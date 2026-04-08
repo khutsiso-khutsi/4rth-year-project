@@ -1,0 +1,883 @@
+﻿@{
+    ViewData["Title"] = "Home";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NMB Haematology Lab System</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --navy: #0b1f3a;
+            --navy2: #122848;
+            --blue: #1a4f8a;
+            --accent: #e8f0fe;
+            --teal: #0d9488;
+            --white: #ffffff;
+            --offwhite: #f4f7fb;
+            --muted: #6b7a99;
+            --border: #dde4f0;
+            --red: #dc2626;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--offwhite);
+            color: var(--navy);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── NAV ────────────────────────────────── */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: var(--navy);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 48px;
+            height: 64px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.25);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .nav-logo {
+            width: 36px;
+            height: 36px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .nav-logo svg {
+                width: 20px;
+                height: 20px;
+                fill: white;
+            }
+
+        .nav-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.1rem;
+            color: var(--white);
+            letter-spacing: 0.01em;
+            line-height: 1.2;
+        }
+
+            .nav-title span {
+                display: block;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.65rem;
+                font-weight: 300;
+                color: rgba(255,255,255,0.5);
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .nav-links a {
+                color: rgba(255,255,255,0.7);
+                text-decoration: none;
+                font-size: 0.875rem;
+                font-weight: 400;
+                padding: 8px 16px;
+                border-radius: 6px;
+                transition: all 0.2s;
+            }
+
+                .nav-links a:hover {
+                    color: white;
+                    background: rgba(255,255,255,0.08);
+                }
+
+        .btn-login {
+            background: var(--teal) !important;
+            color: white !important;
+            font-weight: 500 !important;
+            padding: 8px 20px !important;
+        }
+
+            .btn-login:hover {
+                background: #0f7a70 !important;
+            }
+
+        /* ── HERO ───────────────────────────────── */
+        .hero {
+            min-height: 100vh;
+            background: var(--navy);
+            display: flex;
+            align-items: center;
+            padding: 100px 48px 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .hero::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: radial-gradient(ellipse 60% 80% at 80% 50%, rgba(13,148,136,0.12) 0%, transparent 60%), radial-gradient(ellipse 40% 60% at 20% 80%, rgba(26,79,138,0.3) 0%, transparent 55%);
+            }
+
+            .hero::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+                background-size: 48px 48px;
+            }
+
+        .hero-inner {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .hero-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(13,148,136,0.15);
+            border: 1px solid rgba(13,148,136,0.3);
+            color: #5eead4;
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 6px 14px;
+            border-radius: 100px;
+            margin-bottom: 28px;
+        }
+
+            .hero-tag::before {
+                content: '';
+                width: 6px;
+                height: 6px;
+                background: #5eead4;
+                border-radius: 50%;
+            }
+
+        .hero h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: clamp(2.4rem, 4vw, 3.6rem);
+            color: var(--white);
+            line-height: 1.15;
+            margin-bottom: 24px;
+        }
+
+            .hero h1 em {
+                font-style: italic;
+                color: #5eead4;
+            }
+
+        .hero-desc {
+            color: rgba(255,255,255,0.6);
+            font-size: 1.05rem;
+            line-height: 1.75;
+            margin-bottom: 40px;
+            font-weight: 300;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: var(--teal);
+            color: white;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .btn-primary:hover {
+                background: #0f7a70;
+                transform: translateY(-1px);
+            }
+
+        .btn-outline {
+            background: transparent;
+            color: rgba(255,255,255,0.8);
+            padding: 14px 32px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            font-size: 0.95rem;
+            font-weight: 400;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+            .btn-outline:hover {
+                border-color: rgba(255,255,255,0.4);
+                color: white;
+            }
+
+        .hero-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .stats-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 32px;
+            backdrop-filter: blur(12px);
+            width: 100%;
+            max-width: 380px;
+        }
+
+        .stats-card-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+            .stat-row:last-child {
+                border-bottom: none;
+            }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+            .stat-icon svg {
+                width: 18px;
+                height: 18px;
+            }
+
+        .stat-info {
+            flex: 1;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.45);
+            margin-bottom: 2px;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .stat-badge {
+            font-size: 0.7rem;
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-weight: 500;
+        }
+
+        /* ── SDG BANNER ─────────────────────────── */
+        .sdg-banner {
+            background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+            padding: 20px 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+            .sdg-banner p {
+                color: rgba(255,255,255,0.85);
+                font-size: 0.875rem;
+            }
+
+        .sdg-badge {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 100px;
+            white-space: nowrap;
+        }
+
+        /* ── ROLES SECTION ──────────────────────── */
+        .section {
+            padding: 96px 48px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--teal);
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: clamp(1.8rem, 3vw, 2.6rem);
+            color: var(--navy);
+            line-height: 1.2;
+            margin-bottom: 16px;
+        }
+
+        .section-desc {
+            color: var(--muted);
+            font-size: 1rem;
+            line-height: 1.7;
+            max-width: 520px;
+            margin-bottom: 56px;
+        }
+
+        .roles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .role-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px 24px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .role-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 3px;
+                background: var(--card-color, var(--teal));
+                transform: scaleX(0);
+                transform-origin: left;
+                transition: transform 0.3s;
+            }
+
+            .role-card:hover {
+                border-color: var(--card-color, var(--teal));
+                transform: translateY(-4px);
+                box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+            }
+
+                .role-card:hover::before {
+                    transform: scaleX(1);
+                }
+
+        .role-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 18px;
+            background: var(--icon-bg, #e8f5f3);
+        }
+
+            .role-icon svg {
+                width: 22px;
+                height: 22px;
+            }
+
+        .role-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--navy);
+            margin-bottom: 8px;
+        }
+
+        .role-desc {
+            font-size: 0.83rem;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        /* ── HOW IT WORKS ───────────────────────── */
+        .how-section {
+            background: var(--navy);
+            padding: 96px 48px;
+        }
+
+        .how-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .how-section .section-title {
+            color: white;
+        }
+
+        .how-section .section-label {
+            color: #5eead4;
+        }
+
+        .how-section .section-desc {
+            color: rgba(255,255,255,0.55);
+        }
+
+        .steps-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+            position: relative;
+        }
+
+            .steps-row::before {
+                content: '';
+                position: absolute;
+                top: 28px;
+                left: 14%;
+                right: 14%;
+                height: 1px;
+                background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 20%, rgba(255,255,255,0.15) 80%, rgba(255,255,255,0) 100%);
+            }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .step-num {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--navy2);
+            border: 2px solid rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.3rem;
+            color: #5eead4;
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .step-desc {
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.45);
+            line-height: 1.6;
+        }
+
+        /* ── SDG SECTION ────────────────────────── */
+        .sdg-section {
+            padding: 96px 48px;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+
+        .sdg-visual {
+            background: linear-gradient(135deg, #064e3b, #0d9488);
+            border-radius: 24px;
+            padding: 48px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sdg-num {
+            font-family: 'DM Serif Display', serif;
+            font-size: 5rem;
+            color: rgba(255,255,255,0.15);
+            line-height: 1;
+        }
+
+        .sdg-goal-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.8rem;
+            color: white;
+            line-height: 1.3;
+        }
+
+        .sdg-goal-desc {
+            color: rgba(255,255,255,0.65);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        /* ── FOOTER ─────────────────────────────── */
+        footer {
+            background: var(--navy);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding: 40px 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+            footer p {
+                color: rgba(255,255,255,0.35);
+                font-size: 0.82rem;
+            }
+
+            footer a {
+                color: rgba(255,255,255,0.35);
+                text-decoration: none;
+                font-size: 0.82rem;
+                transition: color 0.2s;
+            }
+
+                footer a:hover {
+                    color: rgba(255,255,255,0.7);
+                }
+    </style>
+</head>
+<body>
+
+    <!-- NAV -->
+    <nav>
+        <a class="nav-brand" href="#">
+            <div class="nav-logo">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" />
+                    <circle cx="12" cy="17" r="4" opacity="0.6" />
+                </svg>
+            </div>
+            <div class="nav-title">
+                NMB-HLabSys
+                <span>Haematology Lab System</span>
+            </div>
+        </a>
+        <div class="nav-links">
+            <a href="#">About</a>
+            <a href="#">Services</a>
+            <a asp-controller="Home" asp-action="Login" class="btn-login">Login</a>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="hero-inner">
+            <div>
+                <div class="hero-tag">Live System</div>
+                <h1>
+                    Smarter Lab Testing<br />for <em>Better Care</em>
+                </h1>
+                <p class="hero-desc">
+                    Nelson Mandela Bay Haematology Diagnostic Laboratories —
+                    a secure, end-to-end system for doctors, technicians, and patients
+                    to manage test requests and results in real time.
+                </p>
+                <div class="hero-actions">
+                    <a asp-controller="Home" asp-action="Login" class="btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                            <polyline points="10 17 15 12 10 7" />
+                            <line x1="15" y1="12" x2="3" y2="12" />
+                        </svg>
+                        Sign In
+                    </a>
+                    <a href="#roles" class="btn-outline">View Roles</a>
+                </div>
+            </div>
+
+            <div class="hero-visual">
+                <div class="stats-card">
+                    <div class="stats-card-header">System Overview</div>
+
+                    <div class="stat-row">
+                        <div class="stat-icon" style="background:rgba(13,148,136,0.15)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">System Users</div>
+                            <div class="stat-value">5 Roles</div>
+                        </div>
+                        <span class="stat-badge" style="background:rgba(13,148,136,0.12);color:#0d9488">Active</span>
+                    </div>
+
+                    <div class="stat-row">
+                        <div class="stat-icon" style="background:rgba(26,79,138,0.12)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#1a4f8a" stroke-width="2" stroke-linecap="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">Test Requests</div>
+                            <div class="stat-value">Tracked Live</div>
+                        </div>
+                        <span class="stat-badge" style="background:rgba(26,79,138,0.1);color:#1a4f8a">Real-time</span>
+                    </div>
+
+                    <div class="stat-row">
+                        <div class="stat-icon" style="background:rgba(220,38,38,0.08)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">Abnormal Alerts</div>
+                            <div class="stat-value">Auto-flagged</div>
+                        </div>
+                        <span class="stat-badge" style="background:rgba(220,38,38,0.08);color:#dc2626">Alert</span>
+                    </div>
+
+                    <div class="stat-row">
+                        <div class="stat-icon" style="background:rgba(13,148,136,0.1)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round">
+                                <rect x="5" y="2" width="14" height="20" rx="2" />
+                                <line x1="12" y1="18" x2="12.01" y2="18" />
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">PDF Reports</div>
+                            <div class="stat-value">Instant Export</div>
+                        </div>
+                        <span class="stat-badge" style="background:rgba(13,148,136,0.1);color:#0d9488">Export</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SDG BANNER -->
+    <div class="sdg-banner">
+        <span class="sdg-badge">UN SDG 3</span>
+        <p>This system supports <strong>Good Health and Well-Being</strong> — ensuring quality diagnostic services for all.</p>
+    </div>
+
+    <!-- ROLES -->
+    <div id="roles" style="background: var(--offwhite);">
+        <div class="section">
+            <div class="section-label">Who Uses This System</div>
+            <h2 class="section-title">Built for Every Role<br />in the Lab</h2>
+            <p class="section-desc">Five dedicated portals — each tailored to the specific tasks and responsibilities of each user type.</p>
+
+            <div class="roles-grid">
+
+                <a href="#" class="role-card" style="--card-color:#0d9488; --icon-bg:#e8f5f3">
+                    <div class="role-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            <polyline points="9 22 9 12 15 12 15 22" />
+                        </svg>
+                    </div>
+                    <div class="role-name">Lab Manager</div>
+                    <div class="role-desc">Oversee staff, test catalogue, consumables, suppliers and system reports.</div>
+                </a>
+
+                <a href="#" class="role-card" style="--card-color:#1a4f8a; --icon-bg:#e8eef8">
+                    <div class="role-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#1a4f8a" stroke-width="2" stroke-linecap="round">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                        </svg>
+                    </div>
+                    <div class="role-name">Doctor</div>
+                    <div class="role-desc">Submit test requests, track progress, view and release results to patients.</div>
+                </a>
+
+                <a href="#" class="role-card" style="--card-color:#7c3aed; --icon-bg:#f0ebff">
+                    <div class="role-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round">
+                            <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18" />
+                        </svg>
+                    </div>
+                    <div class="role-name">Lab Technician</div>
+                    <div class="role-desc">Receive samples, perform and verify tests, capture results with full audit trail.</div>
+                </a>
+
+                <a href="#" class="role-card" style="--card-color:#ea580c; --icon-bg:#fff3ed">
+                    <div class="role-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                    </div>
+                    <div class="role-name">Patient</div>
+                    <div class="role-desc">Register, track requests, view released results and manage consent settings.</div>
+                </a>
+
+                <a href="#" class="role-card" style="--card-color:#dc2626; --icon-bg:#fef2f2">
+                    <div class="role-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round">
+                            <circle cx="12" cy="12" r="3" />
+                            <path d="M19.07 4.93l-1.41 1.41M5.34 5.34l-1.41-1.41M21 12h-2M5 12H3m16.07 7.07l-1.41-1.41M5.34 18.66l-1.41 1.41M12 21v-2M12 5V3" />
+                        </svg>
+                    </div>
+                    <div class="role-name">Admin</div>
+                    <div class="role-desc">Maintain system-wide medical reference data — conditions, allergies, medications.</div>
+                </a>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <section class="how-section">
+        <div class="how-inner">
+            <div class="section-label">Workflow</div>
+            <h2 class="section-title">How It Works</h2>
+            <p class="section-desc">From test request to patient result — a clear, tracked process every step of the way.</p>
+
+            <div class="steps-row">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-title">Doctor Submits</div>
+                    <div class="step-desc">Doctor creates a test request with samples, urgency level and clinical notes.</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-title">Lab Receives</div>
+                    <div class="step-desc">Technician verifies barcodes, receives samples and begins processing.</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-title">Results Verified</div>
+                    <div class="step-desc">A second technician verifies results before they are released.</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-title">Patient Notified</div>
+                    <div class="step-desc">Doctor reviews and releases results. Patient receives secure access.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SDG -->
+    <div style="background: var(--offwhite);">
+        <div class="sdg-section">
+            <div class="sdg-visual">
+                <div class="sdg-num">3</div>
+                <div class="sdg-goal-title">Good Health<br />and Well-Being</div>
+                <div class="sdg-goal-desc">
+                    This system directly supports UN SDG 3 by ensuring accurate, timely
+                    haematology diagnostics — reducing delays in disease detection and improving
+                    health outcomes across Nelson Mandela Bay.
+                </div>
+            </div>
+            <div>
+                <div class="section-label">Our Purpose</div>
+                <h2 class="section-title">Aligned with Global Health Goals</h2>
+                <p class="section-desc" style="margin-bottom: 28px;">
+                    NMB-HLabSys replaces paper-based workflows with a secure, traceable digital
+                    system — cutting delays, reducing errors, and putting results where they need
+                    to be, faster.
+                </p>
+                <ul style="list-style:none; display:flex; flex-direction:column; gap:14px;">
+                    <li style="display:flex;align-items:flex-start;gap:12px;font-size:0.9rem;color:var(--muted)">
+                        <span style="color:var(--teal);font-weight:700;margin-top:1px">✓</span>
+                        Secure role-based access for all users
+                    </li>
+                    <li style="display:flex;align-items:flex-start;gap:12px;font-size:0.9rem;color:var(--muted)">
+                        <span style="color:var(--teal);font-weight:700;margin-top:1px">✓</span>
+                        Automatic alerts for abnormal test results
+                    </li>
+                    <li style="display:flex;align-items:flex-start;gap:12px;font-size:0.9rem;color:var(--muted)">
+                        <span style="color:var(--teal);font-weight:700;margin-top:1px">✓</span>
+                        Two-step result verification for accuracy
+                    </li>
+                    <li style="display:flex;align-items:flex-start;gap:12px;font-size:0.9rem;color:var(--muted)">
+                        <span style="color:var(--teal);font-weight:700;margin-top:1px">✓</span>
+                        Patient consent and data privacy controls
+                    </li>
+                    <li style="display:flex;align-items:flex-start;gap:12px;font-size:0.9rem;color:var(--muted)">
+                        <span style="color:var(--teal);font-weight:700;margin-top:1px">✓</span>
+                        PDF reports for doctors, technicians and patients
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>© 2026 NMB Haematology Diagnostic Laboratories. All rights reserved.</p>
+        <div style="display:flex;gap:24px">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Use</a>
+            <a href="#">Contact</a>
+        </div>
+    </footer>
+
+</body>
+</html>

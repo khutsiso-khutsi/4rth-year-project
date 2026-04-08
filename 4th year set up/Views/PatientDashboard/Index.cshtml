@@ -1,0 +1,756 @@
+﻿@{
+    ViewData["Title"] = "Patient Dashboard";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Patient Dashboard — NMB-HLabSys</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@@0;1&family=DM+Sans:wght@@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --navy: #0b1f3a;
+            --navy2: #122848;
+            --teal: #0d9488;
+            --teal-light: rgba(13,148,136,0.1);
+            --white: #ffffff;
+            --offwhite: #f4f7fb;
+            --muted: #6b7a99;
+            --border: #dde4f0;
+            --red: #dc2626;
+            --green: #16a34a;
+            --amber: #d97706;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--offwhite);
+            color: var(--navy);
+            min-height: 100vh;
+        }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            background: var(--navy);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .brand-logo {
+            width: 34px;
+            height: 34px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .brand-logo svg {
+                width: 18px;
+                height: 18px;
+                fill: white;
+            }
+
+        .brand-name {
+            font-family: 'DM Serif Display', serif;
+            color: white;
+            font-size: 1.1rem;
+            line-height: 1.1;
+        }
+
+            .brand-name span {
+                display: block;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.6rem;
+                font-weight: 300;
+                color: rgba(255,255,255,0.4);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 100px;
+            padding: 6px 14px 6px 8px;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            background: var(--teal);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .user-email {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.75);
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.8);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+            .logout-btn:hover {
+                background: rgba(255,255,255,0.15);
+                color: white;
+            }
+
+            .logout-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+
+        /* ── LAYOUT ── */
+        .page {
+            display: flex;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            flex-shrink: 0;
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: 8px;
+        }
+
+        .nav-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0 20px;
+            margin-bottom: 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.15s;
+            border-left: 3px solid transparent;
+        }
+
+            .nav-item:hover {
+                background: var(--offwhite);
+                color: var(--navy);
+            }
+
+            .nav-item.active {
+                background: var(--teal-light);
+                color: var(--teal);
+                border-left-color: var(--teal);
+            }
+
+            .nav-item svg {
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+            }
+
+        /* ── MAIN ── */
+        .main {
+            flex: 1;
+            padding: clamp(24px, 3vw, 40px);
+            overflow-y: auto;
+        }
+
+        /* ── HERO ── */
+        .hero {
+            background: var(--navy);
+            border-radius: 20px;
+            padding: 32px 36px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .hero::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: radial-gradient(ellipse 60% 80% at 90% 50%, rgba(13,148,136,0.2) 0%, transparent 60%);
+            }
+
+            .hero::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+                background-size: 40px 40px;
+            }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(13,148,136,0.15);
+            border: 1px solid rgba(13,148,136,0.3);
+            color: #5eead4;
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 100px;
+            margin-bottom: 14px;
+        }
+
+            .hero-tag::before {
+                content: '';
+                width: 5px;
+                height: 5px;
+                background: #5eead4;
+                border-radius: 50%;
+            }
+
+        .hero h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: clamp(1.5rem, 2.5vw, 2.2rem);
+            color: white;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+
+            .hero h1 span {
+                color: #5eead4;
+                font-style: italic;
+            }
+
+        .hero p {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.88rem;
+            font-weight: 300;
+        }
+
+        /* ── STATS ROW ── */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
+        }
+
+        .stat-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+            .stat-icon svg {
+                width: 16px;
+                height: 16px;
+            }
+
+        .stat-value {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.6rem;
+            color: var(--navy);
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--muted);
+            font-weight: 400;
+        }
+
+        /* ── SECTION HEADER ── */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.2rem;
+            color: var(--navy);
+        }
+
+        .section-link {
+            font-size: 0.8rem;
+            color: var(--teal);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+            .section-link:hover {
+                text-decoration: underline;
+            }
+
+        /* ── CARDS GRID ── */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
+            transition: box-shadow 0.2s, transform 0.2s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+            .card:hover {
+                box-shadow: 0 8px 24px rgba(11,31,58,0.1);
+                transform: translateY(-2px);
+            }
+
+        .card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+            .card-icon svg {
+                width: 20px;
+                height: 20px;
+            }
+
+        .card h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--navy);
+            margin-bottom: 6px;
+        }
+
+        .card p {
+            font-size: 0.8rem;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .card-arrow {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 16px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--teal);
+        }
+
+            .card-arrow svg {
+                width: 13px;
+                height: 13px;
+            }
+
+        /* ── RECENT ACTIVITY ── */
+        .activity-list {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+            .activity-item:last-child {
+                border-bottom: none;
+            }
+
+            .activity-item:hover {
+                background: var(--offwhite);
+            }
+
+        .activity-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+            .activity-dot svg {
+                width: 15px;
+                height: 15px;
+            }
+
+        .activity-info {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--navy);
+            margin-bottom: 2px;
+        }
+
+        .activity-sub {
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+        .activity-time {
+            font-size: 0.73rem;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .badge-green {
+            background: #dcfce7;
+            color: var(--green);
+        }
+
+        .badge-amber {
+            background: #fef3c7;
+            color: var(--amber);
+        }
+
+        .badge-blue {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        /* ── RESPONSIVE ── */
+        @@media (max-width: 768px) {
+            .topbar {
+                padding: 0 20px;
+            }
+
+            .user-email {
+                display: none;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                padding: 20px 16px;
+            }
+
+            .hero {
+                padding: 24px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
+            </div>
+            <div class="brand-name">
+                NMB-HLabSys
+                <span>Haematology Lab System</span>
+            </div>
+        </a>
+        <div class="topbar-right">
+            <div class="user-chip">
+                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "P")</div>
+                <span class="user-email">@ViewBag.Email</span>
+            </div>
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Sign Out
+            </a>
+        </div>
+    </div>
+
+    <div class="page">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="nav-section">
+                <div class="nav-label">Main</div>
+                <a href="#" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+                    Dashboard
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                    My Results
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                    Appointments
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                    Profile
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-label">Support</div>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+                    Help
+                </a>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main">
+
+            <!-- HERO -->
+            <div class="hero">
+                <div class="hero-content">
+                    <div class="hero-tag">Patient Portal</div>
+                    <h1>Welcome back, <span>@ViewBag.Email</span></h1>
+                    <p>Here's an overview of your health records and upcoming appointments.</p>
+                </div>
+            </div>
+
+            <!-- STATS -->
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#dcfce7">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                    </div>
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">Test Results</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#dbeafe">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                    </div>
+                    <div class="stat-value">1</div>
+                    <div class="stat-label">Upcoming Appointment</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#fef3c7">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                    </div>
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">Active Conditions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:rgba(13,148,136,0.1)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                    </div>
+                    <div class="stat-value">1</div>
+                    <div class="stat-label">Assigned Doctor</div>
+                </div>
+            </div>
+
+            <!-- QUICK ACCESS -->
+            <div class="section-header">
+                <h2 class="section-title">Quick Access</h2>
+            </div>
+            <div class="cards">
+                <a href="#" class="card">
+                    <div class="card-icon" style="background:#dcfce7">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
+                    </div>
+                    <h3>My Results</h3>
+                    <p>View your latest haematology lab test results and reports.</p>
+                    <div class="card-arrow">
+                        View Results
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6" /></svg>
+                    </div>
+                </a>
+                <a href="#" class="card">
+                    <div class="card-icon" style="background:#dbeafe">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                    </div>
+                    <h3>Appointments</h3>
+                    <p>Check your upcoming and past appointments with your doctor.</p>
+                    <div class="card-arrow">
+                        View Appointments
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6" /></svg>
+                    </div>
+                </a>
+                <a href="#" class="card">
+                    <div class="card-icon" style="background:rgba(13,148,136,0.1)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                    </div>
+                    <h3>My Profile</h3>
+                    <p>Manage your personal information, contact details and settings.</p>
+                    <div class="card-arrow">
+                        View Profile
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6" /></svg>
+                    </div>
+                </a>
+                <a href="#" class="card">
+                    <div class="card-icon" style="background:#fef3c7">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                    </div>
+                    <h3>Medical History</h3>
+                    <p>Review your conditions, medications and allergy records.</p>
+                    <div class="card-arrow">
+                        View History
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6" /></svg>
+                    </div>
+                </a>
+            </div>
+
+            <!-- RECENT ACTIVITY -->
+            <div class="section-header">
+                <h2 class="section-title">Recent Activity</h2>
+                <a href="#" class="section-link">View all</a>
+            </div>
+            <div class="activity-list">
+                <div class="activity-item">
+                    <div class="activity-dot" style="background:#dcfce7">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">Full Blood Count Result Available</div>
+                        <div class="activity-sub">Lab Technician uploaded your results</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                        <span class="badge badge-green">Ready</span>
+                        <span class="activity-time">Today</span>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-dot" style="background:#dbeafe">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">Appointment Scheduled</div>
+                        <div class="activity-sub">Consultation with Dr. Smith — 14 April 2026</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                        <span class="badge badge-blue">Upcoming</span>
+                        <span class="activity-time">Yesterday</span>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-dot" style="background:#fef3c7">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">Sample Submitted</div>
+                        <div class="activity-sub">Blood sample submitted for processing</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                        <span class="badge badge-amber">Processing</span>
+                        <span class="activity-time">3 days ago</span>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+</body>
+</html>
