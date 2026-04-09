@@ -1,9 +1,8 @@
 using Patient.Repository;
+using admin.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
-
 builder.Services.AddControllersWithViews();
-
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -11,9 +10,14 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Register from Patient class library
+// Patient class library
 builder.Services.AddScoped<UserRepository>(provider =>
     new UserRepository(
+        builder.Configuration.GetConnectionString("DefaultConnection")!));
+
+// Admin class library
+builder.Services.AddScoped<AdminRepository>(provider =>
+    new AdminRepository(
         builder.Configuration.GetConnectionString("DefaultConnection")!));
 
 var app = builder.Build();

@@ -1,0 +1,807 @@
+﻿@{
+    ViewData["Title"] = "Condition Categories";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Condition Categories — NMB-HLabSys</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --navy: #0b1f3a;
+            --navy2: #122848;
+            --blue: #1a4f8a;
+            --accent: #e8f0fe;
+            --teal: #0d9488;
+            --teal-light: #e8f5f3;
+            --white: #ffffff;
+            --offwhite: #f4f7fb;
+            --muted: #6b7a99;
+            --border: #dde4f0;
+            --red: #dc2626;
+            --sidebar-width: 240px;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--offwhite);
+            color: var(--navy);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topnav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: var(--navy);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            height: 64px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.25);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .nav-logo {
+            width: 36px;
+            height: 36px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .nav-logo svg {
+                width: 20px;
+                height: 20px;
+                fill: white;
+            }
+
+        .nav-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.05rem;
+            color: white;
+            line-height: 1.2;
+        }
+
+            .nav-title span {
+                display: block;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.62rem;
+                font-weight: 300;
+                color: rgba(255,255,255,0.45);
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            padding: 6px 14px 6px 8px;
+        }
+
+        .nav-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .nav-user-info {
+            line-height: 1.3;
+        }
+
+        .nav-user-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: white;
+        }
+
+        .nav-user-role {
+            font-size: 11px;
+            color: rgba(255,255,255,0.45);
+        }
+
+        .btn-signout {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.18);
+            color: rgba(255,255,255,0.7);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            padding: 7px 16px;
+            border-radius: 7px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+            .btn-signout:hover {
+                background: rgba(255,255,255,0.08);
+                color: white;
+            }
+
+            .btn-signout svg {
+                width: 14px;
+                height: 14px;
+            }
+
+        .app-body {
+            display: flex;
+            padding-top: 64px;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--white);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            top: 64px;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 0 20px;
+        }
+
+        .sidebar-section {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            padding: 0 20px;
+            margin: 20px 0 8px;
+        }
+
+            .sidebar-section:first-child {
+                margin-top: 0;
+            }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 20px;
+            font-size: 13.5px;
+            font-weight: 400;
+            color: var(--muted);
+            text-decoration: none;
+            transition: all 0.15s;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+        }
+
+            .nav-item:hover {
+                background: var(--offwhite);
+                color: var(--navy);
+            }
+
+            .nav-item.active {
+                background: var(--teal-light);
+                color: var(--teal);
+                border-left-color: var(--teal);
+                font-weight: 500;
+            }
+
+            .nav-item svg {
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+            }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+        }
+
+        .nav-item.danger {
+            color: var(--red);
+        }
+
+            .nav-item.danger:hover {
+                background: #fef2f2;
+            }
+
+        .main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 32px 36px;
+        }
+
+        .page-header {
+            margin-bottom: 28px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .page-header-left {
+        }
+
+        .page-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--teal);
+            margin-bottom: 6px;
+        }
+
+        .page-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.8rem;
+            color: var(--navy);
+            line-height: 1.2;
+        }
+
+        .page-sub {
+            font-size: 13.5px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--teal);
+            color: white;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13.5px;
+            font-weight: 500;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+            .btn-primary:hover {
+                background: #0f7a70;
+            }
+
+            .btn-primary svg {
+                width: 15px;
+                height: 15px;
+            }
+
+        .card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px 24px;
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--navy);
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .search-input {
+            flex: 1;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13.5px;
+            padding: 9px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--navy);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+            .search-input:focus {
+                border-color: var(--teal);
+                box-shadow: 0 0 0 3px rgba(13,148,136,0.1);
+            }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            text-align: left;
+            padding: 10px 14px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 13px 14px;
+            color: var(--navy);
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: var(--offwhite);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--white);
+            color: var(--navy);
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+
+            .btn-sm:hover {
+                background: var(--offwhite);
+            }
+
+            .btn-sm.danger {
+                color: var(--red);
+                border-color: #fecaca;
+            }
+
+                .btn-sm.danger:hover {
+                    background: #fef2f2;
+                }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--muted);
+        }
+
+            .empty-state svg {
+                width: 40px;
+                height: 40px;
+                margin: 0 auto 12px;
+                display: block;
+                opacity: 0.4;
+            }
+
+            .empty-state p {
+                font-size: 14px;
+            }
+
+        /* Modal */
+        .modal-bg {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(11,31,58,0.45);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .modal-bg.open {
+                display: flex;
+            }
+
+        .modal {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 32px;
+            width: 100%;
+            max-width: 480px;
+            border: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.3rem;
+            color: var(--navy);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12.5px;
+            font-weight: 500;
+            color: var(--navy);
+            margin-bottom: 6px;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13.5px;
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--navy);
+            background: var(--white);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+            .form-input:focus, .form-textarea:focus {
+                border-color: var(--teal);
+                box-shadow: 0 0 0 3px rgba(13,148,136,0.1);
+            }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .btn-cancel {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13.5px;
+            font-weight: 500;
+            padding: 9px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--white);
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+            .btn-cancel:hover {
+                background: var(--offwhite);
+            }
+
+        .btn-submit {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13.5px;
+            font-weight: 500;
+            padding: 9px 22px;
+            border-radius: 8px;
+            border: none;
+            background: var(--teal);
+            color: white;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+            .btn-submit:hover {
+                background: #0f7a70;
+            }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: var(--red);
+            border: 1px solid #fecaca;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="topnav">
+        <a class="nav-brand" href="#">
+            <div class="nav-logo">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" />
+                    <circle cx="12" cy="17" r="4" opacity="0.6" />
+                </svg>
+            </div>
+            <div class="nav-title">NMB-HLabSys <span>Haematology Lab System</span></div>
+        </a>
+        <div class="nav-right">
+            <div class="nav-user">
+                <div class="nav-avatar">A</div>
+                <div class="nav-user-info">
+                    <div class="nav-user-name">@ViewData["AdminEmail"]</div>
+                    <div class="nav-user-role">Admin</div>
+                </div>
+            </div>
+            <a asp-controller="Home" asp-action="Logout" class="btn-signout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Sign Out
+            </a>
+        </div>
+    </nav>
+
+    <div class="app-body">
+        <aside class="sidebar">
+            <div class="sidebar-section">Main</div>
+            <a class="nav-item" asp-controller="Admin" asp-action="Dashboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+                Dashboard
+            </a>
+            <div class="sidebar-section">Manage Reference Data</div>
+            <a class="nav-item active" asp-controller="Admin" asp-action="ConditionCategories">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h7" /></svg>
+                Condition categories
+            </a>
+            <a class="nav-item" asp-controller="Admin" asp-action="MedicalConditions">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4" /><circle cx="12" cy="12" r="4" /></svg>
+                Medical conditions
+            </a>
+            <a class="nav-item" asp-controller="Admin" asp-action="AllergyCategories">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h7" /></svg>
+                Allergy categories
+            </a>
+            <a class="nav-item" asp-controller="Admin" asp-action="Allergies">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                Allergies
+            </a>
+            <a class="nav-item" asp-controller="Admin" asp-action="MedicationCategories">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h7" /></svg>
+                Medication categories
+            </a>
+            <a class="nav-item" asp-controller="Admin" asp-action="Medications">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="2" width="18" height="20" rx="2" /><line x1="12" y1="18" x2="12.01" y2="18" /><path d="M8 6h8M8 10h6" /></svg>
+                Medications
+            </a>
+            <div class="sidebar-section">System</div>
+            <a class="nav-item" asp-controller="Admin" asp-action="ActivityLog">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
+                Activity log
+            </a>
+            <div class="sidebar-bottom">
+                <a class="nav-item danger" asp-controller="Home" asp-action="Logout">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                    Sign out
+                </a>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="page-header">
+                <div class="page-header-left">
+                    <div class="page-label">Reference Data</div>
+                    <h1 class="page-title">Condition Categories</h1>
+                    <p class="page-sub">Manage the categories used to group medical conditions.</p>
+                </div>
+                <button class="btn-primary" onclick="openModal('addModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+                    Add category
+                </button>
+            </div>
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success">@TempData["Success"]</div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-error">@TempData["Error"]</div>
+            }
+
+            <div class="card">
+                <div class="search-bar">
+                    <input class="search-input" type="text" id="searchInput" placeholder="Search categories..." onkeyup="filterTable()" />
+                </div>
+
+                @{
+                    var categories = ViewData["Categories"] as List<admin.Models.ConditionCategory>;
+                }
+
+                @if (categories == null || !categories.Any())
+                {
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7" /></svg>
+                        <p>No condition categories found. Add one to get started.</p>
+                    </div>
+                }
+                else
+                {
+                    <table id="categoriesTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Category name</th>
+                                <th>Description</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cat in categories)
+                            {
+                                <tr>
+                                    <td>@cat.ConditionCategoryID</td>
+                                    <td><strong>@cat.CategoryName</strong></td>
+                                    <td>@(cat.Description ?? "—")</td>
+                                    <td>
+                                        <div class="action-btns">
+                                            <button class="btn-sm" onclick="openEditModal(@cat.ConditionCategoryID, '@cat.CategoryName.Replace("'", "\\'")', '@(cat.Description?.Replace("'", "\\'") ?? "")')">Edit</button>
+                                            <button class="btn-sm danger" onclick="openDeleteModal(@cat.ConditionCategoryID, '@cat.CategoryName.Replace("'", "\\'")' )">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </main>
+    </div>
+
+    <!-- ADD MODAL -->
+    <div class="modal-bg" id="addModal">
+        <div class="modal">
+            <div class="modal-title">Add condition category</div>
+            <form method="post" asp-controller="Admin" asp-action="CreateConditionCategory">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label class="form-label">Category name <span style="color:var(--red)">*</span></label>
+                    <input class="form-input" name="CategoryName" required placeholder="e.g. Blood Disorders" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" name="Description" placeholder="Optional description..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal('addModal')">Cancel</button>
+                    <button type="submit" class="btn-submit">Save category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- EDIT MODAL -->
+    <div class="modal-bg" id="editModal">
+        <div class="modal">
+            <div class="modal-title">Edit condition category</div>
+            <form method="post" asp-controller="Admin" asp-action="EditConditionCategory">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ConditionCategoryID" id="editId" />
+                <div class="form-group">
+                    <label class="form-label">Category name <span style="color:var(--red)">*</span></label>
+                    <input class="form-input" name="CategoryName" id="editName" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" name="Description" id="editDesc"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal('editModal')">Cancel</button>
+                    <button type="submit" class="btn-submit">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- DELETE MODAL -->
+    <div class="modal-bg" id="deleteModal">
+        <div class="modal">
+            <div class="modal-title">Delete category</div>
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:20px;">Are you sure you want to delete <strong id="deleteName"></strong>? This cannot be undone.</p>
+            <form method="post" asp-controller="Admin" asp-action="DeleteConditionCategory">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="deleteId" />
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal('deleteModal')">Cancel</button>
+                    <button type="submit" class="btn-submit" style="background:var(--red);">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal(id) { document.getElementById(id).classList.add('open'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+        function openEditModal(id, name, desc) {
+            document.getElementById('editId').value = id;
+            document.getElementById('editName').value = name;
+            document.getElementById('editDesc').value = desc;
+            openModal('editModal');
+        }
+
+        function openDeleteModal(id, name) {
+            document.getElementById('deleteId').value = id;
+            document.getElementById('deleteName').textContent = name;
+            openModal('deleteModal');
+        }
+
+        function filterTable() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#categoriesTable tbody tr');
+            rows.forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(input) ? '' : 'none';
+            });
+        }
+
+        // Close modal when clicking outside
+        document.querySelectorAll('.modal-bg').forEach(bg => {
+            bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
+        });
+    </script>
+
+</body>
+</html>

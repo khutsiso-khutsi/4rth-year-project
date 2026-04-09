@@ -83,7 +83,7 @@ namespace _4th_year_set_up.Controllers
                 "Doctor" => RedirectToAction("Index", "DoctorDashboard"),
                 "Lab Technician" => RedirectToAction("Index", "TechnicianDashboard"),
                 "Lab Manager" => RedirectToAction("Index", "ManagerDashboard"),
-                "Admin" => RedirectToAction("Index", "AdminDashboard"),
+                "Admin" => RedirectToAction("Dashboard", "Admin"),
                 _ => RedirectToAction("Index")
             };
         }

@@ -6,10 +6,14 @@
 		<RootNamespace>_4th_year_set_up</RootNamespace>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+		<PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
 		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
 	</ItemGroup>
 	<ItemGroup>
+		<ProjectReference Include="..\admin\admin.csproj" />
+		<ProjectReference Include="..\Doctor\Doctor.csproj" />
+		<ProjectReference Include="..\LabManager\LabManager.csproj" />
+		<ProjectReference Include="..\LabTechnician\LabTechnician..csproj" />
 		<ProjectReference Include="..\Patient\Patient.csproj" />
 	</ItemGroup>
 </Project>

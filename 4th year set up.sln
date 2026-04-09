@@ -1,9 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.37111.16 d17.14
+VisualStudioVersion = 17.14.37111.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "4th year set up", "4th year set up\4th year set up.csproj", "{BB31FB40-3F64-472D-AAF3-19A2F285BF07}"
+	ProjectSection(ProjectDependencies) = postProject
+		{00F33122-9CB7-4236-8CC5-DDD474765932} = {00F33122-9CB7-4236-8CC5-DDD474765932}
+		{2AF82BD7-338A-46A8-9ACB-248D80AD5A56} = {2AF82BD7-338A-46A8-9ACB-248D80AD5A56}
+		{849D5628-9DBD-4761-8A68-290A87F362EA} = {849D5628-9DBD-4761-8A68-290A87F362EA}
+		{B7E5CEC9-E954-4E33-9918-BDF0B8CF5EB0} = {B7E5CEC9-E954-4E33-9918-BDF0B8CF5EB0}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "admin", "admin\admin.csproj", "{849D5628-9DBD-4761-8A68-290A87F362EA}"
 EndProject
