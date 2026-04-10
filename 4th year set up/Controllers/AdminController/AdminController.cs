@@ -47,9 +47,15 @@ namespace _4th_year_set_up.Controllers
         public IActionResult CreateConditionCategory(string CategoryName, string? Description)
         {
             var result = _adminRepo.CreateConditionCategory(CategoryName, Description);
-            TempData[result == "SUCCESS" ? "Success" : "Error"] = result == "SUCCESS"
-                ? "Category created successfully."
-                : "Failed to create category: " + result;
+            if (result == "SUCCESS")
+            {
+                _adminRepo.LogActivity($"Created condition category: {CategoryName}", HttpContext.Session.GetString("Email")!);
+                TempData["Success"] = "Category created successfully.";
+            }
+            else
+            {
+                TempData["Error"] = "Failed to create category: " + result;
+            }
             return RedirectToAction("ConditionCategories");
         }
 
@@ -282,6 +288,15 @@ namespace _4th_year_set_up.Controllers
         }
 
         // ── ACTIVITY LOG ──────────────────────────────────────
-        public IActionResult ActivityLog() => View();
+        public IActionResult ActivityLog()
+        {
+            if (HttpContext.Session.GetString("RoleName") != "Admin")
+                return RedirectToAction("Login", "Home");
+
+            ViewData["AdminEmail"] = HttpContext.Session.GetString("Email");
+            ViewData["Logs"] = _adminRepo.GetActivityLog();
+            return View("~/Views/Admin/ActivityLog.cshtml");
+        }
+        
     }
 }

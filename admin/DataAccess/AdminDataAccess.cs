@@ -536,23 +536,25 @@ namespace admin.DataAccess
 
         // ── ACTIVITY LOG ──────────────────────────────────────────────
 
-        public List<ActivityLog> GetActivityLog()
+        public List<ActivityLogEntry> GetActivityLog()
         {
-            var list = new List<ActivityLog>();
+            var logs = new List<ActivityLogEntry>();
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("sp_GetActivityLog", conn);
-            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandType = System.Data.CommandType.StoredProcedure;
             conn.Open();
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
-                list.Add(new ActivityLog
+            {
+                logs.Add(new ActivityLogEntry
                 {
-                    LogID = reader.GetInt32(reader.GetOrdinal("LogID")),
-                    Action = reader.GetString(reader.GetOrdinal("Action")),
-                    PerformedBy = reader.GetString(reader.GetOrdinal("PerformedBy")),
-                    LogDate = reader.GetDateTime(reader.GetOrdinal("LogDate"))
+                    LogID = reader.GetInt32(0),
+                    Action = reader.IsDBNull(1) ? null : reader.GetString(1),
+                    PerformedBy = reader.IsDBNull(2) ? null : reader.GetString(2),
+                    LogDate = reader.GetDateTime(3)
                 });
-            return list;
+            }
+            return logs;
         }
 
         public void LogActivity(string action, string performedBy)

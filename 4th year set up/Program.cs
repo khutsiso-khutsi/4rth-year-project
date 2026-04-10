@@ -1,8 +1,10 @@
 using Patient.Repository;
 using admin.Repository;
+using _4th_year_set_up.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
+builder.Services.AddSingleton<EmailService>();
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -24,7 +26,7 @@ var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseDeveloperExceptionPage();
     app.UseHsts();
 }
 

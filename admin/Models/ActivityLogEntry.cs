@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace admin.Models
 {
-    internal class ActivityLogEntry
+    public class ActivityLogEntry
     {
+        public int LogID { get; set; }
+        public string? Action { get; set; }
+        public string? PerformedBy { get; set; }
+        public DateTime LogDate { get; set; }
     }
 }

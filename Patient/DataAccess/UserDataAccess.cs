@@ -74,5 +74,49 @@ namespace Patient.DataAccess
                 roles.Add((reader.GetInt32(0), reader.GetString(1)));
             return roles;
         }
+        public bool SaveResetToken(string email, string token, DateTime expiry)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(
+                "UPDATE Users SET ResetToken = @Token, ResetTokenExpiry = @Expiry WHERE Email = @Email", conn);
+            cmd.Parameters.AddWithValue("@Token", token);
+            cmd.Parameters.AddWithValue("@Expiry", expiry);
+            cmd.Parameters.AddWithValue("@Email", email);
+            conn.Open();
+            return cmd.ExecuteNonQuery() > 0;
+        }
+
+        public bool ValidateResetToken(string token)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(
+                "SELECT COUNT(*) FROM Users WHERE ResetToken = @Token AND ResetTokenExpiry > GETDATE()", conn);
+            cmd.Parameters.AddWithValue("@Token", token);
+            conn.Open();
+            return (int)cmd.ExecuteScalar() > 0;
+        }
+
+        public bool ResetPassword(string token, string newPassword)
+        {
+            var hashed = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(
+                "UPDATE Users SET PasswordHash = @Hash, ResetToken = NULL, ResetTokenExpiry = NULL WHERE ResetToken = @Token AND ResetTokenExpiry > GETDATE()", conn);
+            cmd.Parameters.AddWithValue("@Hash", hashed);
+            cmd.Parameters.AddWithValue("@Token", token);
+            conn.Open();
+            return cmd.ExecuteNonQuery() > 0;
+        }
+        public bool ResetPasswordByEmail(string email, string newPassword)
+        {
+            var hashed = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(
+                "UPDATE Users SET PasswordHash = @Hash WHERE Email = @Email", conn);
+            cmd.Parameters.AddWithValue("@Hash", hashed);
+            cmd.Parameters.AddWithValue("@Email", email);
+            conn.Open();
+            return cmd.ExecuteNonQuery() > 0;
+        }
     }
 }

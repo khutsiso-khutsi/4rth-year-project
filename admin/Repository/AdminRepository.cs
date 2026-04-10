@@ -14,7 +14,7 @@ namespace admin.Repository
 
         // ── DASHBOARD ─────────────────────────────────────────────────
         public (int conditions, int allergies, int medications, int conditionCats, int allergyCats, int medicationCats) GetDashboardCounts()
-     => _dataAccess.GetDashboardCounts();
+            => _dataAccess.GetDashboardCounts();
 
         // ── CONDITION CATEGORIES ──────────────────────────────────────
         public List<ConditionCategory> GetAllConditionCategories() => _dataAccess.GetAllConditionCategories();
@@ -59,7 +59,7 @@ namespace admin.Repository
         public string DeleteMedication(int id) => _dataAccess.DeleteMedication(id);
 
         // ── ACTIVITY LOG ──────────────────────────────────────────────
-        public List<ActivityLog> GetActivityLog() => _dataAccess.GetActivityLog();
+        public List<ActivityLogEntry> GetActivityLog() => _dataAccess.GetActivityLog();
         public void LogActivity(string action, string performedBy) => _dataAccess.LogActivity(action, performedBy);
     }
 }
