@@ -3,6 +3,7 @@ using admin.Repository;
 using _4th_year_set_up.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<EmailService>();
 builder.Services.AddSession(options =>
@@ -24,9 +25,12 @@ builder.Services.AddScoped<AdminRepository>(provider =>
 
 var app = builder.Build();
 
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
+}
+else
+{
     app.UseHsts();
 }
 
@@ -36,6 +40,7 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthorization();
 
+// Single default route handles everything
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

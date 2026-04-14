@@ -1,0 +1,675 @@
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model Patient.Models.MedicalHistoryViewModel
+@{
+    ViewData["Title"] = "Medical History";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Medical History — NMB-HLabSys</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f1117;
+            color: #e2e8f0;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            background: #1a1d2e;
+            border-right: 1px solid #2d3154;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid #2d3154;
+        }
+
+            .sidebar-header h2 {
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: #7c8cf8;
+                letter-spacing: 1px;
+            }
+
+            .sidebar-header p {
+                font-size: 0.75rem;
+                color: #64748b;
+                margin-top: 4px;
+            }
+
+        .nav-section {
+            padding: 16px 12px 8px;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+            .nav-item:hover {
+                background: #252842;
+                color: #e2e8f0;
+            }
+
+            .nav-item.active {
+                background: #252842;
+                color: #7c8cf8;
+                border-left-color: #7c8cf8;
+                font-weight: 600;
+            }
+
+        .nav-icon {
+            font-size: 1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 16px;
+            border-top: 1px solid #2d3154;
+        }
+
+        .logout-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background: transparent;
+            border: 1px solid #e53e3e;
+            color: #e53e3e;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+            .logout-btn:hover {
+                background: #e53e3e;
+                color: white;
+            }
+
+        /* MAIN */
+        .main {
+            margin-left: 260px;
+            flex: 1;
+            padding: 32px;
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+            .page-header h1 {
+                font-size: 1.75rem;
+                font-weight: 700;
+                color: #e2e8f0;
+            }
+
+            .page-header p {
+                color: #64748b;
+                margin-top: 4px;
+                font-size: 0.875rem;
+            }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 28px;
+            border-bottom: 1px solid #2d3154;
+        }
+
+        .tab-btn {
+            padding: 10px 24px;
+            background: transparent;
+            border: none;
+            color: #64748b;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+            .tab-btn.active {
+                color: #7c8cf8;
+                border-bottom-color: #7c8cf8;
+                font-weight: 600;
+            }
+
+            .tab-btn:hover {
+                color: #e2e8f0;
+            }
+
+        .tab-content {
+            display: none;
+        }
+
+            .tab-content.active {
+                display: block;
+            }
+
+        /* SECTION CARD */
+        .section-card {
+            background: #1a1d2e;
+            border: 1px solid #2d3154;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+            .section-card h3 {
+                font-size: 1rem;
+                font-weight: 600;
+                color: #7c8cf8;
+                margin-bottom: 16px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+        /* ADD FORM */
+        .add-form {
+            background: #12151f;
+            border: 1px solid #2d3154;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 160px;
+        }
+
+            .form-group label {
+                font-size: 0.75rem;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .form-group select,
+            .form-group input,
+            .form-group textarea {
+                background: #1a1d2e;
+                border: 1px solid #2d3154;
+                color: #e2e8f0;
+                padding: 9px 12px;
+                border-radius: 8px;
+                font-size: 0.875rem;
+                font-family: inherit;
+                outline: none;
+                transition: border-color 0.2s;
+            }
+
+                .form-group select:focus,
+                .form-group input:focus,
+                .form-group textarea:focus {
+                    border-color: #7c8cf8;
+                }
+
+                .form-group select option {
+                    background: #1a1d2e;
+                }
+
+        .btn-add {
+            padding: 9px 20px;
+            background: #7c8cf8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+            .btn-add:hover {
+                background: #6470e0;
+            }
+
+        /* ITEMS LIST */
+        .items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .item-card {
+            background: #12151f;
+            border: 1px solid #2d3154;
+            border-radius: 10px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .item-meta {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 3px;
+        }
+
+        .badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-mild {
+            background: #1a3a1a;
+            color: #68d391;
+        }
+
+        .badge-moderate {
+            background: #3a2a1a;
+            color: #f6ad55;
+        }
+
+        .badge-severe {
+            background: #3a1a1a;
+            color: #fc8181;
+        }
+
+        .badge-default {
+            background: #1e2035;
+            color: #7c8cf8;
+        }
+
+        .btn-remove {
+            background: transparent;
+            border: 1px solid #e53e3e44;
+            color: #e53e3e;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+            .btn-remove:hover {
+                background: #e53e3e;
+                color: white;
+            }
+
+        .empty-state {
+            text-align: center;
+            padding: 32px;
+            color: #4a5568;
+            font-size: 0.875rem;
+        }
+
+            .empty-state .empty-icon {
+                font-size: 2rem;
+                margin-bottom: 8px;
+            }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>NMB-HLabSys</h2>
+            <p>@ViewBag.Email</p>
+        </div>
+
+        <div class="nav-section">Patient Portal</div>
+        <a asp-controller="PatientDashboard" asp-action="Index" class="nav-item">
+            <span class="nav-icon">🏠</span> Dashboard
+        </a>
+        <a asp-controller="PatientDashboard" asp-action="MyResults" class="nav-item">
+            <span class="nav-icon">🧪</span> My Results
+        </a>
+        <a asp-controller="PatientDashboard" asp-action="MedicalHistory" class="nav-item active">
+            <span class="nav-icon">📋</span> Medical History
+        </a>
+        <a asp-controller="PatientDashboard" asp-action="Consent" class="nav-item">
+            <span class="nav-icon">🔐</span> Consent Management
+        </a>
+        <a asp-controller="PatientDashboard" asp-action="Profile" class="nav-item">
+            <span class="nav-icon">👤</span> Profile
+        </a>
+
+        <div class="sidebar-footer">
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn">🚪 Logout</a>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+        <div class="page-header">
+            <h1>📋 Medical History</h1>
+            <p>Manage your chronic conditions, allergies, and current medications</p>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('conditions', this)">🫀 Conditions</button>
+            <button class="tab-btn" onclick="switchTab('allergies', this)">⚠️ Allergies</button>
+            <button class="tab-btn" onclick="switchTab('medications', this)">💊 Medications</button>
+        </div>
+
+        <!-- CONDITIONS TAB -->
+        <div id="tab-conditions" class="tab-content active">
+            <div class="section-card">
+                <h3>➕ Add Condition</h3>
+                <form asp-controller="PatientDashboard" asp-action="AddCondition" method="post">
+                    <div class="add-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Condition</label>
+                                <select name="conditionId" required>
+                                    <option value="">-- Select condition --</option>
+                                    @foreach (var c in Model.AllConditions)
+                                    {
+                                        <option value="@c.Id">@c.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Diagnosed Date</label>
+                                <input type="date" name="diagnosedDate" />
+                            </div>
+                            <div class="form-group">
+                                <label>Notes</label>
+                                <input type="text" name="notes" placeholder="Optional notes" />
+                            </div>
+                            <button type="submit" class="btn-add">+ Add</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="section-card">
+                <h3>🫀 My Conditions</h3>
+                @if (!Model.Conditions.Any())
+                {
+                    <div class="empty-state">
+                        <div class="empty-icon">🫀</div>
+                        <p>No conditions recorded yet</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="items-list">
+                        @foreach (var c in Model.Conditions)
+                        {
+                            <div class="item-card">
+                                <div class="item-info">
+                                    <div class="item-name">@c.ConditionName</div>
+                                    <div class="item-meta">
+                                        @if (c.DiagnosedDate.HasValue)
+                                        {
+                                            <span>Diagnosed: @c.DiagnosedDate.Value.ToString("dd MMM yyyy")</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(c.Notes))
+                                        {
+                                            <span> · @c.Notes</span>
+                                        }
+                                    </div>
+                                </div>
+                                <form asp-controller="PatientDashboard" asp-action="RemoveCondition" method="post">
+                                    <input type="hidden" name="patientConditionId" value="@c.PatientConditionID" />
+                                    <button type="submit" class="btn-remove">Remove</button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- ALLERGIES TAB -->
+        <div id="tab-allergies" class="tab-content">
+            <div class="section-card">
+                <h3>➕ Add Allergy</h3>
+                <form asp-controller="PatientDashboard" asp-action="AddAllergy" method="post">
+                    <div class="add-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Allergy</label>
+                                <select name="allergyId" required>
+                                    <option value="">-- Select allergy --</option>
+                                    @foreach (var a in Model.AllAllergies)
+                                    {
+                                        <option value="@a.Id">@a.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Severity</label>
+                                <select name="severity">
+                                    <option value="">-- Select severity --</option>
+                                    <option value="Mild">Mild</option>
+                                    <option value="Moderate">Moderate</option>
+                                    <option value="Severe">Severe</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Notes</label>
+                                <input type="text" name="notes" placeholder="Optional notes" />
+                            </div>
+                            <button type="submit" class="btn-add">+ Add</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="section-card">
+                <h3>⚠️ My Allergies</h3>
+                @if (!Model.Allergies.Any())
+                {
+                    <div class="empty-state">
+                        <div class="empty-icon">⚠️</div>
+                        <p>No allergies recorded yet</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="items-list">
+                        @foreach (var a in Model.Allergies)
+                        {
+                            var badgeClass = a.Severity switch
+                            {
+                                "Mild" => "badge-mild",
+                                "Moderate" => "badge-moderate",
+                                "Severe" => "badge-severe",
+                                _ => "badge-default"
+                            };
+                            <div class="item-card">
+                                <div class="item-info">
+                                    <div class="item-name">@a.AllergyName</div>
+                                    <div class="item-meta">
+                                        @if (!string.IsNullOrEmpty(a.Notes))
+                                        {
+                                            <span>@a.Notes</span>
+                                        }
+                                    </div>
+                                </div>
+                                @if (!string.IsNullOrEmpty(a.Severity))
+                                {
+                                    <span class="badge @badgeClass">@a.Severity</span>
+                                }
+                                <form asp-controller="PatientDashboard" asp-action="RemoveAllergy" method="post">
+                                    <input type="hidden" name="allergyId" value="@a.AllergyID" />
+                                    <button type="submit" class="btn-remove">Remove</button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- MEDICATIONS TAB -->
+        <div id="tab-medications" class="tab-content">
+            <div class="section-card">
+                <h3>➕ Add Medication</h3>
+                <form asp-controller="PatientDashboard" asp-action="AddMedication" method="post">
+                    <div class="add-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Medication</label>
+                                <select name="medicationId" required>
+                                    <option value="">-- Select medication --</option>
+                                    @foreach (var m in Model.AllMedications)
+                                    {
+                                        <option value="@m.Id">@m.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Dosage</label>
+                                <input type="text" name="dosage" placeholder="e.g. 500mg" />
+                            </div>
+                            <div class="form-group">
+                                <label>Frequency</label>
+                                <input type="text" name="frequency" placeholder="e.g. Twice daily" />
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top: 10px;">
+                            <div class="form-group">
+                                <label>Start Date</label>
+                                <input type="date" name="startDate" />
+                            </div>
+                            <div class="form-group">
+                                <label>End Date</label>
+                                <input type="date" name="endDate" />
+                            </div>
+                            <div class="form-group">
+                                <label>Notes</label>
+                                <input type="text" name="notes" placeholder="Optional notes" />
+                            </div>
+                            <button type="submit" class="btn-add">+ Add</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="section-card">
+                <h3>💊 My Medications</h3>
+                @if (!Model.Medications.Any())
+                {
+                    <div class="empty-state">
+                        <div class="empty-icon">💊</div>
+                        <p>No medications recorded yet</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="items-list">
+                        @foreach (var m in Model.Medications)
+                        {
+                            <div class="item-card">
+                                <div class="item-info">
+                                    <div class="item-name">@m.MedicationName</div>
+                                    <div class="item-meta">
+                                        @if (!string.IsNullOrEmpty(m.Dosage))
+                                        {
+                                            <span>@m.Dosage</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(m.Frequency))
+                                        {
+                                            <span> · @m.Frequency</span>
+                                        }
+                                        @if (m.StartDate.HasValue)
+                                        {
+                                            <span> · From @m.StartDate.Value.ToString("dd MMM yyyy")</span>
+                                        }
+                                        @if (m.EndDate.HasValue)
+                                        {
+                                            <span> to @m.EndDate.Value.ToString("dd MMM yyyy")</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(m.Notes))
+                                        {
+                                            <span> · @m.Notes</span>
+                                        }
+                                    </div>
+                                </div>
+                                <form asp-controller="PatientDashboard" asp-action="RemoveMedication" method="post">
+                                    <input type="hidden" name="medicationId" value="@m.MedicationID" />
+                                    <button type="submit" class="btn-remove">Remove</button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function switchTab(tab, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            btn.classList.add('active');
+        }
+    </script>
+
+</body>
+</html>
