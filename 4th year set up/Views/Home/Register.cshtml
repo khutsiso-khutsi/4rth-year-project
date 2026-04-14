@@ -609,10 +609,14 @@
                             {
                                 foreach (var role in ViewBag.Roles)
                                 {
-                                    <option value="@role.Item1">@role.Item2</option>
+                                    if (role.Item2 == "Patient")
+                                    {
+                                        <option value="@role.Item1">@role.Item2</option>
+                                    }
                                 }
                             }
                         </select>
+
                         <div class="select-arrow">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9" /></svg>
                         </div>
