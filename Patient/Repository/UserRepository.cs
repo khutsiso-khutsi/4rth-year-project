@@ -67,5 +67,7 @@ namespace Patient.Repository
 
         public void RemovePatientMedication(int patientId, int medicationId)
             => _dataAccess.RemovePatientMedication(patientId, medicationId);
+        public void LogActivity(string action, string performedBy)
+    => _dataAccess.LogActivity(action, performedBy);
     }
 }

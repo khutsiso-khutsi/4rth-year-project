@@ -346,5 +346,15 @@ namespace Patient.DataAccess
             con.Open();
             cmd.ExecuteNonQuery();
         }
+        public void LogActivity(string action, string performedBy)
+        {
+            using var con = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("sp_LogActivity", con);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@Action", action);
+            cmd.Parameters.AddWithValue("@PerformedBy", performedBy);
+            con.Open();
+            cmd.ExecuteNonQuery();
+        }
     }
 }

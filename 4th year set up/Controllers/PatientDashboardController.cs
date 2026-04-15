@@ -12,6 +12,12 @@ namespace _4th_year_set_up.Controllers
             _userRepo = userRepo;
         }
 
+        private void Log(string activity, string entityType = "Patient", int entityId = 0)
+        {
+            var email = HttpContext.Session.GetString("Email") ?? "unknown";
+            _userRepo.LogActivity(activity, email);
+        }
+
         public IActionResult Index()
         {
             if (HttpContext.Session.GetString("RoleName") == null)
@@ -20,6 +26,7 @@ namespace _4th_year_set_up.Controllers
                 return RedirectToAction("Login", "Home");
             ViewBag.Email = HttpContext.Session.GetString("Email");
             ViewBag.UserID = HttpContext.Session.GetInt32("UserID");
+            Log("Accessed patient dashboard");
             return View();
         }
 
@@ -36,22 +43,29 @@ namespace _4th_year_set_up.Controllers
                 req.Items = _userRepo.GetTestRequestItems(req.RequestID);
             ViewBag.Email = HttpContext.Session.GetString("Email");
             ViewData["Requests"] = requests;
+            Log("Viewed test results", "TestRequest", patientId.Value);
             return View("~/Views/PatientDashboard/MyResults.cshtml");
         }
 
-        //public IActionResult MedicalHistory()
-        //{
-        //    if (HttpContext.Session.GetString("RoleName") != "Patient")
-        //        return RedirectToAction("Login", "Home");
-        //    ViewBag.Email = HttpContext.Session.GetString("Email");
-        //    return View("~/Views/PatientDashboard/MedicalHistory.cshtml");
-        //}
+        public IActionResult MedicalHistory()
+        {
+            if (HttpContext.Session.GetString("RoleName") != "Patient")
+                return RedirectToAction("Login", "Home");
+            var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
+            var patientId = _userRepo.GetPatientIdByUserId(userId);
+            if (patientId == null) return RedirectToAction("Index");
+            var vm = _userRepo.GetMedicalHistory(patientId.Value);
+            ViewBag.Email = HttpContext.Session.GetString("Email");
+            Log("Viewed medical history", "Patient", patientId.Value);
+            return View("~/Views/PatientDashboard/MedicalHistory.cshtml", vm);
+        }
 
         public IActionResult Consent()
         {
             if (HttpContext.Session.GetString("RoleName") != "Patient")
                 return RedirectToAction("Login", "Home");
             ViewBag.Email = HttpContext.Session.GetString("Email");
+            Log("Viewed consent management");
             return View("~/Views/PatientDashboard/Consent.cshtml");
         }
 
@@ -60,20 +74,8 @@ namespace _4th_year_set_up.Controllers
             if (HttpContext.Session.GetString("RoleName") != "Patient")
                 return RedirectToAction("Login", "Home");
             ViewBag.Email = HttpContext.Session.GetString("Email");
+            Log("Viewed profile");
             return View("~/Views/PatientDashboard/Profile.cshtml");
-        }
-        public IActionResult MedicalHistory()
-        {
-            if (HttpContext.Session.GetString("RoleName") != "Patient")
-                return RedirectToAction("Login", "Home");
-
-            var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
-            var patientId = _userRepo.GetPatientIdByUserId(userId);
-            if (patientId == null) return RedirectToAction("Index");
-
-            var vm = _userRepo.GetMedicalHistory(patientId.Value);
-            ViewBag.Email = HttpContext.Session.GetString("Email");
-            return View("~/Views/PatientDashboard/MedicalHistory.cshtml", vm);
         }
 
         [HttpPost]
@@ -84,7 +86,10 @@ namespace _4th_year_set_up.Controllers
             var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
             var patientId = _userRepo.GetPatientIdByUserId(userId);
             if (patientId != null)
+            {
                 _userRepo.AddPatientCondition(patientId.Value, conditionId, diagnosedDate, notes);
+                Log("Added medical condition", "MedicalCondition", conditionId);
+            }
             return RedirectToAction("MedicalHistory");
         }
 
@@ -94,6 +99,7 @@ namespace _4th_year_set_up.Controllers
             if (HttpContext.Session.GetString("RoleName") != "Patient")
                 return RedirectToAction("Login", "Home");
             _userRepo.RemovePatientCondition(patientConditionId);
+            Log("Removed medical condition", "MedicalCondition", patientConditionId);
             return RedirectToAction("MedicalHistory");
         }
 
@@ -105,7 +111,10 @@ namespace _4th_year_set_up.Controllers
             var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
             var patientId = _userRepo.GetPatientIdByUserId(userId);
             if (patientId != null)
+            {
                 _userRepo.AddPatientAllergy(patientId.Value, allergyId, severity, notes);
+                Log("Added allergy", "Allergy", allergyId);
+            }
             return RedirectToAction("MedicalHistory");
         }
 
@@ -117,7 +126,10 @@ namespace _4th_year_set_up.Controllers
             var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
             var patientId = _userRepo.GetPatientIdByUserId(userId);
             if (patientId != null)
+            {
                 _userRepo.RemovePatientAllergy(patientId.Value, allergyId);
+                Log("Removed allergy", "Allergy", allergyId);
+            }
             return RedirectToAction("MedicalHistory");
         }
 
@@ -129,7 +141,10 @@ namespace _4th_year_set_up.Controllers
             var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
             var patientId = _userRepo.GetPatientIdByUserId(userId);
             if (patientId != null)
+            {
                 _userRepo.AddPatientMedication(patientId.Value, medicationId, dosage, frequency, startDate, endDate, notes);
+                Log("Added medication", "Medication", medicationId);
+            }
             return RedirectToAction("MedicalHistory");
         }
 
@@ -141,7 +156,10 @@ namespace _4th_year_set_up.Controllers
             var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
             var patientId = _userRepo.GetPatientIdByUserId(userId);
             if (patientId != null)
+            {
                 _userRepo.RemovePatientMedication(patientId.Value, medicationId);
+                Log("Removed medication", "Medication", medicationId);
+            }
             return RedirectToAction("MedicalHistory");
         }
     }
