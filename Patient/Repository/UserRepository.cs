@@ -69,5 +69,32 @@ namespace Patient.Repository
             => _dataAccess.RemovePatientMedication(patientId, medicationId);
         public void LogActivity(string action, string performedBy)
     => _dataAccess.LogActivity(action, performedBy);
+
+        public ConsentViewModel GetConsentData(int patientId, int selectedDoctorId = 0)
+    => _dataAccess.GetConsentData(patientId, selectedDoctorId);
+
+        public void GrantConsent(int patientId, int doctorId)
+            => _dataAccess.GrantConsent(patientId, doctorId);
+
+        public void RevokeConsent(int patientId, int doctorId)
+            => _dataAccess.RevokeConsent(patientId, doctorId);
+
+        public void GrantTestRequestConsent(int patientId, int doctorId, int requestId)
+            => _dataAccess.GrantTestRequestConsent(patientId, doctorId, requestId);
+
+        public void RevokeTestRequestConsent(int patientId, int doctorId, int requestId)
+            => _dataAccess.RevokeTestRequestConsent(patientId, doctorId, requestId);
+        public ProfileViewModel GetPatientProfile(int patientId)
+    => _dataAccess.GetPatientProfile(patientId);
+
+        public void UpdatePatientProfile(int patientId, string firstName, string lastName,
+            DateTime dob, string cellphone, string homeAddress)
+            => _dataAccess.UpdatePatientProfile(patientId, firstName, lastName, dob, cellphone, homeAddress);
+
+        public void ChangePatientPassword(int userId, string newPasswordHash)
+            => _dataAccess.ChangePatientPassword(userId, newPasswordHash);
+
+        public (int UserId, string PasswordHash)? GetUserById(int userId)
+            => _dataAccess.GetUserById(userId);
     }
 }

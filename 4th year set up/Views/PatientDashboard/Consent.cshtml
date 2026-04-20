@@ -1,4 +1,5 @@
 ﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model Patient.Models.ConsentViewModel
 @{
     ViewData["Title"] = "Consent Management";
     Layout = null;
@@ -8,35 +9,685 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Consent Management — NMB-HLabSys</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@@0;1&family=DM+Sans:wght@@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --navy: #0b1f3a;
+            --teal: #0d9488;
+            --teal-light: rgba(13,148,136,0.1);
+            --white: #ffffff;
+            --offwhite: #f4f7fb;
+            --muted: #6b7a99;
+            --border: #dde4f0;
+            --red: #dc2626;
+            --green: #16a34a;
+        }
+
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background: #0f1117;
-            color: #e2e8f0;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--offwhite);
+            color: var(--navy);
+            min-height: 100vh;
+        }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            background: var(--navy);
+            padding: 0 40px;
             display: flex;
-            justify-content: center;
             align-items: center;
-            height: 100vh;
+            justify-content: space-between;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
         }
 
-        .msg {
-            text-align: center;
-            color: #64748b;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
         }
 
-            .msg h1 {
-                font-size: 2rem;
-                margin-bottom: 8px;
+        .brand-logo {
+            width: 34px;
+            height: 34px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .brand-logo svg {
+                width: 18px;
+                height: 18px;
+                fill: white;
             }
+
+        .brand-name {
+            font-family: 'DM Serif Display', serif;
+            color: white;
+            font-size: 1.1rem;
+            line-height: 1.1;
+        }
+
+            .brand-name span {
+                display: block;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.6rem;
+                font-weight: 300;
+                color: rgba(255,255,255,0.4);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 100px;
+            padding: 6px 14px 6px 8px;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            background: var(--teal);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .user-email {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.75);
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.8);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+            .logout-btn:hover {
+                background: rgba(255,255,255,0.15);
+                color: white;
+            }
+
+            .logout-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+
+        /* ── LAYOUT ── */
+        .page {
+            display: flex;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            flex-shrink: 0;
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+
+        .nav-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0 20px;
+            margin-bottom: 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-left: 3px solid transparent;
+            transition: all 0.15s;
+        }
+
+            .nav-item:hover {
+                background: var(--offwhite);
+                color: var(--navy);
+            }
+
+            .nav-item.active {
+                background: var(--teal-light);
+                color: var(--teal);
+                border-left-color: var(--teal);
+            }
+
+            .nav-item svg {
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+            }
+
+        /* ── MAIN ── */
+        .main {
+            flex: 1;
+            padding: 32px 40px;
+        }
+
+        .page-header {
+            margin-bottom: 28px;
+        }
+
+            .page-header h1 {
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.6rem;
+                color: var(--navy);
+            }
+
+            .page-header p {
+                color: var(--muted);
+                margin-top: 4px;
+                font-size: 0.85rem;
+            }
+
+        /* ── GRID ── */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @@media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ── CARDS ── */
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
+        }
+
+            .card h3 {
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.05rem;
+                color: var(--navy);
+                margin-bottom: 16px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+                .card h3 svg {
+                    width: 18px;
+                    height: 18px;
+                    stroke: var(--teal);
+                    flex-shrink: 0;
+                }
+
+        /* ── FORM ── */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 14px;
+        }
+
+            .form-group label {
+                font-size: 0.7rem;
+                font-weight: 600;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+            }
+
+            .form-group select {
+                background: white;
+                border: 1px solid var(--border);
+                color: var(--navy);
+                padding: 9px 12px;
+                border-radius: 9px;
+                font-size: 0.85rem;
+                font-family: 'DM Sans', sans-serif;
+                outline: none;
+                transition: border-color 0.15s;
+            }
+
+                .form-group select:focus {
+                    border-color: var(--teal);
+                }
+
+        .btn {
+            padding: 9px 20px;
+            border: none;
+            border-radius: 9px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            transition: all 0.15s;
+        }
+
+        .btn-primary {
+            background: var(--teal);
+            color: white;
+        }
+
+            .btn-primary:hover {
+                background: #0b7a70;
+            }
+
+        .btn-danger {
+            background: transparent;
+            border: 1px solid rgba(220,38,38,0.3);
+            color: var(--red);
+        }
+
+            .btn-danger:hover {
+                background: var(--red);
+                color: white;
+            }
+
+        .btn-success {
+            background: transparent;
+            border: 1px solid rgba(13,148,136,0.3);
+            color: var(--teal);
+        }
+
+            .btn-success:hover {
+                background: var(--teal);
+                color: white;
+            }
+
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 0.75rem;
+        }
+
+        /* ── CONSENT ITEMS ── */
+        .consent-item, .request-item {
+            background: var(--offwhite);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .consent-info, .request-info {
+            flex: 1;
+        }
+
+        .consent-name, .request-number {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--navy);
+        }
+
+        .consent-meta, .request-meta {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .badge-active {
+            background: #dcfce7;
+            color: var(--green);
+        }
+
+        .badge-revoked {
+            background: #fee2e2;
+            color: var(--red);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 32px;
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .empty-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .doctor-filter {
+            background: var(--offwhite);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+            .doctor-filter label {
+                font-size: 0.78rem;
+                font-weight: 500;
+                color: var(--muted);
+                white-space: nowrap;
+            }
+
+            .doctor-filter select {
+                background: white;
+                border: 1px solid var(--border);
+                color: var(--navy);
+                padding: 8px 12px;
+                border-radius: 9px;
+                font-size: 0.85rem;
+                font-family: 'DM Sans', sans-serif;
+                outline: none;
+                flex: 1;
+                transition: border-color 0.15s;
+            }
+
+                .doctor-filter select:focus {
+                    border-color: var(--teal);
+                }
+
+        @@media (max-width: 768px) {
+            .topbar {
+                padding: 0 20px;
+            }
+
+            .user-email {
+                display: none;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                padding: 20px 16px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="msg">
-        <h1>🔐 Consent Management</h1>
-        <p>Coming soon</p>
-        <br />
-        <a href="/PatientDashboard/Index" style="color: #7c8cf8;">← Back to Dashboard</a>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
+            </div>
+            <div class="brand-name">
+                NMB-HLabSys
+                <span>Haematology Lab System</span>
+            </div>
+        </a>
+        <div class="topbar-right">
+            <div class="user-chip">
+                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "P")</div>
+                <span class="user-email">@ViewBag.Email</span>
+            </div>
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Sign Out
+            </a>
+        </div>
     </div>
+
+    <div class="page">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="nav-label" style="margin-bottom:4px;">Main</div>
+            <a asp-controller="PatientDashboard" asp-action="Index" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+                Dashboard
+            </a>
+            <a asp-controller="PatientDashboard" asp-action="MyResults" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                My Results
+            </a>
+            <a asp-controller="PatientDashboard" asp-action="MedicalHistory" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                Medical History
+            </a>
+            <a asp-controller="PatientDashboard" asp-action="Consent" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                Consent
+            </a>
+            <a asp-controller="PatientDashboard" asp-action="Profile" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                Profile
+            </a>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main">
+            <div class="page-header">
+                <h1>Consent Management</h1>
+                <p>Control which doctors can access your test request results</p>
+            </div>
+
+            <div class="grid">
+
+                <!-- LEFT -->
+                <div>
+                    <div class="card" style="margin-bottom: 20px;">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                            Grant access to doctor
+                        </h3>
+                        <form asp-controller="PatientDashboard" asp-action="GrantConsent" method="post">
+                            <div class="form-group">
+                                <label>Select doctor</label>
+                                <select name="doctorId" required>
+                                    <option value="">-- Select a doctor --</option>
+                                    @foreach (var d in Model.AllDoctors)
+                                    {
+                                        <option value="@d.DoctorID">@d.DoctorName (@d.Email)</option>
+                                    }
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Grant access</button>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                            Doctor access list
+                        </h3>
+                        @if (!Model.Consents.Any())
+                        {
+                            <div class="empty-state">
+                                <div class="empty-icon">🔐</div>
+                                <p>No doctors have been granted access yet</p>
+                            </div>
+                        }
+                        else
+                        {
+                            @foreach (var c in Model.Consents)
+                            {
+                                <div class="consent-item">
+                                    <div class="consent-info">
+                                        <div class="consent-name">@c.DoctorName</div>
+                                        <div class="consent-meta">
+                                            @c.DoctorEmail ·
+                                            @if (c.ConsentGranted)
+                                            {
+                                                <span>Granted @c.GrantedDate.ToString("dd MMM yyyy")</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Revoked @c.RevokedDate?.ToString("dd MMM yyyy")</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <span class="badge @(c.ConsentGranted ? "badge-active" : "badge-revoked")">
+                                        @(c.ConsentGranted ? "Active" : "Revoked")
+                                    </span>
+                                    @if (c.ConsentGranted)
+                                    {
+                                        <form asp-controller="PatientDashboard" asp-action="RevokeConsent" method="post">
+                                            <input type="hidden" name="doctorId" value="@c.DoctorID" />
+                                            <button type="submit" class="btn btn-danger btn-sm">Revoke</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-controller="PatientDashboard" asp-action="GrantConsent" method="post">
+                                            <input type="hidden" name="doctorId" value="@c.DoctorID" />
+                                            <button type="submit" class="btn btn-success btn-sm">Re-grant</button>
+                                        </form>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+
+                <!-- RIGHT -->
+                <div class="card">
+                    <h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                        Manage test request access
+                    </h3>
+                    <p style="font-size: 0.78rem; color: var(--muted); margin-bottom: 14px;">
+                        Select a doctor to manage which test requests they can see
+                    </p>
+
+                    <div class="doctor-filter">
+                        <label>Filter by doctor:</label>
+                        <select id="doctorSelect" onchange="filterByDoctor(this.value)">
+                            <option value="0">-- Select a doctor --</option>
+                            @foreach (var d in Model.AllDoctors)
+                            {
+                                <option value="@d.DoctorID" selected="@(Model.SelectedDoctorID == d.DoctorID)">
+                                    @d.DoctorName
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    @if (Model.SelectedDoctorID == 0)
+                    {
+                        <div class="empty-state">
+                            <div class="empty-icon">👆</div>
+                            <p>Select a doctor above to manage their access</p>
+                        </div>
+                    }
+                    else if (!Model.TestRequests.Any())
+                    {
+                        <div class="empty-state">
+                            <div class="empty-icon">🧪</div>
+                            <p>No test requests found</p>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var r in Model.TestRequests)
+                        {
+                            <div class="request-item">
+                                <div class="request-info">
+                                    <div class="request-number">@r.RequestNumber</div>
+                                    <div class="request-meta">
+                                        @r.RequestDate.ToString("dd MMM yyyy") · @r.RequestStatus
+                                    </div>
+                                </div>
+                                @if (r.IsShared)
+                                {
+                                    <span class="badge badge-active">Shared</span>
+                                    <form asp-controller="PatientDashboard" asp-action="RevokeTestRequestConsent" method="post">
+                                        <input type="hidden" name="doctorId" value="@Model.SelectedDoctorID" />
+                                        <input type="hidden" name="requestId" value="@r.RequestID" />
+                                        <button type="submit" class="btn btn-danger btn-sm">Revoke</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-revoked">Not shared</span>
+                                    <form asp-controller="PatientDashboard" asp-action="GrantTestRequestConsent" method="post">
+                                        <input type="hidden" name="doctorId" value="@Model.SelectedDoctorID" />
+                                        <input type="hidden" name="requestId" value="@r.RequestID" />
+                                        <button type="submit" class="btn btn-success btn-sm">Share</button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function filterByDoctor(doctorId) {
+            window.location.href = '/PatientDashboard/Consent?selectedDoctorId=' + doctorId;
+        }
+    </script>
+
 </body>
 </html>

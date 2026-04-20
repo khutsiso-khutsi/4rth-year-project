@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Patient.Models;
 using Patient.Repository;
 
 namespace _4th_year_set_up.Controllers
@@ -60,23 +61,7 @@ namespace _4th_year_set_up.Controllers
             return View("~/Views/PatientDashboard/MedicalHistory.cshtml", vm);
         }
 
-        public IActionResult Consent()
-        {
-            if (HttpContext.Session.GetString("RoleName") != "Patient")
-                return RedirectToAction("Login", "Home");
-            ViewBag.Email = HttpContext.Session.GetString("Email");
-            Log("Viewed consent management");
-            return View("~/Views/PatientDashboard/Consent.cshtml");
-        }
-
-        public IActionResult Profile()
-        {
-            if (HttpContext.Session.GetString("RoleName") != "Patient")
-                return RedirectToAction("Login", "Home");
-            ViewBag.Email = HttpContext.Session.GetString("Email");
-            Log("Viewed profile");
-            return View("~/Views/PatientDashboard/Profile.cshtml");
-        }
+       
 
         [HttpPost]
         public IActionResult AddCondition(int conditionId, DateTime? diagnosedDate, string? notes)
@@ -161,6 +146,153 @@ namespace _4th_year_set_up.Controllers
                 Log("Removed medication", "Medication", medicationId);
             }
             return RedirectToAction("MedicalHistory");
+        }
+        public IActionResult Consent(int selectedDoctorId = 0)
+        {
+            if (HttpContext.Session.GetString("RoleName") != "Patient")
+                return RedirectToAction("Login", "Home");
+            var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
+            var patientId = _userRepo.GetPatientIdByUserId(userId);
+            if (patientId == null) return RedirectToAction("Index");
+            var vm = _userRepo.GetConsentData(patientId.Value, selectedDoctorId);
+            ViewBag.Email = HttpContext.Session.GetString("Email");
+            Log("Viewed consent management");
+            return View("~/Views/PatientDashboard/Consent.cshtml", vm);
+        }
+
+        [HttpPost]
+        public IActionResult GrantConsent(int doctorId)
+        {
+            if (HttpContext.Session.GetString("RoleName") != "Patient")
+                return RedirectToAction("Login", "Home");
+            var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
+            var patientId = _userRepo.GetPatientIdByUserId(userId);
+            if (patientId != null)
+            {
+                _userRepo.GrantConsent(patientId.Value, doctorId);
+                Log("Granted consent to doctor", "Doctor", doctorId);
+            }
+            return RedirectToAction("Consent", new { selectedDoctorId = doctorId });
+        }
+
+        [HttpPost]
+        public IActionResult RevokeConsent(int doctorId)
+        {
+            if (HttpContext.Session.GetString("RoleName") != "Patient")
+                return RedirectToAction("Login", "Home");
+            var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
+            var patientId = _userRepo.GetPatientIdByUserId(userId);
+            if (patientId != null)
+            {
+                _userRepo.RevokeConsent(patientId.Value, doctorId);
+                Log("Revoked consent from doctor", "Doctor", doctorId);
+            }
+            return RedirectToAction("Consent");
+        }
+
+        [HttpPost]
+        public IActionResult GrantTestRequestConsent(int doctorId, int requestId)
+        {
+            if (HttpContext.Session.GetString("RoleName") != "Patient")
+                return RedirectToAction("Login", "Home");
+            var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
+            var patientId = _userRepo.GetPatientIdByUserId(userId);
+            if (patientId != null)
+            {
+                _userRepo.GrantTestRequestConsent(patientId.Value, doctorId, requestId);
+                Log("Granted test request access", "TestRequest", requestId);
+            }
+            return RedirectToAction("Consent", new { selectedDoctorId = doctorId });
+        }
+
+        [HttpPost]
+        public IActionResult RevokeTestRequestConsent(int doctorId, int requestId)
+        {
+            if (HttpContext.Session.GetString("RoleName") != "Patient")
+                return RedirectToAction("Login", "Home");
+            var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
+            var patientId = _userRepo.GetPatientIdByUserId(userId);
+            if (patientId != null)
+            {
+                _userRepo.RevokeTestRequestConsent(patientId.Value, doctorId, requestId);
+                Log("Revoked test request access", "TestRequest", requestId);
+            }
+            return RedirectToAction("Consent", new { selectedDoctorId = doctorId });
+        }
+        public IActionResult Profile()
+        {
+            if (HttpContext.Session.GetString("RoleName") != "Patient")
+                return RedirectToAction("Login", "Home");
+            var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
+            var patientId = _userRepo.GetPatientIdByUserId(userId);
+            if (patientId == null) return RedirectToAction("Index");
+            var vm = _userRepo.GetPatientProfile(patientId.Value);
+            ViewBag.Email = HttpContext.Session.GetString("Email");
+            ViewBag.Success = TempData["Success"];
+            ViewBag.Error = TempData["Error"];
+            Log("Viewed profile");
+            return View("~/Views/PatientDashboard/Profile.cshtml", vm);
+        }
+
+        [HttpPost]
+        public IActionResult UpdateProfile(ProfileViewModel model)
+        {
+            if (HttpContext.Session.GetString("RoleName") != "Patient")
+                return RedirectToAction("Login", "Home");
+            var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
+            var patientId = _userRepo.GetPatientIdByUserId(userId);
+            if (patientId != null)
+            {
+                _userRepo.UpdatePatientProfile(patientId.Value, model.FirstName, model.LastName,
+                    model.DateOfBirth, model.CellphoneNumber, model.HomeAddress);
+                Log("Updated profile");
+                TempData["Success"] = "Profile updated successfully.";
+            }
+            return RedirectToAction("Profile");
+        }
+
+        [HttpPost]
+        public IActionResult ChangePassword(ProfileViewModel model)
+        {
+            if (HttpContext.Session.GetString("RoleName") != "Patient")
+                return RedirectToAction("Login", "Home");
+            var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
+
+            if (model.NewPassword != model.ConfirmPassword)
+            {
+                TempData["Error"] = "New passwords do not match.";
+                return RedirectToAction("Profile");
+            }
+
+            var user = _userRepo.GetUserById(userId);
+            if (user == null || !BCrypt.Net.BCrypt.Verify(model.CurrentPassword, user.Value.PasswordHash))
+            {
+                TempData["Error"] = "Current password is incorrect.";
+                return RedirectToAction("Profile");
+            }
+
+            var newHash = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+            _userRepo.ChangePatientPassword(userId, newHash);
+            Log("Changed password");
+            TempData["Success"] = "Password changed successfully.";
+            return RedirectToAction("Profile");
+        }
+        public IActionResult PrintResult(int requestId)
+        {
+            if (HttpContext.Session.GetString("RoleName") != "Patient")
+                return RedirectToAction("Login", "Home");
+
+            var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
+            var patientId = _userRepo.GetPatientIdByUserId(userId);
+            if (patientId == null) return RedirectToAction("Index");
+
+            var requests = _userRepo.GetPatientTestRequests(patientId.Value);
+            var req = requests.FirstOrDefault(r => r.RequestID == requestId);
+            if (req == null) return NotFound();
+
+            req.Items = _userRepo.GetTestRequestItems(req.RequestID);
+            Log("Downloaded test result PDF", "TestRequest", requestId);
+            return View("~/Views/PatientDashboard/PrintResult.cshtml", req);
         }
     }
 }

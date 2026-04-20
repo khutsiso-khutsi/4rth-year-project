@@ -1,0 +1,380 @@
+﻿@model Patient.Models.TestRequest
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Result — @Model.RequestNumber</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #0b1f3a;
+            background: white;
+            padding: 32px 40px;
+            font-size: 13px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 28px;
+            border-bottom: 2px solid #0d9488;
+            padding-bottom: 16px;
+        }
+
+        .brand {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0b1f3a;
+        }
+
+            .brand span {
+                display: block;
+                font-size: 10px;
+                font-weight: 400;
+                color: #6b7a99;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                margin-top: 2px;
+            }
+
+        .print-date {
+            font-size: 11px;
+            color: #6b7a99;
+            text-align: right;
+        }
+
+        .section-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #6b7a99;
+            margin-bottom: 6px;
+            margin-top: 20px;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            background: #f4f7fb;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .meta-item label {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #6b7a99;
+            margin-bottom: 3px;
+        }
+
+        .meta-item span {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .badge-submitted {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .badge-progress {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .badge-completed {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .badge-released {
+            background: rgba(13,148,136,0.12);
+            color: #0d9488;
+        }
+
+        .badge-cancelled {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .badge-urgent {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .badge-stat {
+            background: #fdf2f8;
+            color: #9333ea;
+        }
+
+        .badge-routine {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .notes-box {
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            font-size: 12.5px;
+        }
+
+            .notes-box.clinical {
+                background: #f4f7fb;
+                border-left: 3px solid #6b7a99;
+            }
+
+            .notes-box.release {
+                background: rgba(13,148,136,0.07);
+                border-left: 3px solid #0d9488;
+            }
+
+            .notes-box strong {
+                display: block;
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+                margin-bottom: 4px;
+                color: #6b7a99;
+            }
+
+            .notes-box.release strong {
+                color: #0d9488;
+            }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        th {
+            text-align: left;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #6b7a99;
+            padding: 8px 10px;
+            border-bottom: 2px solid #dde4f0;
+        }
+
+        td {
+            padding: 10px 10px;
+            border-bottom: 1px solid #dde4f0;
+            font-size: 12.5px;
+            vertical-align: middle;
+        }
+
+        tr.abnormal td {
+            background: #fff8f8;
+        }
+
+        .abnormal-val {
+            color: #dc2626;
+            font-weight: 700;
+        }
+
+        .normal-range {
+            font-size: 11px;
+            color: #6b7a99;
+        }
+
+        .pending {
+            color: #6b7a99;
+            font-style: italic;
+        }
+
+        .footer {
+            margin-top: 40px;
+            border-top: 1px solid #dde4f0;
+            padding-top: 12px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 10.5px;
+            color: #6b7a99;
+        }
+
+        .print-btn {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            background: #0d9488;
+            color: white;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(13,148,136,0.35);
+        }
+
+            .print-btn:hover {
+                background: #0b7d73;
+            }
+
+        @@media print {
+            .print-btn {
+                display: none;
+            }
+
+            body {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div>
+            <div class="brand">NMB-HLabSys <span>Haematology Laboratory System</span></div>
+            <div style="margin-top:8px;font-size:12px;color:#6b7a99;">Official Test Result Report</div>
+        </div>
+        <div class="print-date">
+            Printed: @DateTime.Now.ToString("dd MMM yyyy HH:mm")<br />
+            <span style="font-size:10px;">This is an official lab document</span>
+        </div>
+    </div>
+
+    <div class="section-title">Request Details</div>
+    <div class="meta-grid">
+        <div class="meta-item"><label>Request No.</label><span>@Model.RequestNumber</span></div>
+        <div class="meta-item"><label>Date Requested</label><span>@Model.RequestDate.ToString("dd MMM yyyy")</span></div>
+        <div class="meta-item">
+            <label>Status</label>
+            <span class="badge badge-@(Model.RequestStatus?.ToLower().Replace(" ", "-"))">@Model.RequestStatus</span>
+        </div>
+        <div class="meta-item"><label>Doctor</label><span>Dr. @Model.DoctorName</span></div>
+        <div class="meta-item">
+            <label>Urgency</label>
+            <span class="badge badge-@(Model.Urgency?.ToLower() ?? "routine")">@(Model.Urgency ?? "Routine")</span>
+        </div>
+        <div class="meta-item"><label>Tests</label><span>@Model.Items.Count test@(Model.Items.Count != 1 ? "s" : "")</span></div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ClinicalNotes))
+    {
+        <div class="notes-box clinical"><strong>Clinical Notes</strong>@Model.ClinicalNotes</div>
+    }
+    @if (!string.IsNullOrEmpty(Model.ReleaseNotes))
+    {
+        <div class="notes-box release"><strong>Doctor's Note</strong>@Model.ReleaseNotes</div>
+    }
+
+    <div class="section-title">Test Results</div>
+    @if (!Model.Items.Any())
+    {
+        <p style="color:#6b7a99;font-style:italic;padding:12px 0;">No test items recorded for this request.</p>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>Test</th>
+                    <th>Category</th>
+                    <th>Result</th>
+                    <th>Normal Range</th>
+                    <th>Status</th>
+                    <th>Completed</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr class="@(item.IsAbnormal ? "abnormal" : "")">
+                        <td><strong>@item.TestName</strong></td>
+                        <td>@item.CategoryName</td>
+                        <td>
+                            @if (item.ResultValue.HasValue)
+                            {
+                                <span class="@(item.IsAbnormal ? "abnormal-val" : "")">
+                                    @(item.IsAbnormal ? "⚠ " : "")@item.ResultValue @item.UnitName
+                                </span>
+                            }
+                            else
+                            {
+
+                                <span class="pending">Pending</span>
+                            }
+                        </td>
+                        <td>
+                            @if (item.NormalRangeMin.HasValue && item.NormalRangeMax.HasValue)
+                            {
+                                <span class="normal-range">@item.NormalRangeMin – @item.NormalRangeMax @item.UnitName</span>
+                            }
+                            else
+                            {
+
+                                <span class="normal-range">—</span>
+                            }
+                        </td>
+                        <td>
+                            @if (item.IsAbnormal)
+                            {
+                                <span class="badge" style="background:#fef2f2;color:#dc2626;">Abnormal</span>
+                            }
+                            else
+                            {
+
+                                <span class="badge" style="background:#dcfce7;color:#16a34a;">@item.ItemStatus</span>
+                            }
+                        </td>
+                        <td>@(item.CompletionDateTime.HasValue? item.CompletionDateTime.Value.ToString("dd MMM yyyy HH:mm") : "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (!string.IsNullOrEmpty(Model.Items.FirstOrDefault()?.ResultNotes))
+        {
+            <div class="notes-box clinical" style="margin-top:14px">
+                <strong>Result Notes</strong>@Model.Items.First().ResultNotes
+            </div>
+        }
+    }
+
+    <div class="footer">
+        <span>NMB-HLabSys · Haematology Laboratory System</span>
+        <span>Report generated for patient use only · @DateTime.Now.ToString("yyyy")</span>
+    </div>
+
+    <button class="print-btn" onclick="window.print()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <polyline points="6 9 6 2 18 2 18 9" />
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+            <rect x="6" y="14" width="12" height="8" />
+        </svg>
+        Save as PDF / Print
+    </button>
+
+</body>
+</html>

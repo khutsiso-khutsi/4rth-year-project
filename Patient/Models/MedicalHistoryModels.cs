@@ -43,4 +43,5 @@ namespace Patient.Models
         public List<(int Id, string Name)> AllAllergies { get; set; } = new();
         public List<(int Id, string Name)> AllMedications { get; set; } = new();
     }
+
 }

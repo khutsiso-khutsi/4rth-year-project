@@ -356,5 +356,177 @@ namespace Patient.DataAccess
             con.Open();
             cmd.ExecuteNonQuery();
         }
+        public ConsentViewModel GetConsentData(int patientId, int selectedDoctorId = 0)
+        {
+            var vm = new ConsentViewModel();
+            vm.SelectedDoctorID = selectedDoctorId;
+            using var con = new SqlConnection(_connectionString);
+            con.Open();
+
+            // Get all doctors
+            using (var cmd = new SqlCommand("sp_GetAllDoctors", con))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                using var dr = cmd.ExecuteReader();
+                while (dr.Read())
+                    vm.AllDoctors.Add(new DoctorOption
+                    {
+                        DoctorID = (int)dr["DoctorID"],
+                        DoctorName = dr["DoctorName"].ToString()!,
+                        Email = dr["Email"].ToString()!
+                    });
+            }
+
+            // Get existing consents
+            using (var cmd = new SqlCommand("sp_GetPatientConsents", con))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@PatientID", patientId);
+                using var dr = cmd.ExecuteReader();
+                while (dr.Read())
+                    vm.Consents.Add(new DoctorConsent
+                    {
+                        ConsentID = (int)dr["ConsentID"],
+                        DoctorID = (int)dr["DoctorID"],
+                        DoctorName = dr["DoctorName"].ToString()!,
+                        DoctorEmail = dr["DoctorEmail"].ToString()!,
+                        ConsentGranted = (bool)dr["ConsentGranted"],
+                        GrantedDate = (DateTime)dr["GrantedDate"],
+                        RevokedDate = dr["RevokedDate"] as DateTime?
+                    });
+            }
+
+            // Get test requests for selected doctor
+            if (selectedDoctorId > 0)
+            {
+                using var cmd = new SqlCommand("sp_GetConsentTestRequests", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@PatientID", patientId);
+                cmd.Parameters.AddWithValue("@DoctorID", selectedDoctorId);
+                using var dr = cmd.ExecuteReader();
+                while (dr.Read())
+                    vm.TestRequests.Add(new ConsentTestRequest
+                    {
+                        RequestID = (int)dr["RequestID"],
+                        RequestNumber = dr["RequestNumber"].ToString()!,
+                        RequestDate = (DateTime)dr["RequestDate"],
+                        RequestStatus = dr["RequestStatus"].ToString()!,
+                        IsShared = Convert.ToBoolean(dr["IsShared"])
+                    });
+            }
+
+            return vm;
+        }
+
+        public void GrantConsent(int patientId, int doctorId)
+        {
+            using var con = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("sp_GrantConsent", con);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@PatientID", patientId);
+            cmd.Parameters.AddWithValue("@DoctorID", doctorId);
+            con.Open();
+            cmd.ExecuteNonQuery();
+        }
+
+        public void RevokeConsent(int patientId, int doctorId)
+        {
+            using var con = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("sp_RevokeConsent", con);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@PatientID", patientId);
+            cmd.Parameters.AddWithValue("@DoctorID", doctorId);
+            con.Open();
+            cmd.ExecuteNonQuery();
+        }
+
+        public void GrantTestRequestConsent(int patientId, int doctorId, int requestId)
+        {
+            using var con = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("sp_GrantTestRequestConsent", con);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@PatientID", patientId);
+            cmd.Parameters.AddWithValue("@DoctorID", doctorId);
+            cmd.Parameters.AddWithValue("@RequestID", requestId);
+            con.Open();
+            cmd.ExecuteNonQuery();
+        }
+
+        public void RevokeTestRequestConsent(int patientId, int doctorId, int requestId)
+        {
+            using var con = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("sp_RevokeTestRequestConsent", con);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@PatientID", patientId);
+            cmd.Parameters.AddWithValue("@DoctorID", doctorId);
+            cmd.Parameters.AddWithValue("@RequestID", requestId);
+            con.Open();
+            cmd.ExecuteNonQuery();
+        }
+        public ProfileViewModel GetPatientProfile(int patientId)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("sp_GetPatientProfile", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@PatientID", patientId);
+            conn.Open();
+            using var reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                return new ProfileViewModel
+                {
+                    PatientID = reader.GetInt32(reader.GetOrdinal("PatientID")),
+                    FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                    LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                    IDNumber = reader.GetString(reader.GetOrdinal("IDNumber")),
+                    DateOfBirth = reader.GetDateTime(reader.GetOrdinal("DateOfBirth")),
+                    CellphoneNumber = reader.GetString(reader.GetOrdinal("CellphoneNumber")),
+                    HomeAddress = reader.GetString(reader.GetOrdinal("HomeAddress")),
+                    RegistrationDate = reader.GetDateTime(reader.GetOrdinal("RegistrationDate")),
+                    Email = reader.GetString(reader.GetOrdinal("Email"))
+                };
+            }
+            return null;
+        }
+
+        public void UpdatePatientProfile(int patientId, string firstName, string lastName,
+            DateTime dob, string cellphone, string homeAddress)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("sp_UpdatePatientProfile", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@PatientID", patientId);
+            cmd.Parameters.AddWithValue("@FirstName", firstName);
+            cmd.Parameters.AddWithValue("@LastName", lastName);
+            cmd.Parameters.AddWithValue("@DateOfBirth", dob);
+            cmd.Parameters.AddWithValue("@CellphoneNumber", cellphone);
+            cmd.Parameters.AddWithValue("@HomeAddress", homeAddress);
+            conn.Open();
+            cmd.ExecuteNonQuery();
+        }
+
+        public void ChangePatientPassword(int userId, string newPasswordHash)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("sp_ChangePatientPassword", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@UserID", userId);
+            cmd.Parameters.AddWithValue("@NewPasswordHash", newPasswordHash);
+            conn.Open();
+            cmd.ExecuteNonQuery();
+        }
+
+        public (int UserId, string PasswordHash)? GetUserById(int userId)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(
+                "SELECT UserID, PasswordHash FROM Users WHERE UserID = @UserID", conn);
+            cmd.Parameters.AddWithValue("@UserID", userId);
+            conn.Open();
+            using var reader = cmd.ExecuteReader();
+            if (reader.Read())
+                return (reader.GetInt32(0), reader.GetString(1));
+            return null;
+        }
     }
 }
