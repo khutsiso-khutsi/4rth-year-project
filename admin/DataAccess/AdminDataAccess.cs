@@ -13,7 +13,7 @@ namespace admin.DataAccess
             _connectionString = connectionString;
         }
 
-        // ── DASHBOARD COUNTS ─────────────────────────────────────────
+        // DASHBOARD COUNTS 
 
         public (int conditions, int allergies, int medications, int conditionCats, int allergyCats, int medicationCats) GetDashboardCounts()
         {
@@ -34,7 +34,7 @@ namespace admin.DataAccess
             return (0, 0, 0, 0, 0, 0);
         }
 
-        // ── CONDITION CATEGORIES ──────────────────────────────────────
+        // CONDITION CATEGORIES 
 
         public List<ConditionCategory> GetAllConditionCategories()
         {
@@ -115,7 +115,7 @@ namespace admin.DataAccess
             return "ERROR";
         }
 
-        // ── MEDICAL CONDITIONS ────────────────────────────────────────
+        // MEDICAL CONDITIONS 
 
         public List<MedicalCondition> GetAllConditions()
         {
@@ -202,7 +202,7 @@ namespace admin.DataAccess
             return "ERROR";
         }
 
-        // ── ALLERGY CATEGORIES ────────────────────────────────────────
+        // ALLERGY CATEGORIES 
 
         public List<AllergyCategory> GetAllAllergyCategories()
         {
@@ -281,7 +281,7 @@ namespace admin.DataAccess
             return "ERROR";
         }
 
-        // ── ALLERGIES ─────────────────────────────────────────────────
+        //  ALLERGIES 
 
         public List<Allergy> GetAllAllergies()
         {
@@ -368,7 +368,7 @@ namespace admin.DataAccess
             return "ERROR";
         }
 
-        // ── MEDICATION CATEGORIES ─────────────────────────────────────
+        // MEDICATION CATEGORIES
 
         public List<MedicationCategory> GetAllMedicationCategories()
         {
@@ -447,7 +447,7 @@ namespace admin.DataAccess
             return "ERROR";
         }
 
-        // ── MEDICATIONS ───────────────────────────────────────────────
+        //MEDICATIONS
 
         public List<Medication> GetAllMedications()
         {
@@ -534,7 +534,7 @@ namespace admin.DataAccess
             return "ERROR";
         }
 
-        // ── ACTIVITY LOG ──────────────────────────────────────────────
+        // ACTIVITY LOG
 
         public List<ActivityLogEntry> GetActivityLog()
         {

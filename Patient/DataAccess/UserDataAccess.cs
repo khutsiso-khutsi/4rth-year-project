@@ -48,7 +48,7 @@ namespace Patient.DataAccess
             conn.Open();
             cmd.ExecuteNonQuery();
         }
-        public string RegisterUser(string username, string email, string passwordHash, int roleId)
+        public (string result, int newUserId) RegisterUser(string username, string email, string passwordHash, int roleId)
         {
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("sp_RegisterUser", conn);
@@ -60,8 +60,29 @@ namespace Patient.DataAccess
             conn.Open();
             using var reader = cmd.ExecuteReader();
             if (reader.Read())
-                return reader.GetString(reader.GetOrdinal("Result"));
-            return "ERROR";
+            {
+                string result = reader.GetString(reader.GetOrdinal("Result"));
+                int newUserId = reader.GetInt32(reader.GetOrdinal("NewUserID"));
+                return (result, newUserId);
+            }
+            return ("ERROR", 0);
+        }
+        public void CreatePatientRecord(int userId, string firstName, string lastName,
+    string idNumber, DateTime dateOfBirth, string cellphoneNumber, string homeAddress)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(@"
+        INSERT INTO Patients (UserID, FirstName, LastName, IDNumber, DateOfBirth, CellphoneNumber, HomeAddress)
+        VALUES (@UserId, @FirstName, @LastName, @IDNumber, @DateOfBirth, @CellphoneNumber, @HomeAddress)", conn);
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            cmd.Parameters.AddWithValue("@FirstName", firstName);
+            cmd.Parameters.AddWithValue("@LastName", lastName);
+            cmd.Parameters.AddWithValue("@IDNumber", idNumber);
+            cmd.Parameters.AddWithValue("@DateOfBirth", dateOfBirth);
+            cmd.Parameters.AddWithValue("@CellphoneNumber", cellphoneNumber);
+            cmd.Parameters.AddWithValue("@HomeAddress", homeAddress);
+            conn.Open();
+            cmd.ExecuteNonQuery();
         }
         public List<(int Id, string Name)> GetAllRoles()
         {

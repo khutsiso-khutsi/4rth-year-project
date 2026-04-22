@@ -21,10 +21,20 @@ namespace Patient.Repository
         {
             _dataAccess.UpdateLastLogin(userId);
         }
-        public string RegisterUser(string username, string email, string passwordHash, int roleId)
+       
+        public (string result, int newUserId) RegisterUser(string username, string email, string passwordHash, int roleId)
         {
             return _dataAccess.RegisterUser(username, email, passwordHash, roleId);
         }
+
+
+        public void CreatePatientRecord(int userId, string firstName, string lastName,
+    string idNumber, DateTime dateOfBirth, string cellphoneNumber, string homeAddress)
+        {
+            _dataAccess.CreatePatientRecord(userId, firstName, lastName,
+                idNumber, dateOfBirth, cellphoneNumber, homeAddress);
+        }
+
         public List<(int Id, string Name)> GetAllRoles()
         {
             return _dataAccess.GetAllRoles();

@@ -25,6 +25,26 @@ namespace _4th_year_set_up.Controllers
                 return RedirectToAction("Login", "Home");
             if (HttpContext.Session.GetString("RoleName") != "Patient")
                 return RedirectToAction("Login", "Home");
+
+            var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
+            var patientId = _userRepo.GetPatientIdByUserId(userId);
+
+            if (patientId != null)
+            {
+                var requests = _userRepo.GetPatientTestRequests(patientId.Value);
+                var history = _userRepo.GetMedicalHistory(patientId.Value);
+
+                ViewBag.TestResultCount = requests?.Count ?? 0;
+                ViewBag.ActiveConditionCount = history?.Conditions?.Count ?? 0;
+                ViewBag.ActiveMedicationCount = history?.Medications?.Count ?? 0;
+            }
+            else
+            {
+                ViewBag.TestResultCount = 0;
+                ViewBag.ActiveConditionCount = 0;
+                ViewBag.ActiveMedicationCount = 0;
+            }
+
             ViewBag.Email = HttpContext.Session.GetString("Email");
             ViewBag.UserID = HttpContext.Session.GetInt32("UserID");
             Log("Accessed patient dashboard");

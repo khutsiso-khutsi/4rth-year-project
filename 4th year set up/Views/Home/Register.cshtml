@@ -19,7 +19,6 @@
 
         :root {
             --navy: #0b1f3a;
-            --navy2: #122848;
             --teal: #0d9488;
             --white: #ffffff;
             --offwhite: #f4f7fb;
@@ -42,10 +41,9 @@
             overflow: hidden;
         }
 
-        /* LEFT PANEL */
         .left-panel {
-            width: 42%;
-            min-width: 280px;
+            width: 38%;
+            min-width: 260px;
             background: var(--navy);
             display: flex;
             flex-direction: column;
@@ -59,7 +57,7 @@
                 content: '';
                 position: absolute;
                 inset: 0;
-                background: radial-gradient(ellipse 70% 60% at 80% 30%, rgba(13,148,136,0.15) 0%, transparent 60%), radial-gradient(ellipse 50% 70% at 10% 80%, rgba(26,79,138,0.25) 0%, transparent 55%);
+                background: radial-gradient(ellipse 70% 60% at 80% 30%, rgba(13,148,136,0.15) 0%, transparent 60%);
             }
 
             .left-panel::after {
@@ -94,7 +92,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
         }
 
             .brand-logo svg {
@@ -105,8 +102,8 @@
 
         .brand-title {
             font-family: 'DM Serif Display', serif;
-            font-size: clamp(0.95rem, 1.2vw, 1.15rem);
-            color: var(--white);
+            font-size: 1.1rem;
+            color: white;
             line-height: 1.2;
         }
 
@@ -125,7 +122,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: clamp(24px, 4vh, 60px) 0 clamp(16px, 3vh, 40px);
+            padding: 40px 0 24px;
         }
 
         .panel-tag {
@@ -141,7 +138,7 @@
             text-transform: uppercase;
             padding: 5px 12px;
             border-radius: 100px;
-            margin-bottom: clamp(12px, 2vh, 24px);
+            margin-bottom: 20px;
             width: fit-content;
         }
 
@@ -158,7 +155,7 @@
             font-size: clamp(1.6rem, 2.5vw, 2.8rem);
             color: white;
             line-height: 1.2;
-            margin-bottom: clamp(10px, 1.5vh, 20px);
+            margin-bottom: 16px;
         }
 
             .panel-heading em {
@@ -168,10 +165,10 @@
 
         .panel-desc {
             color: rgba(255,255,255,0.5);
-            font-size: clamp(0.8rem, 0.9vw, 0.9rem);
+            font-size: 0.88rem;
             line-height: 1.75;
             font-weight: 300;
-            max-width: 320px;
+            max-width: 300px;
         }
 
         .info-tiles {
@@ -218,14 +215,13 @@
                 margin-bottom: 2px;
             }
 
-        /* RIGHT PANEL */
         .right-panel {
             flex: 1;
             background: var(--offwhite);
             display: flex;
             align-items: flex-start;
             justify-content: center;
-            padding: clamp(16px, 3vw, 40px);
+            padding: clamp(16px, 3vw, 32px);
             overflow-y: auto;
             height: 100vh;
         }
@@ -234,20 +230,20 @@
             background: white;
             border: 1px solid var(--border);
             border-radius: 20px;
-            padding: clamp(24px, 3vw, 40px) clamp(20px, 2.5vw, 36px);
+            padding: clamp(24px, 3vw, 36px) clamp(20px, 2.5vw, 32px);
             width: 100%;
-            max-width: 420px;
+            max-width: 500px;
             box-shadow: 0 4px 40px rgba(11,31,58,0.08);
             margin: auto 0;
         }
 
         .form-header {
-            margin-bottom: clamp(16px, 2vh, 28px);
+            margin-bottom: 20px;
         }
 
             .form-header h2 {
                 font-family: 'DM Serif Display', serif;
-                font-size: clamp(1.4rem, 2vw, 1.8rem);
+                font-size: 1.7rem;
                 color: var(--navy);
                 margin-bottom: 6px;
             }
@@ -255,11 +251,30 @@
             .form-header p {
                 color: var(--muted);
                 font-size: 0.85rem;
-                line-height: 1.5;
+            }
+
+        /* SECTION LABEL */
+        .section-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin: 18px 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .section-label::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: var(--border);
             }
 
         .field {
-            margin-bottom: clamp(10px, 1.5vh, 16px);
+            margin-bottom: 12px;
         }
 
             .field label {
@@ -268,14 +283,20 @@
                 font-weight: 600;
                 color: var(--navy);
                 margin-bottom: 5px;
-                letter-spacing: 0.01em;
             }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
 
         .input-wrap {
             position: relative;
         }
 
-            .input-wrap input, .input-wrap select {
+            .input-wrap input,
+            .input-wrap select {
                 width: 100%;
                 padding: 10px 14px;
                 border: 1.5px solid var(--border);
@@ -289,7 +310,8 @@
                 appearance: none;
             }
 
-                .input-wrap input:focus, .input-wrap select:focus {
+                .input-wrap input:focus,
+                .input-wrap select:focus {
                     border-color: var(--teal);
                     background: white;
                     box-shadow: 0 0 0 3px rgba(13,148,136,0.1);
@@ -424,7 +446,7 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            margin-top: 6px;
+            margin-top: 8px;
         }
 
             .btn-submit:hover {
@@ -455,22 +477,6 @@
                     text-decoration: underline;
                 }
 
-        /* RESPONSIVE */
-        @@media (max-width: 960px) {
-            .left-panel {
-                width: 36%;
-                min-width: 220px;
-            }
-
-            .info-tiles {
-                display: none;
-            }
-
-            .panel-desc {
-                display: none;
-            }
-        }
-
         @@media (max-width: 700px) {
             body {
                 flex-direction: column;
@@ -481,15 +487,6 @@
                 width: 100%;
                 min-width: unset;
                 padding: 20px 24px;
-                flex-shrink: 0;
-            }
-
-            .panel-body {
-                padding: 12px 0;
-            }
-
-            .panel-heading {
-                font-size: 1.4rem;
             }
 
             .right-panel {
@@ -497,8 +494,16 @@
                 padding: 20px 16px 32px;
             }
 
-            .form-card {
-                border-radius: 16px;
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .info-tiles {
+                display: none;
+            }
+
+            .panel-desc {
+                display: none;
             }
         }
     </style>
@@ -510,10 +515,7 @@
         <div class="panel-content">
             <a class="brand" asp-controller="Home" asp-action="Index">
                 <div class="brand-logo">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" />
-                        <circle cx="12" cy="17" r="4" opacity="0.6" />
-                    </svg>
+                    <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
                 </div>
                 <div class="brand-title">
                     NMB-HLabSys
@@ -524,7 +526,7 @@
             <div class="panel-body">
                 <div class="panel-tag">New Account</div>
                 <h2 class="panel-heading">Join <em>NMB</em><br />HLabSys</h2>
-                <p class="panel-desc">Create your account to access your role-based portal — whether you're a doctor, technician, patient or administrator.</p>
+                <p class="panel-desc">Create your account to access your patient portal and manage your haematology lab results securely.</p>
             </div>
 
             <div class="info-tiles">
@@ -560,7 +562,7 @@
         <div class="form-card">
             <div class="form-header">
                 <h2>Create Account</h2>
-                <p>Fill in your details to get started.</p>
+                <p>Fill in all your details to get started.</p>
             </div>
 
             @if (!ViewData.ModelState.IsValid)
@@ -581,6 +583,9 @@
             <form id="registerForm" asp-controller="Home" asp-action="Register" method="post" novalidate>
                 @Html.AntiForgeryToken()
 
+                <!-- ACCOUNT DETAILS SECTION -->
+                <div class="section-label">Account Details</div>
+
                 <!-- Username -->
                 <div class="field">
                     <label for="username">Username</label>
@@ -592,37 +597,72 @@
 
                 <!-- Email -->
                 <div class="field">
-                    <label for="email">Email</label>
+                    <label for="email">Email Address</label>
                     <div class="input-wrap">
                         <input type="email" id="email" name="Email" placeholder="Enter your email address" autocomplete="email" />
                     </div>
                     <div class="val-msg" id="email-msg"></div>
                 </div>
 
-                <!-- Role -->
-                <div class="field">
-                    <label for="role">Role</label>
-                    <div class="input-wrap">
-                        <select id="role" name="RoleID">
-                            <option value="">Select your role</option>
-                            @if (ViewBag.Roles != null)
-                            {
-                                foreach (var role in ViewBag.Roles)
-                                {
-                                    if (role.Item2 == "Patient")
-                                    {
-                                        <option value="@role.Item1">@role.Item2</option>
-                                    }
-                                }
-                            }
-                        </select>
+                <!-- PERSONAL DETAILS SECTION -->
+                <div class="section-label">Personal Details</div>
 
-                        <div class="select-arrow">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9" /></svg>
+                <!-- First Name & Last Name -->
+                <div class="form-row">
+                    <div class="field">
+                        <label for="firstName">First Name</label>
+                        <div class="input-wrap">
+                            <input type="text" id="firstName" name="FirstName" placeholder="First name" />
                         </div>
+                        <div class="val-msg" id="firstname-msg"></div>
                     </div>
-                    <div class="val-msg" id="role-msg"></div>
+                    <div class="field">
+                        <label for="lastName">Last Name</label>
+                        <div class="input-wrap">
+                            <input type="text" id="lastName" name="LastName" placeholder="Last name" />
+                        </div>
+                        <div class="val-msg" id="lastname-msg"></div>
+                    </div>
                 </div>
+
+                <!-- SA ID Number -->
+                <div class="field">
+                    <label for="idNumber">SA ID Number</label>
+                    <div class="input-wrap">
+                        <input type="text" id="idNumber" name="IDNumber" placeholder="13-digit SA ID number" maxlength="13" />
+                    </div>
+                    <div class="val-msg" id="idnumber-msg"></div>
+                </div>
+
+                <!-- Date of Birth & Cellphone -->
+                <div class="form-row">
+                    <div class="field">
+                        <label for="dateOfBirth">Date of Birth</label>
+                        <div class="input-wrap">
+                            <input type="date" id="dateOfBirth" name="DateOfBirth" />
+                        </div>
+                        <div class="val-msg" id="dob-msg"></div>
+                    </div>
+                    <div class="field">
+                        <label for="cellphone">Cellphone Number</label>
+                        <div class="input-wrap">
+                            <input type="text" id="cellphone" name="CellphoneNumber" placeholder="e.g. 0821234567" maxlength="10" />
+                        </div>
+                        <div class="val-msg" id="cellphone-msg"></div>
+                    </div>
+                </div>
+
+                <!-- Home Address -->
+                <div class="field">
+                    <label for="homeAddress">Home Address</label>
+                    <div class="input-wrap">
+                        <input type="text" id="homeAddress" name="HomeAddress" placeholder="Enter your home address" />
+                    </div>
+                    <div class="val-msg" id="address-msg"></div>
+                </div>
+
+                <!-- SECURITY SECTION -->
+                <div class="section-label">Security</div>
 
                 <!-- Password -->
                 <div class="field">
@@ -668,6 +708,7 @@
     </div>
 
     <script>
+        // Password toggle
         function setupToggle(btnId, inputId, showId, hideId) {
             document.getElementById(btnId).addEventListener('click', () => {
                 const input = document.getElementById(inputId);
@@ -680,6 +721,7 @@
         setupToggle('togglePw1', 'password', 'eye1Show', 'eye1Hide');
         setupToggle('togglePw2', 'confirmPassword', 'eye2Show', 'eye2Hide');
 
+        // Strength meter
         const bars = ['s1','s2','s3','s4'].map(id => document.getElementById(id));
         const strengthLabel = document.getElementById('strengthLabel');
         const strengthColors = ['#dc2626','#ea580c','#ca8a04','#16a34a'];
@@ -703,6 +745,7 @@
             strengthLabel.textContent = strengthNames[score - 1] + ' password';
         });
 
+        // Helpers
         function showMsg(id, type, text) {
             const el = document.getElementById(id);
             el.className = 'val-msg show ' + type;
@@ -713,55 +756,99 @@
         function clearMsg(id) { const el = document.getElementById(id); el.className = 'val-msg'; el.innerHTML = ''; }
         function setInputState(input, state) { input.classList.remove('valid','invalid'); if (state) input.classList.add(state); }
 
-        const usernameInput = document.getElementById('username');
-        const emailInput = document.getElementById('email');
-        const roleInput = document.getElementById('role');
-        const passwordInput = document.getElementById('password');
-        const confirmInput = document.getElementById('confirmPassword');
-
+        // Validation functions
         function validateUsername() {
-            const val = usernameInput.value.trim();
-            if (!val) { setInputState(usernameInput,'invalid'); showMsg('username-msg','error','Username is required.'); return false; }
-            if (val.length < 3) { setInputState(usernameInput,'invalid'); showMsg('username-msg','error','At least 3 characters.'); return false; }
-            if (/\s/.test(val)) { setInputState(usernameInput,'invalid'); showMsg('username-msg','error','No spaces allowed.'); return false; }
-            setInputState(usernameInput,'valid'); showMsg('username-msg','success','Looks good!'); return true;
+            const val = document.getElementById('username').value.trim();
+            if (!val) { setInputState(document.getElementById('username'),'invalid'); showMsg('username-msg','error','Username is required.'); return false; }
+            if (val.length < 3) { setInputState(document.getElementById('username'),'invalid'); showMsg('username-msg','error','At least 3 characters.'); return false; }
+            if (/\s/.test(val)) { setInputState(document.getElementById('username'),'invalid'); showMsg('username-msg','error','No spaces allowed.'); return false; }
+            setInputState(document.getElementById('username'),'valid'); showMsg('username-msg','success','Looks good!'); return true;
         }
 
         function validateEmail() {
-            const val = emailInput.value.trim();
-            if (!val) { setInputState(emailInput,'invalid'); showMsg('email-msg','error','Email is required.'); return false; }
-            if (!/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(val)) { setInputState(emailInput,'invalid'); showMsg('email-msg','error','Enter a valid email.'); return false; }
-            setInputState(emailInput,'valid'); showMsg('email-msg','success','Looks good!'); return true;
+            const val = document.getElementById('email').value.trim();
+            if (!val) { setInputState(document.getElementById('email'),'invalid'); showMsg('email-msg','error','Email is required.'); return false; }
+            if (!/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(val)) { setInputState(document.getElementById('email'),'invalid'); showMsg('email-msg','error','Enter a valid email.'); return false; }
+            setInputState(document.getElementById('email'),'valid'); showMsg('email-msg','success','Looks good!'); return true;
         }
 
-        function validateRole() {
-            if (!roleInput.value) { setInputState(roleInput,'invalid'); showMsg('role-msg','error','Please select a role.'); return false; }
-            setInputState(roleInput,'valid'); clearMsg('role-msg'); return true;
+        function validateFirstName() {
+            const val = document.getElementById('firstName').value.trim();
+            if (!val) { setInputState(document.getElementById('firstName'),'invalid'); showMsg('firstname-msg','error','First name is required.'); return false; }
+            setInputState(document.getElementById('firstName'),'valid'); clearMsg('firstname-msg'); return true;
+        }
+
+        function validateLastName() {
+            const val = document.getElementById('lastName').value.trim();
+            if (!val) { setInputState(document.getElementById('lastName'),'invalid'); showMsg('lastname-msg','error','Last name is required.'); return false; }
+            setInputState(document.getElementById('lastName'),'valid'); clearMsg('lastname-msg'); return true;
+        }
+
+        function validateIDNumber() {
+            const val = document.getElementById('idNumber').value.trim();
+            if (!val) { setInputState(document.getElementById('idNumber'),'invalid'); showMsg('idnumber-msg','error','SA ID number is required.'); return false; }
+            if (!/^\d{13}$/.test(val)) { setInputState(document.getElementById('idNumber'),'invalid'); showMsg('idnumber-msg','error','Must be exactly 13 digits.'); return false; }
+            setInputState(document.getElementById('idNumber'),'valid'); showMsg('idnumber-msg','success','Looks good!'); return true;
+        }
+
+        function validateDOB() {
+            const val = document.getElementById('dateOfBirth').value;
+            if (!val) { setInputState(document.getElementById('dateOfBirth'),'invalid'); showMsg('dob-msg','error','Date of birth is required.'); return false; }
+            setInputState(document.getElementById('dateOfBirth'),'valid'); clearMsg('dob-msg'); return true;
+        }
+
+        function validateCellphone() {
+            const val = document.getElementById('cellphone').value.trim();
+            if (!val) { setInputState(document.getElementById('cellphone'),'invalid'); showMsg('cellphone-msg','error','Cellphone is required.'); return false; }
+            if (!/^\d{10}$/.test(val)) { setInputState(document.getElementById('cellphone'),'invalid'); showMsg('cellphone-msg','error','Must be 10 digits.'); return false; }
+            setInputState(document.getElementById('cellphone'),'valid'); clearMsg('cellphone-msg'); return true;
+        }
+
+        function validateAddress() {
+            const val = document.getElementById('homeAddress').value.trim();
+            if (!val) { setInputState(document.getElementById('homeAddress'),'invalid'); showMsg('address-msg','error','Home address is required.'); return false; }
+            setInputState(document.getElementById('homeAddress'),'valid'); clearMsg('address-msg'); return true;
         }
 
         function validatePassword() {
-            const val = passwordInput.value;
-            if (!val) { setInputState(passwordInput,'invalid'); showMsg('password-msg','error','Password is required.'); return false; }
-            if (val.length < 6) { setInputState(passwordInput,'invalid'); showMsg('password-msg','error','At least 6 characters.'); return false; }
-            setInputState(passwordInput,'valid'); clearMsg('password-msg'); return true;
+            const val = document.getElementById('password').value;
+            if (!val) { setInputState(document.getElementById('password'),'invalid'); showMsg('password-msg','error','Password is required.'); return false; }
+            if (val.length < 6) { setInputState(document.getElementById('password'),'invalid'); showMsg('password-msg','error','At least 6 characters.'); return false; }
+            setInputState(document.getElementById('password'),'valid'); clearMsg('password-msg'); return true;
         }
 
         function validateConfirm() {
-            const val = confirmInput.value;
-            if (!val) { setInputState(confirmInput,'invalid'); showMsg('confirm-msg','error','Please confirm your password.'); return false; }
-            if (val !== passwordInput.value) { setInputState(confirmInput,'invalid'); showMsg('confirm-msg','error','Passwords do not match.'); return false; }
-            setInputState(confirmInput,'valid'); showMsg('confirm-msg','success','Passwords match!'); return true;
+            const val = document.getElementById('confirmPassword').value;
+            const pw = document.getElementById('password').value;
+            if (!val) { setInputState(document.getElementById('confirmPassword'),'invalid'); showMsg('confirm-msg','error','Please confirm your password.'); return false; }
+            if (val !== pw) { setInputState(document.getElementById('confirmPassword'),'invalid'); showMsg('confirm-msg','error','Passwords do not match.'); return false; }
+            setInputState(document.getElementById('confirmPassword'),'valid'); showMsg('confirm-msg','success','Passwords match!'); return true;
         }
 
-        usernameInput.addEventListener('blur', validateUsername);
-        emailInput.addEventListener('blur', validateEmail);
-        roleInput.addEventListener('change', validateRole);
-        passwordInput.addEventListener('blur', validatePassword);
-        confirmInput.addEventListener('blur', validateConfirm);
-        confirmInput.addEventListener('input', () => { if (confirmInput.classList.contains('invalid')) validateConfirm(); });
+        // Blur events
+        document.getElementById('username').addEventListener('blur', validateUsername);
+        document.getElementById('email').addEventListener('blur', validateEmail);
+        document.getElementById('firstName').addEventListener('blur', validateFirstName);
+        document.getElementById('lastName').addEventListener('blur', validateLastName);
+        document.getElementById('idNumber').addEventListener('blur', validateIDNumber);
+        document.getElementById('dateOfBirth').addEventListener('blur', validateDOB);
+        document.getElementById('cellphone').addEventListener('blur', validateCellphone);
+        document.getElementById('homeAddress').addEventListener('blur', validateAddress);
+        document.getElementById('password').addEventListener('blur', validatePassword);
+        document.getElementById('confirmPassword').addEventListener('blur', validateConfirm);
+        document.getElementById('confirmPassword').addEventListener('input', () => {
+            if (document.getElementById('confirmPassword').classList.contains('invalid')) validateConfirm();
+        });
 
+        // Submit
         document.getElementById('registerForm').addEventListener('submit', function(e) {
-            const ok = [validateUsername(), validateEmail(), validateRole(), validatePassword(), validateConfirm()];
+            const ok = [
+                validateUsername(), validateEmail(),
+                validateFirstName(), validateLastName(),
+                validateIDNumber(), validateDOB(),
+                validateCellphone(), validateAddress(),
+                validatePassword(), validateConfirm()
+            ];
             if (ok.includes(false)) e.preventDefault();
         });
     </script>

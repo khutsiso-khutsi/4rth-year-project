@@ -104,59 +104,74 @@ namespace _4th_year_set_up.Controllers
         {
             if (HttpContext.Session.GetString("RoleName") != null)
                 return RedirectToDashboard(HttpContext.Session.GetString("RoleName")!);
-            ViewBag.Roles = _userRepo.GetAllRoles();
             return View();
         }
 
         [HttpPost]
-        public IActionResult Register(string Username, string Email, string Password, string ConfirmPassword, int RoleID)
+        public IActionResult Register(string Username, string Email, string Password, string ConfirmPassword,
+            string FirstName, string LastName, string IDNumber,
+            DateTime DateOfBirth, string CellphoneNumber, string HomeAddress)
         {
+            // Check all fields
             if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Email) ||
-                string.IsNullOrWhiteSpace(Password) || string.IsNullOrWhiteSpace(ConfirmPassword))
+                string.IsNullOrWhiteSpace(Password) || string.IsNullOrWhiteSpace(ConfirmPassword) ||
+                string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName) ||
+                string.IsNullOrWhiteSpace(IDNumber) || string.IsNullOrWhiteSpace(CellphoneNumber) ||
+                string.IsNullOrWhiteSpace(HomeAddress))
             {
                 ModelState.AddModelError("", "All fields are required.");
-                ViewBag.Roles = _userRepo.GetAllRoles();
                 return View();
             }
 
             if (Password != ConfirmPassword)
             {
                 ModelState.AddModelError("", "Passwords do not match.");
-                ViewBag.Roles = _userRepo.GetAllRoles();
                 return View();
             }
 
             if (Password.Length < 6)
             {
                 ModelState.AddModelError("", "Password must be at least 6 characters.");
-                ViewBag.Roles = _userRepo.GetAllRoles();
+                return View();
+            }
+
+            if (IDNumber.Length != 13 || !IDNumber.All(char.IsDigit))
+            {
+                ModelState.AddModelError("", "SA ID number must be exactly 13 digits.");
                 return View();
             }
 
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(Password);
-            string result = _userRepo.RegisterUser(Username.Trim(), Email.Trim(), passwordHash, RoleID);
+
+            
+            var (result, newUserId) = _userRepo.RegisterUser(Username.Trim(), Email.Trim(), passwordHash, 5);
 
             switch (result)
             {
                 case "SUCCESS":
+                    if (newUserId > 0)
+                    {
+                        _userRepo.CreatePatientRecord(newUserId, FirstName.Trim(), LastName.Trim(),
+                            IDNumber.Trim(), DateOfBirth, CellphoneNumber.Trim(), HomeAddress.Trim());
+                    }
                     TempData["RegisterSuccess"] = "Account created successfully. Please sign in.";
                     return RedirectToAction("Login");
+
                 case "USERNAME_TAKEN":
                     ModelState.AddModelError("", "That username is already taken.");
-                    ViewBag.Roles = _userRepo.GetAllRoles();
                     return View();
+
                 case "EMAIL_TAKEN":
                     ModelState.AddModelError("", "That email is already registered.");
-                    ViewBag.Roles = _userRepo.GetAllRoles();
                     return View();
+
                 default:
                     ModelState.AddModelError("", "Something went wrong. Please try again.");
-                    ViewBag.Roles = _userRepo.GetAllRoles();
                     return View();
             }
         }
 
-        // ── FORGOT PASSWORD ───────────────────────────────────────────
+        //FORGOT PASSWORD 
         [HttpPost]
         public IActionResult ForgotPassword(string email)
         {
@@ -227,7 +242,7 @@ namespace _4th_year_set_up.Controllers
             return View("~/Views/Home/ForgotPassword.cshtml");
         }
 
-        // ── RESET PASSWORD ────────────────────────────────────────────
+        // RESET PASSWORD
         [HttpGet]
         public IActionResult ResetPassword(string token)
         {

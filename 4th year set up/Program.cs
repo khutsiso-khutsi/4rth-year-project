@@ -1,11 +1,14 @@
-using Patient.Repository;
+﻿using Patient.Repository;
 using admin.Repository;
 using _4th_year_set_up.Services;
+using Microsoft.Data.SqlClient;
 
 var builder = WebApplication.CreateBuilder(args);
-
 builder.Services.AddControllersWithViews();
-builder.Services.AddSingleton<EmailService>();
+
+// ✅ Changed from AddSingleton to AddScoped
+builder.Services.AddScoped<EmailService>();
+
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -25,6 +28,9 @@ builder.Services.AddScoped<AdminRepository>(provider =>
 
 var app = builder.Build();
 
+
+SqlConnection.ClearAllPools();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -40,7 +46,6 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthorization();
 
-// Single default route handles everything
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
