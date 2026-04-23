@@ -12,7 +12,7 @@ namespace Patient.Repository
             _dataAccess = new UserDataAccess(connectionString);
         }
 
-        public (UserSession? user, string? passwordHash) GetUserLoginData(string username)
+        public (UserSession? user, string? passwordHash, bool isVerified) GetUserLoginData(string username)
         {
             return _dataAccess.GetUserLoginData(username);
         }
@@ -21,10 +21,13 @@ namespace Patient.Repository
         {
             _dataAccess.UpdateLastLogin(userId);
         }
-       
-        public (string result, int newUserId) RegisterUser(string username, string email, string passwordHash, int roleId)
+
+        public (string result, int newUserId) RegisterUser(string username, string email,
+    string passwordHash, int roleId, string firstName, string lastName,
+    string idNumber, DateTime dateOfBirth, string cellphone, string homeAddress)
         {
-            return _dataAccess.RegisterUser(username, email, passwordHash, roleId);
+            return _dataAccess.RegisterUser(username, email, passwordHash, roleId,
+                firstName, lastName, idNumber, dateOfBirth, cellphone, homeAddress);
         }
 
 
@@ -106,5 +109,20 @@ namespace Patient.Repository
 
         public (int UserId, string PasswordHash)? GetUserById(int userId)
             => _dataAccess.GetUserById(userId);
+
+        public void SaveVerificationCode(string email, string code, DateTime expiry)
+        {
+            _dataAccess.SaveVerificationCode(email, code, expiry);
+        }
+
+        public (bool success, int userId) VerifyCode(string email, string code)
+        {
+            return _dataAccess.VerifyCode(email, code);
+        }
+
+        public void MarkEmailVerified(int userId)
+        {
+            _dataAccess.MarkEmailVerified(userId);
+        }
     }
 }

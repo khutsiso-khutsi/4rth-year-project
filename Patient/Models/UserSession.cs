@@ -13,6 +13,7 @@ namespace Patient.Models
         public string RoleName { get; set; }
         public string FullName { get; set; }
         public int RoleID { get; set; }
+        public bool IsEmailVerified { get; set; }
     }
 
     public class LoginViewModel

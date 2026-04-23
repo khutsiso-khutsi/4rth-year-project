@@ -7,13 +7,13 @@ namespace Patient.DataAccess
     public class UserDataAccess
     {
         private readonly string _connectionString;
-        
+
         public UserDataAccess(string connectionString)
         {
             _connectionString = connectionString;
         }
 
-        public (UserSession? user, string? passwordHash) GetUserLoginData(string username)
+        public (UserSession? user, string? passwordHash, bool isVerified) GetUserLoginData(string username)
         {
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("sp_LoginUser", conn);
@@ -32,11 +32,12 @@ namespace Patient.DataAccess
                     Email = reader.GetString(reader.GetOrdinal("Email")),
                     RoleID = reader.GetInt32(reader.GetOrdinal("RoleID")),
                     RoleName = reader.GetString(reader.GetOrdinal("RoleName")),
+                    IsEmailVerified = reader.GetBoolean(reader.GetOrdinal("IsEmailVerified")),
                 };
-                return (user, passwordHash);
+                return (user, passwordHash, user.IsEmailVerified);
             }
 
-            return (null, null);
+            return (null, null, false);
         }
 
         public void UpdateLastLogin(int userId)
@@ -48,7 +49,10 @@ namespace Patient.DataAccess
             conn.Open();
             cmd.ExecuteNonQuery();
         }
-        public (string result, int newUserId) RegisterUser(string username, string email, string passwordHash, int roleId)
+
+        public (string result, int newUserId) RegisterUser(string username, string email,
+    string passwordHash, int roleId, string firstName, string lastName,
+    string idNumber, DateTime dateOfBirth, string cellphone, string homeAddress)
         {
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("sp_RegisterUser", conn);
@@ -57,6 +61,12 @@ namespace Patient.DataAccess
             cmd.Parameters.AddWithValue("@Email", email);
             cmd.Parameters.AddWithValue("@PasswordHash", passwordHash);
             cmd.Parameters.AddWithValue("@RoleID", roleId);
+            cmd.Parameters.AddWithValue("@FirstName", firstName);
+            cmd.Parameters.AddWithValue("@LastName", lastName);
+            cmd.Parameters.AddWithValue("@IDNumber", idNumber);
+            cmd.Parameters.AddWithValue("@DateOfBirth", dateOfBirth);
+            cmd.Parameters.AddWithValue("@CellphoneNumber", cellphone);
+            cmd.Parameters.AddWithValue("@HomeAddress", homeAddress);
             conn.Open();
             using var reader = cmd.ExecuteReader();
             if (reader.Read())
@@ -67,13 +77,14 @@ namespace Patient.DataAccess
             }
             return ("ERROR", 0);
         }
+
         public void CreatePatientRecord(int userId, string firstName, string lastName,
-    string idNumber, DateTime dateOfBirth, string cellphoneNumber, string homeAddress)
+            string idNumber, DateTime dateOfBirth, string cellphoneNumber, string homeAddress)
         {
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
-        INSERT INTO Patients (UserID, FirstName, LastName, IDNumber, DateOfBirth, CellphoneNumber, HomeAddress)
-        VALUES (@UserId, @FirstName, @LastName, @IDNumber, @DateOfBirth, @CellphoneNumber, @HomeAddress)", conn);
+                INSERT INTO Patients (UserID, FirstName, LastName, IDNumber, DateOfBirth, CellphoneNumber, HomeAddress)
+                VALUES (@UserId, @FirstName, @LastName, @IDNumber, @DateOfBirth, @CellphoneNumber, @HomeAddress)", conn);
             cmd.Parameters.AddWithValue("@UserId", userId);
             cmd.Parameters.AddWithValue("@FirstName", firstName);
             cmd.Parameters.AddWithValue("@LastName", lastName);
@@ -84,6 +95,7 @@ namespace Patient.DataAccess
             conn.Open();
             cmd.ExecuteNonQuery();
         }
+
         public List<(int Id, string Name)> GetAllRoles()
         {
             var roles = new List<(int, string)>();
@@ -95,6 +107,7 @@ namespace Patient.DataAccess
                 roles.Add((reader.GetInt32(0), reader.GetString(1)));
             return roles;
         }
+
         public bool SaveResetToken(string email, string token, DateTime expiry)
         {
             using var conn = new SqlConnection(_connectionString);
@@ -128,6 +141,7 @@ namespace Patient.DataAccess
             conn.Open();
             return cmd.ExecuteNonQuery() > 0;
         }
+
         public bool ResetPasswordByEmail(string email, string newPassword)
         {
             var hashed = BCrypt.Net.BCrypt.HashPassword(newPassword);
@@ -139,6 +153,7 @@ namespace Patient.DataAccess
             conn.Open();
             return cmd.ExecuteNonQuery() > 0;
         }
+
         public List<TestRequest> GetPatientTestRequests(int patientId)
         {
             var requests = new List<TestRequest>();
@@ -195,9 +210,8 @@ namespace Patient.DataAccess
                 });
             }
             return items;
-
-
         }
+
         public int? GetPatientIdByUserId(int userId)
         {
             using var conn = new SqlConnection(_connectionString);
@@ -208,13 +222,13 @@ namespace Patient.DataAccess
             var result = cmd.ExecuteScalar();
             return result == null ? null : Convert.ToInt32(result);
         }
+
         public MedicalHistoryViewModel GetMedicalHistory(int patientId)
         {
             var vm = new MedicalHistoryViewModel();
             using var con = new SqlConnection(_connectionString);
             con.Open();
 
-            // Conditions
             using (var cmd = new SqlCommand("sp_GetPatientConditions", con))
             {
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -231,7 +245,6 @@ namespace Patient.DataAccess
                     });
             }
 
-            // Allergies
             using (var cmd = new SqlCommand("sp_GetPatientAllergies", con))
             {
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -247,7 +260,6 @@ namespace Patient.DataAccess
                     });
             }
 
-            // Medications
             using (var cmd = new SqlCommand("sp_GetPatientMedications", con))
             {
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -266,7 +278,6 @@ namespace Patient.DataAccess
                     });
             }
 
-            // Dropdowns
             using (var cmd = new SqlCommand("sp_GetAllConditions", con))
             {
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -341,7 +352,8 @@ namespace Patient.DataAccess
             cmd.ExecuteNonQuery();
         }
 
-        public void AddPatientMedication(int patientId, int medicationId, string? dosage, string? frequency, DateTime? startDate, DateTime? endDate, string? notes)
+        public void AddPatientMedication(int patientId, int medicationId, string? dosage, string? frequency,
+            DateTime? startDate, DateTime? endDate, string? notes)
         {
             using var con = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("sp_AddPatientMedication", con);
@@ -367,6 +379,7 @@ namespace Patient.DataAccess
             con.Open();
             cmd.ExecuteNonQuery();
         }
+
         public void LogActivity(string action, string performedBy)
         {
             using var con = new SqlConnection(_connectionString);
@@ -377,6 +390,7 @@ namespace Patient.DataAccess
             con.Open();
             cmd.ExecuteNonQuery();
         }
+
         public ConsentViewModel GetConsentData(int patientId, int selectedDoctorId = 0)
         {
             var vm = new ConsentViewModel();
@@ -384,7 +398,6 @@ namespace Patient.DataAccess
             using var con = new SqlConnection(_connectionString);
             con.Open();
 
-            // Get all doctors
             using (var cmd = new SqlCommand("sp_GetAllDoctors", con))
             {
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -398,7 +411,6 @@ namespace Patient.DataAccess
                     });
             }
 
-            // Get existing consents
             using (var cmd = new SqlCommand("sp_GetPatientConsents", con))
             {
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -417,7 +429,6 @@ namespace Patient.DataAccess
                     });
             }
 
-            // Get test requests for selected doctor
             if (selectedDoctorId > 0)
             {
                 using var cmd = new SqlCommand("sp_GetConsentTestRequests", con);
@@ -484,6 +495,7 @@ namespace Patient.DataAccess
             con.Open();
             cmd.ExecuteNonQuery();
         }
+
         public ProfileViewModel GetPatientProfile(int patientId)
         {
             using var conn = new SqlConnection(_connectionString);
@@ -548,6 +560,55 @@ namespace Patient.DataAccess
             if (reader.Read())
                 return (reader.GetInt32(0), reader.GetString(1));
             return null;
+        }
+
+        public void SaveVerificationCode(string email, string code, DateTime expiry)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(@"
+                UPDATE Users 
+                SET VerificationCode = @Code, VerificationCodeExpiry = @Expiry
+                WHERE Email = @Email", conn);
+            cmd.Parameters.AddWithValue("@Code", code);
+            cmd.Parameters.AddWithValue("@Expiry", expiry);
+            cmd.Parameters.AddWithValue("@Email", email);
+            conn.Open();
+            cmd.ExecuteNonQuery();
+        }
+
+        public (bool success, int userId) VerifyCode(string email, string code)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(@"
+                SELECT UserID, VerificationCode, VerificationCodeExpiry 
+                FROM Users WHERE Email = @Email", conn);
+            cmd.Parameters.AddWithValue("@Email", email);
+            conn.Open();
+            using var reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                string savedCode = reader["VerificationCode"]?.ToString() ?? "";
+                DateTime expiry = Convert.ToDateTime(reader["VerificationCodeExpiry"]);
+                int userId = Convert.ToInt32(reader["UserID"]);
+
+                if (savedCode == code && DateTime.Now <= expiry)
+                    return (true, userId);
+            }
+            return (false, 0);
+        }
+
+        public void MarkEmailVerified(int userId)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(@"
+                UPDATE Users 
+                SET IsEmailVerified = 1, 
+                    VerificationCode = NULL, 
+                    VerificationCodeExpiry = NULL
+                WHERE UserID = @UserId", conn);
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            conn.Open();
+            cmd.ExecuteNonQuery();
         }
     }
 }

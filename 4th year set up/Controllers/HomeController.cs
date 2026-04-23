@@ -35,18 +35,9 @@ namespace _4th_year_set_up.Controllers
         }
 
         [HttpPost]
-        public IActionResult Login(string Username, string Password, bool RememberMe = false)
+        public IActionResult Login(string Username, string Password)
         {
-            _logger.LogInformation("==> Username: '{U}' | Password: '{P}'", Username, Password);
-
-            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
-            {
-                ModelState.AddModelError("", "Username and password are required.");
-                return View();
-            }
-
-            var (user, passwordHash) = _userRepo.GetUserLoginData(Username.Trim());
-            _logger.LogInformation("==> User found: {F} | Hash: '{H}'", user != null, passwordHash);
+            var (user, passwordHash, isVerified) = _userRepo.GetUserLoginData(Username.Trim());
 
             if (user == null || passwordHash == null)
             {
@@ -54,21 +45,33 @@ namespace _4th_year_set_up.Controllers
                 return View();
             }
 
-            bool passwordValid = BCrypt.Net.BCrypt.Verify(Password, passwordHash);
-            _logger.LogInformation("==> Password valid: {V}", passwordValid);
-
-            if (!passwordValid)
+            if (!BCrypt.Net.BCrypt.Verify(Password, passwordHash))
             {
                 ModelState.AddModelError("", "Invalid username or password.");
                 return View();
             }
 
-            _userRepo.UpdateLastLogin(user.UserID);
+            if (!isVerified)
+            {
+                HttpContext.Session.SetString("PendingVerificationEmail", user.Email);
+                TempData["LoginWarning"] = "Please verify your email before signing in.";
+                return RedirectToAction("VerifyEmail");
+            }
+
             HttpContext.Session.SetInt32("UserID", user.UserID);
-            HttpContext.Session.SetString("Email", user.Email);
-            HttpContext.Session.SetString("RoleName", user.RoleName);
             HttpContext.Session.SetInt32("RoleID", user.RoleID);
-            return RedirectToDashboard(user.RoleName);
+            HttpContext.Session.SetString("RoleName", user.RoleName);
+            HttpContext.Session.SetString("Username", Username.Trim());
+
+            _userRepo.UpdateLastLogin(user.UserID);
+
+            return user.RoleID switch
+            {
+                1 => RedirectToAction("AdminDashboard", "Admin"),
+                2 => RedirectToAction("DoctorDashboard", "Doctor"),
+                5 => RedirectToAction("Index", "PatientDashboard"),
+                _ => RedirectToAction("Index", "Home")
+            };
         }
 
         public IActionResult Logout()
@@ -112,7 +115,6 @@ namespace _4th_year_set_up.Controllers
             string FirstName, string LastName, string IDNumber,
             DateTime DateOfBirth, string CellphoneNumber, string HomeAddress)
         {
-            // Check all fields
             if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Email) ||
                 string.IsNullOrWhiteSpace(Password) || string.IsNullOrWhiteSpace(ConfirmPassword) ||
                 string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName) ||
@@ -143,19 +145,42 @@ namespace _4th_year_set_up.Controllers
 
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(Password);
 
-            
-            var (result, newUserId) = _userRepo.RegisterUser(Username.Trim(), Email.Trim(), passwordHash, 5);
+            var (result, newUserId) = _userRepo.RegisterUser(
+                Username.Trim(), Email.Trim(), passwordHash, 5,
+                FirstName.Trim(), LastName.Trim(), IDNumber.Trim(),
+                DateOfBirth, CellphoneNumber.Trim(), HomeAddress.Trim());
 
             switch (result)
             {
                 case "SUCCESS":
-                    if (newUserId > 0)
-                    {
-                        _userRepo.CreatePatientRecord(newUserId, FirstName.Trim(), LastName.Trim(),
-                            IDNumber.Trim(), DateOfBirth, CellphoneNumber.Trim(), HomeAddress.Trim());
-                    }
-                    TempData["RegisterSuccess"] = "Account created successfully. Please sign in.";
-                    return RedirectToAction("Login");
+                    string code = new Random().Next(100000, 999999).ToString();
+                    DateTime expiry = DateTime.Now.AddMinutes(10);
+
+                    _userRepo.SaveVerificationCode(Email.Trim(), code, expiry);
+
+                    string emailBody = $@"
+                <div style='font-family:DM Sans,sans-serif;max-width:480px;margin:auto;background:#f4f7fb;padding:32px;border-radius:16px'>
+                    <div style='background:#0b1f3a;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px'>
+                        <h2 style='color:white;margin:0;font-size:1.3rem'>NMB-HLabSys</h2>
+                        <p style='color:rgba(255,255,255,0.5);font-size:0.75rem;margin:4px 0 0'>Haematology Lab System</p>
+                    </div>
+                    <h3 style='color:#0b1f3a;margin-bottom:8px'>Verify Your Email</h3>
+                    <p style='color:#6b7a99;font-size:0.9rem;line-height:1.6;margin-bottom:24px'>
+                        Hi {FirstName}, thank you for registering. Enter the code below to verify your email address.
+                    </p>
+                    <div style='background:white;border:2px dashed #0d9488;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px'>
+                        <p style='color:#6b7a99;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px'>Your Verification Code</p>
+                        <h1 style='color:#0d9488;font-size:2.5rem;letter-spacing:0.3em;margin:0'>{code}</h1>
+                    </div>
+                    <p style='color:#6b7a99;font-size:0.8rem;text-align:center'>
+                        This code expires in <strong>10 minutes</strong>. Do not share it with anyone.
+                    </p>
+                </div>";
+
+                    _emailService.SendEmail(Email.Trim(), "Your NMB-HLabSys Verification Code", emailBody);
+
+                    HttpContext.Session.SetString("PendingVerificationEmail", Email.Trim());
+                    return RedirectToAction("VerifyEmail");
 
                 case "USERNAME_TAKEN":
                     ModelState.AddModelError("", "That username is already taken.");
@@ -165,13 +190,62 @@ namespace _4th_year_set_up.Controllers
                     ModelState.AddModelError("", "That email is already registered.");
                     return View();
 
+                case "DUPLICATE_EMAIL":
+                    ModelState.AddModelError("", "An account with this email already exists.");
+                    return View();
+
+                case "DUPLICATE_ID":
+                    ModelState.AddModelError("", "An account with this ID number already exists.");
+                    return View();
+
                 default:
-                    ModelState.AddModelError("", "Something went wrong. Please try again.");
+                    ModelState.AddModelError("", "Registration failed. Please try again.");
                     return View();
             }
         }
 
-        //FORGOT PASSWORD 
+        // ✅ VERIFY EMAIL
+        [HttpGet]
+        public IActionResult VerifyEmail()
+        {
+            var email = HttpContext.Session.GetString("PendingVerificationEmail");
+
+            if (string.IsNullOrEmpty(email))
+                return RedirectToAction("Login");
+
+            return View("~/Views/Home/VerifyEmail.cshtml");
+        }
+
+        [HttpPost]
+        public IActionResult VerifyEmail(string code)
+        {
+            var email = HttpContext.Session.GetString("PendingVerificationEmail");
+
+            if (string.IsNullOrEmpty(email))
+                return RedirectToAction("Login");
+
+            var (success, userId) = _userRepo.VerifyCode(email, code);
+
+            if (!success)
+            {
+                TempData["Error"] = "Invalid or expired verification code. Please try again.";
+                return View("~/Views/Home/VerifyEmail.cshtml");
+            }
+
+            _userRepo.MarkEmailVerified(userId);
+
+            HttpContext.Session.Remove("PendingVerificationEmail");
+            TempData["Success"] = "Email verified successfully! You can now log in.";
+            return RedirectToAction("Login");
+        }
+
+        // FORGOT PASSWORD
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View("~/Views/Home/ForgotPassword.cshtml");
+        }
+
         [HttpPost]
         public IActionResult ForgotPassword(string email)
         {
@@ -193,7 +267,7 @@ namespace _4th_year_set_up.Controllers
     <div style='padding:36px 32px;'>
         <h2 style='color:#0b1f3a;font-size:22px;margin:0 0 12px;'>Your temporary password</h2>
         <p style='color:#6b7a99;font-size:14px;line-height:1.7;margin:0 0 28px;'>
-            We received a request to reset your password for your NMB-HLabSys account. 
+            We received a request to reset your password for your NMB-HLabSys account.
             Here is your temporary password — please use it to log in and change your password immediately.
         </p>
         <div style='background:#f4f7fb;border:1px solid #dde4f0;border-radius:12px;padding:24px;text-align:center;margin-bottom:28px;'>
@@ -201,7 +275,7 @@ namespace _4th_year_set_up.Controllers
             <p style='color:#0d9488;font-size:28px;font-weight:700;letter-spacing:3px;margin:0;font-family:monospace;'>{newPassword}</p>
         </div>
         <div style='text-align:center;margin-bottom:28px;'>
-            <a href='{loginLink}' 
+            <a href='{loginLink}'
                style='display:inline-block;background:#0d9488;color:white;padding:14px 36px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;letter-spacing:0.02em;'>
                 Sign In to NMB-HLabSys
             </a>
@@ -212,7 +286,7 @@ namespace _4th_year_set_up.Controllers
             </p>
         </div>
         <p style='color:#6b7a99;font-size:13px;line-height:1.6;margin:0;'>
-            If you did not request a password reset, please contact your system administrator immediately at 
+            If you did not request a password reset, please contact your system administrator immediately at
             <a href='mailto:youngintellect23@gmail.com' style='color:#0d9488;'>youngintellect23@gmail.com</a>.
         </p>
     </div>
@@ -235,11 +309,6 @@ namespace _4th_year_set_up.Controllers
             }
 
             return RedirectToAction("ForgotPassword");
-        }
-        [HttpGet]
-        public IActionResult ForgotPassword()
-        {
-            return View("~/Views/Home/ForgotPassword.cshtml");
         }
 
         // RESET PASSWORD
