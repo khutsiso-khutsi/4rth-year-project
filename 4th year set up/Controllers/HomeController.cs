@@ -66,6 +66,21 @@ namespace _4th_year_set_up.Controllers
                 _ => RedirectToAction("Index", "Home")
             };
         }
+        public IActionResult DevLogin(string role)
+        {
+            HttpContext.Session.SetString("RoleName", role);
+            HttpContext.Session.SetString("Email", $"dev-{role.ToLower()}@test.com");
+
+            return role switch
+            {
+                "Admin" => RedirectToAction("Dashboard", "Admin"),
+                "Manager" => RedirectToAction("Dashboard", "Manager"),
+                "Doctor" => RedirectToAction("Dashboard", "Doctor"),
+                "Tech" => RedirectToAction("Dashboard", "Technician"),
+                "Patient" => RedirectToAction("Index", "Patient"),
+                _ => RedirectToAction("Login", "Home")
+            };
+        }
 
         public IActionResult Logout()
         {
