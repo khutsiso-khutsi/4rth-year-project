@@ -645,8 +645,78 @@
                     </div>
                     <div class="field">
                         <label for="cellphone">Cellphone Number</label>
-                        <div class="input-wrap">
-                            <input type="text" id="cellphone" name="CellphoneNumber" placeholder="e.g. 0821234567" maxlength="10" />
+                        <div class="input-wrap" style="display:flex;gap:6px;align-items:stretch;">
+                            <div style="position:relative;flex-shrink:0;width:110px;">
+                                <select id="dialCode" name="DialCode" style="width:100%;height:100%;padding:10px 28px 10px 10px;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.82rem;color:var(--navy);background:var(--offwhite);outline:none;appearance:none;cursor:pointer;">
+                                    <option value="+27" selected>🇿🇦 +27</option>
+                                    <option value="+1">🇺🇸 +1</option>
+                                    <option value="+1-CA">🇨🇦 +1</option>
+                                    <option value="+44">🇬🇧 +44</option>
+                                    <option value="+61">🇦🇺 +61</option>
+                                    <option value="+64">🇳🇿 +64</option>
+                                    <option value="+91">🇮🇳 +91</option>
+                                    <option value="+86">🇨🇳 +86</option>
+                                    <option value="+81">🇯🇵 +81</option>
+                                    <option value="+82">🇰🇷 +82</option>
+                                    <option value="+49">🇩🇪 +49</option>
+                                    <option value="+33">🇫🇷 +33</option>
+                                    <option value="+39">🇮🇹 +39</option>
+                                    <option value="+34">🇪🇸 +34</option>
+                                    <option value="+351">🇵🇹 +351</option>
+                                    <option value="+31">🇳🇱 +31</option>
+                                    <option value="+32">🇧🇪 +32</option>
+                                    <option value="+41">🇨🇭 +41</option>
+                                    <option value="+43">🇦🇹 +43</option>
+                                    <option value="+46">🇸🇪 +46</option>
+                                    <option value="+47">🇳🇴 +47</option>
+                                    <option value="+45">🇩🇰 +45</option>
+                                    <option value="+358">🇫🇮 +358</option>
+                                    <option value="+48">🇵🇱 +48</option>
+                                    <option value="+420">🇨🇿 +420</option>
+                                    <option value="+36">🇭🇺 +36</option>
+                                    <option value="+40">🇷🇴 +40</option>
+                                    <option value="+7">🇷🇺 +7</option>
+                                    <option value="+380">🇺🇦 +380</option>
+                                    <option value="+30">🇬🇷 +30</option>
+                                    <option value="+90">🇹🇷 +90</option>
+                                    <option value="+972">🇮🇱 +972</option>
+                                    <option value="+971">🇦🇪 +971</option>
+                                    <option value="+966">🇸🇦 +966</option>
+                                    <option value="+20">🇪🇬 +20</option>
+                                    <option value="+234">🇳🇬 +234</option>
+                                    <option value="+254">🇰🇪 +254</option>
+                                    <option value="+233">🇬🇭 +233</option>
+                                    <option value="+255">🇹🇿 +255</option>
+                                    <option value="+256">🇺🇬 +256</option>
+                                    <option value="+263">🇿🇼 +263</option>
+                                    <option value="+260">🇿🇲 +260</option>
+                                    <option value="+267">🇧🇼 +267</option>
+                                    <option value="+264">🇳🇦 +264</option>
+                                    <option value="+268">🇸🇿 +268</option>
+                                    <option value="+266">🇱🇸 +266</option>
+                                    <option value="+258">🇲🇿 +258</option>
+                                    <option value="+55">🇧🇷 +55</option>
+                                    <option value="+54">🇦🇷 +54</option>
+                                    <option value="+56">🇨🇱 +56</option>
+                                    <option value="+57">🇨🇴 +57</option>
+                                    <option value="+51">🇵🇪 +51</option>
+                                    <option value="+52">🇲🇽 +52</option>
+                                    <option value="+63">🇵🇭 +63</option>
+                                    <option value="+62">🇮🇩 +62</option>
+                                    <option value="+60">🇲🇾 +60</option>
+                                    <option value="+65">🇸🇬 +65</option>
+                                    <option value="+66">🇹🇭 +66</option>
+                                    <option value="+84">🇻🇳 +84</option>
+                                    <option value="+880">🇧🇩 +880</option>
+                                    <option value="+92">🇵🇰 +92</option>
+                                    <option value="+94">🇱🇰 +94</option>
+                                    <option value="+98">🇮🇷 +98</option>
+                                </select>
+                                <span class="select-arrow">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9" /></svg>
+                                </span>
+                            </div>
+                            <input type="text" id="cellphone" name="CellphoneNumber" placeholder="e.g. 0821234567" maxlength="15" style="flex:1;" />
                         </div>
                         <div class="val-msg" id="cellphone-msg"></div>
                     </div>
@@ -784,24 +854,85 @@
             setInputState(document.getElementById('lastName'),'valid'); clearMsg('lastname-msg'); return true;
         }
 
-        function validateIDNumber() {
+                function validateIDNumber() {
             const val = document.getElementById('idNumber').value.trim();
-            if (!val) { setInputState(document.getElementById('idNumber'),'invalid'); showMsg('idnumber-msg','error','SA ID number is required.'); return false; }
-            if (!/^\d{13}$/.test(val)) { setInputState(document.getElementById('idNumber'),'invalid'); showMsg('idnumber-msg','error','Must be exactly 13 digits.'); return false; }
-            setInputState(document.getElementById('idNumber'),'valid'); showMsg('idnumber-msg','success','Looks good!'); return true;
+            if (!val) {
+                setInputState(document.getElementById('idNumber'), 'invalid');
+                showMsg('idnumber-msg', 'error', 'SA ID number is required.');
+                return false;
+            }
+            if (!/^\d{13}$/.test(val)) {
+                setInputState(document.getElementById('idNumber'), 'invalid');
+                showMsg('idnumber-msg', 'error', 'Must be exactly 13 digits.');
+                return false;
+            }
+
+            // check dob match if dob already filled
+            const dob = document.getElementById('dateOfBirth').value;
+            if (dob) {
+                const dobDate = new Date(dob);
+                const yy = String(dobDate.getFullYear()).slice(-2);
+                const mm = String(dobDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(dobDate.getDate()).padStart(2, '0');
+                const expectedPrefix = yy + mm + dd;
+                if (val.slice(0, 6) !== expectedPrefix) {
+                    setInputState(document.getElementById('idNumber'), 'invalid');
+                    showMsg('idnumber-msg', 'error', 'First 6 digits must match your date of birth (' + expectedPrefix + ').');
+                    return false;
+                }
+            }
+
+            setInputState(document.getElementById('idNumber'), 'valid');
+            showMsg('idnumber-msg', 'success', 'Looks good!');
+            return true;
         }
 
         function validateDOB() {
             const val = document.getElementById('dateOfBirth').value;
-            if (!val) { setInputState(document.getElementById('dateOfBirth'),'invalid'); showMsg('dob-msg','error','Date of birth is required.'); return false; }
-            setInputState(document.getElementById('dateOfBirth'),'valid'); clearMsg('dob-msg'); return true;
+            if (!val) {
+                setInputState(document.getElementById('dateOfBirth'), 'invalid');
+                showMsg('dob-msg', 'error', 'Date of birth is required.');
+                return false;
+            }
+            setInputState(document.getElementById('dateOfBirth'), 'valid');
+            clearMsg('dob-msg');
+
+            // re-validate ID if already filled so mismatch shows immediately
+            const idVal = document.getElementById('idNumber').value.trim();
+            if (idVal.length === 13) validateIDNumber();
+
+            return true;
         }
 
         function validateCellphone() {
             const val = document.getElementById('cellphone').value.trim();
-            if (!val) { setInputState(document.getElementById('cellphone'),'invalid'); showMsg('cellphone-msg','error','Cellphone is required.'); return false; }
-            if (!/^\d{10}$/.test(val)) { setInputState(document.getElementById('cellphone'),'invalid'); showMsg('cellphone-msg','error','Must be 10 digits.'); return false; }
-            setInputState(document.getElementById('cellphone'),'valid'); clearMsg('cellphone-msg'); return true;
+            const dialCode = document.getElementById('dialCode').value;
+
+            if (!val) {
+                setInputState(document.getElementById('cellphone'), 'invalid');
+                showMsg('cellphone-msg', 'error', 'Cellphone is required.');
+                return false;
+            }
+
+            // SA numbers must be 10 digits starting with 0
+            if (dialCode === '+27') {
+                if (!/^0\d{9}$/.test(val)) {
+                    setInputState(document.getElementById('cellphone'), 'invalid');
+                    showMsg('cellphone-msg', 'error', 'SA number must be 10 digits starting with 0.');
+                    return false;
+                }
+            } else {
+                // for other countries just check its all digits, 5-15 long
+                if (!/^\d{5,15}$/.test(val)) {
+                    setInputState(document.getElementById('cellphone'), 'invalid');
+                    showMsg('cellphone-msg', 'error', 'Enter a valid phone number.');
+                    return false;
+                }
+            }
+
+            setInputState(document.getElementById('cellphone'), 'valid');
+            clearMsg('cellphone-msg');
+            return true;
         }
 
         function validateAddress() {
