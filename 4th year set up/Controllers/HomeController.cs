@@ -66,6 +66,8 @@ namespace _4th_year_set_up.Controllers
                 _ => RedirectToAction("Index", "Home")
             };
         }
+
+        // ── DEV SHORTCUT LOGIN (bypasses password for dev/testing) ──
         public IActionResult DevLogin(string role)
         {
             HttpContext.Session.SetString("RoleName", role);
@@ -73,12 +75,12 @@ namespace _4th_year_set_up.Controllers
 
             return role switch
             {
-                "Admin" => RedirectToAction("Dashboard", "Admin"),
-                "Manager" => RedirectToAction("Dashboard", "Manager"),
-                "Doctor" => RedirectToAction("Dashboard", "Doctor"),
-                "Tech" => RedirectToAction("Dashboard", "Technician"),
-                "Patient" => RedirectToAction("Index", "Patient"),
-                _ => RedirectToAction("Login", "Home")
+                "Admin"         => RedirectToAction("Dashboard", "Admin"),
+                "Doctor"        => RedirectToAction("DoctorDashboard", "Doctor"),
+                "Lab Manager"   => RedirectToAction("Index", "ManagerDashboard"),
+                "Lab Technician"=> RedirectToAction("Index", "TechnicianDashboard"),
+                "Patient"       => RedirectToAction("Index", "PatientDashboard"),
+                _               => RedirectToAction("Login", "Home")
             };
         }
 
@@ -92,12 +94,12 @@ namespace _4th_year_set_up.Controllers
         {
             return roleName switch
             {
-                "Patient" => RedirectToAction("Index", "PatientDashboard"),
-                "Doctor" => RedirectToAction("Index", "DoctorDashboard"),
+                "Patient"        => RedirectToAction("Index", "PatientDashboard"),
+                "Doctor"         => RedirectToAction("Index", "DoctorDashboard"),
                 "Lab Technician" => RedirectToAction("Index", "TechnicianDashboard"),
-                "Lab Manager" => RedirectToAction("Index", "ManagerDashboard"),
-                "Admin" => RedirectToAction("Dashboard", "Admin"),
-                _ => RedirectToAction("Index")
+                "Lab Manager"    => RedirectToAction("Index", "ManagerDashboard"),
+                "Admin"          => RedirectToAction("Dashboard", "Admin"),
+                _                => RedirectToAction("Index")
             };
         }
 
