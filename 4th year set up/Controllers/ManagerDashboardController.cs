@@ -1,4 +1,5 @@
 using _4th_year_set_up.Models;
+using LabManager.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace _4th_year_set_up.Controllers
@@ -120,10 +121,45 @@ namespace _4th_year_set_up.Controllers
 
         }
 
-        public IActionResult Reports()
+        public IActionResult Orders()
         {
-            return View();
+            List<ConsumableOrder> orders = new List<ConsumableOrder>
+            {
+                new ConsumableOrder
+                {
+                    Id = 1,
+                    OrderNumber = "ORD-2026-0041",
+                    Supplier = "MediPath SA",
+                    Items = "EDTA Tubes (200), Lancets (500)",
+                    OrderDate = new DateTime(2026, 05, 15),
+                    Status = "Ordered"
+                },
+
+                new ConsumableOrder
+                {
+                    Id = 2,
+                    OrderNumber = "ORD-2026-0039",
+                    Supplier = "LabSupply Co",
+                    Items = "Reagent Kit FBC (50)",
+                    OrderDate = new DateTime(2026, 05, 10),
+                    Status = "Partially Complete"
+                },
+
+                new ConsumableOrder
+                {
+                    Id = 3,
+                    OrderNumber = "ORD-2026-0035",
+                    Supplier = "Haema Diagnostics",
+                    Items = "Coagulation Reagent (100)",
+                    OrderDate = new DateTime(2026, 04, 28),
+                    Status = "Complete",
+                    CompletedDate = new DateTime(2026, 05, 02)
+                }
+            };
+
+            return View("~/Views/ManagerDashboard/Order.cshtml", orders);
         }
+
 
         public IActionResult Settings()
         {
