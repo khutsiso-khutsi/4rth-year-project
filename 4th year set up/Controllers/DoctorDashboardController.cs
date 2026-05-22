@@ -9,5 +9,6 @@ namespace _4th_year_set_up.Controllers
             ViewBag.Email = HttpContext.Session.GetString("Email") ?? "dev-doctor@test.com";
             return View("~/Views/Doctor/DoctorDashboard.cshtml");
         }
+       
     }
 }

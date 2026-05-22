@@ -1,0 +1,59 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    <!-- ─── VIEW RESULTS ─── -->
+    <div class="page" id="page-results">
+        <div class="page-header">
+            <div class="page-greeting">Test Results</div>
+            <div class="page-subtitle">View and release results to patients</div>
+        </div>
+        <div class="section">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+                <div class="result-header">
+                    REQ-2025-089 — K. Mashamba — 2025-03-01
+                    <span class="badge badge-stat">STAT</span>
+                    <span class="badge badge-verified">Verified</span>
+                </div>
+                <div class="result-alert">⚠ 2 abnormal results detected — highlighted below</div>
+            </div>
+
+            <div class="result-section-title">Full Blood Count</div>
+            <div class="result-row">
+                <span class="result-name">Haemoglobin</span>
+                <span class="result-val abnormal">9.2 g/dL</span>
+                <span class="result-range">Normal: 12.0–17.5 g/dL</span>
+            </div>
+            <div class="result-row">
+                <span class="result-name">WBC Count</span>
+                <span class="result-val abnormal">7.8 ×10⁹/µL</span>
+                <span class="result-range">Normal: 4.5–11.0 ×10⁹/µL</span>
+            </div>
+            <div class="result-row">
+                <span class="result-name">Platelet Count</span>
+                <span class="result-val abnormal">88 ×10⁹/µL</span>
+                <span class="result-range">Normal: 150–400 ×10⁹/µL</span>
+            </div>
+            <div class="result-row">
+                <span class="result-name">MCV</span>
+                <span class="result-val normal">86.4 fL</span>
+                <span class="result-range">Normal: 80–100 fL</span>
+            </div>
+
+            <div style="padding:16px 20px;border-top:1px solid var(--border);">
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label>Note to Patient</label>
+                    <textarea placeholder="e.g. Please make an appointment to discuss these results..."></textarea>
+                </div>
+                <div style="display:flex;align-items:center;gap:16px;">
+                    <button class="btn btn-primary" onclick="releaseResult()">Release to Patient</button>
+                    <button class="btn btn-outline">Download PDF</button>
+                    <span id="release-msg" style="font-size:12px;color:#4ade80;opacity:0;transition:opacity 0.3s;display:flex;align-items:center;gap:6px;">
+                        <span style="width:8px;height:8px;background:#4ade80;border-radius:50%;display:inline-block;"></span>
+                        Results released! Patient notified via email with PDF.
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+}

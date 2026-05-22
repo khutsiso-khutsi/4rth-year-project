@@ -1,0 +1,61 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    <!-- ─── PATIENTS ─── -->
+    <div class="page" id="page-patients">
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;">
+            <div>
+                <div class="page-greeting">Patient Records</div>
+                <div class="page-subtitle">Manage patients and their health information</div>
+            </div>
+            <button class="btn btn-primary" onclick="openRegisterModal()">+ Register Patient</button>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">My Patients</span>
+                <input type="search" id="patient-search" placeholder="Search patients..." oninput="filterPatients(this.value)">
+            </div>
+            <table>
+                <thead>
+                    <tr><th>Name</th><th>SA ID</th><th>DOB</th><th>Conditions</th><th>Last Request</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="patients-tbody">
+                    <tr data-name="K. Mashamba" data-id="9204115800086">
+                        <td>K. Mashamba</td>
+                        <td class="mono">9204115800086</td>
+                        <td>1992-04-11</td>
+                        <td>Hypertension</td>
+                        <td>2025-03-01</td>
+                        <td><button class="btn btn-outline btn-sm" onclick="openPatientModal('K. Mashamba','9204115800086','1992-04-11','082 444 5566','patient@gmail.com','Hypertension','Penicillin','Amlodipine 5mg')">View</button></td>
+                    </tr>
+                    <tr data-name="P. Ndlovu" data-id="8811204200083">
+                        <td>P. Ndlovu</td>
+                        <td class="mono">8811204200083</td>
+                        <td>1988-11-20</td>
+                        <td>Diabetes, Anaemia</td>
+                        <td>2025-03-02</td>
+                        <td><button class="btn btn-outline btn-sm" onclick="openPatientModal('P. Ndlovu','8811204200083','1988-11-20','071 222 3344','pndlovu@mail.com','Diabetes, Anaemia','None','Metformin 500mg')">View</button></td>
+                    </tr>
+                    <tr data-name="M. Jacobs" data-id="9512034800084">
+                        <td>M. Jacobs</td>
+                        <td class="mono">9512034800084</td>
+                        <td>1995-12-03</td>
+                        <td>None</td>
+                        <td>2025-03-03</td>
+                        <td><button class="btn btn-outline btn-sm" onclick="openPatientModal('M. Jacobs','9512034800084','1995-12-03','083 111 9988','mjacobs@mail.com','None','None','None')">View</button></td>
+                    </tr>
+                    <tr data-name="J. Fortuin" data-id="7703125400087">
+                        <td>J. Fortuin</td>
+                        <td class="mono">7703125400087</td>
+                        <td>1977-03-12</td>
+                        <td>Asthma</td>
+                        <td>2025-02-20</td>
+                        <td><button class="btn btn-outline btn-sm" onclick="openPatientModal('J. Fortuin','7703125400087','1977-03-12','064 555 7711','jfortuin@mail.com','Asthma','Aspirin','Salbutamol inhaler')">View</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

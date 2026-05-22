@@ -1,0 +1,59 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    <!-- ─── ALERTS ─── -->
+    <div class="page" id="page-alerts">
+        <div class="page-header">
+            <div class="page-greeting">Abnormal Result Alerts</div>
+            <div class="page-subtitle">Abnormal results from the last 5 days</div>
+        </div>
+        <div class="section">
+            <div class="filter-row">
+                <div class="form-group">
+                    <label>From</label>
+                    <input type="date" value="2025-02-26">
+                </div>
+                <div class="form-group">
+                    <label>To</label>
+                    <input type="date" value="2025-03-03">
+                </div>
+                <button class="btn btn-primary btn-sm">Filter</button>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>Patient</th><th>Test</th><th>Result</th><th>Normal Range</th><th>Request #</th><th>Date</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>K. Mashamba</td>
+                        <td>Haemoglobin</td>
+                        <td style="color:#fb923c;font-family:'DM Mono',monospace;font-weight:700;">9.2 g/dL</td>
+                        <td class="mono">12.0–17.5</td>
+                        <td class="mono">REQ-889</td>
+                        <td>2025-03-01</td>
+                        <td><button class="btn btn-primary btn-sm" onclick="navigate('results')">View</button></td>
+                    </tr>
+                    <tr>
+                        <td>K. Mashamba</td>
+                        <td>Platelet Count</td>
+                        <td style="color:#fb923c;font-family:'DM Mono',monospace;font-weight:700;">88 ×10⁹/µL</td>
+                        <td class="mono">150–400</td>
+                        <td class="mono">REQ-889</td>
+                        <td>2025-03-01</td>
+                        <td><button class="btn btn-primary btn-sm" onclick="navigate('results')">View</button></td>
+                    </tr>
+                    <tr>
+                        <td>P. Ndlovu</td>
+                        <td>PT (Prothrombin)</td>
+                        <td style="color:#fb923c;font-family:'DM Mono',monospace;font-weight:700;">18.2 sec</td>
+                        <td class="mono">11–13.5</td>
+                        <td class="mono">REQ-890</td>
+                        <td>2025-03-02</td>
+                        <td><button class="btn btn-outline btn-sm">View</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

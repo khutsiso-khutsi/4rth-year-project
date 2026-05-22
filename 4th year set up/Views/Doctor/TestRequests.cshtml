@@ -1,0 +1,119 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    <!-- ─── TEST REQUESTS ─── -->
+    <div class="page" id="page-testrequests">
+        <div class="page-header">
+            <div class="page-greeting">Test Requests</div>
+            <div class="page-subtitle">Submit and track laboratory test requests</div>
+        </div>
+        <div class="section">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('new')">New Request</button>
+                <button class="tab" onclick="switchTab('history')">Request History</button>
+            </div>
+
+            <!-- New Request Tab -->
+            <div id="tab-new" style="padding:20px;">
+                <div class="form-section-title">Create Test Request</div>
+                <div class="form-grid" style="margin-bottom:18px;">
+                    <div class="form-group">
+                        <label>Patient</label>
+                        <select id="req-patient">
+                            <option>K. Mashamba</option>
+                            <option>P. Ndlovu</option>
+                            <option>M. Jacobs</option>
+                            <option>J. Fortuin</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Urgency</label>
+                        <select id="req-urgency">
+                            <option>Routine</option>
+                            <option>Urgent</option>
+                            <option>STAT</option>
+                        </select>
+                    </div>
+                    <div class="form-group full">
+                        <label>Clinical Notes</label>
+                        <textarea placeholder="Describe symptoms, reason for tests..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-section-title">Select Test Types</div>
+                <div class="checkbox-group" style="margin-bottom:20px;">
+                    <label class="checkbox-label"><input type="checkbox"> Full Blood Count</label>
+                    <label class="checkbox-label"><input type="checkbox"> Differential Count</label>
+                    <label class="checkbox-label"><input type="checkbox" checked> Coagulation (PT)</label>
+                    <label class="checkbox-label"><input type="checkbox"> Coagulation (aPTT)</label>
+                    <label class="checkbox-label"><input type="checkbox"> Peripheral Blood Film</label>
+                    <label class="checkbox-label"><input type="checkbox"> Platelet Count</label>
+                </div>
+
+                <div class="form-section-title">Sample Barcodes</div>
+                <div class="barcode-info">
+                    <div class="barcode-info-dot"></div>
+                    Required samples: EDTA Whole Blood (x1), Citrate Plasma (x1)
+                </div>
+                <div class="barcode-row" style="margin-bottom:20px;">
+                    <div class="form-group" style="margin:0;">
+                        <label>Barcode</label>
+                        <input type="text" value="BC-2025-03-0441" readonly style="background:var(--bg-surface);color:var(--text-muted);">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>Sample Type</label>
+                        <select>
+                            <option>Whole Blood (EDTA)</option>
+                            <option>Citrate Plasma</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-outline btn-sm" style="white-space:nowrap;align-self:flex-end;">+ Add Sample</button>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:16px;">
+                    <button class="btn btn-primary" onclick="submitRequest()">Submit Request</button>
+                    <span id="submit-msg" style="font-size:12px;color:#4ade80;opacity:0;transition:opacity 0.3s;display:flex;align-items:center;gap:6px;">
+                        <span style="width:8px;height:8px;background:#4ade80;border-radius:50%;display:inline-block;"></span>
+                        Test request submitted! Patient notified via email.
+                    </span>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div id="tab-history" style="display:none;">
+                <table>
+                    <thead>
+                        <tr><th>Request #</th><th>Patient</th><th>Date</th><th>Urgency</th><th>Tests</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="mono">REQ-2025-089</td>
+                            <td>K. Mashamba</td>
+                            <td>2025-03-01</td>
+                            <td><span class="badge badge-stat">STAT</span></td>
+                            <td>FBC, Diff</td>
+                            <td><span class="badge badge-verified">Verified</span></td>
+                        </tr>
+                        <tr>
+                            <td class="mono">REQ-2025-090</td>
+                            <td>P. Ndlovu</td>
+                            <td>2025-03-02</td>
+                            <td><span class="badge badge-urgent">Urgent</span></td>
+                            <td>Coag, FBC</td>
+                            <td><span class="badge badge-inprogress">In Progress</span></td>
+                        </tr>
+                        <tr>
+                            <td class="mono">REQ-2025-091</td>
+                            <td>M. Jacobs</td>
+                            <td>2025-03-03</td>
+                            <td><span class="badge badge-routine">Routine</span></td>
+                            <td>FBC</td>
+                            <td><span class="badge badge-submitted">Submitted</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
