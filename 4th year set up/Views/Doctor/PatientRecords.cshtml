@@ -1,61 +1,746 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-    <!-- ─── PATIENTS ─── -->
-    <div class="page" id="page-patients">
-        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;">
-            <div>
-                <div class="page-greeting">Patient Records</div>
-                <div class="page-subtitle">Manage patients and their health information</div>
-            </div>
-            <button class="btn btn-primary" onclick="openRegisterModal()">+ Register Patient</button>
-        </div>
+﻿@{
+    ViewData["Title"] = "My Patients";
+    Layout = null;
+}
 
-        <div class="section">
-            <div class="section-header">
-                <span class="section-title">My Patients</span>
-                <input type="search" id="patient-search" placeholder="Search patients..." oninput="filterPatients(this.value)">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Patients — NMB-HLabSys</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --navy: #0b1f3a;
+            --blue: #1a4f8a;
+            --accent: #e8f0fe;
+            --teal: #0d9488;
+            --teal-light: #e8f5f3;
+            --white: #ffffff;
+            --offwhite: #f4f7fb;
+            --muted: #6b7a99;
+            --border: #dde4f0;
+            --red: #dc2626;
+            --sidebar-width: 240px;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--offwhite);
+            color: var(--navy);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topnav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: var(--navy);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            height: 64px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.25);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .nav-logo {
+            width: 36px;
+            height: 36px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .nav-logo svg {
+                width: 20px;
+                height: 20px;
+                fill: white;
+            }
+
+        .nav-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.05rem;
+            color: white;
+            line-height: 1.2;
+        }
+
+            .nav-title span {
+                display: block;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.62rem;
+                font-weight: 300;
+                color: rgba(255,255,255,0.45);
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            padding: 6px 14px 6px 8px;
+        }
+
+        .nav-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .nav-user-info {
+            line-height: 1.3;
+        }
+
+        .nav-user-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: white;
+        }
+
+        .nav-user-role {
+            font-size: 11px;
+            color: rgba(255,255,255,0.45);
+        }
+
+        .btn-signout {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.18);
+            color: rgba(255,255,255,0.7);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            padding: 7px 16px;
+            border-radius: 7px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+            .btn-signout:hover {
+                background: rgba(255,255,255,0.08);
+                color: white;
+            }
+
+            .btn-signout svg {
+                width: 14px;
+                height: 14px;
+            }
+
+        .app-body {
+            display: flex;
+            padding-top: 64px;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--white);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            top: 64px;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 0 20px;
+        }
+
+        .sidebar-section {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            padding: 0 20px;
+            margin: 20px 0 8px;
+        }
+
+            .sidebar-section:first-child {
+                margin-top: 0;
+            }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 20px;
+            font-size: 13.5px;
+            font-weight: 400;
+            color: var(--muted);
+            text-decoration: none;
+            transition: all 0.15s;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+        }
+
+            .nav-item:hover {
+                background: var(--offwhite);
+                color: var(--navy);
+            }
+
+            .nav-item.active {
+                background: var(--teal-light);
+                color: var(--teal);
+                border-left-color: var(--teal);
+                font-weight: 500;
+            }
+
+            .nav-item svg {
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+            }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+        }
+
+        .nav-item.danger {
+            color: var(--red);
+        }
+
+            .nav-item.danger:hover {
+                background: #fef2f2;
+            }
+
+        .main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 32px 36px;
+        }
+
+        .page-header {
+            margin-bottom: 28px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .page-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--teal);
+            margin-bottom: 6px;
+        }
+
+        .page-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.8rem;
+            color: var(--navy);
+            line-height: 1.2;
+        }
+
+        .page-sub {
+            font-size: 13.5px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--teal);
+            color: white;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13.5px;
+            font-weight: 500;
+            padding: 9px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+            .btn-primary:hover {
+                background: #0b7a70;
+            }
+
+        .card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px 24px;
+            margin-bottom: 24px;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .search-input {
+            flex: 1;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13.5px;
+            padding: 9px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--navy);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+            .search-input:focus {
+                border-color: var(--teal);
+                box-shadow: 0 0 0 3px rgba(13,148,136,0.1);
+            }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            text-align: left;
+            padding: 10px 14px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 13px 14px;
+            color: var(--navy);
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: var(--offwhite);
+        }
+
+        .mono {
+            font-family: monospace;
+            font-size: 12.5px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--navy);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+            .btn-outline:hover {
+                border-color: var(--teal);
+                color: var(--teal);
+                background: var(--teal-light);
+            }
+
+        /* Modal */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(11,31,58,0.45);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .modal-backdrop.open {
+                display: flex;
+            }
+
+        .modal {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 32px;
+            width: 480px;
+            max-width: 95vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.3rem;
+            color: var(--navy);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--muted);
+            cursor: pointer;
+            line-height: 1;
+        }
+
+            .modal-close:hover {
+                color: var(--navy);
+            }
+
+        .modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px 20px;
+        }
+
+        .modal-field label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .modal-field p {
+            font-size: 13.5px;
+            color: var(--navy);
+        }
+
+        .modal-field.full {
+            grid-column: 1 / -1;
+        }
+
+        /* Register Modal */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+            .form-group label {
+                display: block;
+                font-size: 12px;
+                font-weight: 500;
+                color: var(--muted);
+                margin-bottom: 6px;
+            }
+
+            .form-group input {
+                width: 100%;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 13.5px;
+                padding: 9px 12px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                color: var(--navy);
+                outline: none;
+            }
+
+                .form-group input:focus {
+                    border-color: var(--teal);
+                    box-shadow: 0 0 0 3px rgba(13,148,136,0.1);
+                }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="topnav">
+        <a class="nav-brand" href="#">
+            <div class="nav-logo">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" />
+                    <circle cx="12" cy="17" r="4" opacity="0.6" />
+                </svg>
             </div>
-            <table>
-                <thead>
-                    <tr><th>Name</th><th>SA ID</th><th>DOB</th><th>Conditions</th><th>Last Request</th><th>Actions</th></tr>
-                </thead>
-                <tbody id="patients-tbody">
-                    <tr data-name="K. Mashamba" data-id="9204115800086">
-                        <td>K. Mashamba</td>
-                        <td class="mono">9204115800086</td>
-                        <td>1992-04-11</td>
-                        <td>Hypertension</td>
-                        <td>2025-03-01</td>
-                        <td><button class="btn btn-outline btn-sm" onclick="openPatientModal('K. Mashamba','9204115800086','1992-04-11','082 444 5566','patient@gmail.com','Hypertension','Penicillin','Amlodipine 5mg')">View</button></td>
-                    </tr>
-                    <tr data-name="P. Ndlovu" data-id="8811204200083">
-                        <td>P. Ndlovu</td>
-                        <td class="mono">8811204200083</td>
-                        <td>1988-11-20</td>
-                        <td>Diabetes, Anaemia</td>
-                        <td>2025-03-02</td>
-                        <td><button class="btn btn-outline btn-sm" onclick="openPatientModal('P. Ndlovu','8811204200083','1988-11-20','071 222 3344','pndlovu@mail.com','Diabetes, Anaemia','None','Metformin 500mg')">View</button></td>
-                    </tr>
-                    <tr data-name="M. Jacobs" data-id="9512034800084">
-                        <td>M. Jacobs</td>
-                        <td class="mono">9512034800084</td>
-                        <td>1995-12-03</td>
-                        <td>None</td>
-                        <td>2025-03-03</td>
-                        <td><button class="btn btn-outline btn-sm" onclick="openPatientModal('M. Jacobs','9512034800084','1995-12-03','083 111 9988','mjacobs@mail.com','None','None','None')">View</button></td>
-                    </tr>
-                    <tr data-name="J. Fortuin" data-id="7703125400087">
-                        <td>J. Fortuin</td>
-                        <td class="mono">7703125400087</td>
-                        <td>1977-03-12</td>
-                        <td>Asthma</td>
-                        <td>2025-02-20</td>
-                        <td><button class="btn btn-outline btn-sm" onclick="openPatientModal('J. Fortuin','7703125400087','1977-03-12','064 555 7711','jfortuin@mail.com','Asthma','Aspirin','Salbutamol inhaler')">View</button></td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="nav-title">NMB-HLabSys <span>Haematology Lab System</span></div>
+        </a>
+        <div class="nav-right">
+            <div class="nav-user">
+                <div class="nav-avatar">D</div>
+                <div class="nav-user-info">
+                    <div class="nav-user-name">@ViewBag.Email</div>
+                    <div class="nav-user-role">Doctor</div>
+                </div>
+            </div>
+            <a asp-controller="Home" asp-action="Logout" class="btn-signout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Sign Out
+            </a>
+        </div>
+    </nav>
+
+    <div class="app-body">
+        <aside class="sidebar">
+            <div class="sidebar-section">Main</div>
+            <a class="nav-item" asp-controller="Doctor" asp-action="DoctorDashboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+                Dashboard
+            </a>
+            <a class="nav-item active" asp-controller="Doctor" asp-action="PatientRecords">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                My Patients
+            </a>
+            <a class="nav-item" asp-controller="Doctor" asp-action="TestRequests">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                Test Requests
+            </a>
+            <a class="nav-item" asp-controller="Doctor" asp-action="ViewResults">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                Results
+            </a>
+            <div class="sidebar-section">System</div>
+            <a class="nav-item" asp-controller="Doctor" asp-action="Alerts">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                Activity Log
+            </a>
+            <div class="sidebar-bottom">
+                <a class="nav-item danger" asp-controller="Home" asp-action="Logout">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                    Sign out
+                </a>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="page-header">
+                <div>
+                    <div class="page-label">Doctor Portal</div>
+                    <h1 class="page-title">My Patients</h1>
+                    <p class="page-sub">Manage patients and their health information</p>
+                </div>
+                <button class="btn-primary" onclick="openRegisterModal()">+ Register Patient</button>
+            </div>
+
+            <div class="card">
+                <div class="search-bar">
+                    <input class="search-input" type="text" id="searchInput" placeholder="Search by name or ID..." onkeyup="filterTable()" />
+                </div>
+                <table id="patientTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>SA ID</th>
+                            <th>DOB</th>
+                            <th>Conditions</th>
+                            <th>Last Request</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>K. Mashamba</td>
+                            <td class="mono">9204115800086</td>
+                            <td>1992-04-11</td>
+                            <td>Hypertension</td>
+                            <td>2025-03-01</td>
+                            <td><button class="btn-outline" onclick="openPatientModal('K. Mashamba','9204115800086','1992-04-11','082 444 5566','patient@gmail.com','Hypertension','Penicillin','Amlodipine 5mg')">View</button></td>
+                        </tr>
+                        <tr>
+                            <td>P. Ndlovu</td>
+                            <td class="mono">8811204200083</td>
+                            <td>1988-11-20</td>
+                            <td>Diabetes, Anaemia</td>
+                            <td>2025-03-02</td>
+                            <td><button class="btn-outline" onclick="openPatientModal('P. Ndlovu','8811204200083','1988-11-20','071 222 3344','pndlovu@mail.com','Diabetes, Anaemia','None','Metformin 500mg')">View</button></td>
+                        </tr>
+                        <tr>
+                            <td>M. Jacobs</td>
+                            <td class="mono">9512034800084</td>
+                            <td>1995-12-03</td>
+                            <td>None</td>
+                            <td>2025-03-03</td>
+                            <td><button class="btn-outline" onclick="openPatientModal('M. Jacobs','9512034800084','1995-12-03','083 111 9988','mjacobs@mail.com','None','None','None')">View</button></td>
+                        </tr>
+                        <tr>
+                            <td>J. Fortuin</td>
+                            <td class="mono">7703125400087</td>
+                            <td>1977-03-12</td>
+                            <td>Asthma</td>
+                            <td>2025-02-20</td>
+                            <td><button class="btn-outline" onclick="openPatientModal('J. Fortuin','7703125400087','1977-03-12','064 555 7711','jfortuin@mail.com','Asthma','Aspirin','Salbutamol inhaler')">View</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- View Patient Modal -->
+    <div class="modal-backdrop" id="patientModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-name"></h2>
+                <button class="modal-close" onclick="closePatientModal()">&#x2715;</button>
+            </div>
+            <div class="modal-grid">
+                <div class="modal-field">
+                    <label>SA ID Number</label>
+                    <p id="modal-id"></p>
+                </div>
+                <div class="modal-field">
+                    <label>Date of Birth</label>
+                    <p id="modal-dob"></p>
+                </div>
+                <div class="modal-field">
+                    <label>Phone</label>
+                    <p id="modal-phone"></p>
+                </div>
+                <div class="modal-field">
+                    <label>Email</label>
+                    <p id="modal-email"></p>
+                </div>
+                <div class="modal-field full">
+                    <label>Medical Conditions</label>
+                    <p id="modal-conditions"></p>
+                </div>
+                <div class="modal-field">
+                    <label>Allergies</label>
+                    <p id="modal-allergies"></p>
+                </div>
+                <div class="modal-field">
+                    <label>Current Medication</label>
+                    <p id="modal-medication"></p>
+                </div>
+            </div>
         </div>
     </div>
-}
+
+    <!-- Register Patient Modal -->
+    <div class="modal-backdrop" id="registerModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Register New Patient</h2>
+                <button class="modal-close" onclick="closeRegisterModal()">&#x2715;</button>
+            </div>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" placeholder="e.g. Thabo Nkosi" />
+            </div>
+            <div class="form-group">
+                <label>SA ID Number</label>
+                <input type="text" placeholder="13-digit ID number" maxlength="13" />
+            </div>
+            <div class="form-group">
+                <label>Date of Birth</label>
+                <input type="date" />
+            </div>
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" placeholder="e.g. 082 123 4567" />
+            </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" placeholder="patient@email.com" />
+            </div>
+            <div class="modal-actions">
+                <button class="btn-outline" onclick="closeRegisterModal()">Cancel</button>
+                <button class="btn-primary">Register Patient</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function filterTable() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#patientTable tbody tr');
+            rows.forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(input) ? '' : 'none';
+            });
+        }
+
+        function openPatientModal(name, id, dob, phone, email, conditions, allergies, medication) {
+            document.getElementById('modal-name').textContent = name;
+            document.getElementById('modal-id').textContent = id;
+            document.getElementById('modal-dob').textContent = dob;
+            document.getElementById('modal-phone').textContent = phone;
+            document.getElementById('modal-email').textContent = email;
+            document.getElementById('modal-conditions').textContent = conditions;
+            document.getElementById('modal-allergies').textContent = allergies;
+            document.getElementById('modal-medication').textContent = medication;
+            document.getElementById('patientModal').classList.add('open');
+        }
+
+        function closePatientModal() {
+            document.getElementById('patientModal').classList.remove('open');
+        }
+
+        function openRegisterModal() {
+            document.getElementById('registerModal').classList.add('open');
+        }
+
+        function closeRegisterModal() {
+            document.getElementById('registerModal').classList.remove('open');
+        }
+
+        // Close modals on backdrop click
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+            backdrop.addEventListener('click', function(e) {
+                if (e.target === this) this.classList.remove('open');
+            });
+        });
+    </script>
+
+</body>
+</html>

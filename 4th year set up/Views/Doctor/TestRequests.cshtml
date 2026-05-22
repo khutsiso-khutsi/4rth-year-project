@@ -2,22 +2,457 @@
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
 @{
-    <!-- ─── TEST REQUESTS ─── -->
-    <div class="page" id="page-testrequests">
-        <div class="page-header">
-            <div class="page-greeting">Test Requests</div>
-            <div class="page-subtitle">Submit and track laboratory test requests</div>
+//     <!-- ─── TEST REQUESTS ─── -->
+//     <div class="page" id="page-testrequests">
+//         <div class="page-header">
+//             <div class="page-greeting">Test Requests</div>
+//             <div class="page-subtitle">Submit and track laboratory test requests</div>
+//         </div>
+//         <div class="section">
+//             <div class="tabs">
+//                 <button class="tab active" onclick="switchTab('new')">New Request</button>
+//                 <button class="tab" onclick="switchTab('history')">Request History</button>
+//             </div>
+
+//             <!-- New Request Tab -->
+//             <div id="tab-new" style="padding:20px;">
+//                 <div class="form-section-title">Create Test Request</div>
+//                 <div class="form-grid" style="margin-bottom:18px;">
+//                     <div class="form-group">
+//                         <label>Patient</label>
+//                         <select id="req-patient">
+//                             <option>K. Mashamba</option>
+//                             <option>P. Ndlovu</option>
+//                             <option>M. Jacobs</option>
+//                             <option>J. Fortuin</option>
+//                         </select>
+//                     </div>
+//                     <div class="form-group">
+//                         <label>Urgency</label>
+//                         <select id="req-urgency">
+//                             <option>Routine</option>
+//                             <option>Urgent</option>
+//                             <option>STAT</option>
+//                         </select>
+//                     </div>
+//                     <div class="form-group full">
+//                         <label>Clinical Notes</label>
+//                         <textarea placeholder="Describe symptoms, reason for tests..."></textarea>
+//                     </div>
+//                 </div>
+
+//                 <div class="form-section-title">Select Test Types</div>
+//                 <div class="checkbox-group" style="margin-bottom:20px;">
+//                     <label class="checkbox-label"><input type="checkbox"> Full Blood Count</label>
+//                     <label class="checkbox-label"><input type="checkbox"> Differential Count</label>
+//                     <label class="checkbox-label"><input type="checkbox" checked> Coagulation (PT)</label>
+//                     <label class="checkbox-label"><input type="checkbox"> Coagulation (aPTT)</label>
+//                     <label class="checkbox-label"><input type="checkbox"> Peripheral Blood Film</label>
+//                     <label class="checkbox-label"><input type="checkbox"> Platelet Count</label>
+//                 </div>
+
+//                 <div class="form-section-title">Sample Barcodes</div>
+//                 <div class="barcode-info">
+//                     <div class="barcode-info-dot"></div>
+//                     Required samples: EDTA Whole Blood (x1), Citrate Plasma (x1)
+//                 </div>
+//                 <div class="barcode-row" style="margin-bottom:20px;">
+//                     <div class="form-group" style="margin:0;">
+//                         <label>Barcode</label>
+//                         <input type="text" value="BC-2025-03-0441" readonly style="background:var(--bg-surface);color:var(--text-muted);">
+//                     </div>
+//                     <div class="form-group" style="margin:0;">
+//                         <label>Sample Type</label>
+//                         <select>
+//                             <option>Whole Blood (EDTA)</option>
+//                             <option>Citrate Plasma</option>
+//                         </select>
+//                     </div>
+//                     <button class="btn btn-outline btn-sm" style="white-space:nowrap;align-self:flex-end;">+ Add Sample</button>
+//                 </div>
+
+//                 <div style="display:flex;align-items:center;gap:16px;">
+//                     <button class="btn btn-primary" onclick="submitRequest()">Submit Request</button>
+//                     <span id="submit-msg" style="font-size:12px;color:#4ade80;opacity:0;transition:opacity 0.3s;display:flex;align-items:center;gap:6px;">
+//                         <span style="width:8px;height:8px;background:#4ade80;border-radius:50%;display:inline-block;"></span>
+//                         Test request submitted! Patient notified via email.
+//                     </span>
+//                 </div>
+//             </div>
+
+//             <!-- History Tab -->
+//             <div id="tab-history" style="display:none;">
+//                 <table>
+//                     <thead>
+//                         <tr><th>Request #</th><th>Patient</th><th>Date</th><th>Urgency</th><th>Tests</th><th>Status</th></tr>
+//                     </thead>
+//                     <tbody>
+//                         <tr>
+//                             <td class="mono">REQ-2025-089</td>
+//                             <td>K. Mashamba</td>
+//                             <td>2025-03-01</td>
+//                             <td><span class="badge badge-stat">STAT</span></td>
+//                             <td>FBC, Diff</td>
+//                             <td><span class="badge badge-verified">Verified</span></td>
+//                         </tr>
+//                         <tr>
+//                             <td class="mono">REQ-2025-090</td>
+//                             <td>P. Ndlovu</td>
+//                             <td>2025-03-02</td>
+//                             <td><span class="badge badge-urgent">Urgent</span></td>
+//                             <td>Coag, FBC</td>
+//                             <td><span class="badge badge-inprogress">In Progress</span></td>
+//                         </tr>
+//                         <tr>
+//                             <td class="mono">REQ-2025-091</td>
+//                             <td>M. Jacobs</td>
+//                             <td>2025-03-03</td>
+//                             <td><span class="badge badge-routine">Routine</span></td>
+//                             <td>FBC</td>
+//                             <td><span class="badge badge-submitted">Submitted</span></td>
+//                         </tr>
+//                     </tbody>
+//                 </table>
+//             </div>
+//         </div>
+//     </div>
+{
+    ViewData["Title"] = "Test Requests";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Requests — NMB-HLabSys</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --navy: #0b1f3a;
+            --blue: #1a4f8a;
+            --teal: #0d9488;
+            --teal-light: #e8f5f3;
+            --white: #ffffff;
+            --offwhite: #f4f7fb;
+            --muted: #6b7a99;
+            --border: #dde4f0;
+            --red: #dc2626;
+            --sidebar-width: 240px;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--offwhite);
+            color: var(--navy);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── TOPNAV ── */
+        .topnav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: var(--navy);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 28px; height: 64px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.25);
+        }
+        .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .nav-logo {
+            width: 36px; height: 36px; background: var(--teal);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+        }
+        .nav-logo svg { width: 20px; height: 20px; fill: white; }
+        .nav-title { font-family: 'DM Serif Display', serif; font-size: 1.05rem; color: white; line-height: 1.2; }
+        .nav-title span {
+            display: block; font-family: 'DM Sans', sans-serif;
+            font-size: 0.62rem; font-weight: 300; color: rgba(255,255,255,0.45);
+            letter-spacing: 0.08em; text-transform: uppercase;
+        }
+        .nav-right { display: flex; align-items: center; gap: 14px; }
+        .nav-user {
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px; padding: 6px 14px 6px 8px;
+        }
+        .nav-avatar {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: var(--teal); display: flex; align-items: center;
+            justify-content: center; font-size: 12px; font-weight: 600; color: white;
+        }
+        .nav-user-info { line-height: 1.3; }
+        .nav-user-name { font-size: 13px; font-weight: 500; color: white; }
+        .nav-user-role { font-size: 11px; color: rgba(255,255,255,0.45); }
+        .btn-signout {
+            display: flex; align-items: center; gap: 7px;
+            background: transparent; border: 1px solid rgba(255,255,255,0.18);
+            color: rgba(255,255,255,0.7); font-family: 'DM Sans', sans-serif;
+            font-size: 13px; padding: 7px 16px; border-radius: 7px;
+            cursor: pointer; text-decoration: none; transition: all 0.2s;
+        }
+        .btn-signout:hover { background: rgba(255,255,255,0.08); color: white; }
+        .btn-signout svg { width: 14px; height: 14px; }
+
+        /* ── LAYOUT ── */
+        .app-body { display: flex; padding-top: 64px; min-height: 100vh; }
+
+        .sidebar {
+            width: var(--sidebar-width); background: var(--white);
+            border-right: 1px solid var(--border);
+            position: fixed; top: 64px; bottom: 0; left: 0;
+            overflow-y: auto; display: flex; flex-direction: column;
+            padding: 24px 0 20px;
+        }
+        .sidebar-section {
+            font-size: 10px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.1em; color: var(--muted);
+            padding: 0 20px; margin: 20px 0 8px;
+        }
+        .sidebar-section:first-child { margin-top: 0; }
+        .nav-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 20px; font-size: 13.5px; font-weight: 400;
+            color: var(--muted); text-decoration: none; transition: all 0.15s;
+            border-left: 3px solid transparent;
+        }
+        .nav-item:hover { background: var(--offwhite); color: var(--navy); }
+        .nav-item.active {
+            background: var(--teal-light); color: var(--teal);
+            border-left-color: var(--teal); font-weight: 500;
+        }
+        .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .sidebar-bottom { margin-top: auto; border-top: 1px solid var(--border); padding-top: 16px; }
+        .nav-item.danger { color: var(--red); }
+        .nav-item.danger:hover { background: #fef2f2; }
+
+        .main { margin-left: var(--sidebar-width); flex: 1; padding: 32px 36px; }
+
+        /* ── PAGE HEADER ── */
+        .page-header { margin-bottom: 28px; }
+        .page-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--teal); margin-bottom: 6px; }
+        .page-title { font-family: 'DM Serif Display', serif; font-size: 1.8rem; color: var(--navy); line-height: 1.2; }
+        .page-sub { font-size: 13.5px; color: var(--muted); margin-top: 4px; }
+
+        /* ── CARD ── */
+        .card {
+            background: var(--white); border: 1px solid var(--border);
+            border-radius: 14px; overflow: hidden; margin-bottom: 24px;
+        }
+
+        /* ── TABS ── */
+        .tabs {
+            display: flex; border-bottom: 1px solid var(--border);
+            padding: 0 24px; background: var(--white);
+        }
+        .tab {
+            background: none; border: none; border-bottom: 2px solid transparent;
+            font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 500;
+            color: var(--muted); padding: 14px 18px; cursor: pointer;
+            margin-bottom: -1px; transition: all 0.15s;
+        }
+        .tab:hover { color: var(--navy); }
+        .tab.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+        /* ── FORM ── */
+        .tab-body { padding: 24px; }
+        .form-section-title {
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.08em; color: var(--muted);
+            margin-bottom: 14px; margin-top: 22px;
+        }
+        .form-section-title:first-child { margin-top: 0; }
+
+        .form-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group label { font-size: 12px; font-weight: 500; color: var(--muted); }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            font-family: 'DM Sans', sans-serif; font-size: 13.5px;
+            padding: 9px 12px; border: 1px solid var(--border);
+            border-radius: 8px; color: var(--navy); outline: none;
+            background: var(--white); transition: border-color 0.2s;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--teal); box-shadow: 0 0 0 3px rgba(13,148,136,0.1);
+        }
+        .form-group input[readonly] {
+            background: var(--offwhite); color: var(--muted); cursor: default;
+        }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+
+        /* ── CHECKBOXES ── */
+        .checkbox-group {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+            margin-bottom: 20px;
+        }
+        .checkbox-label {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13.5px; color: var(--navy);
+            background: var(--offwhite); border: 1px solid var(--border);
+            border-radius: 8px; padding: 10px 14px; cursor: pointer;
+            transition: all 0.15s;
+        }
+        .checkbox-label:hover { border-color: var(--teal); background: var(--teal-light); }
+        .checkbox-label input[type="checkbox"] { accent-color: var(--teal); width: 15px; height: 15px; }
+
+        /* ── BARCODE ROW ── */
+        .barcode-info {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12.5px; color: var(--muted);
+            background: var(--offwhite); border: 1px solid var(--border);
+            border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;
+        }
+        .barcode-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--teal); flex-shrink: 0;
+        }
+        .barcode-row {
+            display: grid; grid-template-columns: 1fr 1fr auto;
+            gap: 12px; align-items: end; margin-bottom: 20px;
+        }
+
+        /* ── BUTTONS ── */
+        .btn-primary {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--teal); color: white;
+            font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 500;
+            padding: 9px 20px; border: none; border-radius: 8px;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .btn-primary:hover { background: #0b7a70; }
+        .btn-outline {
+            background: transparent; border: 1px solid var(--border);
+            color: var(--navy); font-family: 'DM Sans', sans-serif;
+            font-size: 12.5px; padding: 9px 14px; border-radius: 8px;
+            cursor: pointer; white-space: nowrap; transition: all 0.15s;
+        }
+        .btn-outline:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-light); }
+
+        /* ── SUCCESS MSG ── */
+        .submit-msg {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 12.5px; color: #059669; opacity: 0; transition: opacity 0.3s;
+        }
+        .submit-msg .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #059669; flex-shrink: 0;
+        }
+
+        /* ── TABLE ── */
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th {
+            text-align: left; padding: 10px 14px;
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.06em; color: var(--muted); border-bottom: 1px solid var(--border);
+        }
+        td { padding: 13px 14px; color: var(--navy); border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--offwhite); }
+        .mono { font-family: monospace; font-size: 12.5px; }
+
+        /* ── BADGES ── */
+        .badge {
+            display: inline-block; padding: 3px 10px;
+            border-radius: 100px; font-size: 11px; font-weight: 500;
+        }
+        .badge-stat     { background: #fef2f2; color: var(--red); }
+        .badge-urgent   { background: #fff7ed; color: #c2410c; }
+        .badge-routine  { background: var(--offwhite); color: var(--muted); }
+        .badge-verified   { background: #dcfce7; color: #166534; }
+        .badge-inprogress { background: #e8f0fe; color: var(--blue); }
+        .badge-submitted  { background: #f0fdf4; color: #15803d; }
+    </style>
+</head>
+<body>
+
+<nav class="topnav">
+    <a class="nav-brand" href="#">
+        <div class="nav-logo">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z"/>
+                <circle cx="12" cy="17" r="4" opacity="0.6"/>
+            </svg>
         </div>
-        <div class="section">
+        <div class="nav-title">NMB-HLabSys <span>Haematology Lab System</span></div>
+    </a>
+    <div class="nav-right">
+        <div class="nav-user">
+            <div class="nav-avatar">D</div>
+            <div class="nav-user-info">
+                <div class="nav-user-name">@ViewBag.Email</div>
+                <div class="nav-user-role">Doctor</div>
+            </div>
+        </div>
+        <a asp-controller="Home" asp-action="Logout" class="btn-signout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Sign Out
+        </a>
+    </div>
+</nav>
+
+<div class="app-body">
+    <aside class="sidebar">
+        <div class="sidebar-section">Main</div>
+        <a class="nav-item" asp-controller="Doctor" asp-action="DoctorDashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Dashboard
+        </a>
+        <a class="nav-item" asp-controller="Doctor" asp-action="PatientRecords">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            My Patients
+        </a>
+        <a class="nav-item active" asp-controller="Doctor" asp-action="TestRequests">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Test Requests
+        </a>
+        <a class="nav-item" asp-controller="Doctor" asp-action="ViewResults">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            Results
+        </a>
+        <div class="sidebar-section">System</div>
+        <a class="nav-item" asp-controller="Doctor" asp-action="Alerts">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Activity Log
+        </a>
+        <div class="sidebar-bottom">
+            <a class="nav-item danger" asp-controller="Home" asp-action="Logout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Sign out
+            </a>
+        </div>
+    </aside>
+
+    <main class="main">
+        <div class="page-header">
+            <div class="page-label">Doctor Portal</div>
+            <h1 class="page-title">Test Requests</h1>
+            <p class="page-sub">Submit and track laboratory test requests</p>
+        </div>
+
+        <div class="card">
             <div class="tabs">
                 <button class="tab active" onclick="switchTab('new')">New Request</button>
                 <button class="tab" onclick="switchTab('history')">Request History</button>
             </div>
 
             <!-- New Request Tab -->
-            <div id="tab-new" style="padding:20px;">
-                <div class="form-section-title">Create Test Request</div>
-                <div class="form-grid" style="margin-bottom:18px;">
+            <div id="tab-new" class="tab-body">
+                <div class="form-section-title">Patient & Urgency</div>
+                <div class="form-grid" style="margin-bottom: 4px;">
                     <div class="form-group">
                         <label>Patient</label>
                         <select id="req-patient">
@@ -42,7 +477,7 @@
                 </div>
 
                 <div class="form-section-title">Select Test Types</div>
-                <div class="checkbox-group" style="margin-bottom:20px;">
+                <div class="checkbox-group">
                     <label class="checkbox-label"><input type="checkbox"> Full Blood Count</label>
                     <label class="checkbox-label"><input type="checkbox"> Differential Count</label>
                     <label class="checkbox-label"><input type="checkbox" checked> Coagulation (PT)</label>
@@ -53,38 +488,45 @@
 
                 <div class="form-section-title">Sample Barcodes</div>
                 <div class="barcode-info">
-                    <div class="barcode-info-dot"></div>
+                    <div class="barcode-dot"></div>
                     Required samples: EDTA Whole Blood (x1), Citrate Plasma (x1)
                 </div>
-                <div class="barcode-row" style="margin-bottom:20px;">
-                    <div class="form-group" style="margin:0;">
+                <div class="barcode-row">
+                    <div class="form-group">
                         <label>Barcode</label>
-                        <input type="text" value="BC-2025-03-0441" readonly style="background:var(--bg-surface);color:var(--text-muted);">
+                        <input type="text" value="BC-2025-03-0441" readonly />
                     </div>
-                    <div class="form-group" style="margin:0;">
+                    <div class="form-group">
                         <label>Sample Type</label>
                         <select>
                             <option>Whole Blood (EDTA)</option>
                             <option>Citrate Plasma</option>
                         </select>
                     </div>
-                    <button class="btn btn-outline btn-sm" style="white-space:nowrap;align-self:flex-end;">+ Add Sample</button>
+                    <button class="btn-outline">+ Add Sample</button>
                 </div>
 
-                <div style="display:flex;align-items:center;gap:16px;">
-                    <button class="btn btn-primary" onclick="submitRequest()">Submit Request</button>
-                    <span id="submit-msg" style="font-size:12px;color:#4ade80;opacity:0;transition:opacity 0.3s;display:flex;align-items:center;gap:6px;">
-                        <span style="width:8px;height:8px;background:#4ade80;border-radius:50%;display:inline-block;"></span>
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <button class="btn-primary" onclick="submitRequest()">Submit Request</button>
+                    <span class="submit-msg" id="submit-msg">
+                        <span class="dot"></span>
                         Test request submitted! Patient notified via email.
                     </span>
                 </div>
             </div>
 
             <!-- History Tab -->
-            <div id="tab-history" style="display:none;">
+            <div id="tab-history" class="tab-body" style="display:none; padding: 0;">
                 <table>
                     <thead>
-                        <tr><th>Request #</th><th>Patient</th><th>Date</th><th>Urgency</th><th>Tests</th><th>Status</th></tr>
+                        <tr>
+                            <th>Request #</th>
+                            <th>Patient</th>
+                            <th>Date</th>
+                            <th>Urgency</th>
+                            <th>Tests</th>
+                            <th>Status</th>
+                        </tr>
                     </thead>
                     <tbody>
                         <tr>
@@ -115,5 +557,25 @@
                 </table>
             </div>
         </div>
-    </div>
+    </main>
+</div>
+
+<script>
+    function switchTab(tab) {
+        document.getElementById('tab-new').style.display = tab === 'new' ? 'block' : 'none';
+        document.getElementById('tab-history').style.display = tab === 'history' ? 'block' : 'none';
+        document.querySelectorAll('.tab').forEach((t, i) => {
+            t.classList.toggle('active', (tab === 'new' && i === 0) || (tab === 'history' && i === 1));
+        });
+    }
+
+    function submitRequest() {
+        const msg = document.getElementById('submit-msg');
+        msg.style.opacity = '1';
+        setTimeout(() => msg.style.opacity = '0', 4000);
+    }
+</script>
+
+</body>
+</html>
 }
