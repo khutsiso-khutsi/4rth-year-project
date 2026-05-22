@@ -17,4 +17,7 @@
 		<ProjectReference Include="..\LabTechnician\LabTechnician..csproj" />
 		<ProjectReference Include="..\Patient\Patient.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Controllers\LabManager\" />
+	</ItemGroup>
 </Project>

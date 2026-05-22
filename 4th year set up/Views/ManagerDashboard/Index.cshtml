@@ -1,4 +1,4 @@
-﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+﻿
 @{
     ViewData["Title"] = "Manager Dashboard";
     Layout = null;
@@ -678,33 +678,40 @@
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="nav-label">Main</div>
-            <a href="#" class="nav-item active">
+            <a asp-controller="ManagerDashboard" asp-action="Dashboard" class="nav-item active">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
                 Dashboard
             </a>
-            <a href="#" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                Test Requests
+            <a asp-controller="ManagerDashboard" asp-action="TestCatalogue" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M9 3v11a3 3 0 006 0V3" /><line x1="6" y1="3" x2="18" y2="3" /></svg>
+                Test Catalogue
             </a>
-            <a href="#" class="nav-item">
+            <a asp-controller="ManagerDashboard" asp-action="Consumables" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                Consumables
+            </a>
+            <a asp-controller="ManagerDashboard" asp-action="Staff" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                 Staff
             </a>
-            <a href="#" class="nav-item">
+            <a asp-controller="ManagerDashboard" asp-action="Orders" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                Orders
+            </a>
+            <a asp-controller="Reports" asp-action="Index" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
                 Reports
             </a>
             <div class="nav-label">System</div>
-            <a href="#" class="nav-item">
+            <a asp-controller="Settings" asp-action="Index" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07 10 10 0 0 0 19.07 4.93z" /></svg>
                 Settings
             </a>
-            <a href="#" class="nav-item">
+            <a asp-controller="AuditLog" asp-action="Index" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                 Audit Log
             </a>
         </aside>
-
         <!-- MAIN -->
         <main class="main">
 

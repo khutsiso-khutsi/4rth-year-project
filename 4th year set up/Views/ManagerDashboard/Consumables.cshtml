@@ -1,0 +1,620 @@
+﻿@model IEnumerable<Consumable>
+
+@{
+    ViewData["Title"] = "Consumables";
+}
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    :root {
+        --navy: #0b1f3a;
+        --navy2: #122848;
+        --teal: #0d9488;
+        --amber: #d97706;
+        --red: #dc2626;
+        --green: #16a34a;
+        --white: #ffffff;
+        --muted: #94a3b8;
+    }
+
+    body {
+        font-family: 'DM Sans',sans-serif;
+        background: #0f172a;
+        color: white;
+        min-height: 100vh;
+    }
+
+    /* TOPBAR */
+
+    .topbar {
+        background: var(--navy);
+        height: 70px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 28px;
+        border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: white;
+    }
+
+    .brand-logo {
+        width: 38px;
+        height: 38px;
+        background: #f59e0b;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 20px;
+    }
+
+    .brand-name {
+        font-size: 22px;
+        font-weight: 700;
+    }
+
+    .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .user-chip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(255,255,255,.05);
+        padding: 8px 14px;
+        border-radius: 40px;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #f59e0b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+
+    .logout-btn {
+        background: #13294b;
+        color: white;
+        text-decoration: none;
+        padding: 10px 16px;
+        border-radius: 10px;
+    }
+
+    /* LAYOUT */
+
+    .page {
+        display: flex;
+    }
+
+    /* SIDEBAR */
+
+    .sidebar {
+        width: 230px;
+        background: #13294b;
+        min-height: calc(100vh - 70px);
+        padding: 24px 0;
+    }
+
+    .nav-label {
+        color: #94a3b8;
+        font-size: 12px;
+        padding: 0 22px;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 22px;
+        color: #cbd5e1;
+        text-decoration: none;
+        transition: .2s;
+    }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,.05);
+        }
+
+        .nav-item.active {
+            background: #2563eb;
+            color: white;
+        }
+
+    /* MAIN */
+
+    .main {
+        flex: 1;
+        padding: 30px;
+    }
+
+    .page-header h1 {
+        font-size: 42px;
+        margin-bottom: 8px;
+    }
+
+    .page-header p {
+        color: #94a3b8;
+        margin-bottom: 30px;
+    }
+
+    /* CARD */
+
+    .card {
+        background: #13294b;
+        border-radius: 20px;
+        padding: 26px;
+    }
+
+    /* SEARCH BAR */
+
+    .search-bar {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .app-finput {
+        flex: 1;
+        max-width: 300px;
+        background: #1e3557;
+        border: none;
+        border-radius: 12px;
+        padding: 14px;
+        color: white;
+        outline: none;
+    }
+
+    /* BUTTONS */
+
+    .btn-sm {
+        border: none;
+        border-radius: 10px;
+        padding: 12px 16px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .btn-teal {
+        background: #0d9488;
+        color: white;
+    }
+
+    .btn-amber {
+        background: #d97706;
+        color: white;
+    }
+
+    .btn-blue {
+        background: #2563eb;
+        color: white;
+    }
+
+    /* TABLE */
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th {
+        text-align: left;
+        padding: 16px 0;
+        color: #94a3b8;
+        font-size: 13px;
+        text-transform: uppercase;
+    }
+
+    td {
+        padding: 20px 0;
+        border-top: 1px solid rgba(255,255,255,.05);
+    }
+
+    /* STOCK BAR */
+
+    .stock-bar {
+        width: 180px;
+        height: 10px;
+        background: rgba(255,255,255,.08);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .stock-fill {
+        height: 100%;
+        border-radius: 10px;
+    }
+
+    .fill-red {
+        background: #ef4444;
+    }
+
+    .fill-amber {
+        background: #f59e0b;
+    }
+
+    .fill-green {
+        background: #22c55e;
+    }
+
+    /* RESPONSIVE */
+
+    @@media(max-width:900px) {
+
+        .sidebar {
+            display: none;
+        }
+
+        .main {
+            padding: 18px;
+        }
+
+        .search-bar {
+            flex-direction: column;
+        }
+
+        .app-finput {
+            max-width: 100%;
+        }
+    }
+
+    .stock-bar {
+        width: 120px;
+        height: 8px;
+        background: rgba(255,255,255,.08);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    th {
+        text-align: left;
+        padding: 16px 16px 16px 0;
+        color: #94a3b8;
+        font-size: 13px;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    td {
+        padding: 18px 16px 18px 0;
+        border-top: 1px solid rgba(255,255,255,.05);
+        white-space: nowrap;
+    }
+
+</style>
+
+<body>
+
+    <!-- TOPBAR -->
+
+    <div class="topbar">
+
+        <a class="brand" asp-controller="Home" asp-action="Index">
+
+            <div class="brand-logo">
+                +
+            </div>
+
+            <div class="brand-name">
+                NMB-HLabSys
+            </div>
+
+        </a>
+
+        <div class="topbar-right">
+
+            <div class="user-chip">
+
+                <div class="user-avatar">
+
+                    @(
+                        !string.IsNullOrEmpty(ViewBag.Email as string)
+                        ? ViewBag.Email.ToString().Substring(0, 1).ToUpper()
+                        : "M"
+                    )
+
+                </div>
+
+                <span>
+
+                    @(ViewBag.Email ?? "Manager")
+
+                </span>
+
+            </div>
+
+            <a asp-controller="Home"
+               asp-action="Logout"
+               class="logout-btn">
+
+                Logout
+
+            </a>
+
+        </div>
+
+    </div>
+
+    <div class="page">
+
+        <!-- SIDEBAR -->
+
+        <aside class="sidebar">
+
+            <div class="nav-label">
+                Main
+            </div>
+
+            <a asp-controller="ManagerDashboard"
+               asp-action="Dashboard"
+               class="nav-item">
+
+                Dashboard
+
+            </a>
+
+            <a asp-controller="ManagerDashboard"
+               asp-action="Test"
+               class="nav-item">
+
+                Test Catalogue
+
+            </a>
+
+            <a asp-controller="ManagerDashboard"
+               asp-action="Consumables"
+               class="nav-item active">
+
+                Consumables
+
+            </a>
+
+            <a asp-controller="ManagerDashboard"
+               asp-action="Staff"
+               class="nav-item">
+
+                Staff
+
+            </a>
+
+            <a asp-controller="Reports"
+               asp-action="Index"
+               class="nav-item">
+
+                Reports
+
+            </a>
+
+            <div class="nav-label" style="margin-top:20px;">
+                System
+            </div>
+
+            <a asp-controller="Settings"
+               asp-action="Index"
+               class="nav-item">
+
+                Settings
+
+            </a>
+
+            <a asp-controller="AuditLog"
+               asp-action="Index"
+               class="nav-item">
+
+                Audit Log
+
+            </a>
+
+        </aside>
+
+		
+        <main class="main">
+
+            <div class="page-header">
+
+                <h1>
+                    Consumables
+                </h1>
+
+                <p>
+                    Track stock levels and manage suppliers.
+                </p>
+
+            </div>
+
+            <div class="card">
+
+                <!-- SEARCH BAR -->
+
+                <div class="search-bar">
+
+                    <input class="app-finput"
+                           placeholder="🔍 Search consumables..." />
+
+                    <button class="btn-sm btn-teal">
+                        + Add Consumable
+                    </button>
+
+                    <button class="btn-sm btn-amber">
+                        + Add Supplier
+                    </button>
+
+                </div>
+
+                <!-- TABLE -->
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Consumable</th>
+                            <th>Supplier</th>
+                            <th>On Hand</th>
+                            <th>Reorder Level</th>
+                            <th>Stock Status</th>
+                            <th>Actions</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+
+                                    <!-- Consumable -->
+
+                                    <td style="font-weight:600;">
+                                        @item.ConsumableName
+                                    </td>
+
+                                    <!-- Supplier -->
+
+                                    <td>
+                                        @item.Supplier
+                                    </td>
+
+                                    <!-- On Hand -->
+
+                                    <td>
+
+                                        @if (item.OnHand < 10)
+                                        {
+                                            <span style="color:#ef4444;font-weight:700;">
+                                                @item.OnHand
+                                            </span>
+                                        }
+                                        else if (item.OnHand < 30)
+                                        {
+                                            <span style="color:#f59e0b;font-weight:700;">
+                                                @item.OnHand
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span style="color:#22c55e;font-weight:700;">
+                                                @item.OnHand
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                    <!-- Reorder Level -->
+
+                                    <td>
+                                        @item.ReorderLevel
+                                    </td>
+
+                                    <!-- Stock Status -->
+
+                                    <td>
+
+                                        <div class="stock-bar">
+
+                                            @if (item.StockStatus == "Low")
+                                            {
+                                                <div class="stock-fill fill-red"
+                                                     style="width:16%;">
+                                                </div>
+                                            }
+
+                                            else if (item.StockStatus == "Medium")
+                                            {
+                                                <div class="stock-fill fill-amber"
+                                                     style="width:45%;">
+                                                </div>
+                                            }
+
+                                            else
+                                            {
+                                                <div class="stock-fill fill-green"
+                                                     style="width:90%;">
+                                                </div>
+                                            }
+
+                                        </div>
+
+                                    </td>
+
+                                    <!-- ACTIONS -->
+
+                                    <td>
+
+                                        <div style="display:flex;gap:8px;">
+
+                                            <button class="btn-sm btn-blue">
+                                                Adjust Stock
+                                            </button>
+
+                                            @if (item.StockStatus != "Good")
+                                            {
+                                                <button class="btn-sm btn-amber">
+                                                    Order
+                                                </button>
+                                            }
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+
+                                <td colspan="6"
+                                    style="text-align:center;padding:30px;color:#94a3b8;">
+
+                                    No consumables found.
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </main>
+
+    </div>
+
+</body>
