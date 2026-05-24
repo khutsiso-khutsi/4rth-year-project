@@ -160,6 +160,11 @@ namespace _4th_year_set_up.Controllers
             return View("~/Views/ManagerDashboard/Order.cshtml", orders);
         }
 
+        public IActionResult Staff()
+        {
+
+            return View("~/Views/ManagerDashboard/Order.cshtml");
+        }
 
         public IActionResult Settings()
         {
