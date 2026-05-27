@@ -294,7 +294,7 @@
             }
 
         .welcome-banner p {
-            color: rgba(255,255,255,0.5);
+            color: white;
             font-size: 0.875rem;
         }
 
@@ -307,7 +307,7 @@
         }
 
         .stat-card {
-            background: white;
+            background: #0b1f3a;
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 20px;
@@ -360,7 +360,7 @@
         .stat-value {
             font-family: 'DM Serif Display', serif;
             font-size: 2rem;
-            color: var(--navy);
+            color: white;
             line-height: 1;
             margin-bottom: 4px;
         }
@@ -387,7 +387,7 @@
 
         /* ── CARDS ── */
         .card {
-            background: white;
+            background: #0b1f3a;
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 24px;
@@ -404,7 +404,7 @@
         .card-title {
             font-family: 'DM Serif Display', serif;
             font-size: 1.05rem;
-            color: var(--navy);
+            color: white;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -447,7 +447,7 @@
             .table td {
                 padding: 12px 0;
                 font-size: 0.83rem;
-                color: var(--navy);
+                color: white;
                 border-bottom: 1px solid var(--offwhite);
                 vertical-align: middle;
             }
@@ -645,6 +645,61 @@
                 grid-template-columns: 1fr 1fr;
             }
         }
+            /* =========================
+               SIDEBAR (FIXED + CLEAN)
+            ========================= */
+
+            .sidebar {
+                width: 210px;
+                background: #0b1f3a; /* navy */
+                border-right: 1px solid rgba(255,255,255,0.08);
+                padding: 14px 10px;
+                flex-shrink: 0;
+            }
+
+            /* SECTION LABEL */
+            .nav-label {
+                font-size: 0.6rem;
+                letter-spacing: 0.12em;
+                margin: 14px 10px 6px;
+                color: rgba(255,255,255,0.5);
+                text-transform: uppercase;
+            }
+
+            /* NAV ITEM */
+            .nav-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 10px;
+                border-radius: 8px;
+                font-size: 0.75rem; /* smaller text */
+                font-weight: 500;
+                color: rgba(255,255,255,0.65);
+                text-decoration: none;
+                transition: 0.2s ease-in-out;
+                margin-bottom: 2px;
+            }
+
+                /* ICON SIZE (IMPORTANT FIX) */
+                .nav-item svg {
+                    width: 14px; /* smaller icons */
+                    height: 14px;
+                    stroke: currentColor;
+                }
+
+                /* HOVER */
+                .nav-item:hover {
+                    background: rgba(255,255,255,0.08);
+                    color: #ffffff;
+                }
+
+                /* ACTIVE STATE */
+                .nav-item.active {
+                    background: rgba(13,148,136,0.25);
+                    color: #14b8a8;
+                    border-left: 3px solid #14b8a8;
+                }
     </style>
 </head>
 <body>
@@ -678,7 +733,7 @@
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="nav-label">Main</div>
-            <a asp-controller="ManagerDashboard" asp-action="Dashboard" class="nav-item active">
+            <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item active">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
                 Dashboard
             </a>
@@ -703,9 +758,9 @@
                 Reports
             </a>
             <div class="nav-label">System</div>
-            <a asp-controller="ManagerDashboard" asp-action="System" class="nav-item">
+            <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07 10 10 0 0 0 19.07 4.93z" /></svg>
-                Settings
+                Profile
             </a>
             <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
