@@ -6,6 +6,12 @@
 		<RootNamespace>_4th_year_set_up</RootNamespace>
 	</PropertyGroup>
 	<ItemGroup>
+	  <Compile Remove="Controllers\LabManager\**" />
+	  <Content Remove="Controllers\LabManager\**" />
+	  <EmbeddedResource Remove="Controllers\LabManager\**" />
+	  <None Remove="Controllers\LabManager\**" />
+	</ItemGroup>
+	<ItemGroup>
 		<PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
 		<PackageReference Include="MailKit" Version="4.15.1" />
 		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />

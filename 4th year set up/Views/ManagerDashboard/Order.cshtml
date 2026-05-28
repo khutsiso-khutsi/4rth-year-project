@@ -1,0 +1,758 @@
+﻿@using LabManager.Models
+@model IEnumerable<ConsumableOrder>
+
+@{
+    ViewData["Title"] = "Consumable Orders";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Consumable Orders</title>
+
+    <!-- GOOGLE FONTS -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap"
+          rel="stylesheet">
+
+    <style>
+
+            /* =========================================
+                       RESET
+                    ========================================= */
+
+            *,
+            *::before,
+            *::after {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            /* =========================================
+                       ROOT VARIABLES
+                    ========================================= */
+
+            :root {
+                --navy: #0b1f3a;
+                --navy-light: #122848;
+                --card: #112240;
+                --teal: #0d9488;
+                --purple: #4f46e5;
+                --red: #dc2626;
+                --green: #16a34a;
+                --amber: #d97706;
+                --white: #ffffff;
+                --muted: #8ca0c0;
+                --border: rgba(255,255,255,0.08);
+                --topbar-height: 64px;
+                --sidebar-width: 230px;
+            }
+
+            /* =========================================
+                       BODY
+                    ========================================= */
+
+            body {
+                font-family: 'DM Sans', sans-serif;
+                background: white;
+                color: white;
+                min-height: 100vh;
+            }
+
+            a {
+                text-decoration: none;
+                color: inherit;
+            }
+
+            button {
+                font-family: inherit;
+            }
+
+            /* =========================================
+                       TOPBAR
+                    ========================================= */
+
+            .topbar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: var(--topbar-height);
+                background: var(--navy);
+                border-bottom: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 28px;
+                z-index: 1000;
+            }
+
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .brand-logo {
+                width: 36px;
+                height: 36px;
+                border-radius: 10px;
+                background: linear-gradient(135deg, var(--teal), var(--purple));
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                color: #0b1f3a;
+                font-size: 1rem;
+            }
+
+            .brand-name {
+                font-weight: 700;
+                font-size: 1rem;
+                line-height: 1.1;
+            }
+
+                .brand-name span {
+                    display: block;
+                    font-size: 0.7rem;
+                    color: var(--muted);
+                    font-weight: 400;
+                }
+
+            .topbar-right {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+            }
+
+            .user-chip {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .user-avatar {
+                width: 34px;
+                height: 34px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, var(--purple), var(--teal));
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 0.8rem;
+            }
+
+            .user-email {
+                font-size: 0.84rem;
+                color: white;
+            }
+
+            .logout-btn {
+                padding: 9px 16px;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                font-size: 0.82rem;
+                color: var(--muted);
+                transition: 0.2s;
+            }
+
+                .logout-btn:hover {
+                    background: var(--navy-light);
+                    color: white;
+                }
+
+            /* =========================================
+                       PAGE LAYOUT
+                    ========================================= */
+
+            .page {
+                display: flex;
+                margin-top: var(--topbar-height);
+                min-height: calc(100vh - var(--topbar-height));
+            }
+
+            /* =========================================
+                       SIDEBAR
+                    ========================================= */
+
+            .sidebar {
+                width: var(--sidebar-width);
+                background: var(--navy);
+                border-right: 1px solid var(--border);
+                padding: 24px 12px;
+                position: sticky;
+                top: var(--topbar-height);
+                height: calc(100vh - var(--topbar-height));
+                overflow-y: auto;
+            }
+
+            .nav-label {
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: var(--muted);
+                margin: 20px 10px 8px;
+            }
+
+                .nav-label:first-child {
+                    margin-top: 0;
+                }
+
+            .nav-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 14px;
+                border-radius: 10px;
+                font-size: 0.84rem;
+                font-weight: 500;
+                color: var(--muted);
+                transition: 0.2s;
+                margin-bottom: 4px;
+            }
+
+                .nav-item svg {
+                    width: 16px;
+                    height: 16px;
+                    stroke: currentColor;
+                    flex-shrink: 0;
+                }
+
+                .nav-item:hover {
+                    background: var(--navy-light);
+                    color: white;
+                }
+
+                .nav-item.active {
+                    background: var(--teal);
+                    color: white;
+                }
+
+            /* =========================================
+                       MAIN
+                    ========================================= */
+
+            .main {
+                flex: 1;
+                padding: 36px;
+            }
+
+            .page-header {
+                margin-bottom: 28px;
+            }
+
+                .page-header h1 {
+                    font-family: 'DM Serif Display', serif;
+                    font-size: 2rem;
+                    margin-bottom: 6px;
+                    color: #0b1f3a;
+                }
+
+                .page-header p {
+                    color: var(--muted);
+                    font-size: 0.9rem;
+                }
+
+            /* =========================================
+                       CARD
+                    ========================================= */
+
+            .card {
+                background: #0b1f3a;
+                border-radius: 18px;
+                padding: 24px;
+            }
+
+            /* =========================================
+                       TOOLBAR
+                    ========================================= */
+
+            .toolbar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                margin-bottom: 24px;
+                flex-wrap: wrap;
+            }
+
+            .status-select {
+                height: 42px;
+                min-width: 180px;
+                padding: 0 14px;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                background: var(--navy);
+                color: white;
+                outline: none;
+            }
+
+                .status-select:focus {
+                    border-color: var(--teal);
+                }
+
+            /* =========================================
+                       BUTTONS
+                    ========================================= */
+
+            .btn {
+                height: 42px;
+                border: none;
+                border-radius: 10px;
+                padding: 0 18px;
+                font-size: 0.82rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: 0.2s;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+                .btn:hover {
+                    transform: translateY(-1px);
+                }
+
+            .btn-teal {
+                background: var(--teal);
+                color: white;
+            }
+
+            .btn-red {
+                background: var(--red);
+                color: white;
+            }
+
+            .btn-sm {
+                height: 34px;
+                padding: 0 14px;
+                border: none;
+                border-radius: 8px;
+                font-size: 0.76rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: 0.2s;
+            }
+
+                .btn-sm:hover {
+                    transform: translateY(-1px);
+                }
+
+            /* =========================================
+                       TABLE
+                    ========================================= */
+
+            .table-wrap {
+                overflow-x: auto;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            thead tr {
+                border-bottom: 1px solid var(--border);
+            }
+
+            th {
+                text-align: left;
+                padding-bottom: 14px;
+                font-size: 0.72rem;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: var(--muted);
+            }
+
+            td {
+                padding: 18px 0;
+                border-bottom: 1px solid var(--border);
+                font-size: 0.85rem;
+                color: rgba(255,255,255,0.9);
+            }
+
+            tbody tr {
+                transition: 0.15s;
+            }
+
+                tbody tr:hover {
+                    background: rgba(255,255,255,0.03);
+                }
+
+                tbody tr:last-child td {
+                    border-bottom: none;
+                }
+
+            /* =========================================
+                       ORDER LINK
+                    ========================================= */
+
+            .order-link {
+                color: #2dd4bf;
+                font-family: monospace;
+                font-weight: 700;
+            }
+
+                .order-link:hover {
+                    text-decoration: underline;
+                }
+
+            /* =========================================
+                       STATUS PILLS
+                    ========================================= */
+
+            .pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                padding: 5px 12px;
+                border-radius: 999px;
+                font-size: 0.75rem;
+                font-weight: 600;
+            }
+
+            .dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+            }
+
+            .pill-complete {
+                background: rgba(22,163,74,0.15);
+                color: #4ade80;
+            }
+
+                .pill-complete .dot {
+                    background: #4ade80;
+                }
+
+            .pill-partial {
+                background: rgba(217,119,6,0.15);
+                color: #fbbf24;
+            }
+
+                .pill-partial .dot {
+                    background: #fbbf24;
+                }
+
+            .pill-ordered {
+                background: rgba(79,70,229,0.15);
+                color: #a5b4fc;
+            }
+
+                .pill-ordered .dot {
+                    background: #a5b4fc;
+                }
+
+            /* =========================================
+                       ACTION GROUP
+                    ========================================= */
+
+            .action-group {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .completed-text {
+                color: var(--muted);
+                font-size: 0.8rem;
+            }
+
+            /* =========================================
+                       RESPONSIVE
+                    ========================================= */
+
+            @@media (max-width: 768px) {
+
+                .sidebar {
+                    display: none;
+                }
+
+                .main {
+                    padding: 20px 16px;
+                }
+
+                .topbar {
+                    padding: 0 16px;
+                }
+
+                .user-email {
+                    display: none;
+                }
+
+                table {
+                    min-width: 700px;
+                }
+            }
+
+    </style>
+
+</head>
+
+<body>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+
+        <a class="brand"
+           asp-controller="Home"
+           asp-action="Index">
+
+            <div class="brand-logo">
+                +
+            </div>
+
+            <div class="brand-name">
+                NMB-HLabSys
+                <span>Haematology Lab System</span>
+            </div>
+
+        </a>
+
+        <div class="topbar-right">
+
+            <div class="user-chip">
+
+                <div class="user-avatar">
+                    @(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "M")
+                </div>
+
+                <span class="user-email">
+                    @(ViewBag.Email ?? "Manager")
+                </span>
+
+            </div>
+
+            <a asp-controller="Home"
+               asp-action="Logout"
+               class="logout-btn">
+
+                Logout
+
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- PAGE -->
+    <div class="page">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="nav-label">Main</div>
+            <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+                Dashboard
+            </a>
+            <a asp-controller="ManagerDashboard" asp-action="TestCatalogue" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M9 3v11a3 3 0 006 0V3" /><line x1="6" y1="3" x2="18" y2="3" /></svg>
+                Test Catalogue
+            </a>
+            <a asp-controller="ManagerDashboard" asp-action="Consumables" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                Consumables
+            </a>
+            <a asp-controller="ManagerDashboard" asp-action="Staff" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                Staff
+            </a>
+            <a asp-controller="ManagerDashboard" asp-action="Orders" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                Orders
+            </a>
+            <a asp-controller="ManagerDashboard" asp-action="Report" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                Reports
+            </a>
+            <div class="nav-label">System</div>
+            <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07 10 10 0 0 0 19.07 4.93z" /></svg>
+                Profile
+            </a>
+            <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                Audit Log
+            </a>
+        </aside>
+
+
+        <!-- MAIN -->
+        <main class="main">
+
+            <!-- HEADER -->
+            <div class="page-header">
+
+                <h1>Consumable Orders</h1>
+
+                <p>
+                    Manage supplier orders and track delivery status.
+                </p>
+
+            </div>
+
+            <!-- CARD -->
+            <div class="card">
+
+                <!-- TOOLBAR -->
+                <div class="toolbar">
+
+                    <select class="status-select">
+
+                        <option>All Statuses</option>
+                        <option>Ordered</option>
+                        <option>Partially Complete</option>
+                        <option>Complete</option>
+                        <option>Cancelled</option>
+
+                    </select>
+
+                    <button class="btn btn-teal">
+                        + Create Order
+                    </button>
+
+                </div>
+
+                <!-- TABLE -->
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>Order #</th>
+                                <th>Supplier</th>
+                                <th>Items</th>
+                                <th>Order Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var order in Model)
+                            {
+                                <tr>
+
+                                    <!-- ORDER -->
+                                    <td>
+
+                                        <a asp-controller="ManagerDashboard"
+                                           asp-action="OrderDetail"
+                                           asp-route-id="@order.Id"
+                                           class="order-link">
+
+                                            @order.OrderNumber
+
+                                        </a>
+
+                                    </td>
+
+                                    <!-- SUPPLIER -->
+                                    <td>@order.Supplier</td>
+
+                                    <!-- ITEMS -->
+                                    <td>@order.Items</td>
+
+                                    <!-- DATE -->
+                                    <td>
+                                        @order.OrderDate.ToString("yyyy-MM-dd")
+                                    </td>
+
+                                    <!-- STATUS -->
+                                    <td>
+
+                                        @if (order.Status == "Complete")
+                                        {
+                                            <span class="pill pill-complete">
+                                                <span class="dot"></span>
+                                                Complete
+                                            </span>
+                                        }
+                                        else if (order.Status == "Partially Complete")
+                                        {
+                                            <span class="pill pill-partial">
+                                                <span class="dot"></span>
+                                                Partially Complete
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="pill pill-ordered">
+                                                <span class="dot"></span>
+                                                @order.Status
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                    <!-- ACTIONS -->
+                                    <td>
+
+                                        @if (order.Status == "Complete")
+                                        {
+                                            <span class="completed-text">
+
+                                                Completed
+                                                @order.CompletedDate?.ToString("yyyy-MM-dd")
+
+                                            </span>
+                                        }
+                                        else if (order.Status == "Partially Complete")
+                                        {
+                                            <div class="action-group">
+
+                                                <button class="btn-sm btn-teal">
+                                                    Receive
+                                                </button>
+
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="action-group">
+
+                                                <button class="btn-sm btn-teal">
+                                                    Receive
+                                                </button>
+
+                                                <button class="btn-sm btn-red">
+                                                    Cancel
+                                                </button>
+
+                                            </div>
+                                        }
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+</body>
+
+</html>

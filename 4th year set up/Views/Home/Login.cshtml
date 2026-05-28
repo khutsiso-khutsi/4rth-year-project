@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Sign In";
     Layout = null;
 }
@@ -35,17 +35,20 @@
             color: var(--navy);
             min-height: 100vh;
             display: flex;
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
         /* ── LEFT PANEL ─────────────────────────── */
         .left-panel {
             width: 45%;
+            min-width: 320px;
+            height: 100vh;
             background: var(--navy);
             display: flex;
             flex-direction: column;
             padding: 48px;
-            position: relative;
+            position: sticky;
+            top: 0;
             overflow: hidden;
         }
 
@@ -219,7 +222,9 @@
             align-items: center;
             justify-content: center;
             padding: 48px;
+            min-height: 100vh;
             overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .form-card {
@@ -229,6 +234,7 @@
             padding: 48px 44px;
             width: 100%;
             max-width: 440px;
+            box-sizing: border-box;
             box-shadow: 0 4px 40px rgba(11,31,58,0.08);
         }
 
@@ -478,8 +484,6 @@
                 height: 17px;
             }
 
-        
-
         .back-link {
             display: flex;
             align-items: center;
@@ -500,6 +504,110 @@
                 width: 14px;
                 height: 14px;
             }
+
+        /* ── DEV SHORTCUT TILES ─────────────────────────── */
+        .dev-shortcuts {
+            width: 100%;
+            max-width: 440px;
+            margin-top: 20px;
+        }
+
+        .dev-shortcuts-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+            .dev-shortcuts-label::before,
+            .dev-shortcuts-label::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: var(--border);
+            }
+
+        .shortcut-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+
+        .shortcut-tile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            background: white;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 6px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+        }
+
+            .shortcut-tile:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 16px rgba(11,31,58,0.1);
+            }
+
+            .shortcut-tile .st-icon {
+                width: 32px;
+                height: 32px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+                .shortcut-tile .st-icon svg {
+                    width: 16px;
+                    height: 16px;
+                }
+
+            .shortcut-tile .st-name {
+                font-size: 0.68rem;
+                font-weight: 600;
+                text-align: center;
+                line-height: 1.2;
+            }
+
+        /* per-role colours */
+        .st-admin { border-color: rgba(13,148,136,0.3); }
+        .st-admin:hover { border-color: var(--teal); }
+        .st-admin .st-icon { background: rgba(13,148,136,0.1); }
+        .st-admin .st-icon svg { stroke: var(--teal); }
+        .st-admin .st-name { color: var(--teal); }
+
+        .st-manager { border-color: rgba(79,70,229,0.25); }
+        .st-manager:hover { border-color: #4f46e5; }
+        .st-manager .st-icon { background: rgba(79,70,229,0.08); }
+        .st-manager .st-icon svg { stroke: #4f46e5; }
+        .st-manager .st-name { color: #4f46e5; }
+
+        .st-doctor { border-color: rgba(37,99,235,0.25); }
+        .st-doctor:hover { border-color: #2563eb; }
+        .st-doctor .st-icon { background: rgba(37,99,235,0.08); }
+        .st-doctor .st-icon svg { stroke: #2563eb; }
+        .st-doctor .st-name { color: #2563eb; }
+
+        .st-tech { border-color: rgba(234,88,12,0.25); }
+        .st-tech:hover { border-color: #ea580c; }
+        .st-tech .st-icon { background: rgba(234,88,12,0.08); }
+        .st-tech .st-icon svg { stroke: #ea580c; }
+        .st-tech .st-name { color: #ea580c; }
+
+        .st-patient { border-color: rgba(22,163,74,0.25); }
+        .st-patient:hover { border-color: var(--green); }
+        .st-patient .st-icon { background: rgba(22,163,74,0.08); }
+        .st-patient .st-icon svg { stroke: var(--green); }
+        .st-patient .st-name { color: var(--green); }
 
         @@media (max-width: 900px) {
             .left-panel {
@@ -577,7 +685,8 @@
 
     <!-- RIGHT PANEL -->
     <div class="right-panel">
-        <div>
+        <div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:440px;overflow:hidden;">
+
             <div class="form-card">
 
                 <div class="form-header">
@@ -674,7 +783,77 @@
                     Don't have an account? <a asp-controller="Home" asp-action="Register" style="color:var(--teal);font-weight:500">Create one</a>
                 </p>
 
-            </div>  <%-- closes form-card --%>
+            </div><!-- /form-card -->
+
+            <!-- ── DEV SHORTCUTS ──────────────────────────────────── -->
+            <div class="dev-shortcuts">
+                <div class="dev-shortcuts-label">Dev shortcuts</div>
+                <div class="shortcut-grid">
+
+                    <!-- Admin -->
+                    <a class="shortcut-tile st-admin" href="/Home/DevLogin?role=Admin">
+                        <div class="st-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="8" r="4"/>
+                                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                                <polyline points="16 3 21 3 21 8"/>
+                                <line x1="15" y1="9" x2="21" y2="3"/>
+                            </svg>
+
+                        </div>
+                        <span class="st-name">Admin</span>
+                    </a>
+
+                    <!-- Manager -->
+                    <a class="shortcut-tile st-manager" href="/Dev/Login?role=Lab Manager">
+                        <div class="st-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                                <line x1="8" y1="21" x2="16" y2="21"/>
+                                <line x1="12" y1="17" x2="12" y2="21"/>
+                            </svg>
+                        </div>
+                        <span class="st-name">Manager</span>
+                    </a>
+
+                    <!-- Doctor -->
+                    <a class="shortcut-tile st-doctor" href="/Dev/Login?role=Doctor">
+                        <div class="st-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2a4 4 0 0 1 4 4 7 7 0 0 1-8 0 4 4 0 0 1 4-4z"/>
+                                <path d="M4 20v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"/>
+                                <line x1="12" y1="12" x2="12" y2="16"/>
+                                <line x1="10" y1="14" x2="14" y2="14"/>
+                            </svg>
+                        </div>
+                        <span class="st-name">Doctor</span>
+                    </a>
+
+                    <!-- Technician -->
+                    <a class="shortcut-tile st-tech" href="/Dev/Login?role=Lab Technician">
+                        <div class="st-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/>
+                            </svg>
+                        </div>
+                        <span class="st-name">Tech</span>
+                    </a>
+
+                    <!-- Patient -->
+                    <a class="shortcut-tile st-patient" href="/Home/DevLogin?role=Patient">
+                        <div class="st-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </div>
+                        <span class="st-name">Patient</span>
+                    </a>
+
+                </div>
+            </div>
+           
+
         </div>
     </div>
 

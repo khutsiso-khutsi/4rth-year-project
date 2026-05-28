@@ -51,13 +51,6 @@ namespace _4th_year_set_up.Controllers
                 return View();
             }
 
-            if (!isVerified)
-            {
-                HttpContext.Session.SetString("PendingVerificationEmail", user.Email);
-                TempData["LoginWarning"] = "Please verify your email before signing in.";
-                return RedirectToAction("VerifyEmail");
-            }
-
             HttpContext.Session.SetInt32("UserID", user.UserID);
             HttpContext.Session.SetInt32("RoleID", user.RoleID);
             HttpContext.Session.SetString("RoleName", user.RoleName);
@@ -67,10 +60,27 @@ namespace _4th_year_set_up.Controllers
 
             return user.RoleID switch
             {
-                1 => RedirectToAction("AdminDashboard", "Admin"),
+                1 => RedirectToAction("Dashboard", "Admin"),
                 2 => RedirectToAction("DoctorDashboard", "Doctor"),
                 5 => RedirectToAction("Index", "PatientDashboard"),
                 _ => RedirectToAction("Index", "Home")
+            };
+        }
+
+        // ── DEV SHORTCUT LOGIN (bypasses password for dev/testing) ──
+        public IActionResult DevLogin(string role)
+        {
+            HttpContext.Session.SetString("RoleName", role);
+            HttpContext.Session.SetString("Email", $"dev-{role.ToLower()}@test.com");
+
+            return role switch
+            {
+                "Admin"         => RedirectToAction("Dashboard", "Admin"),
+                "Doctor"        => RedirectToAction("DoctorDashboard", "Doctor"),
+                "Lab Manager"   => RedirectToAction("Index", "ManagerDashboard"),
+                "Lab Technician"=> RedirectToAction("Index", "TechnicianDashboard"),
+                "Patient"       => RedirectToAction("Index", "PatientDashboard"),
+                _               => RedirectToAction("Login", "Home")
             };
         }
 
@@ -84,12 +94,12 @@ namespace _4th_year_set_up.Controllers
         {
             return roleName switch
             {
-                "Patient" => RedirectToAction("Index", "PatientDashboard"),
-                "Doctor" => RedirectToAction("Index", "DoctorDashboard"),
+                "Patient"        => RedirectToAction("Index", "PatientDashboard"),
+                "Doctor"         => RedirectToAction("Index", "DoctorDashboard"),
                 "Lab Technician" => RedirectToAction("Index", "TechnicianDashboard"),
-                "Lab Manager" => RedirectToAction("Index", "ManagerDashboard"),
-                "Admin" => RedirectToAction("Dashboard", "Admin"),
-                _ => RedirectToAction("Index")
+                "Lab Manager"    => RedirectToAction("Index", "ManagerDashboard"),
+                "Admin"          => RedirectToAction("Dashboard", "Admin"),
+                _                => RedirectToAction("Index")
             };
         }
 
@@ -153,34 +163,8 @@ namespace _4th_year_set_up.Controllers
             switch (result)
             {
                 case "SUCCESS":
-                    string code = new Random().Next(100000, 999999).ToString();
-                    DateTime expiry = DateTime.Now.AddMinutes(10);
-
-                    _userRepo.SaveVerificationCode(Email.Trim(), code, expiry);
-
-                    string emailBody = $@"
-                <div style='font-family:DM Sans,sans-serif;max-width:480px;margin:auto;background:#f4f7fb;padding:32px;border-radius:16px'>
-                    <div style='background:#0b1f3a;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px'>
-                        <h2 style='color:white;margin:0;font-size:1.3rem'>NMB-HLabSys</h2>
-                        <p style='color:rgba(255,255,255,0.5);font-size:0.75rem;margin:4px 0 0'>Haematology Lab System</p>
-                    </div>
-                    <h3 style='color:#0b1f3a;margin-bottom:8px'>Verify Your Email</h3>
-                    <p style='color:#6b7a99;font-size:0.9rem;line-height:1.6;margin-bottom:24px'>
-                        Hi {FirstName}, thank you for registering. Enter the code below to verify your email address.
-                    </p>
-                    <div style='background:white;border:2px dashed #0d9488;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px'>
-                        <p style='color:#6b7a99;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px'>Your Verification Code</p>
-                        <h1 style='color:#0d9488;font-size:2.5rem;letter-spacing:0.3em;margin:0'>{code}</h1>
-                    </div>
-                    <p style='color:#6b7a99;font-size:0.8rem;text-align:center'>
-                        This code expires in <strong>10 minutes</strong>. Do not share it with anyone.
-                    </p>
-                </div>";
-
-                    _emailService.SendEmail(Email.Trim(), "Your NMB-HLabSys Verification Code", emailBody);
-
-                    HttpContext.Session.SetString("PendingVerificationEmail", Email.Trim());
-                    return RedirectToAction("VerifyEmail");
+                    TempData["Success"] = "Registration successful! You can now log in.";
+                    return RedirectToAction("Login");
 
                 case "USERNAME_TAKEN":
                     ModelState.AddModelError("", "That username is already taken.");
@@ -202,41 +186,6 @@ namespace _4th_year_set_up.Controllers
                     ModelState.AddModelError("", "Registration failed. Please try again.");
                     return View();
             }
-        }
-
-        // ✅ VERIFY EMAIL
-        [HttpGet]
-        public IActionResult VerifyEmail()
-        {
-            var email = HttpContext.Session.GetString("PendingVerificationEmail");
-
-            if (string.IsNullOrEmpty(email))
-                return RedirectToAction("Login");
-
-            return View("~/Views/Home/VerifyEmail.cshtml");
-        }
-
-        [HttpPost]
-        public IActionResult VerifyEmail(string code)
-        {
-            var email = HttpContext.Session.GetString("PendingVerificationEmail");
-
-            if (string.IsNullOrEmpty(email))
-                return RedirectToAction("Login");
-
-            var (success, userId) = _userRepo.VerifyCode(email, code);
-
-            if (!success)
-            {
-                TempData["Error"] = "Invalid or expired verification code. Please try again.";
-                return View("~/Views/Home/VerifyEmail.cshtml");
-            }
-
-            _userRepo.MarkEmailVerified(userId);
-
-            HttpContext.Session.Remove("PendingVerificationEmail");
-            TempData["Success"] = "Email verified successfully! You can now log in.";
-            return RedirectToAction("Login");
         }
 
         // FORGOT PASSWORD

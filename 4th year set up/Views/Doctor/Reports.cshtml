@@ -1,0 +1,58 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+
+    <!-- ─── REPORTS ─── -->
+    <div class="page" id="page-reports">
+        <div class="page-header">
+            <div class="page-greeting">Doctor Reports</div>
+            <div class="page-subtitle">Generate PDF reports for your submitted test requests</div>
+        </div>
+        <div class="section" style="padding:20px;">
+            <div class="report-box">
+                <div class="report-box-title">All Test Requests — PDF Report</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                    <div class="form-group">
+                        <label>From Date</label>
+                        <input type="date" value="2025-02-01">
+                    </div>
+                    <div class="form-group">
+                        <label>To Date</label>
+                        <input type="date" value="2025-03-03">
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:14px;">
+                    <button class="btn btn-primary" onclick="generateReport()">Generate PDF Report</button>
+                    <span id="report-msg" style="font-size:12px;color:#4ade80;opacity:0;transition:opacity 0.3s;display:flex;align-items:center;gap:6px;">
+                        <span style="width:8px;height:8px;background:#4ade80;border-radius:50%;display:inline-block;"></span>
+                        PDF report generated!
+                    </span>
+                </div>
+            </div>
+
+            <div class="form-section-title" style="margin-bottom:0;">Preview — My Requests (Feb–Mar 2025)</div>
+            <table style="margin-top:0;">
+                <thead>
+                    <tr><th>Request #</th><th>Patient</th><th>Date</th><th>Tests</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="mono">REQ-2025-089</td>
+                        <td>K. Mashamba</td>
+                        <td>2025-03-01</td>
+                        <td>FBC, Diff</td>
+                        <td><span class="badge badge-verified">Verified</span></td>
+                    </tr>
+                    <tr>
+                        <td class="mono">REQ-2025-090</td>
+                        <td>P. Ndlovu</td>
+                        <td>2025-03-02</td>
+                        <td>Coag, FBC</td>
+                        <td><span class="badge badge-inprogress">In Progress</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

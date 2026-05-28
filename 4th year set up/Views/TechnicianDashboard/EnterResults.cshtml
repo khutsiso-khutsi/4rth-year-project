@@ -1,0 +1,1295 @@
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    ViewData["Title"] = "Enter Results";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enter Results — NMB-HLabSys</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --navy: #0b1f3a;
+            --navy2: #122848;
+            --teal: #0d9488;
+            --teal-light: rgba(13,148,136,0.1);
+            --orange: #ea580c;
+            --orange-light: rgba(234,88,12,0.1);
+            --amber: #d97706;
+            --amber-light: rgba(217,119,6,0.1);
+            --red: #dc2626;
+            --red-light: rgba(220,38,38,0.1);
+            --green: #16a34a;
+            --green-light: rgba(22,163,74,0.1);
+            --blue: #2563eb;
+            --blue-light: rgba(37,99,235,0.1);
+            --white: #ffffff;
+            --offwhite: #f4f7fb;
+            --muted: #6b7a99;
+            --border: #dde4f0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--offwhite);
+            color: var(--navy);
+            min-height: 100vh;
+        }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            background: var(--navy);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .brand-logo {
+            width: 34px;
+            height: 34px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .brand-logo svg {
+                width: 18px;
+                height: 18px;
+                fill: white;
+            }
+
+        .brand-name {
+            font-family: 'DM Serif Display', serif;
+            color: white;
+            font-size: 1.1rem;
+            line-height: 1.1;
+        }
+
+            .brand-name span {
+                display: block;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.6rem;
+                font-weight: 300;
+                color: rgba(255,255,255,0.4);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 100px;
+            padding: 6px 14px 6px 8px;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            background: var(--orange);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .user-email {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.75);
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.8);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+            .logout-btn:hover {
+                background: rgba(255,255,255,0.15);
+                color: white;
+            }
+
+            .logout-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+
+        /* ── LAYOUT ── */
+        .page {
+            display: flex;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            flex-shrink: 0;
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+
+        .nav-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0 20px;
+            margin-bottom: 4px;
+            margin-top: 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-left: 3px solid transparent;
+            transition: all 0.15s;
+        }
+
+            .nav-item:hover {
+                background: var(--offwhite);
+                color: var(--navy);
+            }
+
+            .nav-item.active {
+                background: var(--orange-light);
+                color: var(--orange);
+                border-left-color: var(--orange);
+            }
+
+            .nav-item svg {
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+            }
+
+        /* ── MAIN ── */
+        .main {
+            flex: 1;
+            padding: 24px 32px;
+        }
+
+
+        /* ── CONTENT GRID ── */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+        }
+
+        /* ── CARD ── */
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
+        }
+
+        .card-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.05rem;
+            color: var(--navy);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+            .card-title svg {
+                width: 17px;
+                height: 17px;
+                stroke: var(--teal);
+            }
+
+        /* ── PATIENT INFO STRIP ── */
+        .patient-strip {
+            background: var(--offwhite);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .patient-avatar {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--navy), var(--navy2));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.1rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .patient-info {
+            flex: 1;
+        }
+
+        .patient-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--navy);
+        }
+
+        .patient-meta {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .patient-badges {
+            display: flex;
+            gap: 6px;
+            margin-left: auto;
+            flex-wrap: wrap;
+        }
+
+        /* ── BADGES ── */
+        .badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .badge-completed {
+            background: var(--green-light);
+            color: var(--green);
+        }
+
+        .badge-pending {
+            background: var(--amber-light);
+            color: var(--amber);
+        }
+
+        .badge-urgent {
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+        .badge-inprogress {
+            background: var(--blue-light);
+            color: var(--blue);
+        }
+
+        .badge-routine {
+            background: var(--teal-light);
+            color: var(--teal);
+        }
+
+        /* ── TEST PANELS ── */
+        .test-panel {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            transition: box-shadow 0.2s;
+        }
+
+            .test-panel:last-of-type {
+                margin-bottom: 0;
+            }
+
+            .test-panel:hover {
+                box-shadow: 0 4px 16px rgba(11,31,58,0.08);
+            }
+
+        .test-panel-header {
+            background: var(--offwhite);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 1px solid var(--border);
+        }
+
+            .test-panel-header:hover {
+                background: #edf0f7;
+            }
+
+        .test-panel-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .test-panel-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+            .test-panel-icon svg {
+                width: 15px;
+                height: 15px;
+            }
+
+        .test-panel-name {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--navy);
+        }
+
+        .test-panel-sub {
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .test-panel-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chevron {
+            width: 16px;
+            height: 16px;
+            color: var(--muted);
+            transition: transform 0.2s;
+        }
+
+        .test-panel.open .chevron {
+            transform: rotate(180deg);
+        }
+
+        .test-panel-body {
+            padding: 20px;
+            display: none;
+        }
+
+        .test-panel.open .test-panel-body {
+            display: block;
+        }
+
+        /* ── RESULT FIELDS ── */
+        .fields-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+            .field.span-2 {
+                grid-column: span 2;
+            }
+
+            .field label {
+                font-size: 0.68rem;
+                font-weight: 600;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+            }
+
+            .field input, .field select, .field textarea {
+                width: 100%;
+                padding: 9px 12px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                font-size: 0.85rem;
+                font-family: 'DM Sans', sans-serif;
+                color: var(--navy);
+                background: white;
+                outline: none;
+                transition: border-color 0.15s, box-shadow 0.15s;
+            }
+
+                .field input:focus, .field select:focus, .field textarea:focus {
+                    border-color: var(--teal);
+                    box-shadow: 0 0 0 3px rgba(13,148,136,0.1);
+                }
+
+            .field textarea {
+                resize: vertical;
+                min-height: 72px;
+            }
+
+        .range-hint {
+            font-size: 0.69rem;
+            color: var(--muted);
+        }
+
+            .range-hint strong {
+                color: var(--navy);
+            }
+
+        /* Abnormal flag highlight */
+        .field input.abnormal-high {
+            border-color: var(--red);
+            background: var(--red-light);
+        }
+
+        .field input.abnormal-low {
+            border-color: var(--amber);
+            background: var(--amber-light);
+        }
+
+        /* ── SECTION DIVIDER ── */
+        .section-divider {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 10px 0 6px;
+            margin-bottom: 8px;
+            border-bottom: 1px dashed var(--border);
+            grid-column: span 2;
+        }
+
+        /* ── BUTTONS ── */
+        .btn {
+            padding: 9px 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            transition: all 0.15s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: var(--teal);
+            color: white;
+        }
+
+            .btn-primary:hover {
+                background: #0b7a70;
+            }
+
+        .btn-orange {
+            background: var(--orange);
+            color: white;
+        }
+
+            .btn-orange:hover {
+                background: #c2410c;
+            }
+
+        .btn-ghost {
+            background: var(--offwhite);
+            border: 1px solid var(--border);
+            color: var(--navy);
+        }
+
+            .btn-ghost:hover {
+                border-color: var(--teal);
+                color: var(--teal);
+            }
+
+        .btn-danger {
+            background: var(--red-light);
+            color: var(--red);
+            border: 1px solid rgba(220,38,38,0.2);
+        }
+
+            .btn-danger:hover {
+                background: var(--red);
+                color: white;
+            }
+
+        .btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .btn-lg {
+            padding: 11px 24px;
+            font-size: 0.88rem;
+            border-radius: 12px;
+        }
+
+        /* ── SIDEBAR CARD ── */
+        .sidebar-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
+            margin-bottom: 16px;
+        }
+
+            .sidebar-card:last-child {
+                margin-bottom: 0;
+            }
+
+        .sidebar-card-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 0.95rem;
+            color: var(--navy);
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+            .sidebar-card-title svg {
+                width: 15px;
+                height: 15px;
+                stroke: var(--orange);
+            }
+
+        /* ── REQUEST DETAIL LIST ── */
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--offwhite);
+            font-size: 0.82rem;
+        }
+
+            .detail-row:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+        .detail-label {
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: var(--navy);
+            font-weight: 600;
+            text-align: right;
+            max-width: 55%;
+        }
+
+        /* ── CHECKLIST ── */
+        .checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.82rem;
+            color: var(--navy);
+        }
+
+            .check-item input[type="checkbox"] {
+                width: 15px;
+                height: 15px;
+                accent-color: var(--teal);
+                cursor: pointer;
+                flex-shrink: 0;
+            }
+
+            .check-item.done {
+                color: var(--muted);
+                text-decoration: line-through;
+            }
+
+        /* ── PROGRESS INDICATOR ── */
+        .progress-wrap {
+            margin-bottom: 8px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-bottom: 5px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--border);
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--teal);
+            border-radius: 100px;
+            transition: width 0.4s ease;
+        }
+
+        /* ── SUBMIT STRIP ── */
+        .submit-strip {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
+        }
+
+        .submit-strip-left {
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+
+            .submit-strip-left strong {
+                display: block;
+                color: var(--navy);
+                font-size: 0.88rem;
+                margin-bottom: 2px;
+            }
+
+        .submit-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            background: var(--navy);
+            color: white;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 300;
+        }
+
+            .toast.show {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+        .toast-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--teal);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ── RESPONSIVE ── */
+        @@media (max-width: 1100px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .topbar {
+                padding: 0 20px;
+            }
+
+            .user-email {
+                display: none;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                padding: 20px 16px;
+            }
+
+            .fields-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .field.span-2 {
+                grid-column: span 1;
+            }
+
+            .section-divider {
+                grid-column: span 1;
+            }
+
+            .submit-strip {
+                flex-direction: column;
+                gap: 14px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
+            </div>
+            <div class="brand-name">NMB-HLabSys<span>Haematology Lab System</span></div>
+        </a>
+        <div class="topbar-right">
+            <div class="user-chip">
+                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "T")</div>
+                <span class="user-email">@ViewBag.Email</span>
+            </div>
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Sign Out
+            </a>
+        </div>
+    </div>
+
+    <div class="page">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="nav-label">Main</div>
+            <a asp-controller="TechnicianDashboard" asp-action="Index" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+                Dashboard
+            </a>
+            <a href="#" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" /></svg>
+                Test Queue
+            </a>
+            <a href="/TechnicianDashboard/EnterResults" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                Enter Results
+            </a>
+            <a href="#" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                Completed
+            </a>
+            <div class="nav-label">System</div>
+            <a href="#" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                Activity Log
+            </a>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main">
+
+            <!-- CONTENT GRID -->
+            <div class="content-grid">
+
+                <!-- LEFT: RESULT ENTRY -->
+                <div>
+                    <!-- PATIENT STRIP -->
+                    <div class="patient-strip">
+                        <div class="patient-avatar">TN</div>
+                        <div class="patient-info">
+                            <div class="patient-name">Thabo Nkosi</div>
+                            <div class="patient-meta">DOB: 12 Mar 1985 &nbsp;·&nbsp; M &nbsp;·&nbsp; Ward 4B &nbsp;·&nbsp; Dr. S. Mokoena</div>
+                        </div>
+                        <div class="patient-badges">
+                            <span class="badge badge-urgent">Urgent</span>
+                            <span class="badge badge-inprogress">In Progress</span>
+                        </div>
+                    </div>
+
+                    <!-- PROGRESS -->
+                    <div class="progress-wrap" style="margin-bottom:20px;">
+                        <div class="progress-label">
+                            <span>Results Completion</span>
+                            <span id="progressPct">0 / 4 panels</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+                    </div>
+
+                    <!-- TEST PANELS -->
+                    <!-- 1. Full Blood Count -->
+                    <div class="test-panel open" id="panel-fbc">
+                        <div class="test-panel-header" onclick="togglePanel('panel-fbc')">
+                            <div class="test-panel-left">
+                                <div class="test-panel-icon" style="background:var(--orange-light)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>
+                                </div>
+                                <div>
+                                    <div class="test-panel-name">Full Blood Count</div>
+                                    <div class="test-panel-sub">Haematology · Automated Analyser</div>
+                                </div>
+                            </div>
+                            <div class="test-panel-right">
+                                <span class="badge badge-pending" id="badge-fbc">Pending</span>
+                                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9" /></svg>
+                            </div>
+                        </div>
+                        <div class="test-panel-body">
+                            <div class="fields-grid">
+                                <div class="section-divider">Red Cell Indices</div>
+                                <div class="field">
+                                    <label>Haemoglobin (Hb)</label>
+                                    <input type="number" step="0.1" placeholder="e.g. 13.5" id="hb-val" oninput="checkRange(this, 12.0, 17.5)" />
+                                    <span class="range-hint">Normal: <strong>12.0 – 17.5 g/dL</strong></span>
+                                </div>
+                                <div class="field">
+                                    <label>Unit</label>
+                                    <select><option>g/dL</option></select>
+                                </div>
+                                <div class="field">
+                                    <label>Haematocrit (Hct)</label>
+                                    <input type="number" step="0.1" placeholder="e.g. 40.5" oninput="checkRange(this, 36, 52)" />
+                                    <span class="range-hint">Normal: <strong>36 – 52 %</strong></span>
+                                </div>
+                                <div class="field">
+                                    <label>Unit</label>
+                                    <select><option>%</option></select>
+                                </div>
+                                <div class="field">
+                                    <label>MCV</label>
+                                    <input type="number" step="0.1" placeholder="e.g. 85" oninput="checkRange(this, 80, 100)" />
+                                    <span class="range-hint">Normal: <strong>80 – 100 fL</strong></span>
+                                </div>
+                                <div class="field">
+                                    <label>MCH</label>
+                                    <input type="number" step="0.1" placeholder="e.g. 28" oninput="checkRange(this, 27, 33)" />
+                                    <span class="range-hint">Normal: <strong>27 – 33 pg</strong></span>
+                                </div>
+                                <div class="field">
+                                    <label>RBC Count</label>
+                                    <input type="number" step="0.01" placeholder="e.g. 4.5" oninput="checkRange(this, 4.0, 5.5)" />
+                                    <span class="range-hint">Normal: <strong>4.0 – 5.5 ×10⁶/µL</strong></span>
+                                </div>
+                                <div class="field">
+                                    <label>RDW</label>
+                                    <input type="number" step="0.1" placeholder="e.g. 13.5" oninput="checkRange(this, 11.5, 14.5)" />
+                                    <span class="range-hint">Normal: <strong>11.5 – 14.5 %</strong></span>
+                                </div>
+                                <div class="section-divider">White Cells &amp; Platelets</div>
+                                <div class="field">
+                                    <label>WBC Count</label>
+                                    <input type="number" step="0.1" placeholder="e.g. 7.0" oninput="checkRange(this, 4.0, 11.0)" />
+                                    <span class="range-hint">Normal: <strong>4.0 – 11.0 ×10³/µL</strong></span>
+                                </div>
+                                <div class="field">
+                                    <label>Platelet Count</label>
+                                    <input type="number" step="1" placeholder="e.g. 250" oninput="checkRange(this, 150, 400)" />
+                                    <span class="range-hint">Normal: <strong>150 – 400 ×10³/µL</strong></span>
+                                </div>
+                                <div class="section-divider">Result Details</div>
+                                <div class="field">
+                                    <label>Abnormal Flag</label>
+                                    <select>
+                                        <option>None</option>
+                                        <option>Abnormal — High</option>
+                                        <option>Abnormal — Low</option>
+                                        <option>Critical High</option>
+                                        <option>Critical Low</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label>Status</label>
+                                    <select>
+                                        <option>In Progress</option>
+                                        <option>Completed</option>
+                                        <option>Requires Repeat</option>
+                                        <option>Requires Senior Review</option>
+                                    </select>
+                                </div>
+                                <div class="field span-2">
+                                    <label>Notes / Observations</label>
+                                    <textarea placeholder="e.g. Slight haemolysis noted. Sample quality acceptable for analysis..."></textarea>
+                                </div>
+                                <div class="field span-2" style="align-items:flex-end">
+                                    <button class="btn btn-primary" onclick="markComplete('panel-fbc','badge-fbc')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                        Mark as Complete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. WBC Differential -->
+                    <div class="test-panel" id="panel-diff">
+                        <div class="test-panel-header" onclick="togglePanel('panel-diff')">
+                            <div class="test-panel-left">
+                                <div class="test-panel-icon" style="background:var(--blue-light)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><path d="M2 20h20M6 20V10m4 10V4m4 16v-7m4 7v-3" /></svg>
+                                </div>
+                                <div>
+                                    <div class="test-panel-name">WBC Differential</div>
+                                    <div class="test-panel-sub">Haematology · Manual / Automated</div>
+                                </div>
+                            </div>
+                            <div class="test-panel-right">
+                                <span class="badge badge-pending" id="badge-diff">Pending</span>
+                                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9" /></svg>
+                            </div>
+                        </div>
+                        <div class="test-panel-body">
+                            <div class="fields-grid">
+                                <div class="section-divider">Differential Count (%)</div>
+                                <div class="field">
+                                    <label>Neutrophils</label>
+                                    <input type="number" step="0.1" placeholder="e.g. 60" oninput="checkRange(this, 40, 75)" />
+                                    <span class="range-hint">Normal: <strong>40 – 75 %</strong></span>
+                                </div>
+                                <div class="field">
+                                    <label>Lymphocytes</label>
+                                    <input type="number" step="0.1" placeholder="e.g. 30" oninput="checkRange(this, 20, 45)" />
+                                    <span class="range-hint">Normal: <strong>20 – 45 %</strong></span>
+                                </div>
+                                <div class="field">
+                                    <label>Monocytes</label>
+                                    <input type="number" step="0.1" placeholder="e.g. 6" oninput="checkRange(this, 2, 10)" />
+                                    <span class="range-hint">Normal: <strong>2 – 10 %</strong></span>
+                                </div>
+                                <div class="field">
+                                    <label>Eosinophils</label>
+                                    <input type="number" step="0.1" placeholder="e.g. 3" oninput="checkRange(this, 1, 6)" />
+                                    <span class="range-hint">Normal: <strong>1 – 6 %</strong></span>
+                                </div>
+                                <div class="field">
+                                    <label>Basophils</label>
+                                    <input type="number" step="0.1" placeholder="e.g. 0.5" oninput="checkRange(this, 0, 1)" />
+                                    <span class="range-hint">Normal: <strong>0 – 1 %</strong></span>
+                                </div>
+                                <div class="field">
+                                    <label>Bands / Immature</label>
+                                    <input type="number" step="0.1" placeholder="e.g. 0" />
+                                    <span class="range-hint">Note if present</span>
+                                </div>
+                                <div class="field">
+                                    <label>Abnormal Flag</label>
+                                    <select><option>None</option><option>Abnormal — High</option><option>Abnormal — Low</option><option>Critical High</option><option>Critical Low</option></select>
+                                </div>
+                                <div class="field">
+                                    <label>Status</label>
+                                    <select><option>In Progress</option><option>Completed</option><option>Requires Repeat</option><option>Requires Senior Review</option></select>
+                                </div>
+                                <div class="field span-2">
+                                    <label>Notes</label>
+                                    <textarea placeholder="Morphology observations, blast cells, toxic granulation, etc."></textarea>
+                                </div>
+                                <div class="field span-2" style="align-items:flex-end">
+                                    <button class="btn btn-primary" onclick="markComplete('panel-diff','badge-diff')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                        Mark as Complete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Platelet Count -->
+                    <div class="test-panel" id="panel-plt">
+                        <div class="test-panel-header" onclick="togglePanel('panel-plt')">
+                            <div class="test-panel-left">
+                                <div class="test-panel-icon" style="background:var(--teal-light)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3" /><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" /></svg>
+                                </div>
+                                <div>
+                                    <div class="test-panel-name">Platelet Count</div>
+                                    <div class="test-panel-sub">Haematology · Automated Analyser</div>
+                                </div>
+                            </div>
+                            <div class="test-panel-right">
+                                <span class="badge badge-pending" id="badge-plt">Pending</span>
+                                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9" /></svg>
+                            </div>
+                        </div>
+                        <div class="test-panel-body">
+                            <div class="fields-grid">
+                                <div class="field">
+                                    <label>Platelet Count</label>
+                                    <input type="number" step="1" placeholder="e.g. 250" oninput="checkRange(this, 150, 400)" />
+                                    <span class="range-hint">Normal: <strong>150 – 400 ×10³/µL</strong></span>
+                                </div>
+                                <div class="field">
+                                    <label>MPV</label>
+                                    <input type="number" step="0.1" placeholder="e.g. 9.5" oninput="checkRange(this, 7.5, 12.5)" />
+                                    <span class="range-hint">Normal: <strong>7.5 – 12.5 fL</strong></span>
+                                </div>
+                                <div class="field">
+                                    <label>Abnormal Flag</label>
+                                    <select><option>None</option><option>Abnormal — High</option><option>Abnormal — Low</option><option>Critical High</option><option>Critical Low</option></select>
+                                </div>
+                                <div class="field">
+                                    <label>Status</label>
+                                    <select><option>In Progress</option><option>Completed</option><option>Requires Repeat</option></select>
+                                </div>
+                                <div class="field span-2">
+                                    <label>Notes</label>
+                                    <textarea placeholder="Platelet clumping, giant platelets, etc."></textarea>
+                                </div>
+                                <div class="field span-2" style="align-items:flex-end">
+                                    <button class="btn btn-primary" onclick="markComplete('panel-plt','badge-plt')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                        Mark as Complete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. ESR -->
+                    <div class="test-panel" id="panel-esr">
+                        <div class="test-panel-header" onclick="togglePanel('panel-esr')">
+                            <div class="test-panel-left">
+                                <div class="test-panel-icon" style="background:var(--amber-light)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                                </div>
+                                <div>
+                                    <div class="test-panel-name">Erythrocyte Sedimentation Rate</div>
+                                    <div class="test-panel-sub">Haematology · Westergren Method</div>
+                                </div>
+                            </div>
+                            <div class="test-panel-right">
+                                <span class="badge badge-pending" id="badge-esr">Pending</span>
+                                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9" /></svg>
+                            </div>
+                        </div>
+                        <div class="test-panel-body">
+                            <div class="fields-grid">
+                                <div class="field">
+                                    <label>ESR Value</label>
+                                    <input type="number" step="1" placeholder="e.g. 15" oninput="checkRange(this, 0, 20)" />
+                                    <span class="range-hint">Normal (M): <strong>0 – 15 mm/hr</strong></span>
+                                </div>
+                                <div class="field">
+                                    <label>Unit</label>
+                                    <select><option>mm/hr</option></select>
+                                </div>
+                                <div class="field">
+                                    <label>Abnormal Flag</label>
+                                    <select><option>None</option><option>Elevated</option><option>Markedly Elevated</option></select>
+                                </div>
+                                <div class="field">
+                                    <label>Status</label>
+                                    <select><option>In Progress</option><option>Completed</option><option>Requires Repeat</option></select>
+                                </div>
+                                <div class="field span-2">
+                                    <label>Notes</label>
+                                    <textarea placeholder="Method, timing, sample condition..."></textarea>
+                                </div>
+                                <div class="field span-2" style="align-items:flex-end">
+                                    <button class="btn btn-primary" onclick="markComplete('panel-esr','badge-esr')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                        Mark as Complete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBMIT STRIP -->
+                    <div class="submit-strip">
+                        <div class="submit-strip-left">
+                            <strong>Ready to submit?</strong>
+                            Complete all panels before saving. Results will be sent for pathologist review.
+                        </div>
+                        <div class="submit-actions">
+                            <button class="btn btn-ghost btn-lg" onclick="saveDraft()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
+                                Save Draft
+                            </button>
+                            <button class="btn btn-orange btn-lg" onclick="submitAll()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                Submit All Results
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT SIDEBAR -->
+                <div>
+                    <!-- REQUEST DETAILS -->
+                    <div class="sidebar-card">
+                        <div class="sidebar-card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                            Request Details
+                        </div>
+                        <div class="detail-row"><span class="detail-label">Request No.</span><span class="detail-value">REQ-0148</span></div>
+                        <div class="detail-row"><span class="detail-label">Priority</span><span class="detail-value"><span class="badge badge-urgent">Urgent</span></span></div>
+                        <div class="detail-row"><span class="detail-label">Received</span><span class="detail-value">@DateTime.Now.ToString("dd MMM yyyy, HH:mm")</span></div>
+                        <div class="detail-row"><span class="detail-label">Requesting Dr.</span><span class="detail-value">Dr. S. Mokoena</span></div>
+                        <div class="detail-row"><span class="detail-label">Ward</span><span class="detail-value">Ward 4B</span></div>
+                        <div class="detail-row"><span class="detail-label">Sample Type</span><span class="detail-value">EDTA Whole Blood</span></div>
+                        <div class="detail-row"><span class="detail-label">Tube ID</span><span class="detail-value">TBN-20240527-148</span></div>
+                        <div class="detail-row"><span class="detail-label">Assigned Tech.</span><span class="detail-value">@(ViewBag.Email ?? "Technician")</span></div>
+                    </div>
+
+                    <!-- CHECKLIST -->
+                    <div class="sidebar-card">
+                        <div class="sidebar-card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
+                            Pre-Submission Checklist
+                        </div>
+                        <div class="checklist">
+                            <label class="check-item"><input type="checkbox" onchange="updateChecklist(this)" /> Sample ID verified against request</label>
+                            <label class="check-item"><input type="checkbox" onchange="updateChecklist(this)" /> Analyser QC passed today</label>
+                            <label class="check-item"><input type="checkbox" onchange="updateChecklist(this)" /> All critical values flagged</label>
+                            <label class="check-item"><input type="checkbox" onchange="updateChecklist(this)" /> Morphology reviewed if flagged</label>
+                            <label class="check-item"><input type="checkbox" onchange="updateChecklist(this)" /> Results plausible / no data-entry error</label>
+                        </div>
+                    </div>
+
+                    <!-- QUICK NOTES -->
+                    <div class="sidebar-card">
+                        <div class="sidebar-card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                            Case Notes
+                        </div>
+                        <textarea style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.82rem;font-family:'DM Sans',sans-serif;color:var(--navy);resize:vertical;min-height:90px;outline:none;" placeholder="Internal notes for this case..."></textarea>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast">
+        <div class="toast-dot"></div>
+        <span id="toastMsg">Action completed</span>
+    </div>
+
+    <script>
+        const panels = { 'panel-fbc': false, 'panel-diff': false, 'panel-plt': false, 'panel-esr': false };
+
+        function togglePanel(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('open');
+        }
+
+        function markComplete(panelId, badgeId) {
+            panels[panelId] = true;
+            const badge = document.getElementById(badgeId);
+            badge.className = 'badge badge-completed';
+            badge.textContent = 'Complete';
+            updateProgress();
+            showToast('Panel marked as complete');
+        }
+
+        function updateProgress() {
+            const done = Object.values(panels).filter(Boolean).length;
+            const total = Object.keys(panels).length;
+            const pct = Math.round((done / total) * 100);
+            document.getElementById('progressFill').style.width = pct + '%';
+            document.getElementById('progressPct').textContent = done + ' / ' + total + ' panels';
+        }
+
+        function checkRange(el, min, max) {
+            const val = parseFloat(el.value);
+            el.classList.remove('abnormal-high', 'abnormal-low');
+            if (!isNaN(val)) {
+                if (val > max) el.classList.add('abnormal-high');
+                else if (val < min) el.classList.add('abnormal-low');
+            }
+        }
+
+        function saveDraft() { showToast('Draft saved successfully'); }
+        function submitAll() { showToast('Results submitted for review'); }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function updateChecklist(cb) {
+            cb.parentElement.classList.toggle('done', cb.checked);
+        }
+    </script>
+
+</body>
+</html>

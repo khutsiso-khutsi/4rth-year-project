@@ -1,0 +1,491 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    ViewData["Title"] = "Doctor Dashboard";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Doctor Dashboard — NMB-HLabSys</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --navy: #0b1f3a;
+            --navy2: #122848;
+            --teal: #0d9488;
+            --teal-light: rgba(13,148,136,0.1);
+            --blue: #2563eb;
+            --blue-light: rgba(37,99,235,0.1);
+            --amber: #d97706;
+            --amber-light: rgba(217,119,6,0.1);
+            --red: #dc2626;
+            --red-light: rgba(220,38,38,0.1);
+            --green: #16a34a;
+            --green-light: rgba(22,163,74,0.1);
+            --white: #ffffff;
+            --offwhite: #f4f7fb;
+            --muted: #6b7a99;
+            --border: #dde4f0;
+        }
+
+        body { font-family: 'DM Sans', sans-serif; background: var(--offwhite); color: var(--navy); min-height: 100vh; }
+
+        /* TOPBAR */
+        .topbar { background: var(--navy); padding: 0 40px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.15); }
+        .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .brand-logo { width: 34px; height: 34px; background: var(--teal); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .brand-logo svg { width: 18px; height: 18px; fill: white; }
+        .brand-name { font-family: 'DM Serif Display', serif; color: white; font-size: 1.1rem; line-height: 1.1; }
+        .brand-name span { display: block; font-family: 'DM Sans', sans-serif; font-size: 0.6rem; font-weight: 300; color: rgba(255,255,255,0.4); letter-spacing: 0.1em; text-transform: uppercase; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .user-chip { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; padding: 6px 14px 6px 8px; }
+        .user-avatar { width: 28px; height: 28px; background: var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; color: white; }
+        .user-email { font-size: 0.8rem; color: rgba(255,255,255,0.75); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .logout-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 0.82rem; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        .logout-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+        .logout-btn svg { width: 14px; height: 14px; }
+
+        /* LAYOUT */
+        .page { display: flex; min-height: calc(100vh - 64px); }
+
+        /* SIDEBAR */
+        .sidebar { width: 220px; background: white; border-right: 1px solid var(--border); padding: 24px 0; flex-shrink: 0; position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto; }
+        .nav-label { font-size: 0.65rem; font-weight: 600; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; padding: 0 20px; margin-bottom: 4px; margin-top: 16px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; border-left: 3px solid transparent; transition: all 0.15s; }
+        .nav-item:hover { background: var(--offwhite); color: var(--navy); }
+        .nav-item.active { background: var(--blue-light); color: var(--blue); border-left-color: var(--blue); }
+        .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+        /* MAIN */
+        .main { flex: 1; padding: 32px 40px; }
+
+        /* WELCOME BANNER */
+        .welcome-banner { background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%); border-radius: 20px; padding: 32px 36px; margin-bottom: 28px; position: relative; overflow: hidden; }
+        .welcome-banner::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 80% at 90% 50%, rgba(37,99,235,0.25) 0%, transparent 60%); }
+        .welcome-banner::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 40px 40px; }
+        .welcome-inner { position: relative; z-index: 2; }
+        .welcome-tag { display: inline-flex; align-items: center; gap: 6px; background: rgba(37,99,235,0.2); border: 1px solid rgba(37,99,235,0.3); color: #93c5fd; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 10px; border-radius: 100px; margin-bottom: 12px; }
+        .welcome-tag::before { content: ''; width: 5px; height: 5px; background: #93c5fd; border-radius: 50%; }
+        .welcome-banner h1 { font-family: 'DM Serif Display', serif; font-size: 1.8rem; color: white; margin-bottom: 6px; }
+        .welcome-banner h1 em { font-style: italic; color: #93c5fd; }
+        .welcome-banner p { color: rgba(255,255,255,0.5); font-size: 0.875rem; }
+
+        /* STATS */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+        .stat-card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(11,31,58,0.04); }
+        .stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+        .stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .stat-icon svg { width: 18px; height: 18px; }
+        .stat-trend { font-size: 0.72rem; font-weight: 600; padding: 3px 8px; border-radius: 100px; }
+        .trend-up { background: var(--green-light); color: var(--green); }
+        .trend-warn { background: var(--amber-light); color: var(--amber); }
+        .trend-blue { background: var(--blue-light); color: var(--blue); }
+        .stat-value { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--navy); line-height: 1; margin-bottom: 4px; }
+        .stat-label { font-size: 0.78rem; color: var(--muted); font-weight: 500; }
+
+        /* SECTION GRIDS */
+        .section-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; margin-bottom: 20px; }
+
+        /* CARDS */
+        .card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 24px; box-shadow: 0 2px 8px rgba(11,31,58,0.04); }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .card-title { font-family: 'DM Serif Display', serif; font-size: 1.05rem; color: var(--navy); display: flex; align-items: center; gap: 8px; }
+        .card-title svg { width: 17px; height: 17px; stroke: var(--blue); }
+        .card-action { font-size: 0.78rem; color: var(--teal); text-decoration: none; font-weight: 500; }
+        .card-action:hover { text-decoration: underline; }
+
+        /* TABLE */
+        .table { width: 100%; border-collapse: collapse; }
+        .table th { font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 0 0 10px; text-align: left; border-bottom: 1px solid var(--border); }
+        .table td { padding: 12px 0; font-size: 0.83rem; color: var(--navy); border-bottom: 1px solid var(--offwhite); vertical-align: middle; }
+        .table tr:last-child td { border-bottom: none; }
+
+        /* BADGES */
+        .badge { display: inline-block; padding: 3px 9px; border-radius: 100px; font-size: 0.7rem; font-weight: 600; }
+        .badge-completed { background: var(--green-light); color: var(--green); }
+        .badge-pending { background: var(--amber-light); color: var(--amber); }
+        .badge-urgent { background: var(--red-light); color: var(--red); }
+        .badge-inprogress { background: var(--blue-light); color: var(--blue); }
+        .badge-consented { background: var(--teal-light); color: var(--teal); }
+        .badge-noconsent { background: #f1f5f9; color: var(--muted); }
+
+        /* BUTTONS */
+        .btn { padding: 6px 14px; border: none; border-radius: 8px; font-size: 0.78rem; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 600; transition: all 0.15s; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-primary { background: var(--blue); color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-teal { background: var(--teal); color: white; }
+        .btn-teal:hover { background: #0b7a70; }
+        .btn-ghost { background: var(--offwhite); border: 1px solid var(--border); color: var(--navy); }
+        .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+
+        /* PATIENT LIST */
+        .patient-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--offwhite); }
+        .patient-item:last-child { border-bottom: none; }
+        .patient-avatar { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; color: white; flex-shrink: 0; background: var(--blue); }
+        .patient-info { flex: 1; }
+        .patient-name { font-size: 0.85rem; font-weight: 600; color: var(--navy); }
+        .patient-meta { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+
+        /* ACTIVITY */
+        .activity-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--offwhite); }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+        .activity-text { font-size: 0.82rem; color: var(--navy); line-height: 1.5; }
+        .activity-time { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+        /* NEW REQUEST FORM */
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
+        .form-group select, .form-group input, .form-group textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 9px; font-size: 0.85rem; font-family: 'DM Sans', sans-serif; color: var(--navy); background: white; outline: none; transition: border-color 0.15s; }
+        .form-group select:focus, .form-group input:focus, .form-group textarea:focus { border-color: var(--blue); }
+
+        @@media (max-width: 1100px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .section-grid { grid-template-columns: 1fr; }
+        }
+        @@media (max-width: 768px) {
+            .topbar { padding: 0 20px; }
+            .user-email { display: none; }
+            .sidebar { display: none; }
+            .main { padding: 20px 16px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z"/><circle cx="12" cy="17" r="4" opacity="0.6"/></svg>
+            </div>
+            <div class="brand-name">NMB-HLabSys<span>Haematology Lab System</span></div>
+        </a>
+        <div class="topbar-right">
+            <div class="user-chip">
+                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0,1).ToUpper() ?? "D")</div>
+                <span class="user-email">@ViewBag.Email</span>
+            </div>
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Sign Out
+            </a>
+        </div>
+    </div>
+
+    <div class="page">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="nav-label">Main</div>
+            <a href="#" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                Dashboard
+            </a>
+            <a asp-controller = "" asp-action ="" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                My Patients
+            </a>
+            <a href="#" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Test Requests
+            </a>
+            <a href="#" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                Results
+            </a>
+            <div class="nav-label">System</div>
+            <a href="#" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Activity Log
+            </a>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main">
+
+            <!-- WELCOME BANNER -->
+            <div class="welcome-banner">
+                <div class="welcome-inner">
+                    <div class="welcome-tag">Doctor Portal</div>
+                    <h1>Welcome back, <em>Doctor</em></h1>
+                    <p>Your patient overview for today — @DateTime.Now.ToString("dddd, dd MMMM yyyy")</p>
+                </div>
+            </div>
+
+            <!-- STATS -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon" style="background:var(--blue-light)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <span class="stat-trend trend-blue">Active</span>
+                    </div>
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">My Patients</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon" style="background:var(--amber-light)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </div>
+                        <span class="stat-trend trend-warn">Pending</span>
+                    </div>
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">Awaiting Results</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon" style="background:var(--green-light)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span class="stat-trend trend-up">Ready</span>
+                    </div>
+                    <div class="stat-value">8</div>
+                    <div class="stat-label">Results Available</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon" style="background:var(--teal-light)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <span class="stat-trend trend-up">Consented</span>
+                    </div>
+                    <div class="stat-value">9</div>
+                    <div class="stat-label">Consented Records</div>
+                </div>
+            </div>
+
+            <!-- TEST REQUESTS + PATIENTS -->
+            <div class="section-grid">
+
+                <!-- TEST REQUESTS TABLE -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            My Test Requests
+                        </div>
+                        <a href="#" class="card-action">View all</a>
+                    </div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Request #</th>
+                                <th>Patient</th>
+                                <th>Tests</th>
+                                <th>Urgency</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>REQ-0148</strong></td>
+                                <td>Thabo Nkosi</td>
+                                <td>FBC, ESR</td>
+                                <td><span class="badge badge-urgent">Urgent</span></td>
+                                <td><span class="badge badge-pending">Pending</span></td>
+                                <td><a href="#" class="btn btn-ghost">View</a></td>
+                            </tr>
+                            <tr>
+                                <td><strong>REQ-0147</strong></td>
+                                <td>Zanele Dlamini</td>
+                                <td>Haemoglobin</td>
+                                <td><span class="badge badge-urgent">Urgent</span></td>
+                                <td><span class="badge badge-inprogress">In Progress</span></td>
+                                <td><a href="#" class="btn btn-ghost">View</a></td>
+                            </tr>
+                            <tr>
+                                <td><strong>REQ-0144</strong></td>
+                                <td>Bongani Zulu</td>
+                                <td>Platelet Count</td>
+                                <td><span class="badge badge-pending">Routine</span></td>
+                                <td><span class="badge badge-completed">Completed</span></td>
+                                <td><a href="#" class="btn btn-primary">View Results</a></td>
+                            </tr>
+                            <tr>
+                                <td><strong>REQ-0140</strong></td>
+                                <td>Nomsa Ndlovu</td>
+                                <td>WBC Differential</td>
+                                <td><span class="badge badge-pending">Routine</span></td>
+                                <td><span class="badge badge-completed">Completed</span></td>
+                                <td><a href="#" class="btn btn-primary">View Results</a></td>
+                            </tr>
+                            <tr>
+                                <td><strong>REQ-0138</strong></td>
+                                <td>Sipho Khumalo</td>
+                                <td>FBC</td>
+                                <td><span class="badge badge-pending">Routine</span></td>
+                                <td><span class="badge badge-completed">Completed</span></td>
+                                <td><a href="#" class="btn btn-primary">View Results</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- MY PATIENTS -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            My Patients
+                        </div>
+                        <a href="#" class="card-action">All patients</a>
+                    </div>
+                    <div class="patient-item">
+                        <div class="patient-avatar" style="background:#2563eb">TN</div>
+                        <div class="patient-info">
+                            <div class="patient-name">Thabo Nkosi</div>
+                            <div class="patient-meta">ID: 9203154567890 · 2 active requests</div>
+                        </div>
+                        <span class="badge badge-consented">Consented</span>
+                    </div>
+                    <div class="patient-item">
+                        <div class="patient-avatar" style="background:#0d9488">ZD</div>
+                        <div class="patient-info">
+                            <div class="patient-name">Zanele Dlamini</div>
+                            <div class="patient-meta">ID: 9508234567891 · 1 active request</div>
+                        </div>
+                        <span class="badge badge-consented">Consented</span>
+                    </div>
+                    <div class="patient-item">
+                        <div class="patient-avatar" style="background:#d97706">BZ</div>
+                        <div class="patient-info">
+                            <div class="patient-name">Bongani Zulu</div>
+                            <div class="patient-meta">ID: 8811234567892 · 1 request</div>
+                        </div>
+                        <span class="badge badge-consented">Consented</span>
+                    </div>
+                    <div class="patient-item">
+                        <div class="patient-avatar" style="background:#6b7a99">NN</div>
+                        <div class="patient-info">
+                            <div class="patient-name">Nomsa Ndlovu</div>
+                            <div class="patient-meta">ID: 9106234567893 · 1 request</div>
+                        </div>
+                        <span class="badge badge-noconsent">No Consent</span>
+                    </div>
+                    <div class="patient-item">
+                        <div class="patient-avatar" style="background:#4f46e5">SK</div>
+                        <div class="patient-info">
+                            <div class="patient-name">Sipho Khumalo</div>
+                            <div class="patient-meta">ID: 9304234567894 · 1 request</div>
+                        </div>
+                        <span class="badge badge-consented">Consented</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- NEW REQUEST + ACTIVITY -->
+            <div class="section-grid">
+
+                <!-- NEW TEST REQUEST FORM -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Submit New Test Request
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Patient</label>
+                        <select>
+                            <option value="">-- Select patient --</option>
+                            <option>Thabo Nkosi</option>
+                            <option>Zanele Dlamini</option>
+                            <option>Bongani Zulu</option>
+                            <option>Nomsa Ndlovu</option>
+                            <option>Sipho Khumalo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Test Type</label>
+                        <select>
+                            <option value="">-- Select test --</option>
+                            <option>Full Blood Count (FBC)</option>
+                            <option>Haemoglobin</option>
+                            <option>Platelet Count</option>
+                            <option>WBC Differential</option>
+                            <option>ESR</option>
+                            <option>Reticulocyte Count</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Urgency</label>
+                        <select>
+                            <option>Routine</option>
+                            <option>Urgent</option>
+                            <option>Emergency</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Clinical Notes</label>
+                        <textarea rows="3" placeholder="Add any relevant clinical notes..."></textarea>
+                    </div>
+                    <button class="btn btn-teal" style="width:100%;justify-content:center;padding:12px;">Submit Request</button>
+                </div>
+
+                <!-- ACTIVITY LOG -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            Recent Activity
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-dot" style="background:var(--green)"></div>
+                        <div>
+                            <div class="activity-text">Results available for <strong>REQ-0144</strong> — Platelet Count</div>
+                            <div class="activity-time">1 hour ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-dot" style="background:var(--blue)"></div>
+                        <div>
+                            <div class="activity-text">Submitted urgent request <strong>REQ-0148</strong> for Thabo Nkosi</div>
+                            <div class="activity-time">2 hours ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-dot" style="background:var(--teal)"></div>
+                        <div>
+                            <div class="activity-text">Zanele Dlamini granted consent for <strong>REQ-0147</strong></div>
+                            <div class="activity-time">3 hours ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-dot" style="background:var(--green)"></div>
+                        <div>
+                            <div class="activity-text">Results available for <strong>REQ-0140</strong> — WBC Differential</div>
+                            <div class="activity-time">Yesterday</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-dot" style="background:var(--blue)"></div>
+                        <div>
+                            <div class="activity-text">Submitted request <strong>REQ-0138</strong> for Sipho Khumalo</div>
+                            <div class="activity-time">Yesterday</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+
+</body>
+</html>
