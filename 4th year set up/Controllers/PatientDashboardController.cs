@@ -510,11 +510,13 @@ namespace _4th_year_set_up.Controllers
                 {
                     new DoctorConsent { ConsentID = 1, DoctorID = 1, DoctorName = "Dr. John Smith", DoctorEmail = "john.smith@nmb.com", ConsentGranted = true, GrantedDate = DateTime.Now.AddMonths(-1) }
                 },
+
                 TestRequests = new List<ConsentTestRequest>
-                {
-                    new ConsentTestRequest { RequestID = 1, RequestNumber = "REQ-001", RequestDate = DateTime.Now.AddDays(-10), RequestStatus = "Completed", IsShared = true },
-                    new ConsentTestRequest { RequestID = 2, RequestNumber = "REQ-002", RequestDate = DateTime.Now.AddDays(-3), RequestStatus = "Pending", IsShared = false }
-                }
+{
+    new ConsentTestRequest { RequestID = 1, RequestNumber = "REQ-001", RequestDate = DateTime.Now.AddDays(-10), RequestStatus = "Completed", IsShared = true,  Urgency = "Routine" },
+    new ConsentTestRequest { RequestID = 2, RequestNumber = "REQ-002", RequestDate = DateTime.Now.AddDays(-3),  RequestStatus = "Pending",   IsShared = false, Urgency = "Urgent"  }
+}
+
             };
 
             ViewBag.Email = HttpContext.Session.GetString("Email") ?? "dev-patient@test.com";
