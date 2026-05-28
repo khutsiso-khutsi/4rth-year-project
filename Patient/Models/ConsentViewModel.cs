@@ -36,5 +36,6 @@ namespace Patient.Models
         public DateTime RequestDate { get; set; }
         public string RequestStatus { get; set; } = "";
         public bool IsShared { get; set; }
+        public string? Urgency { get; set; }
     }
 }

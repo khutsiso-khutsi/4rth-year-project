@@ -34,7 +34,7 @@
 
         body {
             font-family: 'DM Sans', sans-serif;
-            background: var(--offwhite);
+            background: var(--navy);
             color: var(--navy);
             min-height: 100vh;
             overflow-x: hidden;
@@ -684,27 +684,120 @@
         footer {
             background: var(--navy);
             border-top: 1px solid rgba(255,255,255,0.08);
-            padding: 40px 48px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            padding: 64px 48px 0;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 48px;
         }
 
-            footer p {
-                color: rgba(255,255,255,0.35);
-                font-size: 0.82rem;
+        .footer-inner {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .footer-logo {
+            width: 36px;
+            height: 36px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+            .footer-logo svg {
+                width: 20px;
+                height: 20px;
+                fill: white;
             }
 
-            footer a {
-                color: rgba(255,255,255,0.35);
-                text-decoration: none;
-                font-size: 0.82rem;
-                transition: color 0.2s;
+        .footer-brand-name {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1rem;
+            color: white;
+        }
+
+        .footer-brand-sub {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .footer-tagline {
+            color: rgba(255,255,255,0.45);
+            font-size: 0.83rem;
+            line-height: 1.7;
+            max-width: 320px;
+        }
+
+        .footer-sdg {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255,255,255,0.45);
+            font-size: 0.78rem;
+        }
+
+        .footer-sdg-badge {
+            background: rgba(13,148,136,0.2);
+            border: 1px solid rgba(13,148,136,0.35);
+            color: #5eead4;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 100px;
+        }
+
+        .footer-links-col {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-top: 4px;
+        }
+
+        .footer-col-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.3);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .footer-links-col a {
+            color: rgba(255,255,255,0.55);
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.2s;
+        }
+
+            .footer-links-col a:hover {
+                color: #5eead4;
             }
 
-                footer a:hover {
-                    color: rgba(255,255,255,0.7);
-                }
+        .footer-bottom {
+            grid-column: 1 / -1;
+            border-top: 1px solid rgba(255,255,255,0.07);
+            padding: 24px 0 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .footer-bottom p {
+                color: rgba(255,255,255,0.25);
+                font-size: 0.78rem;
+            }
 
         /* ── CHAT WIDGET ── */
         .chat-bubble {
@@ -1006,58 +1099,62 @@
                     animation-delay: 0.4s;
                 }
 
-        
-        .hero {
-            padding: 80px 20px 60px;
-        }
+       
+            
 
-        .hero-inner {
-            grid-template-columns: 1fr;
-            gap: 40px;
-        }
+            .hero-inner {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
 
-        .hero-visual {
-            display: none;
-        }
-
-        .section {
-            padding: 60px 20px;
-        }
-
-        .how-section {
-            padding: 60px 20px;
-        }
-
-        .faq-section {
-            padding: 60px 20px;
-        }
-
-        .steps-row {
-            grid-template-columns: 1fr 1fr;
-            gap: 32px;
-        }
-
-            .steps-row::before {
+            .hero-visual {
                 display: none;
             }
 
-        .sdg-section {
-            grid-template-columns: 1fr;
-            padding: 60px 20px;
+            .section {
+                padding: 60px 20px;
+            }
+
+            .how-section {
+                padding: 60px 20px;
+            }
+
+            .faq-section {
+                padding: 60px 20px;
+            }
+
+            .steps-row {
+                grid-template-columns: 1fr 1fr;
+                gap: 32px;
+            }
+
+                .steps-row::before {
+                    display: none;
+                }
+
+            .sdg-section {
+                grid-template-columns: 1fr;
+                padding: 60px 20px;
+            }
+
+            footer {
+                grid-template-columns: 1fr;
+                padding: 40px 20px 0;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
+
+            .chat-window {
+                width: calc(100vw - 32px);
+                right: 16px;
+            }
         }
 
-        footer {
-            flex-direction: column;
-            gap: 16px;
-            padding: 32px 20px;
-        }
-
-        .chat-window {
-            width: calc(100vw - 32px);
-            right: 16px;
-        }
-
-        }
+        
     </style>
 </head>
 <body>
@@ -1346,12 +1443,53 @@
     </div>
 
     <!-- FOOTER -->
+    <!-- FOOTER -->
     <footer>
-        <p>© 2026 NMB Haematology Diagnostic Laboratories. All rights reserved.</p>
-        <div style="display:flex;gap:24px">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <div class="footer-logo">
+                    <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
+                </div>
+                <div>
+                    <div class="footer-brand-name">NMB-HLabSys</div>
+                    <div class="footer-brand-sub">Haematology Lab System</div>
+                </div>
+            </div>
+            <p class="footer-tagline">A secure, end-to-end diagnostic platform for Nelson Mandela Bay Haematology Laboratories — connecting doctors, technicians and patients in real time.</p>
+            <div class="footer-sdg">
+                <span class="footer-sdg-badge">UN SDG 3</span>
+                <span>Supporting Good Health and Well-Being</span>
+            </div>
+        </div>
+
+        <div class="footer-links-col">
+            <div class="footer-col-title">Quick Links</div>
+            <a href="#roles">Our Roles</a>
+            <a href="#faq">FAQ</a>
+            <a asp-controller="Home" asp-action="Login">Sign In</a>
+            <a asp-controller="Home" asp-action="Register">Register</a>
+        </div>
+
+        <div class="footer-links-col">
+            <div class="footer-col-title">Portals</div>
+            <a href="#">Doctor Portal</a>
+            <a href="#">Patient Portal</a>
+            <a href="#">Lab Technician</a>
+            <a href="#">Lab Manager</a>
+            <a href="#">Admin</a>
+        </div>
+
+        <div class="footer-links-col">
+            <div class="footer-col-title">Contact</div>
+            <a href="mailto:support@nmb-hlabsys.ac.za">support@nmb-hlabsys.ac.za</a>
             <a href="#">Privacy Policy</a>
             <a href="#">Terms of Use</a>
-            <a href="#">Contact</a>
+            <a href="#">Report an Issue</a>
+        </div>
+
+        <div class="footer-bottom">
+            <p>© 2026 NMB Haematology Diagnostic Laboratories. All rights reserved.</p>
+            <p>Built for Nelson Mandela Bay · Powered by ASP.NET Core</p>
         </div>
     </footer>
 

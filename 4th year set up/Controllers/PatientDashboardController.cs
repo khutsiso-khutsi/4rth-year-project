@@ -510,11 +510,13 @@ namespace _4th_year_set_up.Controllers
                 {
                     new DoctorConsent { ConsentID = 1, DoctorID = 1, DoctorName = "Dr. John Smith", DoctorEmail = "john.smith@nmb.com", ConsentGranted = true, GrantedDate = DateTime.Now.AddMonths(-1) }
                 },
+
                 TestRequests = new List<ConsentTestRequest>
-                {
-                    new ConsentTestRequest { RequestID = 1, RequestNumber = "REQ-001", RequestDate = DateTime.Now.AddDays(-10), RequestStatus = "Completed", IsShared = true },
-                    new ConsentTestRequest { RequestID = 2, RequestNumber = "REQ-002", RequestDate = DateTime.Now.AddDays(-3), RequestStatus = "Pending", IsShared = false }
-                }
+{
+    new ConsentTestRequest { RequestID = 1, RequestNumber = "REQ-001", RequestDate = DateTime.Now.AddDays(-10), RequestStatus = "Completed", IsShared = true,  Urgency = "Routine" },
+    new ConsentTestRequest { RequestID = 2, RequestNumber = "REQ-002", RequestDate = DateTime.Now.AddDays(-3),  RequestStatus = "Pending",   IsShared = false, Urgency = "Urgent"  }
+}
+
             };
 
             ViewBag.Email = HttpContext.Session.GetString("Email") ?? "dev-patient@test.com";
@@ -561,6 +563,31 @@ namespace _4th_year_set_up.Controllers
         [HttpPost]
         public IActionResult UpdateProfile(ProfileViewModel model)
         {
+            // Validation
+            if (string.IsNullOrWhiteSpace(model.FirstName) || model.FirstName.Length < 2)
+            {
+                TempData["Error"] = "First name must be at least 2 characters.";
+                return RedirectToAction("Profile");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.LastName) || model.LastName.Length < 2)
+            {
+                TempData["Error"] = "Last name must be at least 2 characters.";
+                return RedirectToAction("Profile");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.CellphoneNumber) || !System.Text.RegularExpressions.Regex.IsMatch(model.CellphoneNumber, @"^\d{10}$"))
+            {
+                TempData["Error"] = "Cellphone number must be exactly 10 digits.";
+                return RedirectToAction("Profile");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.HomeAddress) || model.HomeAddress.Length < 5)
+            {
+                TempData["Error"] = "Please enter a valid home address.";
+                return RedirectToAction("Profile");
+            }
+
             TempData["Success"] = "Profile updated successfully.";
             return RedirectToAction("Profile");
         }
@@ -568,6 +595,43 @@ namespace _4th_year_set_up.Controllers
         [HttpPost]
         public IActionResult ChangePassword(ProfileViewModel model)
         {
+            // Validation
+            if (string.IsNullOrWhiteSpace(model.CurrentPassword))
+            {
+                TempData["Error"] = "Please enter your current password.";
+                return RedirectToAction("Profile");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.NewPassword) || model.NewPassword.Length < 8)
+            {
+                TempData["Error"] = "New password must be at least 8 characters.";
+                return RedirectToAction("Profile");
+            }
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(model.NewPassword, @"[A-Z]"))
+            {
+                TempData["Error"] = "New password must contain at least one uppercase letter.";
+                return RedirectToAction("Profile");
+            }
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(model.NewPassword, @"[0-9]"))
+            {
+                TempData["Error"] = "New password must contain at least one number.";
+                return RedirectToAction("Profile");
+            }
+
+            if (model.NewPassword != model.ConfirmPassword)
+            {
+                TempData["Error"] = "New password and confirmation do not match.";
+                return RedirectToAction("Profile");
+            }
+
+            if (model.NewPassword == model.CurrentPassword)
+            {
+                TempData["Error"] = "New password cannot be the same as your current password.";
+                return RedirectToAction("Profile");
+            }
+
             TempData["Success"] = "Password changed successfully.";
             return RedirectToAction("Profile");
         }
@@ -581,7 +645,7 @@ namespace _4th_year_set_up.Controllers
                 RequestDate = DateTime.Now.AddDays(-10),
                 RequestStatus = "Completed",
                 Urgency = "Routine",
-                DoctorName = "Dr. John Smith",
+                DoctorName = "Dr. Khutsiso Letageng",
                 Items = new List<TestRequestItem>
                 {
                     new TestRequestItem { RequestItemID = 1, TestName = "Full Blood Count", CategoryName = "Haematology", ItemStatus = "Verified", ResultValue = 13.5m, UnitName = "g/dL", NormalRangeMin = 12.0m, NormalRangeMax = 17.5m, IsAbnormal = false },
