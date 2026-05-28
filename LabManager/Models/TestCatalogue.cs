@@ -15,5 +15,7 @@
         public string NormalRange { get; set; }
 
         public int TAT { get; set; }
+
+        public string Consumables { get; set; }
     }
 }
