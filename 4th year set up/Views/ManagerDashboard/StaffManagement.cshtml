@@ -1,5 +1,4 @@
-﻿```cshtml
-@using LabManager.Models
+﻿@using LabManager.Models
 @model StaffViewModel
 
 @{
@@ -26,6 +25,7 @@
 
             :root {
                 --bg: #081120;
+                --navy: #0b1f3a;
                 --card: #111c2d;
                 --card2: #162338;
                 --line: rgba(255,255,255,.06);
@@ -41,17 +41,20 @@
 
             body {
                 font-family: var(--font);
-                background: linear-gradient(180deg,#081120 0%, #0b1728 100%);
+                background: #f5f7fb;
                 color: var(--text);
                 min-height: 100vh;
+            }
+
+            a {
+                text-decoration: none;
             }
 
             /* TOPBAR */
 
             .topbar {
                 height: 74px;
-                background: rgba(10,18,32,.92);
-                backdrop-filter: blur(14px);
+                background: #0b1f3a;
                 border-bottom: 1px solid var(--line);
                 display: flex;
                 align-items: center;
@@ -66,7 +69,6 @@
                 display: flex;
                 align-items: center;
                 gap: 14px;
-                text-decoration: none;
             }
 
             .brand-logo {
@@ -98,7 +100,7 @@
                 .brand-name span {
                     font-size: 11px;
                     font-weight: 500;
-                    color: var(--muted);
+                    color: #b6c2d1;
                     margin-top: 3px;
                     letter-spacing: .5px;
                 }
@@ -114,8 +116,8 @@
                 align-items: center;
                 gap: 10px;
                 padding: 7px 14px;
-                background: rgba(255,255,255,.05);
-                border: 1px solid rgba(255,255,255,.07);
+                background: rgba(255,255,255,.08);
+                border: 1px solid rgba(255,255,255,.08);
                 border-radius: 999px;
             }
 
@@ -134,7 +136,7 @@
 
             .user-email {
                 font-size: 13px;
-                color: #e2e8f0;
+                color: #ffffff;
                 font-weight: 500;
             }
 
@@ -142,12 +144,11 @@
                 height: 42px;
                 padding: 0 18px;
                 border-radius: 12px;
-                background: rgba(231,76,60,.12);
+                background: rgba(231,76,60,.15);
                 border: 1px solid rgba(231,76,60,.25);
-                color: #ff8a80;
+                color: #ffb4ac;
                 font-size: 13px;
                 font-weight: 600;
-                text-decoration: none;
                 display: flex;
                 align-items: center;
                 gap: 8px;
@@ -155,9 +156,8 @@
             }
 
                 .logout-btn:hover {
-                    background: rgba(231,76,60,.22);
+                    background: rgba(231,76,60,.25);
                     color: white;
-                    transform: translateY(-1px);
                 }
 
                 .logout-btn svg {
@@ -165,7 +165,7 @@
                     height: 16px;
                 }
 
-            /* LAYOUT */
+            /* PAGE */
 
             .page {
                 display: flex;
@@ -176,8 +176,8 @@
 
             .sidebar {
                 width: 260px;
-                background: rgba(10,18,32,.95);
-                border-right: 1px solid var(--line);
+                background: #0b1f3a;
+                border-right: 1px solid rgba(255,255,255,.05);
                 padding: 26px 18px;
                 position: sticky;
                 top: 74px;
@@ -188,7 +188,7 @@
                 font-size: 11px;
                 text-transform: uppercase;
                 letter-spacing: 1px;
-                color: var(--muted);
+                color: #93a4ba;
                 margin: 18px 10px 12px;
                 font-weight: 700;
             }
@@ -200,7 +200,6 @@
                 gap: 12px;
                 padding: 0 14px;
                 border-radius: 14px;
-                text-decoration: none;
                 color: #d7e2f0;
                 font-size: 14px;
                 font-weight: 500;
@@ -216,14 +215,14 @@
                 }
 
                 .nav-item:hover {
-                    background: rgba(255,255,255,.05);
+                    background: rgba(255,255,255,.08);
                     transform: translateX(2px);
                 }
 
                 .nav-item.active {
-                    background: linear-gradient(135deg,rgba(52,152,219,.22),rgba(26,188,156,.18));
-                    color: white;
+                    background: linear-gradient(135deg,rgba(52,152,219,.25),rgba(26,188,156,.18));
                     border: 1px solid rgba(52,152,219,.25);
+                    color: white;
                 }
 
             /* MAIN */
@@ -241,10 +240,11 @@
                     font-size: 30px;
                     font-weight: 700;
                     margin-bottom: 8px;
+                    color: #0b1f3a;
                 }
 
                 .page-header p {
-                    color: var(--muted);
+                    color: #64748b;
                     font-size: 14px;
                 }
 
@@ -259,11 +259,11 @@
             /* CARDS */
 
             .card {
-                background: linear-gradient(180deg,#121f33,#101a2b);
-                border: 1px solid var(--line);
+                background: white;
                 border-radius: 24px;
                 padding: 24px;
-                box-shadow: 0 12px 30px rgba(0,0,0,.18);
+                border: 1px solid #e2e8f0;
+                box-shadow: 0 10px 30px rgba(15,23,42,.06);
             }
 
             .card-header {
@@ -274,9 +274,9 @@
             }
 
             .section-title {
-                font-size: 14px;
+                font-size: 15px;
                 font-weight: 700;
-                color: white;
+                color: #0b1f3a;
             }
 
             .btn-add {
@@ -294,7 +294,6 @@
 
                 .btn-add:hover {
                     transform: translateY(-2px);
-                    box-shadow: 0 10px 25px rgba(52,152,219,.25);
                 }
 
             /* TABLE */
@@ -314,14 +313,15 @@
                 font-size: 11px;
                 text-transform: uppercase;
                 letter-spacing: .7px;
-                color: var(--muted);
-                border-bottom: 1px solid rgba(255,255,255,.06);
+                color: #64748b;
+                border-bottom: 1px solid #e2e8f0;
             }
 
             td {
                 padding: 16px 10px;
-                border-bottom: 1px solid rgba(255,255,255,.04);
+                border-bottom: 1px solid #edf2f7;
                 font-size: 14px;
+                color: #1e293b;
             }
 
             tr:last-child td {
@@ -329,22 +329,23 @@
             }
 
             tr:hover td {
-                background: rgba(255,255,255,.02);
+                background: #f8fafc;
             }
 
             .staff-name {
                 font-weight: 600;
                 margin-bottom: 3px;
+                color: #0f172a;
             }
 
             .staff-email {
                 font-size: 12px;
-                color: var(--muted);
+                color: #64748b;
             }
 
             .mono {
                 font-family: monospace;
-                color: #8bd2ff;
+                color: #2563eb;
                 font-size: 12px;
             }
 
@@ -360,12 +361,12 @@
 
             .active {
                 background: rgba(46,204,113,.12);
-                color: #2ecc71;
+                color: #16a34a;
             }
 
             .inactive {
-                background: rgba(148,163,184,.12);
-                color: #94a3b8;
+                background: rgba(148,163,184,.15);
+                color: #64748b;
             }
 
             .dot {
@@ -380,8 +381,8 @@
                 align-items: center;
                 padding: 6px 12px;
                 border-radius: 999px;
-                background: rgba(155,89,182,.15);
-                color: #c084fc;
+                background: rgba(155,89,182,.12);
+                color: #9333ea;
                 font-size: 12px;
                 font-weight: 600;
             }
@@ -406,7 +407,7 @@
             .modal {
                 width: 100%;
                 max-width: 620px;
-                background: #121f33;
+                background: #12233f;
                 border-radius: 28px;
                 border: 1px solid rgba(255,255,255,.08);
                 padding: 30px;
@@ -419,7 +420,7 @@
                 }
 
             .modal-sub {
-                color: var(--muted);
+                color: #94a3b8;
                 font-size: 14px;
                 margin-bottom: 24px;
             }
@@ -458,7 +459,7 @@
                 font-size: 11px;
                 text-transform: uppercase;
                 letter-spacing: .7px;
-                color: var(--muted);
+                color: #94a3b8;
                 font-weight: 700;
             }
 
@@ -468,7 +469,7 @@
                 padding: 0 14px;
                 border-radius: 12px;
                 border: 1px solid rgba(255,255,255,.08);
-                background: rgba(255,255,255,.04);
+                background: rgba(255,255,255,.05);
                 color: white;
                 font-family: var(--font);
                 font-size: 14px;
@@ -519,21 +520,11 @@
                 color: white;
             }
 
-                .btn-primary:hover {
-                    transform: translateY(-2px);
-                }
-
             .btn-outline {
                 background: transparent;
                 border: 1px solid rgba(255,255,255,.1);
                 color: #d7e2f0;
             }
-
-                .btn-outline:hover {
-                    background: rgba(255,255,255,.05);
-                }
-
-            /* RESPONSIVE */
 
             @@media(max-width:1100px) {
 
@@ -633,67 +624,42 @@
     <div class="page">
 
         <!-- SIDEBAR -->
-
-        <aside class="sidebar">
-
-            <div class="nav-label">Main</div>
-
-            <a asp-controller="ManagerDashboard"
-               asp-action="Index"
-               class="nav-item">
-
-                <svg viewBox="0 0 24 24">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                </svg>
-
-                Dashboard
-
-            </a>
-
-            <a asp-controller="ManagerDashboard"
-               asp-action="Staff"
-               class="nav-item active">
-
-                <svg viewBox="0 0 24 24">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-
-                Staff
-
-            </a>
-
-            <a asp-controller="ManagerDashboard"
-               asp-action="Orders"
-               class="nav-item">
-
-                <svg viewBox="0 0 24 24">
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-                </svg>
-
-                Orders
-
-            </a>
-
-            <a asp-controller="ManagerDashboard"
-               asp-action="Report"
-               class="nav-item">
-
-                <svg viewBox="0 0 24 24">
-                    <path d="M3 3v18h18"></path>
-                    <path d="M18 17V9"></path>
-                    <path d="M13 17V5"></path>
-                    <path d="M8 17v-3"></path>
-                </svg>
-
-                Reports
-
-            </a>
-
-        </aside>
+       <aside class="sidebar">
+        <div class="nav-label">Main</div>
+        <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+            Dashboard
+        </a>
+        <a asp-controller="ManagerDashboard" asp-action="TestCatalogue" class="nav-item">
+            <svg viewBox="0 0 24 24"><path d="M9 3v11a3 3 0 006 0V3" /><line x1="6" y1="3" x2="18" y2="3" /></svg>
+            Test Catalogue
+        </a>
+        <a asp-controller="ManagerDashboard" asp-action="Consumables" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+            Consumables
+        </a>
+        <a asp-controller="ManagerDashboard" asp-action="Staff" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+            Staff
+        </a>
+        <a asp-controller="ManagerDashboard" asp-action="Orders" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+            Orders
+        </a>
+        <a asp-controller="ManagerDashboard" asp-action="Report" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+            Reports
+        </a>
+        <div class="nav-label">System</div>
+        <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07 10 10 0 0 0 19.07 4.93z" /></svg>
+            Profile
+        </a>
+        <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+            Audit Log
+        </a>
+    </aside>
 
         <!-- MAIN CONTENT -->
 
