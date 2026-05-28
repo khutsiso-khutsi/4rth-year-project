@@ -472,6 +472,157 @@
                 color: var(--amber);
             }
 
+            /* ── MODAL STYLES ── */
+            .modal-bg {
+                display: none;
+                position: fixed;
+                inset: 0;
+                z-index: 200;
+                background: rgba(11,31,58,0.45);
+                align-items: center;
+                justify-content: center;
+            }
+
+                .modal-bg.open {
+                    display: flex;
+                }
+
+            .modal {
+                background: white;
+                border-radius: 20px;
+                padding: 32px 28px;
+                width: 90%;
+                max-width: 480px;
+                box-shadow: 0 20px 60px rgba(11,31,58,0.2);
+                animation: modalIn 0.18s ease;
+            }
+
+            .modal-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 6px;
+            }
+
+                .modal-header h3 {
+                    font-family: 'DM Serif Display', serif;
+                    font-size: 1.2rem;
+                    color: var(--navy);
+                }
+
+            .modal-close {
+                background: var(--offwhite);
+                border: none;
+                width: 30px;
+                height: 30px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 0.8rem;
+                color: var(--muted);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: 0.15s;
+            }
+
+                .modal-close:hover {
+                    background: var(--border);
+                    color: var(--navy);
+                }
+
+            .modal-sub {
+                font-size: 0.82rem;
+                color: var(--muted);
+                margin-bottom: 20px;
+            }
+
+            .fgrid2 {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 14px;
+                margin-bottom: 14px;
+            }
+
+            .fgroup2 {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                margin-bottom: 14px;
+            }
+
+            .fgrid2 .fgroup2,
+            .fgrid3 .fgroup2 {
+                margin-bottom: 0;
+            }
+
+            .app-label {
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: var(--navy);
+                letter-spacing: 0.02em;
+            }
+
+            .app-finput {
+                height: 40px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 0 12px;
+                font-size: 0.83rem;
+                font-family: 'DM Sans', sans-serif;
+                color: var(--navy);
+                background: var(--offwhite);
+                outline: none;
+                transition: 0.15s;
+                width: 100%;
+            }
+
+                .app-finput:focus {
+                    border-color: var(--teal);
+                    background: white;
+                }
+
+            .app-select {
+                cursor: pointer;
+            }
+
+            .modal-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 22px;
+            }
+
+            .btn-full {
+                flex: 1;
+                padding: 11px 16px;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                font-size: 0.83rem;
+                font-weight: 600;
+                font-family: 'DM Sans', sans-serif;
+                transition: 0.15s;
+            }
+
+                .btn-full.blue {
+                    background: var(--teal);
+                    color: white;
+                    box-shadow: 0 4px 14px rgba(13,148,136,0.25);
+                }
+
+                    .btn-full.blue:hover {
+                        opacity: 0.9;
+                    }
+
+                .btn-full.btn-outline {
+                    background: white;
+                    color: var(--navy);
+                    border: 1px solid var(--border);
+                }
+
+                    .btn-full.btn-outline:hover {
+                        background: var(--offwhite);
+                    }
+
             /* ── RESPONSIVE ── */
             @@media (max-width: 768px) {
                 .topbar {
@@ -488,6 +639,22 @@
 
                 .main {
                     padding: 20px 16px;
+                }
+
+                .fgrid2 {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            @@keyframes modalIn {
+                from {
+                    opacity: 0;
+                    transform: scale(0.96) translateY(8px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
                 }
             }
     </style>
@@ -582,8 +749,10 @@
                                oninput="filterTable(this,'cons-tbody')" />
                     </div>
                     <div class="toolbar-actions">
-                        <button class="btn btn-teal">+ Add Consumable</button>
-                        <button class="btn btn-light">+ Add Supplier</button>
+                        <!-- ↓ opens Add Consumable modal -->
+                        <button class="btn btn-teal" onclick="openModal('m-add-consumable')">+ Add Consumable</button>
+                        <!-- ↓ opens Add Supplier modal -->
+                        <button class="btn btn-light" onclick="openModal('m-add-supplier')">+ Add Supplier</button>
                     </div>
                 </div>
 
@@ -639,7 +808,11 @@
                                         </td>
                                         <td>
                                             <div class="table-actions">
-                                                <button class="action-btn adjust-btn">Adjust</button>
+                                                <!-- ↓ opens Adjust Stock modal, populates row data -->
+                                                <button class="action-btn adjust-btn"
+                                                        onclick="openAdjustModal('@c.ConsumableName', @c.OnHand, @c.ReorderLevel)">
+                                                    Adjust
+                                                </button>
                                                 @if (c.StockStatus != "Good")
                                                 {
                                                     <a asp-controller="ManagerDashboard"
@@ -668,7 +841,112 @@
         </main>
     </div>
 
-    <!-- LOGOUT MODAL -->
+    <!-- ══════════════════════════════════════════
+         MODAL: ADD CONSUMABLE
+    ══════════════════════════════════════════ -->
+    <div class="modal-bg" id="m-add-consumable" onclick="bgClose(event, this)">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Add Consumable</h3>
+                <button class="modal-close" onclick="closeModal('m-add-consumable')">✕</button>
+            </div>
+            <div class="modal-sub">Add a new consumable stock item.</div>
+            <div class="fgroup2">
+                <label class="app-label">Consumable Name *</label>
+                <input class="app-finput" id="ac-name" placeholder="e.g. EDTA Tubes" />
+            </div>
+            <div class="fgrid2">
+                <div class="fgroup2">
+                    <label class="app-label">Quantity on Hand</label>
+                    <input class="app-finput" id="ac-qty" placeholder="e.g. 100" type="number" />
+                </div>
+                <div class="fgroup2">
+                    <label class="app-label">Reorder Level</label>
+                    <input class="app-finput" id="ac-reorder" placeholder="e.g. 50" type="number" />
+                </div>
+            </div>
+            <div class="fgroup2" style="margin-bottom:0">
+                <label class="app-label">Supplier *</label>
+                <select class="app-finput app-select" id="ac-supplier">
+                    <option>MediPath SA</option>
+                    <option>LabSupply Co</option>
+                    <option>Haema Diagnostics</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-full blue" onclick="addConsumable()">Add Consumable</button>
+                <button class="btn-full btn-outline" onclick="closeModal('m-add-consumable')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         MODAL: ADJUST STOCK
+    ══════════════════════════════════════════ -->
+    <div class="modal-bg" id="m-adjust-stock" onclick="bgClose(event, this)">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Adjust Stock Level</h3>
+                <button class="modal-close" onclick="closeModal('m-adjust-stock')">✕</button>
+            </div>
+            <div class="modal-sub">Adjust the quantity on hand for this consumable.</div>
+            <div style="background:var(--offwhite);border-radius:8px;padding:12px 16px;margin-bottom:16px;">
+                <div id="adj-name" style="font-size:13px;font-weight:600;color:var(--navy);"></div>
+                <div id="adj-meta" style="font-size:12px;color:var(--muted);margin-top:2px;"></div>
+            </div>
+            <div class="fgroup2">
+                <label class="app-label">Adjustment Type</label>
+                <select class="app-finput app-select" id="stock-adj-type">
+                    <option value="increase">Increase by amount</option>
+                    <option value="decrease">Decrease by amount</option>
+                    <option value="set">Set to specific value</option>
+                </select>
+            </div>
+            <div class="fgroup2" style="margin-bottom:0">
+                <label class="app-label">Quantity</label>
+                <input class="app-finput" id="stock-adj-val" type="number" placeholder="Enter quantity" />
+            </div>
+            <div class="modal-actions">
+                <button class="btn-full blue" onclick="adjustStock()">Apply Adjustment</button>
+                <button class="btn-full btn-outline" onclick="closeModal('m-adjust-stock')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         MODAL: ADD SUPPLIER
+    ══════════════════════════════════════════ -->
+    <div class="modal-bg" id="m-add-supplier" onclick="bgClose(event, this)">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Add Supplier</h3>
+                <button class="modal-close" onclick="closeModal('m-add-supplier')">✕</button>
+            </div>
+            <div class="modal-sub">Add a new consumable supplier to the system.</div>
+            <div class="fgroup2">
+                <label class="app-label">Supplier Name *</label>
+                <input class="app-finput" id="as-name" placeholder="e.g. MediPath SA" />
+            </div>
+            <div class="fgrid2">
+                <div class="fgroup2">
+                    <label class="app-label">Contact Person</label>
+                    <input class="app-finput" id="as-contact" placeholder="Contact person name" />
+                </div>
+                <div class="fgroup2">
+                    <label class="app-label">Email Address *</label>
+                    <input class="app-finput" type="email" id="as-email" placeholder="supplier@company.co.za" />
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-full blue" onclick="addSupplier()">Add Supplier</button>
+                <button class="btn-full btn-outline" onclick="closeModal('m-add-supplier')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         MODAL: LOGOUT CONFIRMATION
+    ══════════════════════════════════════════ -->
     <div id="logout-modal" role="dialog" aria-modal="true"
          style="display:none;position:fixed;inset:0;z-index:999;background:rgba(11,31,58,0.45);align-items:center;justify-content:center;">
         <div style="background:white;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(11,31,58,0.2);animation:modalIn 0.18s ease;">
@@ -688,28 +966,57 @@
         </div>
     </div>
 
-    <style>
-            @@keyframes modalIn {
-                from {
-                    opacity: 0;
-                    transform: scale(0.96) translateY(8px);
-                }
-
-                to {
-                    opacity: 1;
-                    transform: scale(1) translateY(0);
-                }
-            }
-    </style>
-
     <script>
+            /* ── MODAL HELPERS ── */
+            function openModal(id) {
+                document.getElementById(id).classList.add('open');
+            }
+
+            function closeModal(id) {
+                document.getElementById(id).classList.remove('open');
+            }
+
+            function bgClose(e, el) {
+                if (e.target === el) closeModal(el.id);
+            }
+
+            /* ── ADJUST MODAL: populate from row data ── */
+            function openAdjustModal(name, onHand, reorderLevel) {
+                document.getElementById('adj-name').textContent = name;
+                document.getElementById('adj-meta').textContent =
+                    'Current: ' + onHand + ' units · Reorder level: ' + reorderLevel;
+                document.getElementById('stock-adj-val').value = '';
+                document.getElementById('stock-adj-type').selectedIndex = 0;
+                openModal('m-adjust-stock');
+            }
+
+            /* ── ADD CONSUMABLE ── */
+            function addConsumable() {
+                // Wire to your controller action as needed.
+                closeModal('m-add-consumable');
+            }
+
+            /* ── ADJUST STOCK ── */
+            function adjustStock() {
+                // Wire to your controller action as needed.
+                closeModal('m-adjust-stock');
+            }
+
+            /* ── ADD SUPPLIER ── */
+            function addSupplier() {
+                // Wire to your controller action as needed.
+                closeModal('m-add-supplier');
+            }
+
+            /* ── SEARCH ── */
             function filterTable(input, tbodyId) {
-                const value = input.value.toLowerCase();
-                document.querySelectorAll('#' + tbodyId + ' tr').forEach(row => {
+                var value = input.value.toLowerCase();
+                document.querySelectorAll('#' + tbodyId + ' tr').forEach(function (row) {
                     row.style.display = row.textContent.toLowerCase().includes(value) ? '' : 'none';
                 });
             }
 
+            /* ── LOGOUT MODAL ── */
             var logoutBtn     = document.getElementById('logout-btn');
             var logoutModal   = document.getElementById('logout-modal');
             var logoutCancel  = document.getElementById('logout-cancel');
@@ -722,13 +1029,15 @@
                     logoutModal.style.display = 'flex';
                     logoutCancel.focus();
                 });
-                function closeModal() {
+                function closeLogoutModal() {
                     logoutModal.style.display = 'none';
                     logoutBtn.focus();
                 }
-                logoutCancel.addEventListener('click', closeModal);
-                logoutModal.addEventListener('click', function (e) { if (e.target === logoutModal) closeModal(); });
-                document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && logoutModal.style.display === 'flex') closeModal(); });
+                logoutCancel.addEventListener('click', closeLogoutModal);
+                logoutModal.addEventListener('click', function (e) { if (e.target === logoutModal) closeLogoutModal(); });
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape' && logoutModal.style.display === 'flex') closeLogoutModal();
+                });
             }
     </script>
 
