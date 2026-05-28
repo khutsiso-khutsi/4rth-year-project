@@ -214,12 +214,12 @@
                 Dashboard
             </a>
 
-            <a asp-controller="TechnicianDashboard" asp-action="TestQueue" class="nav-item">
+            @* <a asp-controller="TechnicianDashboard" asp-action="TestQueue" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                     <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" />
                 </svg>
                 Test Queue
-            </a>
+            </a> *@
 
             <a asp-controller="TechnicianDashboard" asp-action="EnterResults" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -233,7 +233,7 @@
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                     <polyline points="14 2 14 8 20 8" />
                 </svg>
-                Completed
+                View Results
             </a>
 
             <div class="nav-label">System</div>
@@ -498,6 +498,8 @@
         document.getElementById('resultsModal').addEventListener('click', function(e) {
             if (e.target === this) closeModal();
         });
+
+
     </script>
 
 </body>
