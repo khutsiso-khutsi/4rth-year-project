@@ -802,3 +802,79 @@
 
 </body>
 </html>
+<script>
+    // Personal Details validation
+    document.querySelector('form[action*="UpdateProfile"]').addEventListener('submit', function (e) {
+        const firstName = this.querySelector('[name="FirstName"]').value.trim();
+        const lastName = this.querySelector('[name="LastName"]').value.trim();
+        const phone = this.querySelector('[name="CellphoneNumber"]').value.trim();
+        const address = this.querySelector('[name="HomeAddress"]').value.trim();
+
+        if (!firstName || !lastName) {
+            e.preventDefault();
+            alert('First name and last name are required.');
+            return;
+        }
+
+        if (firstName.length < 2 || lastName.length < 2) {
+            e.preventDefault();
+            alert('Names must be at least 2 characters.');
+            return;
+        }
+
+        if (!/^\d{10}$/.test(phone)) {
+            e.preventDefault();
+            alert('Cellphone number must be exactly 10 digits.');
+            return;
+        }
+
+        if (address.length < 5) {
+            e.preventDefault();
+            alert('Please enter a valid home address.');
+            return;
+        }
+    });
+
+    // Change Password validation
+    document.querySelector('form[action*="ChangePassword"]').addEventListener('submit', function (e) {
+        const current = this.querySelector('[name="CurrentPassword"]').value;
+        const newPass = this.querySelector('[name="NewPassword"]').value;
+        const confirm = this.querySelector('[name="ConfirmPassword"]').value;
+
+        if (!current) {
+            e.preventDefault();
+            alert('Please enter your current password.');
+            return;
+        }
+
+        if (newPass.length < 8) {
+            e.preventDefault();
+            alert('New password must be at least 8 characters.');
+            return;
+        }
+
+        if (!/[A-Z]/.test(newPass)) {
+            e.preventDefault();
+            alert('New password must contain at least one uppercase letter.');
+            return;
+        }
+
+        if (!/[0-9]/.test(newPass)) {
+            e.preventDefault();
+            alert('New password must contain at least one number.');
+            return;
+        }
+
+        if (newPass !== confirm) {
+            e.preventDefault();
+            alert('New password and confirmation do not match.');
+            return;
+        }
+
+        if (newPass === current) {
+            e.preventDefault();
+            alert('New password cannot be the same as your current password.');
+            return;
+        }
+    });
+</script>

@@ -12,5 +12,6 @@ namespace admin.Models
         public string? Action { get; set; }
         public string? PerformedBy { get; set; }
         public DateTime LogDate { get; set; }
+        public DateTime Timestamp { get; set; }
     }
 }
