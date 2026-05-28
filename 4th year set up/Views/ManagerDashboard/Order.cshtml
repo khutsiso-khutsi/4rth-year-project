@@ -1,237 +1,879 @@
-﻿@using LabManager.Models;
+﻿@using LabManager.Models
 @model IEnumerable<ConsumableOrder>
+
+
 @{
     Layout = null;
+
+    var current = ViewBag.StatusFilter as string ?? "All Statuses";
+    var statuses = new[] { "All Statuses", "Ordered", "Partially Complete", "Complete", "Cancelled" };
 }
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Orders — NMB-HLabSys</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <title>Consumable Orders — NMB-HLabSys</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        :root {
-            --navy:  #0b1f3a;
-            --navy2: #0f2747;
-            --blue:  #2e86c1;
-            --blue2: #3498db;
-            --teal:  #1abc9c;
-            --white: #f8fafc;
-            --gray1: #e2e8f0;
-            --gray2: #94a3b8;
-            --gray3: #64748b;
-            --red:   #e74c3c;
-            --amber: #f39c12;
-            --green: #27ae60;
-            --font:  'DM Sans', sans-serif;
-        }
+            *, *::before, *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
 
-        body { font-family: var(--font); background: white; color: var(--white); min-height: 100vh; }
+            :root {
+                --navy: #0b1f3a;
+                --teal: #0d9488;
+                --teal-light: rgba(13,148,136,0.1);
+                --offwhite: #f4f7fb;
+                --white: #ffffff;
+                --muted: #6b7a99;
+                --border: #dde4f0;
+                --green: #16a34a;
+                --green-light: rgba(22,163,74,0.1);
+                --amber: #d97706;
+                --amber-light: rgba(217,119,6,0.1);
+                --red: #dc2626;
+                --red-light: rgba(220,38,38,0.1);
+                --blue: #1d4ed8;
+                --blue-light: rgba(29,78,216,0.1);
+            }
 
-        /* TOPBAR */
-        .topbar {
-            height: 56px; background: #0b1f3a;
-            display: flex; align-items: center; padding: 0 24px;
-            position: sticky; top: 0; z-index: 100;
-            border-bottom: 1px solid rgba(255,255,255,.08);
-        }
-        .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
-        .brand-logo { width: 32px; height: 32px; background: var(--amber); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-        .brand-logo svg { width: 18px; height: 18px; fill: #fff; }
-        .brand-name { font-size: 14px; font-weight: 600; line-height: 1.2; }
-        .brand-name span { display: block; font-size: 10px; font-weight: 400; color: var(--gray2); }
-        .topbar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
-        .user-chip { display: flex; align-items: center; gap: 8px; padding: 5px 12px; background: rgba(255,255,255,.07); border-radius: 20px; font-size: 13px; }
-        .user-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--amber); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; }
-        .logout-btn { height: 32px; padding: 0 14px; background: transparent; border: 1px solid rgba(255,255,255,.15); border-radius: 8px; color: var(--gray2); font-size: 12px; cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: .15s; }
-        .logout-btn:hover { background: rgba(255,255,255,.06); color: #fff; }
+            body {
+                font-family: 'DM Sans', sans-serif;
+                background: var(--offwhite);
+                color: var(--navy);
+                min-height: 100vh;
+            }
 
-        /* LAYOUT */
-        .page { display: flex; min-height: calc(100vh - 56px); }
+            a {
+                text-decoration: none;
+            }
 
-        /* SIDEBAR */
-        .sidebar { width: 220px; flex-shrink: 0; background: #0b1f3a; border-right: 1px solid rgba(255,255,255,.08); padding: 20px 12px; display: flex; flex-direction: column; gap: 2px; }
-        .nav-label { font-size: 10px; font-weight: 600; color: var(--gray3); letter-spacing: .8px; text-transform: uppercase; padding: 10px 10px 4px; margin-top: 6px; }
-        .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 9px; color: var(--gray2); font-size: 13px; font-weight: 500; text-decoration: none; transition: .15s; }
-        .nav-item svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
-        .nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
-        .nav-item.active { background: rgba(52,152,219,.2); color: var(--blue2); }
+            /* ───────── TOPBAR ───────── */
 
-        /* MAIN */
-        .app-body { flex: 1; padding: 28px 32px; min-width: 0; }
-        .page-header { margin-bottom: 24px; }
-        .page-header h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; color: black; }
-        .page-header p  { font-size: 14px; color: var(--gray2); }
+            .topbar {
+                background: var(--navy);
+                padding: 0 40px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                height: 64px;
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+            }
 
-        /* CARD */
-        .card { background: var(--navy2); border-radius: 14px; border: 1px solid rgba(255,255,255,.08); padding: 24px; }
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
 
-        /* SEARCH BAR */
-        .search-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+            .brand-logo {
+                width: 34px;
+                height: 34px;
+                background: var(--teal);
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
 
-        /* INPUTS */
-        .app-finput { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; color: var(--white); font-family: var(--font); font-size: 13px; padding: 8px 12px; outline: none; transition: border-color .15s; }
-        .app-finput:focus { border-color: var(--blue2); }
-        .app-finput::placeholder { color: var(--gray3); }
-        .app-select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; }
-        .app-select option { background: var(--navy2); color: var(--white); }
+                .brand-logo svg {
+                    width: 18px;
+                    height: 18px;
+                    fill: white;
+                }
 
-        /* BUTTONS */
-        .btn-sm { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 6px 14px; border-radius: 7px; font-family: var(--font); font-size: 12px; font-weight: 500; cursor: pointer; text-decoration: none; border: none; transition: opacity .15s, transform .1s; white-space: nowrap; line-height: 1.4; }
-        .btn-sm:hover  { opacity: .82; transform: translateY(-1px); }
-        .btn-sm:active { transform: translateY(0); }
-        .btn-teal { background: var(--teal); color: #fff; }
-        .btn-red  { background: var(--red);  color: #fff; }
-        .btn-blue { background: var(--blue2); color: #fff; }
-        .btn-full { width: 100%; padding: 10px 16px; border-radius: 9px; font-family: var(--font); font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: opacity .15s; }
-        .btn-full:hover { opacity: .88; }
-        .btn-full.blue  { background: var(--blue2); color: #fff; }
-        .btn-full.btn-outline { background: transparent; border: 1px solid rgba(255,255,255,.15); color: var(--gray2); }
-        .btn-full.btn-outline:hover { background: rgba(255,255,255,.05); color: #fff; }
+            .brand-name {
+                font-family: 'DM Serif Display', serif;
+                color: white;
+                font-size: 1.1rem;
+                line-height: 1.1;
+            }
 
-        /* TABLE */
-        .tbl-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid rgba(255,255,255,.07); }
-        table { width: 100%; border-collapse: collapse; min-width: 640px; }
-        thead { background: rgba(255,255,255,.04); }
-        th { font-size: 11px; font-weight: 600; color: var(--gray3); text-transform: uppercase; letter-spacing: .6px; padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(255,255,255,.08); white-space: nowrap; }
-        td { padding: 13px 16px; font-size: 13.5px; color: var(--gray1); border-bottom: 1px solid rgba(255,255,255,.05); vertical-align: middle; }
-        tbody tr:last-child td { border-bottom: none; }
-        tbody tr:hover td { background: rgba(255,255,255,.04); }
+                .brand-name span {
+                    display: block;
+                    font-family: 'DM Sans', sans-serif;
+                    font-size: 0.6rem;
+                    font-weight: 300;
+                    color: rgba(255,255,255,0.4);
+                    letter-spacing: 0.1em;
+                    text-transform: uppercase;
+                }
 
-        /* MONO */
-        .mono { font-family: 'Courier New', Courier, monospace; font-size: 12.5px; background: rgba(255,255,255,.07); padding: 3px 8px; border-radius: 5px; color: var(--blue2); letter-spacing: .3px; }
+            .topbar-right {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
 
-        /* STATUS PILLS */
-        .status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 500; white-space: nowrap; }
-        .sp-ordered   { background: rgba(243,156,18,.15);  color: #f39c12; }
-        .sp-partial   { background: rgba(251,146,60,.15);  color: #fb923c; }
-        .sp-complete  { background: rgba(39,174,96,.15);   color: #27ae60; }
-        .sp-cancelled { background: rgba(231,76,60,.15);   color: #e74c3c; }
-        .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+            .user-chip {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                background: rgba(255,255,255,0.07);
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 100px;
+                padding: 6px 14px 6px 8px;
+            }
 
-        /* EMPTY STATE */
-        .empty-state { text-align: center; padding: 48px 20px; color: var(--gray3); }
-        .empty-state svg { width: 38px; height: 38px; stroke: var(--gray3); fill: none; stroke-width: 1.5; margin-bottom: 10px; display: block; margin-inline: auto; }
-        .empty-state p { font-size: 14px; }
+            .user-avatar {
+                width: 28px;
+                height: 28px;
+                background: var(--teal);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: white;
+            }
 
-        /* MODAL */
-        .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
-        .modal-bg.open { display: flex; }
-        .modal { background: var(--navy2); border-radius: 20px; padding: 32px; width: 100%; max-width: 560px; border: 1px solid rgba(255,255,255,.08); position: relative; }
-        .modal-header h3 { font-size: 18px; font-weight: 600; color: var(--white); margin-bottom: 4px; }
-        .modal-sub { font-size: 13px; color: var(--gray2); margin-bottom: 22px; }
-        .modal-close { position: absolute; top: 16px; right: 16px; width: 30px; height: 30px; border: none; border-radius: 6px; background: rgba(255,255,255,.08); color: var(--gray2); cursor: pointer; font-size: 14px; transition: .15s; }
-        .modal-close:hover { background: rgba(255,255,255,.14); color: #fff; }
-        .fgrid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-        .fgroup2 { display: flex; flex-direction: column; gap: 6px; }
-        .app-label { font-size: 12px; font-weight: 500; color: var(--gray2); }
-        .modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
+            .user-email {
+                font-size: 0.8rem;
+                color: rgba(255,255,255,0.75);
+                max-width: 160px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
 
-        /* RESPONSIVE */
-        @@media (max-width: 900px) {
-            .sidebar  { display: none; }
-            .app-body { padding: 20px; }
-            .fgrid2   { grid-template-columns: 1fr; }
-        }
+            .logout-btn {
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.12);
+                color: rgba(255,255,255,0.8);
+                padding: 8px 16px;
+                border-radius: 8px;
+                text-decoration: none;
+                font-size: 0.82rem;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s;
+            }
+
+                .logout-btn:hover {
+                    background: rgba(255,255,255,0.15);
+                    color: white;
+                }
+
+                .logout-btn svg {
+                    width: 14px;
+                    height: 14px;
+                }
+
+            /* ───────── LAYOUT ───────── */
+
+            .page {
+                display: flex;
+                min-height: calc(100vh - 64px);
+            }
+
+            /* ───────── SIDEBAR ───────── */
+
+            .sidebar {
+                width: 220px;
+                background: white;
+                border-right: 1px solid var(--border);
+                padding: 24px 0;
+                flex-shrink: 0;
+                position: sticky;
+                top: 64px;
+                height: calc(100vh - 64px);
+                overflow-y: auto;
+            }
+
+            .nav-section {
+                margin-bottom: 8px;
+            }
+
+            .nav-label {
+                font-size: 0.65rem;
+                font-weight: 600;
+                color: var(--muted);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                padding: 0 20px;
+                margin-bottom: 4px;
+            }
+
+            .nav-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 20px;
+                color: var(--muted);
+                text-decoration: none;
+                font-size: 0.85rem;
+                font-weight: 500;
+                transition: all 0.15s;
+                border-left: 3px solid transparent;
+            }
+
+                .nav-item:hover {
+                    background: var(--offwhite);
+                    color: var(--navy);
+                }
+
+                .nav-item.active {
+                    background: var(--teal-light);
+                    color: var(--teal);
+                    border-left-color: var(--teal);
+                }
+
+                .nav-item svg {
+                    width: 16px;
+                    height: 16px;
+                    flex-shrink: 0;
+                    fill: none;
+                    stroke: currentColor;
+                    stroke-width: 2;
+                    stroke-linecap: round;
+                }
+
+            /* ───────── MAIN ───────── */
+
+            .main {
+                flex: 1;
+                padding: clamp(24px, 3vw, 40px);
+                overflow-y: auto;
+            }
+
+            .page-header {
+                margin-bottom: 24px;
+            }
+
+                .page-header h1 {
+                    font-family: 'DM Serif Display', serif;
+                    font-size: 1.8rem;
+                    color: var(--navy);
+                    margin-bottom: 4px;
+                }
+
+                .page-header p {
+                    font-size: 0.875rem;
+                    color: var(--muted);
+                }
+
+            .card {
+                background: white;
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                padding: 28px;
+                box-shadow: 0 2px 8px rgba(11,31,58,0.04);
+            }
+
+            /* ───────── TOOLBAR ───────── */
+
+            .toolbar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 16px;
+                flex-wrap: wrap;
+                margin-bottom: 24px;
+            }
+
+            .toolbar-left {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+
+            .filter-select {
+                height: 44px;
+                min-width: 220px;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                background: var(--offwhite);
+                padding: 0 14px;
+                outline: none;
+                font-size: 0.85rem;
+                font-family: 'DM Sans', sans-serif;
+                color: var(--navy);
+                transition: 0.2s;
+                cursor: pointer;
+            }
+
+                .filter-select:focus {
+                    border-color: var(--teal);
+                    background: white;
+                }
+
+            .btn {
+                height: 44px;
+                padding: 0 18px;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                font-size: 0.82rem;
+                font-weight: 600;
+                font-family: 'DM Sans', sans-serif;
+                transition: 0.2s;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                text-decoration: none;
+            }
+
+                .btn:hover {
+                    transform: translateY(-1px);
+                }
+
+            .btn-teal {
+                background: var(--teal);
+                color: white;
+                box-shadow: 0 4px 14px rgba(13,148,136,0.25);
+            }
+
+            /* ───────── TABLE ───────── */
+
+            .table-wrap {
+                overflow-x: auto;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 900px;
+            }
+
+            thead th {
+                text-align: left;
+                padding: 0 16px 12px;
+                font-size: 0.7rem;
+                font-weight: 600;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--muted);
+                border-bottom: 1px solid var(--border);
+            }
+
+            tbody td {
+                padding: 14px 16px;
+                border-bottom: 1px solid var(--offwhite);
+                font-size: 0.83rem;
+                color: var(--navy);
+                vertical-align: middle;
+            }
+
+            tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            tbody tr:hover {
+                background: var(--offwhite);
+            }
+
+            .order-number {
+                font-weight: 700;
+                color: var(--blue);
+            }
+
+            /* ───────── STATUS ───────── */
+
+            .status {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 5px 10px;
+                border-radius: 100px;
+                font-size: 0.72rem;
+                font-weight: 600;
+            }
+
+            .status-dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: currentColor;
+            }
+
+            .ordered {
+                background: var(--blue-light);
+                color: var(--blue);
+            }
+
+            .partial {
+                background: var(--amber-light);
+                color: var(--amber);
+            }
+
+            .complete {
+                background: var(--green-light);
+                color: var(--green);
+            }
+
+            .cancelled {
+                background: var(--red-light);
+                color: var(--red);
+            }
+
+            /* ───────── ACTIONS ───────── */
+
+            .table-actions {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .action-btn {
+                height: 34px;
+                padding: 0 12px;
+                border-radius: 8px;
+                border: none;
+                cursor: pointer;
+                font-size: 0.75rem;
+                font-weight: 600;
+                font-family: 'DM Sans', sans-serif;
+                display: inline-flex;
+                align-items: center;
+                text-decoration: none;
+                transition: 0.2s;
+            }
+
+                .action-btn:hover {
+                    transform: translateY(-1px);
+                }
+
+            .receive-btn {
+                background: var(--green-light);
+                color: var(--green);
+            }
+
+            .cancel-btn {
+                background: var(--red-light);
+                color: var(--red);
+            }
+
+            .completed-text {
+                font-size: 0.75rem;
+                color: var(--muted);
+                line-height: 1.6;
+            }
+
+            /* ───────── EMPTY ───────── */
+
+            .empty {
+                text-align: center;
+                padding: 60px 20px;
+                color: var(--muted);
+            }
+
+                .empty svg {
+                    width: 48px;
+                    height: 48px;
+                    stroke: #c0cadb;
+                    fill: none;
+                    stroke-width: 1.5;
+                    margin-bottom: 12px;
+                }
+
+                .empty h3 {
+                    color: var(--navy);
+                    margin-bottom: 6px;
+                }
+
+            /* ───────── MODAL ───────── */
+
+            .modal-bg {
+                position: fixed;
+                inset: 0;
+                background: rgba(11,31,58,0.45);
+                z-index: 999;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+            }
+
+                .modal-bg.open {
+                    display: flex;
+                }
+
+            .modal {
+                width: 100%;
+                max-width: 600px;
+                background: white;
+                border-radius: 22px;
+                padding: 32px;
+                position: relative;
+                animation: modalIn 0.18s ease;
+            }
+
+            @@keyframes modalIn {
+                from {
+                    opacity: 0;
+                    transform: scale(0.96) translateY(8px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
+                }
+            }
+
+            .modal-close {
+                position: absolute;
+                top: 18px;
+                right: 18px;
+                width: 36px;
+                height: 36px;
+                border: none;
+                border-radius: 10px;
+                background: var(--offwhite);
+                cursor: pointer;
+                font-size: 1rem;
+            }
+
+            .modal h2 {
+                font-family: 'DM Serif Display', serif;
+                margin-bottom: 6px;
+                color: var(--navy);
+            }
+
+            .modal p {
+                color: var(--muted);
+                font-size: 0.875rem;
+                line-height: 1.6;
+                margin-bottom: 22px;
+            }
+
+            .form-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 18px;
+            }
+
+            .form-group {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+                .form-group.full {
+                    grid-column: span 2;
+                }
+
+            .form-label {
+                font-size: 0.8rem;
+                font-weight: 600;
+                color: var(--navy);
+            }
+
+            .form-input {
+                height: 46px;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                background: var(--offwhite);
+                padding: 0 14px;
+                outline: none;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.85rem;
+            }
+
+                .form-input:focus {
+                    border-color: var(--teal);
+                    background: white;
+                }
+
+            .modal-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 26px;
+            }
+
+            .btn-modal {
+                flex: 1;
+                height: 46px;
+                border: none;
+                border-radius: 10px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                cursor: pointer;
+                font-family: 'DM Sans', sans-serif;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-decoration: none;
+            }
+
+            .btn-save {
+                background: var(--teal);
+                color: white;
+            }
+
+            .btn-cancel-modal {
+                background: var(--offwhite);
+                color: var(--navy);
+            }
+
+            .modal-icon {
+                width: 52px;
+                height: 52px;
+                border-radius: 14px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 18px;
+            }
+
+            /* ───────── RESPONSIVE ───────── */
+
+            @@media (max-width: 768px) {
+
+                .topbar {
+                    padding: 0 20px;
+                }
+
+                .sidebar {
+                    display: none;
+                }
+
+                .main {
+                    padding: 20px 16px;
+                }
+
+                .user-email {
+                    display: none;
+                }
+
+                .form-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .form-group.full {
+                    grid-column: span 1;
+                }
+
+                .modal-actions {
+                    flex-direction: column;
+                }
+            }
+
     </style>
 </head>
 <body>
 
     <!-- TOPBAR -->
+
     <div class="topbar">
-        <a class="brand" asp-controller="Home" asp-action="Index">
+
+        <a class="brand"
+           asp-controller="Home"
+           asp-action="Index">
+
             <div class="brand-logo">
-                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" />
+                    <circle cx="12" cy="17" r="4" opacity="0.6" />
+                </svg>
             </div>
-            <div class="brand-name">NMB-HLabSys<span>Haematology Lab System</span></div>
+
+            <div class="brand-name">
+                NMB-HLabSys
+                <span>Haematology Lab System</span>
+            </div>
+
         </a>
+
         <div class="topbar-right">
+
             <div class="user-chip">
-                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "M")</div>
+                <div class="user-avatar">
+                    @(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "M")
+                </div>
                 <span class="user-email">@ViewBag.Email</span>
             </div>
-            <a asp-controller="Home" asp-action="Logout" class="logout-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+
+            <a asp-controller="Home"
+               asp-action="Logout"
+               class="logout-btn"
+               id="logout-btn">
+
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2"
+                     stroke-linecap="round">
+
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                     <polyline points="16 17 21 12 16 7" />
                     <line x1="21" y1="12" x2="9" y2="12" />
+
                 </svg>
+
                 Sign Out
+
             </a>
+
         </div>
+
     </div>
 
     <div class="page">
 
         <!-- SIDEBAR -->
+
         <aside class="sidebar">
-            <div class="nav-label">Main</div>
-            <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
-                Dashboard
-            </a>
-            <a asp-controller="ManagerDashboard" asp-action="TestCatalogue" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3v11a3 3 0 006 0V3" /><line x1="6" y1="3" x2="18" y2="3" /></svg>
-                Test Catalogue
-            </a>
-            <a asp-controller="ManagerDashboard" asp-action="Consumables" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                Consumables
-            </a>
-            <a asp-controller="ManagerDashboard" asp-action="Staff" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                Staff
-            </a>
-            <a asp-controller="ManagerDashboard" asp-action="Orders" class="nav-item active">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 01-8 0" /></svg>
-                Orders
-            </a>
-            <a asp-controller="ManagerDashboard" asp-action="Report" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
-                Reports
-            </a>
-            <div class="nav-label">System</div>
-            <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07 10 10 0 0 0 19.07 4.93z" /></svg>
-                Profile
-            </a>
-            <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                Audit Log
-            </a>
+
+            <div class="nav-section">
+
+                <div class="nav-label">Main</div>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Index"
+                   class="nav-item">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                    </svg>
+                    Dashboard
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="TestCatalogue"
+                   class="nav-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 3v11a3 3 0 006 0V3" />
+                        <line x1="6" y1="3" x2="18" y2="3" />
+                    </svg>
+                    Test Catalogue
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Consumables"
+                   class="nav-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    Consumables
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Staff"
+                   class="nav-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    Staff
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Orders"
+                   class="nav-item active">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                    Orders
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Report"
+                   class="nav-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                    Reports
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-label">System</div>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Profile"
+                   class="nav-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    Profile
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="AuditLog"
+                   class="nav-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                    Audit Log
+                </a>
+
+            </div>
+
         </aside>
 
-        <!-- MAIN CONTENT -->
-        <div class="app-body">
+        <!-- MAIN -->
+
+        <main class="main">
+
             <div class="page-header">
                 <h1>Consumable Orders</h1>
-                <p>Manage supplier orders and track delivery status.</p>
+                <p>Manage supplier orders and monitor delivery progress.</p>
             </div>
 
             <div class="card">
-                <div class="search-bar">
-                    <select class="app-finput app-select" style="width:180px"
-                            onchange="location.href='?status='+this.value">
-                        @{
-                            var statuses = new[] { "All Statuses", "Ordered", "Partially Complete", "Complete", "Cancelled" };
-                            var current  = ViewBag.StatusFilter as string ?? "All Statuses";
-                        }
-                       @*  @foreach (var s in statuses)
-                        {
-                            <option value="@s" @(s == current ? "selected" : "")>@s</option>
-                        } *@
-                    </select>
-                    <button class="btn-sm btn-teal" onclick="openModal('m-create-order')">+ Create Order</button>
+
+                <!-- TOOLBAR -->
+
+                <div class="toolbar">
+
+                    <div class="toolbar-left">
+
+                        <select class="filter-select"
+                                onchange="location.href='?status=' + this.value">
+
+                            @foreach (var s in statuses)
+                            {
+                                <option value="@s" selected="@(s == current)">
+                                    @s
+                                </option>
+                            }
+
+                        </select>
+
+                    </div>
+
+                    <button class="btn btn-teal"
+                            onclick="openModal('createModal')">
+                        + Create Order
+                    </button>
+
                 </div>
 
-                <div class="tbl-wrap">
+                <!-- TABLE -->
+
+                <div class="table-wrap">
+
                     <table>
+
                         <thead>
                             <tr>
-                                <th>Order #</th>
+                                <th>Order Number</th>
                                 <th>Supplier</th>
                                 <th>Items</th>
                                 <th>Order Date</th>
@@ -239,56 +881,77 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
+
                         <tbody>
+
                             @if (Model != null && Model.Any())
                             {
                                 foreach (var o in Model)
                                 {
+                                    var statusClass = o.Status switch
+                                    {
+                                        "Ordered" => "status ordered",
+                                        "Partially Complete" => "status partial",
+                                        "Complete" => "status complete",
+                                        "Cancelled" => "status cancelled",
+                                        _ => "status ordered"
+                                    };
+
                                     <tr>
-                                        <td><span class="mono">@o.OrderNumber</span></td>
-                                        <td>@o.Supplier</td>
-                                        <td>@o.Items</td>
-                                        <td>@o.OrderDate.ToString("yyyy-MM-dd")</td>
+
                                         <td>
-                                            @{
-                                                var pillClass = o.Status switch
-                                                {
-                                                    "Ordered"            => "status-pill sp-ordered",
-                                                    "Partially Complete" => "status-pill sp-partial",
-                                                    "Complete"           => "status-pill sp-complete",
-                                                    "Cancelled"          => "status-pill sp-cancelled",
-                                                    _                    => "status-pill sp-ordered"
-                                                };
-                                            }
-                                            <span class="@pillClass"><span class="dot"></span>@o.Status</span>
+                                            <span class="order-number">
+                                                @o.OrderNumber
+                                            </span>
                                         </td>
+
+                                        <td>@o.Supplier</td>
+
+                                        <td>@o.Items</td>
+
                                         <td>
+                                            @o.OrderDate.ToString("dd MMM yyyy")
+                                        </td>
+
+                                        <td>
+                                            <span class="@statusClass">
+                                                <span class="status-dot"></span>
+                                                @o.Status
+                                            </span>
+                                        </td>
+
+                                        <td>
+
                                             @if (o.Status == "Complete" || o.Status == "Cancelled")
                                             {
-                                                <span style="font-size:12px;color:var(--gray3)">
+                                                <div class="completed-text">
                                                     @(o.Status == "Complete" ? "Completed" : "Cancelled")
-                                                    @o.CompletedDate?.ToString("yyyy-MM-dd")
-                                                </span>
+                                                    <br />
+                                                    @o.CompletedDate?.ToString("dd MMM yyyy")
+                                                </div>
                                             }
                                             else
                                             {
-                                                <div style="display:flex;gap:6px;align-items:center">
-                                                    <a asp-controller="ManagerDashboard"
-                                                       asp-action="ReceiveOrder"
-                                                       asp-route-id="@o.Id"
-                                                       class="btn-sm btn-teal"
-                                                       onclick="return confirm('Mark this order as received?')">Receive</a>
+                                                <div class="table-actions">
+
+                                                    <button class="action-btn receive-btn"
+                                                            onclick="openConfirm('confirmReceive','@o.Id','receive')">
+                                                        Receive
+                                                    </button>
+
                                                     @if (o.Status == "Ordered")
                                                     {
-                                                        <a asp-controller="ManagerDashboard"
-                                                           asp-action="CancelOrder"
-                                                           asp-route-id="@o.Id"
-                                                           class="btn-sm btn-red"
-                                                           onclick="return confirm('Cancel this order?')">Cancel</a>
+                                                        <button class="action-btn cancel-btn"
+                                                                onclick="openConfirm('confirmCancel','@o.Id','cancel')">
+                                                            Cancel
+                                                        </button>
                                                     }
+
                                                 </div>
                                             }
+
                                         </td>
+
                                     </tr>
                                 }
                             }
@@ -296,69 +959,378 @@
                             {
                                 <tr>
                                     <td colspan="6">
-                                        <div class="empty-state">
-                                            <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 01-8 0" /></svg>
-                                            <p>No orders found.</p>
+
+                                        <div class="empty">
+
+                                            <svg viewBox="0 0 24 24">
+                                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                                <path d="M16 10a4 4 0 0 1-8 0"></path>
+                                            </svg>
+
+                                            <h3>No Orders Found</h3>
+
+                                            <p>
+                                                No consumable orders are available right now.
+                                            </p>
+
                                         </div>
+
                                     </td>
                                 </tr>
                             }
+
                         </tbody>
+
                     </table>
+
                 </div>
+
             </div>
-        </div>
+
+        </main>
+
     </div>
 
-    <!-- MODAL: CREATE ORDER -->
-    <div class="modal-bg" id="m-create-order" onclick="bgClose(event,this)">
+    <!-- CREATE ORDER MODAL -->
+
+    <div class="modal-bg"
+         id="createModal"
+         onclick="closeByBackground(event,this)">
+
         <div class="modal">
-            <button class="modal-close" onclick="closeModal('m-create-order')">&#x2715;</button>
-            <div class="modal-header"><h3>Create Supplier Order</h3></div>
-            <p class="modal-sub">Create a new consumable order.</p>
-            <form asp-controller="ManagerDashboard" asp-action="CreateOrder" method="post">
+
+            <button class="modal-close"
+                    onclick="closeModal('createModal')">
+                ✕
+            </button>
+
+            <h2>Create New Order</h2>
+
+            <p>
+                Add a new consumable supplier order to the system.
+            </p>
+
+            <form asp-controller="ManagerDashboard"
+                  asp-action="CreateOrder"
+                  method="post">
+
                 @Html.AntiForgeryToken()
-                <div class="fgrid2">
-                    <div class="fgroup2">
-                        <label class="app-label">Order Number *</label>
-                        <input class="app-finput" style="width:100%" name="orderNumber"
-                               value="ORD-@DateTime.Now.Year-@(new Random().Next(1000, 9999))" required />
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Order Number
+                        </label>
+
+                        <input type="text"
+                               class="form-input"
+                               name="orderNumber"
+                               value="ORD-@DateTime.Now.Year-@(new Random().Next(1000, 9999))"
+                               required />
+
                     </div>
-                    <div class="fgroup2">
-                        <label class="app-label">Supplier *</label>
-                        <select class="app-finput app-select" style="width:100%" name="supplier" required>
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Supplier
+                        </label>
+
+                        <select class="form-input"
+                                name="supplier"
+                                required>
+
                             @if (ViewBag.Suppliers != null)
                             {
                                 foreach (var s in ViewBag.Suppliers as IEnumerable<Supplier>)
                                 {
-                                    <option value="@s.SupplierName">@s.SupplierName</option>
+                                    <option value="@s.SupplierName">
+                                        @s.SupplierName
+                                    </option>
                                 }
                             }
+
                         </select>
+
                     </div>
+
+                    <div class="form-group full">
+
+                        <label class="form-label">
+                            Order Items
+                        </label>
+
+                        <input type="text"
+                               class="form-input"
+                               name="items"
+                               placeholder="EDTA Tubes (200), Lancets (500)"
+                               required />
+
+                    </div>
+
                 </div>
-                <div class="fgroup2" style="margin-bottom:0">
-                    <label class="app-label">Items (e.g. EDTA Tubes (200), Lancets (500))</label>
-                    <input class="app-finput" style="width:100%" name="items"
-                           placeholder="e.g. EDTA Tubes (200), Lancets (500)" required />
-                </div>
+
                 <div class="modal-actions">
-                    <button type="submit" class="btn-full blue">Create Order</button>
-                    <button type="button" class="btn-full btn-outline" onclick="closeModal('m-create-order')">Cancel</button>
+
+                    <button type="submit"
+                            class="btn-modal btn-save">
+                        Create Order
+                    </button>
+
+                    <button type="button"
+                            class="btn-modal btn-cancel-modal"
+                            onclick="closeModal('createModal')">
+                        Cancel
+                    </button>
+
                 </div>
+
             </form>
+
         </div>
+
+    </div>
+
+    <!-- RECEIVE MODAL -->
+
+    <div class="modal-bg"
+         id="confirmReceive"
+         onclick="closeByBackground(event,this)">
+
+        <div class="modal"
+             style="max-width:400px;">
+
+            <button class="modal-close"
+                    onclick="closeModal('confirmReceive')">
+                ✕
+            </button>
+
+            <div class="modal-icon"
+                 style="background:var(--green-light);">
+
+                <svg width="22"
+                     height="22"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="#16a34a"
+                     stroke-width="2"
+                     stroke-linecap="round">
+
+                    <polyline points="20 6 9 17 4 12"></polyline>
+
+                </svg>
+
+            </div>
+
+            <h2>Mark as Received?</h2>
+
+            <p>
+                This will update the order status and stock levels.
+            </p>
+
+            <div class="modal-actions">
+
+                <button class="btn-modal btn-cancel-modal"
+                        onclick="closeModal('confirmReceive')">
+                    Cancel
+                </button>
+
+                <a id="receive-confirm-link"
+                   href="#"
+                   class="btn-modal btn-save"
+                   style="background:var(--green);">
+                    Mark Received
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- CANCEL MODAL -->
+
+    <div class="modal-bg"
+         id="confirmCancel"
+         onclick="closeByBackground(event,this)">
+
+        <div class="modal"
+             style="max-width:400px;">
+
+            <button class="modal-close"
+                    onclick="closeModal('confirmCancel')">
+                ✕
+            </button>
+
+            <div class="modal-icon"
+                 style="background:var(--red-light);">
+
+                <svg width="22"
+                     height="22"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="#dc2626"
+                     stroke-width="2"
+                     stroke-linecap="round">
+
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+
+                </svg>
+
+            </div>
+
+            <h2>Cancel this order?</h2>
+
+            <p>
+                This action cannot be undone.
+            </p>
+
+            <div class="modal-actions">
+
+                <button class="btn-modal btn-cancel-modal"
+                        onclick="closeModal('confirmCancel')">
+                    Go Back
+                </button>
+
+                <a id="cancel-confirm-link"
+                   href="#"
+                   class="btn-modal btn-save"
+                   style="background:var(--red);">
+                    Cancel Order
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- LOGOUT MODAL -->
+
+    <div class="modal-bg"
+         id="logoutModal"
+         onclick="closeByBackground(event,this)">
+
+        <div class="modal"
+             style="max-width:400px;">
+
+            <button class="modal-close"
+                    onclick="closeModal('logoutModal')">
+                ✕
+            </button>
+
+            <div class="modal-icon"
+                 style="background:var(--red-light);">
+
+                <svg width="22"
+                     height="22"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="#dc2626"
+                     stroke-width="2"
+                     stroke-linecap="round">
+
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+
+                </svg>
+
+            </div>
+
+            <h2>Sign out?</h2>
+
+            <p>
+                You'll be returned to the login screen.
+            </p>
+
+            <div class="modal-actions">
+
+                <button class="btn-modal btn-cancel-modal"
+                        onclick="closeModal('logoutModal')">
+                    Cancel
+                </button>
+
+                <a id="logout-confirm"
+                   href="#"
+                   class="btn-modal btn-save"
+                   style="background:var(--red);">
+                    Sign Out
+                </a>
+
+            </div>
+
+        </div>
+
     </div>
 
     <script>
-        function openModal(id)  { document.getElementById(id).classList.add('open');    document.body.style.overflow = 'hidden'; }
-        function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
-        function bgClose(e, el) { if (e.target === el) { el.classList.remove('open'); document.body.style.overflow = ''; } }
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') document.querySelectorAll('.modal-bg.open').forEach(m => {
-                m.classList.remove('open'); document.body.style.overflow = '';
+
+            function openModal(id) {
+                document.getElementById(id).classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeModal(id) {
+                document.getElementById(id).classList.remove('open');
+                document.body.style.overflow = '';
+            }
+
+            function closeByBackground(event, element) {
+                if (event.target === element) {
+                    closeModal(element.id);
+                }
+            }
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    document.querySelectorAll('.modal-bg.open')
+                        .forEach(m => m.classList.remove('open'));
+
+                    document.body.style.overflow = '';
+                }
             });
-        });
+
+            function openConfirm(modalId, orderId, action) {
+
+                if (action === 'receive') {
+
+                    document.getElementById('receive-confirm-link').href =
+                        '@Url.Action("ReceiveOrder", "ManagerDashboard")/' + orderId;
+                }
+
+                else if (action === 'cancel') {
+
+                    document.getElementById('cancel-confirm-link').href =
+                        '@Url.Action("CancelOrder", "ManagerDashboard")/' + orderId;
+                }
+
+                openModal(modalId);
+            }
+
+            // Logout Modal
+
+            var logoutBtn = document.getElementById('logout-btn');
+            var logoutConfirm = document.getElementById('logout-confirm');
+
+            if (logoutBtn) {
+
+                logoutConfirm.href = logoutBtn.href;
+
+                logoutBtn.addEventListener('click', function (e) {
+
+                    e.preventDefault();
+
+                    openModal('logoutModal');
+
+                });
+            }
+
     </script>
+
 </body>
 </html>

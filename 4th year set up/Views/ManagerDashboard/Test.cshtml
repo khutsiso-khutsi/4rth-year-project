@@ -1,670 +1,513 @@
-﻿@using LabManager.Models;
+@using LabManager.Models
 @model IEnumerable<TestCatalogue>
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
 @{
+    ViewData["Title"] = "Test Catalogue";
     Layout = null;
 }
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
     <title>Test Catalogue — NMB-HLabSys</title>
-
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet" />
-
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-            *, *::before, *::after {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
+        :root {
+            --navy: #0b1f3a;
+            --navy2: #122848;
+            --teal: #0d9488;
+            --teal-light: rgba(13,148,136,0.1);
+            --white: #ffffff;
+            --offwhite: #f4f7fb;
+            --muted: #6b7a99;
+            --border: #dde4f0;
+            --red: #dc2626;
+            --red-light: rgba(220,38,38,0.1);
+            --green: #16a34a;
+            --green-light: rgba(22,163,74,0.1);
+            --amber: #d97706;
+            --amber-light: rgba(217,119,6,0.1);
+            --blue: #1d4ed8;
+            --blue-light: rgba(29,78,216,0.1);
+            --purple: #4f46e5;
+            --purple-light: rgba(79,70,229,0.1);
+        }
 
-            :root {
-                --bg: #f4f7fb;
-                --sidebar: #0b1f3a;
-                --topbar: #0b1f3a;
-                --panel: #ffffff;
-                --border: #e2e8f0;
-                --blue: #3498db;
-                --teal: #1abc9c;
-                --red: #e74c3c;
-                --amber: #f39c12;
-                --text: #1e293b;
-                --muted: #94a3b8;
-                --muted-2: #64748b;
-                --font: 'DM Sans', sans-serif;
-            }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--offwhite);
+            color: var(--navy);
+            min-height: 100vh;
+        }
 
-            body {
-                font-family: var(--font);
-                background: var(--bg);
-                color: var(--text);
-                min-height: 100vh;
-            }
+        a { text-decoration: none; }
 
-            a {
-                text-decoration: none;
-            }
+        /* ── TOPBAR ── */
+        .topbar {
+            background: var(--navy);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+        }
 
-            /* TOPBAR */
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
 
-            .topbar {
-                height: 74px;
-                background: var(--topbar);
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 0 28px;
-                position: sticky;
-                top: 0;
-                z-index: 999;
-                border-bottom: 1px solid rgba(255,255,255,.06);
-            }
+        .brand-logo {
+            width: 34px;
+            height: 34px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-            .brand {
-                display: flex;
-                align-items: center;
-                gap: 14px;
-            }
+        .brand-logo svg {
+            width: 18px;
+            height: 18px;
+            fill: white;
+        }
 
-            .brand-logo {
-                width: 48px;
-                height: 48px;
-                border-radius: 14px;
-                background: linear-gradient(135deg,#3498db,#1abc9c);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
+        .brand-name {
+            font-family: 'DM Serif Display', serif;
+            color: white;
+            font-size: 1.1rem;
+            line-height: 1.1;
+        }
 
-                .brand-logo svg {
-                    width: 24px;
-                    height: 24px;
-                    fill: white;
-                }
+        .brand-name span {
+            display: block;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.6rem;
+            font-weight: 300;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
 
-            .brand-name {
-                display: flex;
-                flex-direction: column;
-                color: white;
-                font-size: 17px;
-                font-weight: 700;
-            }
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
 
-                .brand-name span {
-                    font-size: 11px;
-                    font-weight: 500;
-                    color: #cbd5e1;
-                    margin-top: 3px;
-                }
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 100px;
+            padding: 6px 14px 6px 8px;
+        }
 
-            .topbar-right {
-                display: flex;
-                align-items: center;
-                gap: 14px;
-            }
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            background: var(--teal);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
 
-            .user-chip {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 7px 14px;
-                border-radius: 999px;
-                background: rgba(255,255,255,.08);
-                border: 1px solid rgba(255,255,255,.08);
-            }
+        .user-email {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.75);
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
 
-            .user-avatar {
-                width: 34px;
-                height: 34px;
-                border-radius: 50%;
-                background: linear-gradient(135deg,#f39c12,#e67e22);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-size: 13px;
-                font-weight: 700;
-            }
+        .logout-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.8);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
 
-            .user-email {
-                color: white;
-                font-size: 13px;
-                font-weight: 500;
-            }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
 
-            .logout-btn {
-                height: 42px;
-                padding: 0 18px;
-                border-radius: 12px;
-                background: rgba(231,76,60,.14);
-                border: 1px solid rgba(231,76,60,.18);
-                color: #ffc7c1;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                font-size: 13px;
-                font-weight: 600;
-                transition: .2s ease;
-            }
+        .logout-btn svg { width: 14px; height: 14px; }
 
-                .logout-btn:hover {
-                    background: rgba(231,76,60,.24);
-                    color: white;
-                }
+        /* ── LAYOUT ── */
+        .page {
+            display: flex;
+            min-height: calc(100vh - 64px);
+        }
 
-                .logout-btn svg {
-                    width: 16px;
-                    height: 16px;
-                }
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            flex-shrink: 0;
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
 
-            /* PAGE */
+        .nav-section { margin-bottom: 8px; }
 
-            .page {
-                display: flex;
-                min-height: calc(100vh - 74px);
-            }
+        .nav-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0 20px;
+            margin-bottom: 4px;
+        }
 
-            /* SIDEBAR */
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.15s;
+            border-left: 3px solid transparent;
+        }
 
-            .sidebar {
-                width: 260px;
-                background: var(--sidebar);
-                padding: 24px 18px;
-                border-right: 1px solid rgba(255,255,255,.05);
-                position: sticky;
-                top: 74px;
-                height: calc(100vh - 74px);
-            }
+        .nav-item:hover {
+            background: var(--offwhite);
+            color: var(--navy);
+        }
 
-            .nav-label {
-                margin: 18px 12px 12px;
-                font-size: 11px;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-                color: #94a3b8;
-            }
+        .nav-item.active {
+            background: var(--teal-light);
+            color: var(--teal);
+            border-left-color: var(--teal);
+        }
 
-            .nav-item {
-                height: 48px;
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 0 14px;
-                border-radius: 14px;
-                color: #dbe7f4;
-                font-size: 14px;
-                font-weight: 500;
-                transition: .2s ease;
-            }
+        .nav-item svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+        }
 
-                .nav-item svg {
-                    width: 18px;
-                    height: 18px;
-                    stroke: currentColor;
-                    fill: none;
-                    stroke-width: 2;
-                }
+        /* ── MAIN ── */
+        .main {
+            flex: 1;
+            padding: clamp(24px, 3vw, 40px);
+            overflow-y: auto;
+        }
 
-                .nav-item:hover {
-                    background: rgba(255,255,255,.06);
-                    transform: translateX(2px);
-                }
+        /* ── PAGE HEADER ── */
+        .page-header {
+            margin-bottom: 24px;
+        }
 
-                .nav-item.active {
-                    background: rgba(255,255,255,.10);
-                    color: white;
-                }
+        .page-header h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.8rem;
+            color: var(--navy);
+            margin-bottom: 4px;
+        }
 
-            /* MAIN CONTENT */
+        .page-header p {
+            font-size: 0.875rem;
+            color: var(--muted);
+        }
 
-            .main-content {
-                flex: 1;
-                padding: 34px;
-            }
+        /* ── CARD ── */
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
+        }
 
-            .page-header {
-                margin-bottom: 28px;
-            }
+        /* ── TOOLBAR ── */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
 
-                .page-header h1 {
-                    font-size: 30px;
-                    font-weight: 700;
-                    color: #0f172a;
-                    margin-bottom: 8px;
-                }
+        .search-box { flex: 1; max-width: 340px; min-width: 220px; }
 
-                .page-header p {
-                    color: var(--muted-2);
-                    font-size: 14px;
-                }
+        .search-input {
+            width: 100%;
+            height: 44px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--offwhite);
+            padding: 0 16px;
+            outline: none;
+            font-size: 0.875rem;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--navy);
+            transition: 0.2s ease;
+        }
 
-            /* CARD */
+        .search-input:focus {
+            border-color: var(--teal);
+            background: white;
+        }
 
-            .card {
-                background: var(--panel);
-                border-radius: 22px;
-                border: 1px solid var(--border);
-                padding: 28px;
-                box-shadow: 0 10px 30px rgba(15,23,42,.06);
-            }
+        .search-input::placeholder { color: var(--muted); }
 
-            /* TOOLBAR */
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
 
-            .toolbar {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 16px;
-                margin-bottom: 24px;
-                flex-wrap: wrap;
-            }
+        .btn {
+            height: 44px;
+            padding: 0 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            transition: 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-            .search-box {
-                flex: 1;
-                max-width: 320px;
-                min-width: 220px;
-            }
+        .btn:hover { transform: translateY(-1px); }
 
-            .search-input {
-                width: 100%;
-                height: 46px;
-                padding: 0 16px;
-                border-radius: 12px;
-                border: 1px solid #dbe4ef;
-                background: #f8fafc;
-                color: #0f172a;
-                font-size: 14px;
-                outline: none;
-            }
+        .btn-teal {
+            background: var(--teal);
+            color: white;
+            box-shadow: 0 4px 14px rgba(13,148,136,0.25);
+        }
 
-                .search-input::placeholder {
-                    color: #94a3b8;
-                }
+        .btn-light {
+            background: var(--teal-light);
+            color: var(--teal);
+        }
 
-            .action-group {
-                display: flex;
-                gap: 10px;
-                flex-wrap: wrap;
-            }
+        /* ── TABLE ── */
+        .table-wrap { overflow-x: auto; }
 
-            .btn {
-                height: 44px;
-                padding: 0 18px;
-                border: none;
-                border-radius: 12px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 13px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: .2s ease;
-            }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
 
-                .btn:hover {
-                    transform: translateY(-1px);
-                }
+        thead th {
+            text-align: left;
+            padding: 0 16px 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+        }
 
-            .btn-amber {
-                background: rgba(243,156,18,.12);
-                color: #d68910;
-            }
+        tbody td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--offwhite);
+            font-size: 0.83rem;
+            color: var(--navy);
+            vertical-align: middle;
+        }
 
-            .btn-teal {
-                background: rgba(26,188,156,.12);
-                color: #0f9f84;
-            }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: var(--offwhite); }
 
-            /* TABLE */
+        .test-name { font-weight: 600; color: var(--navy); }
 
-            .table-wrap {
-                overflow-x: auto;
-            }
+        /* ── BADGES ── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
 
-            table {
-                width: 100%;
-                border-collapse: collapse;
-            }
+        .badge-category { background: var(--blue-light);  color: var(--blue);  }
+        .badge-tat      { background: var(--green-light); color: var(--green); }
 
-            thead th {
-                padding: 14px;
-                text-align: left;
-                font-size: 11px;
-                font-weight: 700;
-                letter-spacing: .7px;
-                text-transform: uppercase;
-                color: #64748b;
-                border-bottom: 1px solid #e2e8f0;
-            }
+        /* ── ACTION BUTTONS ── */
+        .actions { display: flex; align-items: center; gap: 8px; }
 
-            tbody td {
-                padding: 18px 14px;
-                border-bottom: 1px solid #eef2f7;
-                font-size: 14px;
-                color: #334155;
-            }
+        .action-btn {
+            height: 34px;
+            padding: 0 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            font-family: 'DM Sans', sans-serif;
+            text-decoration: none;
+        }
 
-            tbody tr:hover td {
-                background: #f8fafc;
-            }
+        .action-btn:hover { transform: translateY(-1px); }
 
-            .test-name {
-                font-weight: 600;
-                color: #0f172a;
-            }
+        .edit-btn   { background: var(--teal-light); color: var(--teal); }
+        .delete-btn { background: var(--red-light);  color: var(--red);  }
 
-            .badge {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                padding: 6px 12px;
-                border-radius: 999px;
-                font-size: 11px;
-                font-weight: 600;
-            }
-
-            .badge-blue {
-                background: rgba(52,152,219,.12);
-                color: #2980b9;
-            }
-
-            .badge-green {
-                background: rgba(26,188,156,.12);
-                color: #0f9f84;
-            }
-
-            .actions {
-                display: flex;
-                gap: 8px;
-            }
-
-            .action-btn {
-                height: 34px;
-                padding: 0 14px;
-                border: none;
-                border-radius: 10px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 12px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: .2s ease;
-            }
-
-            .edit-btn {
-                background: rgba(52,152,219,.12);
-                color: #2980b9;
-            }
-
-            .delete-btn {
-                background: rgba(231,76,60,.12);
-                color: #d63031;
-            }
-
-            .action-btn:hover {
-                transform: translateY(-1px);
-            }
-
+        /* ── RESPONSIVE ── */
+        @@media (max-width: 768px) {
+            .topbar    { padding: 0 20px; }
+            .user-email { display: none; }
+            .sidebar   { display: none; }
+            .main      { padding: 20px 16px; }
+        }
     </style>
-
 </head>
-
 <body>
 
     <!-- TOPBAR -->
-
     <div class="topbar">
-
-        <a class="brand"
-           asp-controller="Home"
-           asp-action="Index">
-
+        <a class="brand" asp-controller="Home" asp-action="Index">
             <div class="brand-logo">
-
-                <svg viewBox="0 0 24 24">
-
-                    <path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" />
-
-                    <circle cx="12"
-                            cy="17"
-                            r="4"
-                            opacity="0.6" />
-
-                </svg>
-
+                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
             </div>
-
             <div class="brand-name">
-
                 NMB-HLabSys
-
-                <span>
-                    Haematology Lab System
-                </span>
-
+                <span>Haematology Lab System</span>
             </div>
-
         </a>
-
         <div class="topbar-right">
-
             <div class="user-chip">
-
-                <div class="user-avatar">
-                    @(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "M")
-                </div>
-
-                <span class="user-email">
-                    @(ViewBag.Email ?? "Manager")
-                </span>
-
+                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "M")</div>
+                <span class="user-email">@ViewBag.Email</span>
             </div>
-
-            <a asp-controller="Home"
-               asp-action="Logout"
-               class="logout-btn">
-
-                <svg viewBox="0 0 24 24"
-                     fill="none"
-                     stroke="currentColor"
-                     stroke-width="2"
-                     stroke-linecap="round">
-
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn" id="logout-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-
                     <polyline points="16 17 21 12 16 7" />
-
-                    <line x1="21"
-                          y1="12"
-                          x2="9"
-                          y2="12" />
-
+                    <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
-
                 Sign Out
-
             </a>
-
         </div>
-
     </div>
-
-    <!-- PAGE -->
 
     <div class="page">
 
         <!-- SIDEBAR -->
-
         <aside class="sidebar">
-
-            <div class="nav-label">Main</div>
-
-            <a asp-controller="ManagerDashboard"
-               asp-action="Index"
-               class="nav-item">
-
-                <svg viewBox="0 0 24 24">
-                    <rect x="3" y="3" width="7" height="7" />
-                    <rect x="14" y="3" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" />
-                    <rect x="14" y="14" width="7" height="7" />
-                </svg>
-
-                Dashboard
-
-            </a>
-
-            <a asp-controller="ManagerDashboard"
-               asp-action="TestCatalogue"
-               class="nav-item active">
-
-                <svg viewBox="0 0 24 24">
-                    <path d="M9 3v11a3 3 0 006 0V3" />
-                    <line x1="6" y1="3" x2="18" y2="3" />
-                </svg>
-
-                Test Catalogue
-
-            </a>
-
-            <a asp-controller="ManagerDashboard"
-               asp-action="Consumables"
-               class="nav-item">
-
-                <svg viewBox="0 0 24 24">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                </svg>
-
-                Consumables
-
-            </a>
-
-            <a asp-controller="ManagerDashboard"
-               asp-action="Staff"
-               class="nav-item">
-
-                <svg viewBox="0 0 24 24">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                </svg>
-
-                Staff
-
-            </a>
-
-            <a asp-controller="ManagerDashboard"
-               asp-action="Orders"
-               class="nav-item">
-
-                <svg viewBox="0 0 24 24">
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                </svg>
-
-                Orders
-
-            </a>
-
-            <a asp-controller="ManagerDashboard"
-               asp-action="Report"
-               class="nav-item">
-
-                <svg viewBox="0 0 24 24">
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                </svg>
-
-                Reports
-
-            </a>
-
-            <div class="nav-label">System</div>
-
-            <a asp-controller="ManagerDashboard"
-               asp-action="Profile"
-               class="nav-item">
-
-                <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.07 4.93A10 10 0 1 0 4.93 19.07 10 10 0 0 0 19.07 4.93z" />
-                </svg>
-
-                Profile
-
-            </a>
-
-            <a asp-controller="ManagerDashboard"
-               asp-action="AuditLog"
-               class="nav-item">
-
-                <svg viewBox="0 0 24 24">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-
-                Audit Log
-
-            </a>
-
+            <div class="nav-section">
+                <div class="nav-label">Main</div>
+                <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+                    Dashboard
+                </a>
+                <a asp-controller="ManagerDashboard" asp-action="TestCatalogue" class="nav-item active">
+                    <svg viewBox="0 0 24 24"><path d="M9 3v11a3 3 0 006 0V3" /><line x1="6" y1="3" x2="18" y2="3" /></svg>
+                    Test Catalogue
+                </a>
+                <a asp-controller="ManagerDashboard" asp-action="Consumables" class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                    Consumables
+                </a>
+                <a asp-controller="ManagerDashboard" asp-action="Staff" class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                    Staff
+                </a>
+                <a asp-controller="ManagerDashboard" asp-action="Orders" class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                    Orders
+                </a>
+                <a asp-controller="ManagerDashboard" asp-action="Report" class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
+                    Reports
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-label">System</div>
+                <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                    Profile
+                </a>
+                <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                    Audit Log
+                </a>
+            </div>
         </aside>
 
-        <!-- MAIN CONTENT -->
-
-        <main class="main-content">
+        <!-- MAIN -->
+        <main class="main">
 
             <div class="page-header">
-
                 <h1>Test Catalogue</h1>
-
-                <p>
-                    Manage haematology tests, categories,
-                    sample types and turnaround times.
-                </p>
-
+                <p>Manage haematology tests, categories, sample types and turnaround times.</p>
             </div>
 
             <div class="card">
 
+                <!-- TOOLBAR -->
                 <div class="toolbar">
-
                     <div class="search-box">
-
-                        <input type="text"
-                               id="searchInput"
-                               class="search-input"
-                               placeholder="Search tests..." />
-
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search tests..." />
                     </div>
-
-                    <div class="action-group">
-
-                        <button class="btn btn-amber">
-                            + Category
-                        </button>
-
-                        <button class="btn btn-teal">
-                            + Test Type
-                        </button>
-
+                    <div class="toolbar-actions">
+                        <button class="btn btn-light">+ Category</button>
+                        <button class="btn btn-teal">+ Test Type</button>
                     </div>
-
                 </div>
 
+                <!-- TABLE -->
                 <div class="table-wrap">
-
                     <table id="testTable">
-
                         <thead>
-
                             <tr>
-
                                 <th>Test Name</th>
                                 <th>Category</th>
                                 <th>Sample Type</th>
@@ -672,121 +515,109 @@
                                 <th>Normal Range</th>
                                 <th>TAT</th>
                                 <th>Actions</th>
-
                             </tr>
-
                         </thead>
-
                         <tbody>
-
                             @if (Model != null && Model.Any())
                             {
                                 foreach (var t in Model)
                                 {
                                     <tr>
-
-                                        <td class="test-name">
-                                            @t.TestName
-                                        </td>
-
-                                        <td>
-                                            <span class="badge badge-blue">
-                                                @t.Category
-                                            </span>
-                                        </td>
-
+                                        <td class="test-name">@t.TestName</td>
+                                        <td><span class="badge badge-category">@t.Category</span></td>
                                         <td>@t.SampleType</td>
-
                                         <td>@t.Units</td>
-
                                         <td>@t.NormalRange</td>
-
+                                        <td><span class="badge badge-tat">@t.TAT mins</span></td>
                                         <td>
-                                            <span class="badge badge-green">
-                                                @t.TAT mins
-                                            </span>
-                                        </td>
-
-                                        <td>
-
                                             <div class="actions">
-
-                                                <button class="action-btn edit-btn">
-                                                    Edit
-                                                </button>
-
+                                                <button class="action-btn edit-btn">Edit</button>
                                                 <a asp-controller="ManagerDashboard"
                                                    asp-action="DeleteTest"
                                                    asp-route-id="@t.TestId"
                                                    class="action-btn delete-btn"
                                                    onclick="return confirm('Delete @t.TestName?')">
-
                                                     Delete
-
                                                 </a>
-
                                             </div>
-
                                         </td>
-
                                     </tr>
                                 }
                             }
                             else
                             {
                                 <tr>
-
-                                    <td colspan="7"
-                                        style="text-align:center;padding:40px;color:var(--muted)">
-
+                                    <td colspan="7" style="text-align:center;padding:48px;color:var(--muted);font-size:0.875rem;">
                                         No test catalogue records found.
-
                                     </td>
-
                                 </tr>
                             }
-
                         </tbody>
-
                     </table>
-
                 </div>
 
             </div>
 
         </main>
-
     </div>
 
+    <!-- LOGOUT MODAL -->
+    <div id="logout-modal" role="dialog" aria-modal="true"
+         style="display:none;position:fixed;inset:0;z-index:999;background:rgba(11,31,58,0.45);align-items:center;justify-content:center;">
+        <div style="background:white;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(11,31,58,0.2);animation:modalIn 0.18s ease;">
+            <div style="width:52px;height:52px;background:#fee2e2;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+            </div>
+            <h3 style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--navy);margin-bottom:8px;">Sign out?</h3>
+            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:24px;line-height:1.6;">You'll be returned to the login screen. Any unsaved changes will be lost.</p>
+            <div style="display:flex;gap:10px;">
+                <button id="logout-cancel" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:white;color:var(--navy);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancel</button>
+                <a id="logout-confirm" href="#" style="flex:1;padding:10px;border:none;border-radius:10px;background:#dc2626;color:white;font-size:0.85rem;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;font-family:'DM Sans',sans-serif;">Sign Out</a>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @@keyframes modalIn {
+            from { opacity: 0; transform: scale(0.96) translateY(8px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+    </style>
+
     <script>
-
-            const searchInput = document.getElementById("searchInput");
-
-            searchInput.addEventListener("keyup", function () {
-
-                const searchValue = this.value.toLowerCase();
-
-                const tableRows = document.querySelectorAll("#testTable tbody tr");
-
-                tableRows.forEach(row => {
-
-                    const rowText = row.textContent.toLowerCase();
-
-                    if (rowText.includes(searchValue)) {
-
-                        row.style.display = "";
-
-                    }
-                    else {
-
-                        row.style.display = "none";
-
-                    }
-
-                });
-
+        // Search
+        document.getElementById("searchInput").addEventListener("keyup", function () {
+            const val = this.value.toLowerCase();
+            document.querySelectorAll("#testTable tbody tr").forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(val) ? "" : "none";
             });
+        });
 
+        // Logout modal
+        var logoutBtn     = document.getElementById('logout-btn');
+        var logoutModal   = document.getElementById('logout-modal');
+        var logoutCancel  = document.getElementById('logout-cancel');
+        var logoutConfirm = document.getElementById('logout-confirm');
+
+        if (logoutBtn && logoutModal) {
+            logoutConfirm.href = logoutBtn.href;
+            logoutBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                logoutModal.style.display = 'flex';
+                logoutCancel.focus();
+            });
+            function closeModal() {
+                logoutModal.style.display = 'none';
+                logoutBtn.focus();
+            }
+            logoutCancel.addEventListener('click', closeModal);
+            logoutModal.addEventListener('click', function (e) { if (e.target === logoutModal) closeModal(); });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && logoutModal.style.display === 'flex') closeModal(); });
+        }
     </script>
 
 </body>
