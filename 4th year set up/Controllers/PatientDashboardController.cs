@@ -643,7 +643,7 @@ namespace _4th_year_set_up.Controllers
                 RequestDate = DateTime.Now.AddDays(-10),
                 RequestStatus = "Completed",
                 Urgency = "Routine",
-                DoctorName = "Dr. John Smith",
+                DoctorName = "Dr. Khutsiso Letageng",
                 Items = new List<TestRequestItem>
                 {
                     new TestRequestItem { RequestItemID = 1, TestName = "Full Blood Count", CategoryName = "Haematology", ItemStatus = "Verified", ResultValue = 13.5m, UnitName = "g/dL", NormalRangeMin = 12.0m, NormalRangeMax = 17.5m, IsAbnormal = false },
