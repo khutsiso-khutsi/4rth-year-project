@@ -523,6 +523,33 @@
             color: #1d4ed8;
         }
 
+        .badge-red {
+            background: #fee2e2;
+            color: var(--red);
+        }
+
+        /* ── ALERT BANNER ── */
+        .alert-banner {
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+            border-radius: 12px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            font-size: 0.85rem;
+            color: #92400e;
+            font-weight: 500;
+        }
+
+            .alert-banner svg {
+                width: 18px;
+                height: 18px;
+                flex-shrink: 0;
+                stroke: #d97706;
+            }
+
         /* ── RESPONSIVE ── */
         @@media (max-width: 768px) {
             .topbar {
@@ -565,7 +592,7 @@
                 <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "P")</div>
                 <span class="user-email">@ViewBag.Email</span>
             </div>
-            <a asp-controller="Home" asp-action="Logout" class="logout-btn">
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn" id="logout-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                     <polyline points="16 17 21 12 16 7" />
@@ -619,10 +646,23 @@
             <div class="hero">
                 <div class="hero-content">
                     <div class="hero-tag">Patient Portal</div>
-                    <h1>Welcome back, <span>@ViewBag.Email</span></h1>
-                    <p>Here's an overview of your health records and upcoming appointments.</p>
+                    <h1>Welcome back, <span>@(ViewBag.PatientName ?? ViewBag.Email)</span></h1>
+                    <p id="hero-datetime">@DateTime.Now.ToString("dddd, dd MMMM yyyy") — Here's your health summary for today.</p>
                 </div>
             </div>
+
+            <!-- ABNORMAL RESULT ALERT — only shows if there are abnormal results -->
+            @if (ViewBag.HasAbnormalResults == true)
+            {
+                <div class="alert-banner" id="alert-banner" role="alert" aria-live="polite">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    You have abnormal test results that require attention. Please consult your doctor.
+                </div>
+            }
 
             <!-- STATS -->
             <div class="stats">
@@ -630,29 +670,43 @@
                     <div class="stat-icon" style="background:#dcfce7">
                         <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
                     </div>
-                    <div class="stat-value">@ViewBag.TestResultCount</div>
+                    <div class="stat-value" data-target="@(ViewBag.TestResultCount ?? 0)">0</div>
                     <div class="stat-label">Test Results</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:#dbeafe">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                    <div class="stat-icon" style="background:#fee2e2">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
                     </div>
-                    <div class="stat-value">@(ViewBag.AppointmentCount ?? 0)</div>
-                    <div class="stat-label">Upcoming Appointments</div>
+                    <div class="stat-value" data-target="@(ViewBag.AbnormalCount ?? 0)">0</div>
+                    <div class="stat-label">Abnormal Results</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon" style="background:#fef3c7">
                         <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
                     </div>
-                    <div class="stat-value">@ViewBag.ActiveConditionCount</div>
+                    <div class="stat-value" data-target="@(ViewBag.ActiveConditionCount ?? 0)">0</div>
                     <div class="stat-label">Active Conditions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#dbeafe">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 1 1-2-2V9m0 0h18" /></svg>
+                    </div>
+                    <div class="stat-value" data-target="@(ViewBag.ActiveMedicationCount ?? 0)">0</div>
+                    <div class="stat-label">Active Medications</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon" style="background:rgba(13,148,136,0.1)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                     </div>
-                    <div class="stat-value">1</div>
+                    <div class="stat-value" data-target="@(ViewBag.AssignedDoctorCount ?? 0)">0</div>
                     <div class="stat-label">Assigned Doctor</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#f3e8ff">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                    </div>
+                    <div class="stat-value" data-target="@(ViewBag.ConsentCount ?? 0)">0</div>
+                    <div class="stat-label">Active Consents</div>
                 </div>
             </div>
 
@@ -666,7 +720,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
                     </div>
                     <h3>My Results</h3>
-                    <p>View your latest haematology lab test results and reports.</p>
+                    <p>View your latest haematology lab test results and download PDF reports.</p>
                     <div class="card-arrow">
                         View Results
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6" /></svg>
@@ -674,35 +728,34 @@
                 </a>
                 <a asp-controller="PatientDashboard" asp-action="MedicalHistory" class="card">
                     <div class="card-icon" style="background:#dbeafe">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
                     </div>
-                    <h3>Appointments</h3>
-                    <p>Check your upcoming and past appointments with your doctor.</p>
+                    <h3>Medical History</h3>
+                    <p>Manage your conditions, allergies and current medications.</p>
                     <div class="card-arrow">
-                        View Appointments
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6" /></svg>
-                    </div>
-                </a>
-                <a asp-controller="PatientDashboard" asp-action="Profile" class="card">
-
-                    <div class="card-icon" style="background:rgba(13,148,136,0.1)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                    </div>
-                    <h3>My Profile</h3>
-                    <p>Manage your personal information, contact details and settings.</p>
-                    <div class="card-arrow">
-                        View Profile
+                        View History
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6" /></svg>
                     </div>
                 </a>
                 <a asp-controller="PatientDashboard" asp-action="Consent" class="card">
-                    <div class="card-icon" style="background:#fef3c7">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                    <div class="card-icon" style="background:#f3e8ff">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                     </div>
-                    <h3>Medical History</h3>
-                    <p>Review your conditions, medications and allergy records.</p>
+                    <h3>Consent Management</h3>
+                    <p>Control which doctors can access your test results and records.</p>
                     <div class="card-arrow">
-                        View History
+                        Manage Consent
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6" /></svg>
+                    </div>
+                </a>
+                <a asp-controller="PatientDashboard" asp-action="Profile" class="card">
+                    <div class="card-icon" style="background:rgba(13,148,136,0.1)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                    </div>
+                    <h3>My Profile</h3>
+                    <p>Update your personal details, contact info and change your password.</p>
+                    <div class="card-arrow">
+                        View Profile
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6" /></svg>
                     </div>
                 </a>
@@ -711,52 +764,385 @@
             <!-- RECENT ACTIVITY -->
             <div class="section-header">
                 <h2 class="section-title">Recent Activity</h2>
-                <a href="#" class="section-link">View all</a>
+                <a asp-controller="PatientDashboard" asp-action="MyResults" class="section-link">View all results →</a>
             </div>
             <div class="activity-list">
-                <div class="activity-item">
-                    <div class="activity-dot" style="background:#dcfce7">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                @{
+                    var requests = ViewData["Requests"] as List<Patient.Models.TestRequest>;
+                }
+                @if (requests != null && requests.Any())
+                {
+                    @foreach (var req in requests.Take(5))
+                    {
+                        var isCompleted = req.RequestStatus == "Completed";
+                        var isPending = req.RequestStatus == "Pending";
+                        var dotBg = isCompleted ? "#dcfce7" : isPending ? "#fef3c7" : "#dbeafe";
+                        var dotStroke = isCompleted ? "#16a34a" : isPending ? "#d97706" : "#1d4ed8";
+                        var badgeClass = isCompleted ? "badge-green" : isPending ? "badge-amber" : "badge-blue";
+                        <div class="activity-item">
+                            <div class="activity-dot" style="background:@dotBg">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="@dotStroke" stroke-width="2" stroke-linecap="round">
+                                    @if (isCompleted)
+                                    {
+                                        <polyline points="20 6 9 17 4 12" />
+                                    }
+                                    else
+                                    {
+                                        <circle cx="12" cy="12" r="10" />
+                                        <line x1="12" y1="8" x2="12" y2="12" />
+                                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                                    }
+                                </svg>
+                            </div>
+                            <div class="activity-info">
+                                <div class="activity-title">@req.RequestNumber — @req.Urgency</div>
+                                <div class="activity-sub">Dr. @req.DoctorName · @req.RequestDate.ToString("dd MMM yyyy")</div>
+                            </div>
+                            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                                <span class="badge @badgeClass">@req.RequestStatus</span>
+                                <span class="activity-time" data-date="@req.RequestDate.ToString("o")">@((DateTime.Now - req.RequestDate).Days) days ago</span>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="activity-item">
+                        <div class="activity-info" style="text-align:center;padding:12px 0;color:var(--muted);font-size:0.85rem;">
+                            No recent activity found.
+                        </div>
                     </div>
-                    <div class="activity-info">
-                        <div class="activity-title">Full Blood Count Result Available</div>
-                        <div class="activity-sub">Lab Technician uploaded your results</div>
-                    </div>
-                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-                        <span class="badge badge-green">Ready</span>
-                        <span class="activity-time">Today</span>
-                    </div>
-                </div>
-                <div class="activity-item">
-                    <div class="activity-dot" style="background:#dbeafe">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
-                    </div>
-                    <div class="activity-info">
-                        <div class="activity-title">Appointment Scheduled</div>
-                        <div class="activity-sub">Consultation with Dr. Smith — 14 April 2026</div>
-                    </div>
-                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-                        <span class="badge badge-blue">Upcoming</span>
-                        <span class="activity-time">Yesterday</span>
-                    </div>
-                </div>
-                <div class="activity-item">
-                    <div class="activity-dot" style="background:#fef3c7">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-                    </div>
-                    <div class="activity-info">
-                        <div class="activity-title">Sample Submitted</div>
-                        <div class="activity-sub">Blood sample submitted for processing</div>
-                    </div>
-                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-                        <span class="badge badge-amber">Processing</span>
-                        <span class="activity-time">3 days ago</span>
-                    </div>
-                </div>
+                }
             </div>
 
         </main>
     </div>
+
+    <!-- ── LOGOUT CONFIRMATION MODAL ── -->
+    <div id="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title"
+         style="display:none;position:fixed;inset:0;z-index:999;background:rgba(11,31,58,0.45);align-items:center;justify-content:center;">
+        <div style="background:white;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(11,31,58,0.2);animation:modalIn 0.18s ease;">
+            <div style="width:52px;height:52px;background:#fee2e2;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+            </div>
+            <h3 id="logout-modal-title" style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--navy);margin-bottom:8px;">Sign out?</h3>
+            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:24px;line-height:1.6;">You'll be returned to the login screen. Any unsaved changes will be lost.</p>
+            <div style="display:flex;gap:10px;">
+                <button id="logout-cancel" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:white;color:var(--navy);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancel</button>
+                <a id="logout-confirm" href="#" style="flex:1;padding:10px;border:none;border-radius:10px;background:#dc2626;color:white;font-size:0.85rem;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;font-family:'DM Sans',sans-serif;">Sign Out</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── TOAST NOTIFICATION ── -->
+    <div id="toast" role="status" aria-live="polite"
+         style="position:fixed;bottom:24px;right:24px;z-index:1000;background:var(--navy);color:white;padding:12px 18px;border-radius:12px;font-size:0.82rem;font-weight:500;display:flex;align-items:center;gap:10px;opacity:0;transform:translateY(8px);transition:opacity 0.25s,transform 0.25s;pointer-events:none;max-width:320px;">
+        <span id="toast-icon" style="font-size:1rem;"></span>
+        <span id="toast-msg"></span>
+    </div>
+
+    <style>
+        @@keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.96) translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @@keyframes countUp {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stat-value.animated {
+            animation: countUp 0.4s ease forwards;
+        }
+
+        /* Page-load fade-in for main sections */
+        .hero, .stats, .cards, .activity-list {
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+            .hero.visible, .stats.visible, .cards.visible, .activity-list.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+        /* Active nav item keyboard focus ring */
+        .nav-item:focus-visible {
+            outline: 2px solid var(--teal);
+            outline-offset: -2px;
+        }
+
+        /* Logout modal backdrop click area */
+        #logout-modal.open {
+            display: flex !important;
+        }
+
+        /* Relative timestamps tooltip */
+        .activity-time[title] {
+            cursor: help;
+            border-bottom: 1px dotted var(--border);
+        }
+    </style>
+
+    <script>
+        (function () {
+            'use strict';
+
+            /* ─── 1. STAGGERED PAGE-LOAD ANIMATIONS ─── */
+            const sections = document.querySelectorAll('.hero, .stats, .cards, .activity-list');
+            sections.forEach(function(el, i) {
+                el.style.transitionDelay = (i * 80) + 'ms';
+                // Use rAF so CSS transition fires after first paint
+                requestAnimationFrame(function() {
+                    requestAnimationFrame(function() {
+                        el.classList.add('visible');
+                    });
+                });
+            });
+
+            /* ─── 2. ANIMATED STAT COUNTERS ─── */
+            function animateCounter(el, target, duration) {
+                var start = null;
+                var from = 0;
+                function step(ts) {
+                    if (!start) start = ts;
+                    var progress = Math.min((ts - start) / duration, 1);
+                    // Ease-out cubic
+                    var eased = 1 - Math.pow(1 - progress, 3);
+                    el.textContent = Math.round(from + (target - from) * eased);
+                    if (progress < 1) requestAnimationFrame(step);
+                    else {
+                        el.textContent = target;
+                        el.classList.add('animated');
+                    }
+                }
+                requestAnimationFrame(step);
+            }
+
+            // Trigger counters when stats section enters viewport
+            var statsSection = document.querySelector('.stats');
+            if (statsSection && 'IntersectionObserver' in window) {
+                var counterDone = false;
+                var io = new IntersectionObserver(function(entries) {
+                    if (entries[0].isIntersecting && !counterDone) {
+                        counterDone = true;
+                        document.querySelectorAll('.stat-value[data-target]').forEach(function(el) {
+                            var target = parseInt(el.getAttribute('data-target'), 10) || 0;
+                            animateCounter(el, target, 900);
+                        });
+                    }
+                }, { threshold: 0.3 });
+                io.observe(statsSection);
+            } else {
+                // Fallback: set values immediately
+                document.querySelectorAll('.stat-value[data-target]').forEach(function(el) {
+                    el.textContent = el.getAttribute('data-target');
+                });
+            }
+
+            /* ─── 3. LIVE CLOCK IN HERO ─── */
+            var heroDt = document.getElementById('hero-datetime');
+            if (heroDt) {
+                var days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+                var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                function padZ(n) { return n < 10 ? '0' + n : String(n); }
+                function formatHero(d) {
+                    var h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
+                    var ampm = h >= 12 ? 'PM' : 'AM';
+                    var h12 = h % 12 || 12;
+                    var dd = String(d.getDate()).padStart(2, '0');
+                    return days[d.getDay()] + ', ' + dd + ' ' + months[d.getMonth()] + ' ' + d.getFullYear()
+                        + ' \u2014 ' + h12 + ':' + padZ(m) + ':' + padZ(s) + ' ' + ampm;
+                }
+                function tickHero() { heroDt.textContent = formatHero(new Date()); }
+                tickHero();
+                setInterval(tickHero, 1000);
+            }
+
+            /* ─── 4. RELATIVE TIMESTAMPS WITH TOOLTIPS ─── */
+            document.querySelectorAll('.activity-time[data-date]').forEach(function(el) {
+                var raw = el.getAttribute('data-date');
+                if (!raw) return;
+                var d = new Date(raw);
+                if (isNaN(d)) return;
+                // Absolute date as tooltip
+                el.setAttribute('title', d.toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' }));
+                // Relative label
+                var diff = Date.now() - d.getTime();
+                var mins  = Math.floor(diff / 60000);
+                var hours = Math.floor(diff / 3600000);
+                var days  = Math.floor(diff / 86400000);
+                var weeks = Math.floor(days / 7);
+                var label;
+                if (mins < 1)       label = 'Just now';
+                else if (mins < 60) label = mins + ' min' + (mins !== 1 ? 's' : '') + ' ago';
+                else if (hours < 24) label = hours + ' hour' + (hours !== 1 ? 's' : '') + ' ago';
+                else if (days < 7)  label = days + ' day' + (days !== 1 ? 's' : '') + ' ago';
+                else if (weeks < 5) label = weeks + ' week' + (weeks !== 1 ? 's' : '') + ' ago';
+                else                label = d.toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
+                el.textContent = label;
+            });
+
+            /* ─── 5. LOGOUT CONFIRMATION MODAL ─── */
+            var logoutBtn    = document.getElementById('logout-btn');
+            var logoutModal  = document.getElementById('logout-modal');
+            var logoutCancel = document.getElementById('logout-cancel');
+            var logoutConfirm = document.getElementById('logout-confirm');
+
+            if (logoutBtn && logoutModal) {
+                // Copy the real href to confirm button
+                logoutConfirm.href = logoutBtn.href;
+
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    logoutModal.classList.add('open');
+                    logoutModal.style.display = 'flex';
+                    logoutCancel.focus();
+                });
+
+                function closeModal() {
+                    logoutModal.classList.remove('open');
+                    logoutModal.style.display = 'none';
+                    logoutBtn.focus();
+                }
+
+                logoutCancel.addEventListener('click', closeModal);
+
+                // Close on backdrop click
+                logoutModal.addEventListener('click', function(e) {
+                    if (e.target === logoutModal) closeModal();
+                });
+
+                // Close on Escape
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && logoutModal.style.display === 'flex') closeModal();
+                });
+            }
+
+            /* ─── 6. TOAST NOTIFICATION HELPER ─── */
+            var toast    = document.getElementById('toast');
+            var toastMsg = document.getElementById('toast-msg');
+            var toastIco = document.getElementById('toast-icon');
+            var toastTimer;
+
+            function showToast(msg, type) {
+                type = type || 'info';
+                var icons = { success: '✓', warning: '⚠', error: '✕', info: 'ℹ' };
+                toastMsg.textContent = msg;
+                toastIco.textContent = icons[type] || icons.info;
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(function() {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(8px)';
+                }, 3500);
+            }
+
+            // Expose globally so other scripts can use it
+            window.showToast = showToast;
+
+            // Show a welcome toast on first visit in this session
+            if (!sessionStorage.getItem('dashboard_welcomed')) {
+                sessionStorage.setItem('dashboard_welcomed', '1');
+                setTimeout(function() { showToast('Dashboard loaded successfully', 'success'); }, 800);
+            }
+
+            /* ─── 7. ABNORMAL RESULTS ALERT AUTO-DISMISS ─── */
+            var alertBanner = document.getElementById('alert-banner');
+            if (alertBanner) {
+                // Add a dismiss button dynamically
+                var dismissBtn = document.createElement('button');
+                dismissBtn.textContent = '×';
+                dismissBtn.setAttribute('aria-label', 'Dismiss alert');
+                dismissBtn.style.cssText = 'margin-left:auto;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#92400e;line-height:1;padding:0 0 0 8px;flex-shrink:0;';
+                alertBanner.appendChild(dismissBtn);
+                dismissBtn.addEventListener('click', function() {
+                    alertBanner.style.transition = 'opacity 0.3s, max-height 0.3s, padding 0.3s, margin 0.3s';
+                    alertBanner.style.maxHeight = alertBanner.offsetHeight + 'px';
+                    requestAnimationFrame(function() {
+                        alertBanner.style.opacity = '0';
+                        alertBanner.style.maxHeight = '0';
+                        alertBanner.style.padding = '0 20px';
+                        alertBanner.style.marginBottom = '0';
+                    });
+                    setTimeout(function() { alertBanner.remove(); }, 350);
+                });
+            }
+
+            /* ─── 8. ACTIVITY ITEM CLICK → NAVIGATE ─── */
+            document.querySelectorAll('.activity-item').forEach(function(item) {
+                var titleEl = item.querySelector('.activity-title');
+                if (!titleEl) return;
+                item.style.cursor = 'pointer';
+                item.addEventListener('click', function() {
+                    // Navigate to MyResults — the server will handle filtering
+                    window.location.href = item.getAttribute('data-href') || '/PatientDashboard/MyResults';
+                });
+                // Keyboard accessibility
+                item.setAttribute('tabindex', '0');
+                item.setAttribute('role', 'button');
+                item.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        item.click();
+                    }
+                });
+            });
+
+            /* ─── 9. STAT CARD HOVER TOOLTIP (accessible title) ─── */
+            var statLabels = {
+                'Test Results':        'Total haematology test results on file',
+                'Abnormal Results':    'Results outside the normal reference range',
+                'Active Conditions':   'Current diagnosed medical conditions',
+                'Active Medications':  'Medications currently prescribed',
+                'Assigned Doctor':     'Doctors with access to your records',
+                'Active Consents':     'Active data-sharing consent agreements'
+            };
+            document.querySelectorAll('.stat-card').forEach(function(card) {
+                var label = card.querySelector('.stat-label');
+                if (label && statLabels[label.textContent.trim()]) {
+                    card.setAttribute('title', statLabels[label.textContent.trim()]);
+                }
+            });
+
+            /* ─── 10. KEYBOARD SHORTCUT HINTS ─── */
+            // Alt+1-4 = quick nav to the four main sections
+            var shortcuts = {
+                '1': '/PatientDashboard/MyResults',
+                '2': '/PatientDashboard/MedicalHistory',
+                '3': '/PatientDashboard/Consent',
+                '4': '/PatientDashboard/Profile'
+            };
+            document.addEventListener('keydown', function(e) {
+                if (e.altKey && shortcuts[e.key]) {
+                    e.preventDefault();
+                    window.location.href = shortcuts[e.key];
+                }
+            });
+
+        })();
+    </script>
 
 </body>
 </html>
