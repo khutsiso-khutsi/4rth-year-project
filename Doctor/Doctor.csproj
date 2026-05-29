@@ -8,12 +8,12 @@
 
   <ItemGroup>
     <Folder Include="DataAccess\" />
-    <Folder Include="Models\" />
     <Folder Include="Repository\" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.TagHelpers" Version="2.3.10" />
   </ItemGroup>
 
 </Project>
