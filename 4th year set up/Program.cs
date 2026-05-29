@@ -1,10 +1,13 @@
-﻿using Patient.Repository;
+﻿using _4th_year_set_up.Services;
 using admin.Repository;
-using _4th_year_set_up.Services;
 using Microsoft.Data.SqlClient;
+using Patient.Repository;
+using Rotativa.AspNetCore;
+
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
+//RotativaConfiguration.Setup(builder.Environment.WebRootPath, "Rotativa");
 
 // ✅ Changed from AddSingleton to AddScoped
 builder.Services.AddScoped<EmailService>();
@@ -25,6 +28,8 @@ builder.Services.AddScoped<UserRepository>(provider =>
 builder.Services.AddScoped<AdminRepository>(provider =>
     new AdminRepository(
         builder.Configuration.GetConnectionString("DefaultConnection")!));
+
+
 
 var app = builder.Build();
 
@@ -48,6 +53,8 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=ManagerDashboard}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+

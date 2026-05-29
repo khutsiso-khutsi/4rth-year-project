@@ -1,0 +1,126 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Reports</title>
+
+    <style>
+            body {
+                font-family: 'DM Sans', sans-serif;
+                background: #f4f7fb;
+                padding: 40px;
+            }
+
+            .btn {
+                background: #0d9488;
+                color: white;
+                border: none;
+                padding: 12px 18px;
+                border-radius: 8px;
+                cursor: pointer;
+            }
+
+            .modal {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.45);
+                justify-content: center;
+                align-items: center;
+            }
+
+            .modal-box {
+                background: white;
+                width: 420px;
+                border-radius: 14px;
+                padding: 24px;
+            }
+
+            .form-group {
+                margin-bottom: 14px;
+            }
+
+            label {
+                font-size: 13px;
+                color: #555;
+            }
+
+            input {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                margin-top: 5px;
+            }
+
+            .actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 18px;
+            }
+
+            .cancel {
+                background: #ddd;
+                color: black;
+            }
+    </style>
+</head>
+
+<body>
+
+    <h1>Laboratory Reports</h1>
+
+    <button class="btn" id="openModal">
+        Generate PDF Report
+    </button>
+
+    <!-- MODAL -->
+    <div class="modal" id="reportModal">
+        <div class="modal-box">
+
+            <h3>Generate Report</h3>
+
+            <form asp-action="GeneratePdf" method="post">
+
+                <div class="form-group">
+                    <label>Start Date</label>
+                    <input type="date" name="startDate" required />
+                </div>
+
+                <div class="form-group">
+                    <label>End Date</label>
+                    <input type="date" name="endDate" required />
+                </div>
+
+                <div class="actions">
+                    <button type="submit" class="btn">Download PDF</button>
+                    <button type="button" class="btn cancel" id="closeModal">Cancel</button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+    <script>
+            const modal = document.getElementById("reportModal");
+
+            document.getElementById("openModal").onclick = () => {
+                modal.style.display = "flex";
+            };
+
+            document.getElementById("closeModal").onclick = () => {
+                modal.style.display = "none";
+            };
+
+            window.onclick = (e) => {
+                if (e.target === modal) modal.style.display = "none";
+            };
+    </script>
+
+</body>
+</html>
