@@ -2,7 +2,11 @@ using _4th_year_set_up.Models;
 using LabManager.Models;
 using Microsoft.AspNetCore.Mvc;
 using Patient.Models;
+using System.Drawing;
 using System.Numerics;
+using Rotativa.AspNetCore;
+using Rotativa.AspNetCore.Options;
+using Size = System.Drawing.Size;
 
 namespace _4th_year_set_up.Controllers
 {
@@ -508,7 +512,38 @@ namespace _4th_year_set_up.Controllers
             SetSession();
 
             return View(
-                "~/Views/ManagerDashboard/AuditLog.cshtml");
+                "~/Views/ManagerDashboard/Index.cshtml");
         }
-    }
+
+        public IActionResult Report() {
+            
+            return View("~/Views/ManagerDashboard/Index.cshtml");
+        
+        }
+        //[HttpPost]
+        //public IActionResult GeneratePdf(DateTime startDate, DateTime endDate)
+        //{
+        //    // DEMO DATA
+        //    var reportData = new List<TestCategoryReport>
+        //{
+        //   new TestCategoryReport { Category = "Full Blood Count", TotalTests = 45 },
+        //    new TestCategoryReport { Category = "Differential Count", TotalTests = 28 },
+        //   new TestCategoryReport { Category = "Peripheral Blood Film", TotalTests = 19 },
+        //   new TestCategoryReport { Category = "Coagulation Studies", TotalTests = 13 }
+        // };
+
+        //    ViewBag.StartDate = startDate;
+        //    ViewBag.EndDate = endDate;
+
+        //    return new ViewAsPdf("ReportPdf", reportData)
+        //    {
+        //        FileName = "LaboratoryReport.pdf",
+        //        PageSize = Rotativa.AspNetCore.Options.Size.A4,
+        //        PageOrientation = Rotativa.AspNetCore.Options.Orientation.Portrait
+        //    };
+        //}
 }
+
+
+}
+       
