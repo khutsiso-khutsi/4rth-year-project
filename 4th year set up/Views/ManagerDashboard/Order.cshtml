@@ -1,319 +1,330 @@
 ﻿@using LabManager.Models
 @model IEnumerable<ConsumableOrder>
 
+
 @{
-    ViewData["Title"] = "Consumable Orders";
     Layout = null;
+
+    var current = ViewBag.StatusFilter as string ?? "All Statuses";
+    var statuses = new[] { "All Statuses", "Ordered", "Partially Complete", "Complete", "Cancelled" };
 }
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Consumable Orders — NMB-HLabSys</title>
 
-    <title>Consumable Orders</title>
-
-    <!-- GOOGLE FONTS -->
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap"
-          rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
     <style>
 
-            /* =========================================
-                       RESET
-                    ========================================= */
-
-            *,
-            *::before,
-            *::after {
+            *, *::before, *::after {
+                box-sizing: border-box;
                 margin: 0;
                 padding: 0;
-                box-sizing: border-box;
             }
-
-            /* =========================================
-                       ROOT VARIABLES
-                    ========================================= */
 
             :root {
                 --navy: #0b1f3a;
-                --navy-light: #122848;
-                --card: #112240;
                 --teal: #0d9488;
-                --purple: #4f46e5;
-                --red: #dc2626;
-                --green: #16a34a;
-                --amber: #d97706;
+                --teal-light: rgba(13,148,136,0.1);
+                --offwhite: #f4f7fb;
                 --white: #ffffff;
-                --muted: #8ca0c0;
-                --border: rgba(255,255,255,0.08);
-                --topbar-height: 64px;
-                --sidebar-width: 230px;
+                --muted: #6b7a99;
+                --border: #dde4f0;
+                --green: #16a34a;
+                --green-light: rgba(22,163,74,0.1);
+                --amber: #d97706;
+                --amber-light: rgba(217,119,6,0.1);
+                --red: #dc2626;
+                --red-light: rgba(220,38,38,0.1);
+                --blue: #1d4ed8;
+                --blue-light: rgba(29,78,216,0.1);
             }
-
-            /* =========================================
-                       BODY
-                    ========================================= */
 
             body {
                 font-family: 'DM Sans', sans-serif;
-                background: white;
-                color: white;
+                background: var(--offwhite);
+                color: var(--navy);
                 min-height: 100vh;
             }
 
             a {
                 text-decoration: none;
-                color: inherit;
             }
 
-            button {
-                font-family: inherit;
-            }
-
-            /* =========================================
-                       TOPBAR
-                    ========================================= */
+            /* ───────── TOPBAR ───────── */
 
             .topbar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                height: var(--topbar-height);
                 background: var(--navy);
-                border-bottom: 1px solid var(--border);
+                padding: 0 40px;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                padding: 0 28px;
-                z-index: 1000;
+                height: 64px;
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                box-shadow: 0 2px 20px rgba(0,0,0,0.15);
             }
 
             .brand {
                 display: flex;
                 align-items: center;
-                gap: 12px;
+                gap: 10px;
             }
 
             .brand-logo {
-                width: 36px;
-                height: 36px;
-                border-radius: 10px;
-                background: linear-gradient(135deg, var(--teal), var(--purple));
+                width: 34px;
+                height: 34px;
+                background: var(--teal);
+                border-radius: 8px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-weight: 700;
-                color: #0b1f3a;
-                font-size: 1rem;
             }
 
+                .brand-logo svg {
+                    width: 18px;
+                    height: 18px;
+                    fill: white;
+                }
+
             .brand-name {
-                font-weight: 700;
-                font-size: 1rem;
+                font-family: 'DM Serif Display', serif;
+                color: white;
+                font-size: 1.1rem;
                 line-height: 1.1;
             }
 
                 .brand-name span {
                     display: block;
-                    font-size: 0.7rem;
-                    color: var(--muted);
-                    font-weight: 400;
+                    font-family: 'DM Sans', sans-serif;
+                    font-size: 0.6rem;
+                    font-weight: 300;
+                    color: rgba(255,255,255,0.4);
+                    letter-spacing: 0.1em;
+                    text-transform: uppercase;
                 }
 
             .topbar-right {
                 display: flex;
                 align-items: center;
-                gap: 14px;
+                gap: 16px;
             }
 
             .user-chip {
                 display: flex;
                 align-items: center;
                 gap: 10px;
+                background: rgba(255,255,255,0.07);
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 100px;
+                padding: 6px 14px 6px 8px;
             }
 
             .user-avatar {
-                width: 34px;
-                height: 34px;
+                width: 28px;
+                height: 28px;
+                background: var(--teal);
                 border-radius: 50%;
-                background: linear-gradient(135deg, var(--purple), var(--teal));
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-weight: 700;
-                font-size: 0.8rem;
-            }
-
-            .user-email {
-                font-size: 0.84rem;
+                font-size: 0.75rem;
+                font-weight: 600;
                 color: white;
             }
 
+            .user-email {
+                font-size: 0.8rem;
+                color: rgba(255,255,255,0.75);
+                max-width: 160px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
             .logout-btn {
-                padding: 9px 16px;
-                border-radius: 10px;
-                border: 1px solid var(--border);
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.12);
+                color: rgba(255,255,255,0.8);
+                padding: 8px 16px;
+                border-radius: 8px;
+                text-decoration: none;
                 font-size: 0.82rem;
-                color: var(--muted);
-                transition: 0.2s;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s;
             }
 
                 .logout-btn:hover {
-                    background: var(--navy-light);
+                    background: rgba(255,255,255,0.15);
                     color: white;
                 }
 
-            /* =========================================
-                       PAGE LAYOUT
-                    ========================================= */
+                .logout-btn svg {
+                    width: 14px;
+                    height: 14px;
+                }
+
+            /* ───────── LAYOUT ───────── */
 
             .page {
                 display: flex;
-                margin-top: var(--topbar-height);
-                min-height: calc(100vh - var(--topbar-height));
+                min-height: calc(100vh - 64px);
             }
 
-            /* =========================================
-                       SIDEBAR
-                    ========================================= */
+            /* ───────── SIDEBAR ───────── */
 
             .sidebar {
-                width: var(--sidebar-width);
-                background: var(--navy);
+                width: 220px;
+                background: white;
                 border-right: 1px solid var(--border);
-                padding: 24px 12px;
+                padding: 24px 0;
+                flex-shrink: 0;
                 position: sticky;
-                top: var(--topbar-height);
-                height: calc(100vh - var(--topbar-height));
+                top: 64px;
+                height: calc(100vh - 64px);
                 overflow-y: auto;
             }
 
-            .nav-label {
-                font-size: 0.7rem;
-                text-transform: uppercase;
-                letter-spacing: 0.1em;
-                color: var(--muted);
-                margin: 20px 10px 8px;
+            .nav-section {
+                margin-bottom: 8px;
             }
 
-                .nav-label:first-child {
-                    margin-top: 0;
-                }
+            .nav-label {
+                font-size: 0.65rem;
+                font-weight: 600;
+                color: var(--muted);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                padding: 0 20px;
+                margin-bottom: 4px;
+            }
 
             .nav-item {
                 display: flex;
                 align-items: center;
                 gap: 10px;
-                padding: 12px 14px;
-                border-radius: 10px;
-                font-size: 0.84rem;
-                font-weight: 500;
+                padding: 10px 20px;
                 color: var(--muted);
-                transition: 0.2s;
-                margin-bottom: 4px;
+                text-decoration: none;
+                font-size: 0.85rem;
+                font-weight: 500;
+                transition: all 0.15s;
+                border-left: 3px solid transparent;
             }
+
+                .nav-item:hover {
+                    background: var(--offwhite);
+                    color: var(--navy);
+                }
+
+                .nav-item.active {
+                    background: var(--teal-light);
+                    color: var(--teal);
+                    border-left-color: var(--teal);
+                }
 
                 .nav-item svg {
                     width: 16px;
                     height: 16px;
-                    stroke: currentColor;
                     flex-shrink: 0;
+                    fill: none;
+                    stroke: currentColor;
+                    stroke-width: 2;
+                    stroke-linecap: round;
                 }
 
-                .nav-item:hover {
-                    background: var(--navy-light);
-                    color: white;
-                }
-
-                .nav-item.active {
-                    background: var(--teal);
-                    color: white;
-                }
-
-            /* =========================================
-                       MAIN
-                    ========================================= */
+            /* ───────── MAIN ───────── */
 
             .main {
                 flex: 1;
-                padding: 36px;
+                padding: clamp(24px, 3vw, 40px);
+                overflow-y: auto;
             }
 
             .page-header {
-                margin-bottom: 28px;
+                margin-bottom: 24px;
             }
 
                 .page-header h1 {
                     font-family: 'DM Serif Display', serif;
-                    font-size: 2rem;
-                    margin-bottom: 6px;
-                    color: #0b1f3a;
+                    font-size: 1.8rem;
+                    color: var(--navy);
+                    margin-bottom: 4px;
                 }
 
                 .page-header p {
+                    font-size: 0.875rem;
                     color: var(--muted);
-                    font-size: 0.9rem;
                 }
 
-            /* =========================================
-                       CARD
-                    ========================================= */
-
             .card {
-                background: #0b1f3a;
-                border-radius: 18px;
-                padding: 24px;
+                background: white;
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                padding: 28px;
+                box-shadow: 0 2px 8px rgba(11,31,58,0.04);
             }
 
-            /* =========================================
-                       TOOLBAR
-                    ========================================= */
+            /* ───────── TOOLBAR ───────── */
 
             .toolbar {
                 display: flex;
-                align-items: center;
                 justify-content: space-between;
-                gap: 12px;
+                align-items: center;
+                gap: 16px;
+                flex-wrap: wrap;
                 margin-bottom: 24px;
+            }
+
+            .toolbar-left {
+                display: flex;
+                align-items: center;
+                gap: 12px;
                 flex-wrap: wrap;
             }
 
-            .status-select {
-                height: 42px;
-                min-width: 180px;
-                padding: 0 14px;
+            .filter-select {
+                height: 44px;
+                min-width: 220px;
                 border-radius: 10px;
                 border: 1px solid var(--border);
-                background: var(--navy);
-                color: white;
+                background: var(--offwhite);
+                padding: 0 14px;
                 outline: none;
+                font-size: 0.85rem;
+                font-family: 'DM Sans', sans-serif;
+                color: var(--navy);
+                transition: 0.2s;
+                cursor: pointer;
             }
 
-                .status-select:focus {
+                .filter-select:focus {
                     border-color: var(--teal);
+                    background: white;
                 }
 
-            /* =========================================
-                       BUTTONS
-                    ========================================= */
-
             .btn {
-                height: 42px;
+                height: 44px;
+                padding: 0 18px;
                 border: none;
                 border-radius: 10px;
-                padding: 0 18px;
+                cursor: pointer;
                 font-size: 0.82rem;
                 font-weight: 600;
-                cursor: pointer;
+                font-family: 'DM Sans', sans-serif;
                 transition: 0.2s;
                 display: inline-flex;
                 align-items: center;
-                justify-content: center;
+                gap: 6px;
+                text-decoration: none;
             }
 
                 .btn:hover {
@@ -323,31 +334,10 @@
             .btn-teal {
                 background: var(--teal);
                 color: white;
+                box-shadow: 0 4px 14px rgba(13,148,136,0.25);
             }
 
-            .btn-red {
-                background: var(--red);
-                color: white;
-            }
-
-            .btn-sm {
-                height: 34px;
-                padding: 0 14px;
-                border: none;
-                border-radius: 8px;
-                font-size: 0.76rem;
-                font-weight: 600;
-                cursor: pointer;
-                transition: 0.2s;
-            }
-
-                .btn-sm:hover {
-                    transform: translateY(-1px);
-                }
-
-            /* =========================================
-                       TABLE
-                    ========================================= */
+            /* ───────── TABLE ───────── */
 
             .table-wrap {
                 overflow-x: auto;
@@ -356,121 +346,433 @@
             table {
                 width: 100%;
                 border-collapse: collapse;
+                min-width: 900px;
             }
 
-            thead tr {
-                border-bottom: 1px solid var(--border);
-            }
-
-            th {
+            thead th {
                 text-align: left;
-                padding-bottom: 14px;
-                font-size: 0.72rem;
-                text-transform: uppercase;
+                padding: 0 16px 12px;
+                font-size: 0.7rem;
+                font-weight: 600;
                 letter-spacing: 0.08em;
+                text-transform: uppercase;
                 color: var(--muted);
-            }
-
-            td {
-                padding: 18px 0;
                 border-bottom: 1px solid var(--border);
-                font-size: 0.85rem;
-                color: rgba(255,255,255,0.9);
             }
 
-            tbody tr {
-                transition: 0.15s;
+            tbody td {
+                padding: 14px 16px;
+                border-bottom: 1px solid var(--offwhite);
+                font-size: 0.83rem;
+                color: var(--navy);
+                vertical-align: middle;
             }
 
-                tbody tr:hover {
-                    background: rgba(255,255,255,0.03);
-                }
+            tbody tr:last-child td {
+                border-bottom: none;
+            }
 
-                tbody tr:last-child td {
-                    border-bottom: none;
-                }
+            tbody tr:hover {
+                background: var(--offwhite);
+            }
 
-            /* =========================================
-                       ORDER LINK
-                    ========================================= */
-
-            .order-link {
-                color: #2dd4bf;
-                font-family: monospace;
+            .order-number {
                 font-weight: 700;
+                color: var(--blue);
             }
 
-                .order-link:hover {
-                    text-decoration: underline;
-                }
+            /* ───────── STATUS ───────── */
 
-            /* =========================================
-                       STATUS PILLS
-                    ========================================= */
-
-            .pill {
+            .status {
                 display: inline-flex;
                 align-items: center;
-                gap: 7px;
-                padding: 5px 12px;
-                border-radius: 999px;
-                font-size: 0.75rem;
+                gap: 6px;
+                padding: 5px 10px;
+                border-radius: 100px;
+                font-size: 0.72rem;
                 font-weight: 600;
             }
 
-            .dot {
+            .status-dot {
                 width: 7px;
                 height: 7px;
                 border-radius: 50%;
+                background: currentColor;
             }
 
-            .pill-complete {
-                background: rgba(22,163,74,0.15);
-                color: #4ade80;
+            .ordered {
+                background: var(--blue-light);
+                color: var(--blue);
             }
 
-                .pill-complete .dot {
-                    background: #4ade80;
-                }
-
-            .pill-partial {
-                background: rgba(217,119,6,0.15);
-                color: #fbbf24;
+            .partial {
+                background: var(--amber-light);
+                color: var(--amber);
             }
 
-                .pill-partial .dot {
-                    background: #fbbf24;
-                }
-
-            .pill-ordered {
-                background: rgba(79,70,229,0.15);
-                color: #a5b4fc;
+            .complete {
+                background: var(--green-light);
+                color: var(--green);
             }
 
-                .pill-ordered .dot {
-                    background: #a5b4fc;
-                }
+            .cancelled {
+                background: var(--red-light);
+                color: var(--red);
+            }
 
-            /* =========================================
-                       ACTION GROUP
-                    ========================================= */
+            /* ───────── ACTIONS ───────── */
 
-            .action-group {
+            .table-actions {
                 display: flex;
+                align-items: center;
                 gap: 8px;
                 flex-wrap: wrap;
             }
 
-            .completed-text {
-                color: var(--muted);
-                font-size: 0.8rem;
+            .action-btn {
+                height: 34px;
+                padding: 0 12px;
+                border-radius: 8px;
+                border: none;
+                cursor: pointer;
+                font-size: 0.75rem;
+                font-weight: 600;
+                font-family: 'DM Sans', sans-serif;
+                display: inline-flex;
+                align-items: center;
+                text-decoration: none;
+                transition: 0.2s;
             }
 
-            /* =========================================
-                       RESPONSIVE
-                    ========================================= */
+                .action-btn:hover {
+                    transform: translateY(-1px);
+                }
+
+            .receive-btn {
+                background: var(--green-light);
+                color: var(--green);
+            }
+
+            .cancel-btn {
+                background: var(--red-light);
+                color: var(--red);
+            }
+
+            .completed-text {
+                font-size: 0.75rem;
+                color: var(--muted);
+                line-height: 1.6;
+            }
+
+            /* ───────── EMPTY ───────── */
+
+            .empty {
+                text-align: center;
+                padding: 60px 20px;
+                color: var(--muted);
+            }
+
+                .empty svg {
+                    width: 48px;
+                    height: 48px;
+                    stroke: #c0cadb;
+                    fill: none;
+                    stroke-width: 1.5;
+                    margin-bottom: 12px;
+                }
+
+                .empty h3 {
+                    color: var(--navy);
+                    margin-bottom: 6px;
+                }
+
+            /* ───────── MODAL (shared) ───────── */
+
+            .modal-bg {
+                position: fixed;
+                inset: 0;
+                background: rgba(11,31,58,0.45);
+                z-index: 999;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+            }
+
+                .modal-bg.open {
+                    display: flex;
+                }
+
+            .modal {
+                width: 100%;
+                max-width: 600px;
+                background: white;
+                border-radius: 22px;
+                padding: 32px;
+                position: relative;
+                animation: modalIn 0.18s ease;
+            }
+
+            @@keyframes modalIn {
+                from {
+                    opacity: 0;
+                    transform: scale(0.96) translateY(8px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
+                }
+            }
+
+            .modal-close {
+                position: absolute;
+                top: 18px;
+                right: 18px;
+                width: 36px;
+                height: 36px;
+                border: none;
+                border-radius: 10px;
+                background: var(--offwhite);
+                cursor: pointer;
+                font-size: 1rem;
+                color: var(--muted);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: 0.15s;
+            }
+
+                .modal-close:hover {
+                    background: var(--border);
+                    color: var(--navy);
+                }
+
+            .modal h2 {
+                font-family: 'DM Serif Display', serif;
+                margin-bottom: 6px;
+                color: var(--navy);
+            }
+
+            .modal p {
+                color: var(--muted);
+                font-size: 0.875rem;
+                line-height: 1.6;
+                margin-bottom: 22px;
+            }
+
+            /* modal header / sub used by new modals */
+            .modal-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 4px;
+                padding-right: 40px;
+            }
+
+                .modal-header h3 {
+                    font-family: 'DM Serif Display', serif;
+                    font-size: 1.2rem;
+                    color: var(--navy);
+                }
+
+            .modal-sub {
+                font-size: 0.82rem;
+                color: var(--muted);
+                margin-bottom: 18px;
+            }
+
+            .form-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 18px;
+            }
+
+            .form-group {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+                .form-group.full {
+                    grid-column: span 2;
+                }
+
+            .form-label {
+                font-size: 0.8rem;
+                font-weight: 600;
+                color: var(--navy);
+            }
+
+            .form-input {
+                height: 46px;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                background: var(--offwhite);
+                padding: 0 14px;
+                outline: none;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.85rem;
+            }
+
+                .form-input:focus {
+                    border-color: var(--teal);
+                    background: white;
+                }
+
+            .modal-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 22px;
+            }
+
+            .btn-modal {
+                flex: 1;
+                height: 46px;
+                border: none;
+                border-radius: 10px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                cursor: pointer;
+                font-family: 'DM Sans', sans-serif;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-decoration: none;
+            }
+
+            .btn-save {
+                background: var(--teal);
+                color: white;
+            }
+
+            .btn-cancel-modal {
+                background: var(--offwhite);
+                color: var(--navy);
+            }
+
+            .modal-icon {
+                width: 52px;
+                height: 52px;
+                border-radius: 14px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 18px;
+            }
+
+            /* ── form elements used in new modals ── */
+            .fgroup2 {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                margin-bottom: 14px;
+            }
+
+            .app-label {
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: var(--navy);
+                letter-spacing: 0.02em;
+            }
+
+            .app-textarea {
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 10px 12px;
+                font-size: 0.83rem;
+                font-family: 'DM Sans', sans-serif;
+                color: var(--navy);
+                background: var(--offwhite);
+                outline: none;
+                resize: vertical;
+                min-height: 90px;
+                width: 100%;
+                transition: 0.15s;
+            }
+
+                .app-textarea:focus {
+                    border-color: var(--teal);
+                    background: white;
+                }
+
+            /* item checklist rows */
+            .recv-item {
+                background: var(--offwhite);
+                border-radius: 8px;
+                padding: 12px 14px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 10px;
+            }
+
+                .recv-item:last-child {
+                    margin-bottom: 0;
+                }
+
+            .recv-item-info .recv-item-name {
+                font-size: 0.82rem;
+                font-weight: 600;
+                color: var(--navy);
+            }
+
+            .recv-item-info .recv-item-qty {
+                font-size: 0.75rem;
+                color: var(--muted);
+                margin-top: 2px;
+            }
+
+            .recv-item-check {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 0.8rem;
+                cursor: pointer;
+                color: var(--navy);
+                font-weight: 500;
+            }
+
+                .recv-item-check input[type="checkbox"] {
+                    width: 16px;
+                    height: 16px;
+                    accent-color: var(--teal);
+                    cursor: pointer;
+                }
+
+            /* btn-full variants used by new modals */
+            .btn-full {
+                flex: 1;
+                height: 44px;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                font-size: 0.83rem;
+                font-weight: 600;
+                font-family: 'DM Sans', sans-serif;
+                transition: 0.15s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+                .btn-full.btn-outline {
+                    background: white;
+                    color: var(--navy);
+                    border: 1px solid var(--border);
+                }
+
+                    .btn-full.btn-outline:hover {
+                        background: var(--offwhite);
+                    }
+
+            /* ───────── RESPONSIVE ───────── */
 
             @@media (max-width: 768px) {
+
+                .topbar {
+                    padding: 0 20px;
+                }
 
                 .sidebar {
                     display: none;
@@ -480,26 +782,29 @@
                     padding: 20px 16px;
                 }
 
-                .topbar {
-                    padding: 0 16px;
-                }
-
                 .user-email {
                     display: none;
                 }
 
-                table {
-                    min-width: 700px;
+                .form-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .form-group.full {
+                    grid-column: span 1;
+                }
+
+                .modal-actions {
+                    flex-direction: column;
                 }
             }
 
     </style>
-
 </head>
-
 <body>
 
     <!-- TOPBAR -->
+
     <div class="topbar">
 
         <a class="brand"
@@ -507,7 +812,10 @@
            asp-action="Index">
 
             <div class="brand-logo">
-                +
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" />
+                    <circle cx="12" cy="17" r="4" opacity="0.6" />
+                </svg>
             </div>
 
             <div class="brand-name">
@@ -520,22 +828,30 @@
         <div class="topbar-right">
 
             <div class="user-chip">
-
                 <div class="user-avatar">
                     @(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "M")
                 </div>
-
-                <span class="user-email">
-                    @(ViewBag.Email ?? "Manager")
-                </span>
-
+                <span class="user-email">@ViewBag.Email</span>
             </div>
 
             <a asp-controller="Home"
                asp-action="Logout"
-               class="logout-btn">
+               class="logout-btn"
+               id="logout-btn">
 
-                Logout
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2"
+                     stroke-linecap="round">
+
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+
+                </svg>
+
+                Sign Out
 
             </a>
 
@@ -543,201 +859,262 @@
 
     </div>
 
-    <!-- PAGE -->
     <div class="page">
 
         <!-- SIDEBAR -->
+
         <aside class="sidebar">
-            <div class="nav-label">Main</div>
-            <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item active">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
-                Dashboard
-            </a>
-            <a asp-controller="ManagerDashboard" asp-action="TestCatalogue" class="nav-item">
-                <svg viewBox="0 0 24 24"><path d="M9 3v11a3 3 0 006 0V3" /><line x1="6" y1="3" x2="18" y2="3" /></svg>
-                Test Catalogue
-            </a>
-            <a asp-controller="ManagerDashboard" asp-action="Consumables" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                Consumables
-            </a>
-            <a asp-controller="ManagerDashboard" asp-action="Staff" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                Staff
-            </a>
-            <a asp-controller="ManagerDashboard" asp-action="Orders" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
-                Orders
-            </a>
-            <a asp-controller="ManagerDashboard" asp-action="Report" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
-                Reports
-            </a>
-            <div class="nav-label">System</div>
-            <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07 10 10 0 0 0 19.07 4.93z" /></svg>
-                Profile
-            </a>
-            <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                Audit Log
-            </a>
-        </aside>
 
+            <div class="nav-section">
 
-        <!-- MAIN -->
-        <main class="main">
+                <div class="nav-label">Main</div>
 
-            <!-- HEADER -->
-            <div class="page-header">
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Index"
+                   class="nav-item">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                    </svg>
+                    Dashboard
+                </a>
 
-                <h1>Consumable Orders</h1>
+                <a asp-controller="ManagerDashboard"
+                   asp-action="TestCatalogue"
+                   class="nav-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 3v11a3 3 0 006 0V3" />
+                        <line x1="6" y1="3" x2="18" y2="3" />
+                    </svg>
+                    Test Catalogue
+                </a>
 
-                <p>
-                    Manage supplier orders and track delivery status.
-                </p>
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Consumables"
+                   class="nav-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    Consumables
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Staff"
+                   class="nav-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    Staff
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Orders"
+                   class="nav-item active">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                    Orders
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Report"
+                   class="nav-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                    Reports
+                </a>
 
             </div>
 
-            <!-- CARD -->
+            <div class="nav-section">
+
+                <div class="nav-label">System</div>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Profile"
+                   class="nav-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    Profile
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="AuditLog"
+                   class="nav-item">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                    Audit Log
+                </a>
+
+            </div>
+
+        </aside>
+
+        <!-- MAIN -->
+
+        <main class="main">
+
+            <div class="page-header">
+                <h1>Consumable Orders</h1>
+                <p>Manage supplier orders and monitor delivery progress.</p>
+            </div>
+
             <div class="card">
 
                 <!-- TOOLBAR -->
+
                 <div class="toolbar">
 
-                    <select class="status-select">
+                    <div class="toolbar-left">
 
-                        <option>All Statuses</option>
-                        <option>Ordered</option>
-                        <option>Partially Complete</option>
-                        <option>Complete</option>
-                        <option>Cancelled</option>
+                        <select class="filter-select"
+                                onchange="location.href='?status=' + this.value">
 
-                    </select>
+                            @foreach (var s in statuses)
+                            {
+                                <option value="@s" selected="@(s == current)">
+                                    @s
+                                </option>
+                            }
 
-                    <button class="btn btn-teal">
+                        </select>
+
+                    </div>
+
+                    <button class="btn btn-teal"
+                            onclick="openModal('createModal')">
                         + Create Order
                     </button>
 
                 </div>
 
                 <!-- TABLE -->
+
                 <div class="table-wrap">
 
                     <table>
 
                         <thead>
-
                             <tr>
-
-                                <th>Order #</th>
+                                <th>Order Number</th>
                                 <th>Supplier</th>
                                 <th>Items</th>
                                 <th>Order Date</th>
                                 <th>Status</th>
                                 <th>Actions</th>
-
                             </tr>
-
                         </thead>
 
                         <tbody>
 
-                            @foreach (var order in Model)
+                            @if (Model != null && Model.Any())
+                            {
+                                foreach (var o in Model)
+                                {
+                                    var statusClass = o.Status switch
+                                    {
+                                        "Ordered" => "status ordered",
+                                        "Partially Complete" => "status partial",
+                                        "Complete" => "status complete",
+                                        "Cancelled" => "status cancelled",
+                                        _ => "status ordered"
+                                    };
+
+                                    <tr>
+
+                                        <td>
+                                            <span class="order-number">
+                                                @o.OrderNumber
+                                            </span>
+                                        </td>
+
+                                        <td>@o.Supplier</td>
+
+                                        <td>@o.Items</td>
+
+                                        <td>
+                                            @o.OrderDate.ToString("dd MMM yyyy")
+                                        </td>
+
+                                        <td>
+                                            <span class="@statusClass">
+                                                <span class="status-dot"></span>
+                                                @o.Status
+                                            </span>
+                                        </td>
+
+                                        <td>
+
+                                            @if (o.Status == "Complete" || o.Status == "Cancelled")
+                                            {
+                                                <div class="completed-text">
+                                                    @(o.Status == "Complete" ? "Completed" : "Cancelled")
+                                                    <br />
+                                                    @o.CompletedDate?.ToString("dd MMM yyyy")
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="table-actions">
+
+                                                    <!-- ↓ opens Receive Order modal, populates order data -->
+                                                    <button class="action-btn receive-btn"
+                                                            onclick="openReceiveModal('@o.Id','@o.OrderNumber','@o.Supplier','@o.OrderDate.ToString("yyyy-MM-dd")','@o.Items')">
+                                                        Receive
+                                                    </button>
+
+                                                    @if (o.Status == "Ordered")
+                                                    {
+                                                        <!-- ↓ opens Cancel Order modal, populates order data -->
+                                                        <button class="action-btn cancel-btn"
+                                                                onclick="openCancelModal('@o.Id','@o.OrderNumber','@o.Supplier')">
+                                                            Cancel
+                                                        </button>
+                                                    }
+
+                                                </div>
+                                            }
+
+                                        </td>
+
+                                    </tr>
+                                }
+                            }
+                            else
                             {
                                 <tr>
+                                    <td colspan="6">
 
-                                    <!-- ORDER -->
-                                    <td>
+                                        <div class="empty">
 
-                                        <a asp-controller="ManagerDashboard"
-                                           asp-action="OrderDetail"
-                                           asp-route-id="@order.Id"
-                                           class="order-link">
+                                            <svg viewBox="0 0 24 24">
+                                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                                <path d="M16 10a4 4 0 0 1-8 0"></path>
+                                            </svg>
 
-                                            @order.OrderNumber
+                                            <h3>No Orders Found</h3>
 
-                                        </a>
+                                            <p>
+                                                No consumable orders are available right now.
+                                            </p>
 
-                                    </td>
-
-                                    <!-- SUPPLIER -->
-                                    <td>@order.Supplier</td>
-
-                                    <!-- ITEMS -->
-                                    <td>@order.Items</td>
-
-                                    <!-- DATE -->
-                                    <td>
-                                        @order.OrderDate.ToString("yyyy-MM-dd")
-                                    </td>
-
-                                    <!-- STATUS -->
-                                    <td>
-
-                                        @if (order.Status == "Complete")
-                                        {
-                                            <span class="pill pill-complete">
-                                                <span class="dot"></span>
-                                                Complete
-                                            </span>
-                                        }
-                                        else if (order.Status == "Partially Complete")
-                                        {
-                                            <span class="pill pill-partial">
-                                                <span class="dot"></span>
-                                                Partially Complete
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="pill pill-ordered">
-                                                <span class="dot"></span>
-                                                @order.Status
-                                            </span>
-                                        }
+                                        </div>
 
                                     </td>
-
-                                    <!-- ACTIONS -->
-                                    <td>
-
-                                        @if (order.Status == "Complete")
-                                        {
-                                            <span class="completed-text">
-
-                                                Completed
-                                                @order.CompletedDate?.ToString("yyyy-MM-dd")
-
-                                            </span>
-                                        }
-                                        else if (order.Status == "Partially Complete")
-                                        {
-                                            <div class="action-group">
-
-                                                <button class="btn-sm btn-teal">
-                                                    Receive
-                                                </button>
-
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <div class="action-group">
-
-                                                <button class="btn-sm btn-teal">
-                                                    Receive
-                                                </button>
-
-                                                <button class="btn-sm btn-red">
-                                                    Cancel
-                                                </button>
-
-                                            </div>
-                                        }
-
-                                    </td>
-
                                 </tr>
                             }
 
@@ -753,6 +1130,327 @@
 
     </div>
 
-</body>
+    <!-- CREATE ORDER MODAL -->
 
+    <div class="modal-bg"
+         id="createModal"
+         onclick="closeByBackground(event,this)">
+
+        <div class="modal">
+
+            <button class="modal-close"
+                    onclick="closeModal('createModal')">
+                ✕
+            </button>
+
+            <h2>Create New Order</h2>
+
+            <p>
+                Add a new consumable supplier order to the system.
+            </p>
+
+            <form asp-controller="ManagerDashboard"
+                  asp-action="CreateOrder"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Order Number
+                        </label>
+
+                        <input type="text"
+                               class="form-input"
+                               name="orderNumber"
+                               value="ORD-@DateTime.Now.Year-@(new Random().Next(1000, 9999))"
+                               required />
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Supplier
+                        </label>
+
+                        <select class="form-input"
+                                name="supplier"
+                                required>
+
+                            @if (ViewBag.Suppliers != null)
+                            {
+                                foreach (var s in ViewBag.Suppliers as IEnumerable<Supplier>)
+                                {
+                                    <option value="@s.SupplierName">
+                                        @s.SupplierName
+                                    </option>
+                                }
+                            }
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group full">
+
+                        <label class="form-label">
+                            Order Items
+                        </label>
+
+                        <input type="text"
+                               class="form-input"
+                               name="items"
+                               placeholder="EDTA Tubes (200), Lancets (500)"
+                               required />
+
+                    </div>
+
+                </div>
+
+                <div class="modal-actions">
+
+                    <button type="submit"
+                            class="btn-modal btn-save">
+                        Create Order
+                    </button>
+
+                    <button type="button"
+                            class="btn-modal btn-cancel-modal"
+                            onclick="closeModal('createModal')">
+                        Cancel
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         MODAL: RECEIVE ORDER
+    ══════════════════════════════════════════ -->
+    <div class="modal-bg" id="m-receive-order" onclick="closeByBackground(event, this)">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal('m-receive-order')">✕</button>
+            <div class="modal-header">
+                <h3 id="recv-title">Receive Order</h3>
+            </div>
+            <div class="modal-sub" id="recv-sub"></div>
+            <div id="recv-items-list" style="margin-bottom:16px;"></div>
+            <div class="modal-actions">
+                <button class="btn-full" id="recv-confirm-btn"
+                        style="background:var(--green);color:white;"
+                        onclick="receiveOrder()">
+                    Confirm Receipt &amp; Update Stock
+                </button>
+                <button class="btn-full btn-outline" onclick="closeModal('m-receive-order')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         MODAL: CANCEL ORDER
+    ══════════════════════════════════════════ -->
+    <div class="modal-bg" id="m-cancel-order" onclick="closeByBackground(event, this)">
+        <div class="modal" style="max-width:480px;">
+            <button class="modal-close" onclick="closeModal('m-cancel-order')">✕</button>
+            <div class="modal-header">
+                <h3>Cancel Order</h3>
+            </div>
+            <div class="modal-sub" id="cancel-sub"></div>
+            <div class="fgroup2">
+                <label class="app-label">Reason for Cancellation *</label>
+                <textarea class="app-textarea" id="cancel-reason" placeholder="Enter reason for cancelling this order..."></textarea>
+            </div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:4px;">
+                The supplier will be notified by email of this cancellation.
+            </div>
+            <div class="modal-actions">
+                <a id="cancel-confirm-link" href="#"
+                   class="btn-full"
+                   style="background:var(--red);color:white;text-decoration:none;">
+                    Cancel Order &amp; Notify Supplier
+                </a>
+                <button class="btn-full btn-outline" onclick="closeModal('m-cancel-order')">Go Back</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGOUT MODAL -->
+
+    <div class="modal-bg"
+         id="logoutModal"
+         onclick="closeByBackground(event,this)">
+
+        <div class="modal"
+             style="max-width:400px;">
+
+            <button class="modal-close"
+                    onclick="closeModal('logoutModal')">
+                ✕
+            </button>
+
+            <div class="modal-icon"
+                 style="background:var(--red-light);">
+
+                <svg width="22"
+                     height="22"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="#dc2626"
+                     stroke-width="2"
+                     stroke-linecap="round">
+
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+
+                </svg>
+
+            </div>
+
+            <h2>Sign out?</h2>
+
+            <p>
+                You'll be returned to the login screen.
+            </p>
+
+            <div class="modal-actions">
+
+                <button class="btn-modal btn-cancel-modal"
+                        onclick="closeModal('logoutModal')">
+                    Cancel
+                </button>
+
+                <a id="logout-confirm"
+                   href="#"
+                   class="btn-modal btn-save"
+                   style="background:var(--red);">
+                    Sign Out
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+            /* ── MODAL HELPERS ── */
+            function openModal(id) {
+                document.getElementById(id).classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeModal(id) {
+                document.getElementById(id).classList.remove('open');
+                document.body.style.overflow = '';
+            }
+
+            function closeByBackground(event, element) {
+                if (event.target === element) {
+                    closeModal(element.id);
+                }
+            }
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    document.querySelectorAll('.modal-bg.open')
+                        .forEach(function (m) { m.classList.remove('open'); });
+                    document.body.style.overflow = '';
+                }
+            });
+
+            /* ── RECEIVE ORDER MODAL ── */
+            var _receiveOrderId = null;
+
+            function openReceiveModal(orderId, orderNumber, supplier, orderDate, items) {
+                _receiveOrderId = orderId;
+
+                document.getElementById('recv-title').textContent =
+                    'Receive Order \u2014 ' + orderNumber;
+
+                document.getElementById('recv-sub').textContent =
+                    supplier + ' \u00B7 Ordered ' + orderDate;
+
+                // Build item checklist from comma-separated items string
+                var list = document.getElementById('recv-items-list');
+                list.innerHTML = '';
+
+                var itemArr = items.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+
+                itemArr.forEach(function (item, idx) {
+                    // Try to parse "Name (qty)" pattern; fall back gracefully
+                    var match = item.match(/^(.+?)\s*\((\d+)\s*\)$/);
+                    var name = match ? match[1].trim() : item;
+                    var qty  = match ? match[2] + ' units' : '';
+
+                    var row = document.createElement('div');
+                    row.className = 'recv-item';
+                    row.innerHTML =
+                        '<div class="recv-item-info">' +
+                            '<div class="recv-item-name">' + escHtml(name) + '</div>' +
+                            (qty ? '<div class="recv-item-qty">Ordered: ' + escHtml(qty) + '</div>' : '') +
+                        '</div>' +
+                        '<label class="recv-item-check">' +
+                            '<input type="checkbox" id="recv-chk-' + idx + '"> Received' +
+                        '</label>';
+                    list.appendChild(row);
+                });
+
+                // Wire confirm button to controller action
+                document.getElementById('recv-confirm-btn').setAttribute(
+                    'data-href',
+                    '@Url.Action("ReceiveOrder", "ManagerDashboard")/' + orderId
+                );
+
+                openModal('m-receive-order');
+            }
+
+            function receiveOrder() {
+                var href = document.getElementById('recv-confirm-btn').getAttribute('data-href');
+                if (href) { window.location.href = href; }
+                closeModal('m-receive-order');
+            }
+
+            /* ── CANCEL ORDER MODAL ── */
+            function openCancelModal(orderId, orderNumber, supplier) {
+                document.getElementById('cancel-sub').textContent =
+                    orderNumber + ' \u2014 ' + supplier;
+
+                document.getElementById('cancel-reason').value = '';
+
+                document.getElementById('cancel-confirm-link').href =
+                    '@Url.Action("CancelOrder", "ManagerDashboard")/' + orderId;
+
+                openModal('m-cancel-order');
+            }
+
+            /* ── UTILITY ── */
+            function escHtml(str) {
+                return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
+
+            /* ── LOGOUT MODAL ── */
+            var logoutBtn     = document.getElementById('logout-btn');
+            var logoutConfirm = document.getElementById('logout-confirm');
+
+            if (logoutBtn) {
+                logoutConfirm.href = logoutBtn.href;
+                logoutBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    openModal('logoutModal');
+                });
+            }
+
+    </script>
+
+</body>
 </html>

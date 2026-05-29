@@ -1,5 +1,807 @@
-﻿@{
-    ViewData["Title"] = "View Results";
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    ViewData["Title"] = "Completed Results";
+    Layout = null;
 }
 
-<h1>View Results</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Completed Results — NMB-HLabSys</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --navy: #0b1f3a;
+            --navy2: #122848;
+            --teal: #0d9488;
+            --teal-light: rgba(13,148,136,0.1);
+            --orange: #ea580c;
+            --orange-light: rgba(234,88,12,0.1);
+            --amber: #d97706;
+            --amber-light: rgba(217,119,6,0.1);
+            --red: #dc2626;
+            --red-light: rgba(220,38,38,0.1);
+            --green: #16a34a;
+            --green-light: rgba(22,163,74,0.1);
+            --blue: #2563eb;
+            --blue-light: rgba(37,99,235,0.1);
+            --offwhite: #f4f7fb;
+            --muted: #6b7a99;
+            --border: #dde4f0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--offwhite);
+            color: var(--navy);
+            min-height: 100vh;
+        }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            background: var(--navy);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .brand-logo {
+            width: 34px;
+            height: 34px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .brand-logo svg {
+                width: 18px;
+                height: 18px;
+                fill: white;
+            }
+
+        .brand-name {
+            font-family: 'DM Serif Display', serif;
+            color: white;
+            font-size: 1.1rem;
+            line-height: 1.1;
+        }
+
+            .brand-name span {
+                display: block;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.6rem;
+                font-weight: 300;
+                color: rgba(255,255,255,0.4);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 100px;
+            padding: 6px 14px 6px 8px;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            background: var(--orange);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .user-email {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.75);
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.8);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+            .logout-btn:hover {
+                background: rgba(255,255,255,0.15);
+                color: white;
+            }
+
+            .logout-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+
+        /* ── LAYOUT ── */
+        .page {
+            display: flex;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            flex-shrink: 0;
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+
+        .nav-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0 20px;
+            margin-bottom: 4px;
+            margin-top: 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-left: 3px solid transparent;
+            transition: all 0.15s;
+        }
+
+            .nav-item:hover {
+                background: var(--offwhite);
+                color: var(--navy);
+            }
+
+            .nav-item.active {
+                background: var(--orange-light);
+                color: var(--orange);
+                border-left-color: var(--orange);
+            }
+
+            .nav-item svg {
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+            }
+
+        /* ── MAIN ── */
+        .main {
+            flex: 1;
+            padding: 28px 36px;
+        }
+
+        /* ── TABLE CARD ── */
+        .table-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
+            overflow: hidden;
+        }
+
+        .table-card-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .table-card-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1rem;
+            color: var(--navy);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .table-card-title svg {
+                width: 16px;
+                height: 16px;
+                stroke: var(--teal);
+            }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead tr {
+            background: var(--offwhite);
+        }
+
+        th {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            padding: 12px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 14px 20px;
+            font-size: 0.83rem;
+            color: var(--navy);
+            border-bottom: 1px solid var(--offwhite);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #fafbfd;
+        }
+
+        /* ── PATIENT CELL ── */
+        .patient-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .patient-initials {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--navy), var(--navy2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .patient-name {
+            font-weight: 600;
+            font-size: 0.83rem;
+        }
+
+        .patient-ward {
+            font-size: 0.7rem;
+            color: var(--muted);
+            margin-top: 1px;
+        }
+
+        /* ── BADGES ── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 11px;
+            border-radius: 100px;
+            font-size: 0.69rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+            .badge::before {
+                content: '';
+                width: 5px;
+                height: 5px;
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+
+        /* Status badges */
+        .badge-verified {
+            background: var(--teal-light);
+            color: var(--teal);
+        }
+
+            .badge-verified::before {
+                background: var(--teal);
+            }
+
+        .badge-flagged {
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+            .badge-flagged::before {
+                background: var(--red);
+            }
+
+        .badge-completed {
+            background: var(--blue-light);
+            color: var(--blue);
+        }
+
+            .badge-completed::before {
+                background: var(--blue);
+            }
+
+        /* Result badges — GREEN for normal, ORANGE for abnormal */
+        .badge-normal {
+            background: var(--green-light);
+            color: var(--green);
+        }
+
+            .badge-normal::before {
+                background: var(--green);
+            }
+
+        .badge-abnormal {
+            background: var(--orange-light);
+            color: var(--orange);
+        }
+
+            .badge-abnormal::before {
+                background: var(--orange);
+            }
+
+        /* Priority */
+        .badge-urgent {
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+            .badge-urgent::before {
+                background: var(--red);
+            }
+
+        .badge-routine {
+            background: var(--teal-light);
+            color: var(--teal);
+        }
+
+            .badge-routine::before {
+                background: var(--teal);
+            }
+
+        /* ── ACTION BTN ── */
+        .btn {
+            padding: 7px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s;
+        }
+
+            .btn svg {
+                width: 13px;
+                height: 13px;
+            }
+
+        .btn-teal {
+            background: var(--teal);
+            color: white;
+        }
+
+            .btn-teal:hover {
+                background: #0b7a70;
+            }
+
+        .btn-ghost {
+            background: var(--offwhite);
+            border: 1px solid var(--border);
+            color: var(--navy);
+        }
+
+            .btn-ghost:hover {
+                border-color: var(--teal);
+                color: var(--teal);
+            }
+
+        /* ── MODAL ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(11,31,58,0.45);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .modal-overlay.open {
+                display: flex;
+            }
+
+        .modal {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 22px 26px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.1rem;
+            color: var(--navy);
+        }
+
+        .modal-sub {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+            .modal-close:hover {
+                color: var(--navy);
+            }
+
+        .modal-body {
+            padding: 22px 26px;
+        }
+
+        .modal-footer {
+            padding: 14px 26px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        /* Modal detail rows */
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--offwhite);
+            font-size: 0.82rem;
+        }
+
+            .detail-row:last-child {
+                border-bottom: none;
+            }
+
+        .detail-label {
+            color: var(--muted);
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: var(--navy);
+        }
+
+        /* Modal result rows */
+        .result-section-title {
+            font-size: 0.67rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin: 16px 0 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            background: var(--offwhite);
+            font-size: 0.82rem;
+        }
+
+        .result-name {
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .result-val {
+            font-weight: 700;
+        }
+
+            .result-val.normal {
+                color: var(--green);
+            }
+
+            .result-val.abnormal {
+                color: var(--orange);
+            }
+
+        .result-ref {
+            font-size: 0.7rem;
+            color: var(--muted);
+            font-weight: 400;
+            margin-left: 6px;
+        }
+
+        @@media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                padding: 16px;
+            }
+
+            .user-email {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
+            </div>
+            <div class="brand-name">NMB-HLabSys<span>Haematology Lab System</span></div>
+        </a>
+        <div class="topbar-right">
+            <div class="user-chip">
+                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "T")</div>
+                <span class="user-email">@ViewBag.Email</span>
+            </div>
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                Sign Out
+            </a>
+        </div>
+    </div>
+
+    <div class="page">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="nav-label">Main</div>
+            <a href="/TechnicianDashboard/Index" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+                Dashboard
+            </a>
+            <a href="#" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" /></svg>
+                Test Queue
+            </a>
+            <a href="/TechnicianDashboard/EnterResults" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                Enter Results
+            </a>
+            <a href="/TechnicianDashboard/ViewResults" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                Completed
+            </a>
+            <div class="nav-label">System</div>
+            <a href="#" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                Activity Log
+            </a>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main">
+            <div class="table-card">
+                <div class="table-card-header">
+                    <div class="table-card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                        Completed Lab Results
+                    </div>
+                    <span style="font-size:0.78rem;color:var(--muted)" id="rowCount"></span>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Request #</th>
+                            <th>Patient</th>
+                            <th>Test</th>
+                            <th>Status</th>
+                            <th>Result</th>
+                            <th>Completed</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title" id="mReq"></div>
+                    <div class="modal-sub" id="mSub"></div>
+                </div>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-row"><span class="detail-label">Patient</span><span class="detail-value" id="mPatient"></span></div>
+                <div class="detail-row"><span class="detail-label">Ward</span><span class="detail-value" id="mWard"></span></div>
+                <div class="detail-row"><span class="detail-label">Test</span><span class="detail-value" id="mTest"></span></div>
+                <div class="detail-row"><span class="detail-label">Completed</span><span class="detail-value" id="mDate"></span></div>
+
+                <div class="result-section-title">Result Values</div>
+                <div id="mResults"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DATA = [
+            {
+                req: "REQ-001", patient: "Bongani Zulu", initials: "BZ", ward: "Ward 2A",
+                test: "ESR", status: "Verified", result: "Normal", completed: "27 May 2026",
+                results: [{ name: "ESR", value: "12 mm/hr", ref: "0–15 mm/hr", flag: "normal" }]
+            },
+            {
+                req: "REQ-002", patient: "Nomsa Ndlovu", initials: "NN", ward: "Ward 4B",
+                test: "Full Blood Count", status: "Verified", result: "Abnormal", completed: "27 May 2026",
+                results: [
+                    { name: "Haemoglobin", value: "9.2 g/dL",    ref: "12.0–17.5 g/dL",  flag: "abnormal" },
+                    { name: "WBC",         value: "11.8 ×10³/µL",ref: "4.0–11.0 ×10³/µL",flag: "abnormal" },
+                    { name: "Platelets",   value: "310 ×10³/µL", ref: "150–400 ×10³/µL", flag: "normal" }
+                ]
+            },
+            {
+                req: "REQ-003", patient: "Sipho Khumalo", initials: "SK", ward: "ICU",
+                test: "Platelet Count", status: "Flagged", result: "Abnormal", completed: "26 May 2026",
+                results: [
+                    { name: "Platelets", value: "62 ×10³/µL", ref: "150–400 ×10³/µL", flag: "abnormal" },
+                    { name: "MPV",       value: "13.1 fL",    ref: "7.5–12.5 fL",     flag: "abnormal" }
+                ]
+            }
+        ];
+
+        function statusBadge(s) {
+            const map = { Verified: 'badge-verified', Flagged: 'badge-flagged', Completed: 'badge-completed' };
+            return `<span class="badge ${map[s] || 'badge-completed'}">${s}</span>`;
+        }
+
+        function resultBadge(r) {
+            return r === 'Normal'
+                ? `<span class="badge badge-normal">${r}</span>`
+                : `<span class="badge badge-abnormal">${r}</span>`;
+        }
+
+        function renderTable() {
+            document.getElementById('rowCount').textContent = DATA.length + ' records';
+            document.getElementById('tableBody').innerHTML = DATA.map(r => `
+                <tr>
+                    <td><strong>${r.req}</strong></td>
+                    <td>
+                        <div class="patient-cell">
+                            <div class="patient-initials">${r.initials}</div>
+                            <div>
+                                <div class="patient-name">${r.patient}</div>
+                                <div class="patient-ward">${r.ward}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${r.test}</td>
+                    <td>${statusBadge(r.status)}</td>
+                    <td>${resultBadge(r.result)}</td>
+                    <td style="color:var(--muted);font-size:0.8rem">${r.completed}</td>
+                    <td>
+                        <button class="btn btn-teal" onclick='openModal(${JSON.stringify(r).replace(/'/g,"&#39;")})'>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            View
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openModal(r) {
+            document.getElementById('mReq').textContent = r.req;
+            document.getElementById('mSub').textContent = r.test + ' · ' + r.completed;
+            document.getElementById('mPatient').textContent = r.patient;
+            document.getElementById('mWard').textContent = r.ward;
+            document.getElementById('mTest').textContent = r.test;
+            document.getElementById('mDate').textContent = r.completed;
+            document.getElementById('mResults').innerHTML = r.results.map(x => `
+                <div class="result-row">
+                    <span class="result-name">${x.name}</span>
+                    <span class="result-val ${x.flag}">
+                        ${x.value}
+                        <span class="result-ref">Ref: ${x.ref}</span>
+                    </span>
+                </div>
+            `).join('');
+            document.getElementById('modal').classList.add('open');
+        }
+
+        function closeModal() { document.getElementById('modal').classList.remove('open'); }
+        document.getElementById('modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+        renderTable();
+    </script>
+
+</body>
+</html>

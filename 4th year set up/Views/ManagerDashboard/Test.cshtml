@@ -1,4 +1,6 @@
-﻿@model IEnumerable<TestCatalogue>
+@using LabManager.Models
+@model IEnumerable<TestCatalogue>
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
 @{
     ViewData["Title"] = "Test Catalogue";
@@ -24,18 +26,20 @@
                 --navy2: #122848;
                 --teal: #0d9488;
                 --teal-light: rgba(13,148,136,0.1);
-                --purple: #4f46e5;
-                --purple-light: rgba(79,70,229,0.1);
-                --amber: #d97706;
-                --amber-light: rgba(217,119,6,0.1);
-                --red: #dc2626;
-                --red-light: rgba(220,38,38,0.1);
-                --green: #16a34a;
-                --green-light: rgba(22,163,74,0.1);
                 --white: #ffffff;
                 --offwhite: #f4f7fb;
                 --muted: #6b7a99;
                 --border: #dde4f0;
+                --red: #dc2626;
+                --red-light: rgba(220,38,38,0.1);
+                --green: #16a34a;
+                --green-light: rgba(22,163,74,0.1);
+                --amber: #d97706;
+                --amber-light: rgba(217,119,6,0.1);
+                --blue: #1d4ed8;
+                --blue-light: rgba(29,78,216,0.1);
+                --purple: #4f46e5;
+                --purple-light: rgba(79,70,229,0.1);
             }
 
             body {
@@ -45,7 +49,11 @@
                 min-height: 100vh;
             }
 
-            /* TOPBAR */
+            a {
+                text-decoration: none;
+            }
+
+            /* ── TOPBAR ── */
             .topbar {
                 background: var(--navy);
                 padding: 0 40px;
@@ -118,7 +126,7 @@
             .user-avatar {
                 width: 28px;
                 height: 28px;
-                background: var(--purple);
+                background: var(--teal);
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
@@ -162,13 +170,13 @@
                     height: 14px;
                 }
 
-            /* LAYOUT */
+            /* ── LAYOUT ── */
             .page {
                 display: flex;
                 min-height: calc(100vh - 64px);
             }
 
-            /* SIDEBAR */
+            /* ── SIDEBAR ── */
             .sidebar {
                 width: 220px;
                 background: white;
@@ -181,6 +189,10 @@
                 overflow-y: auto;
             }
 
+            .nav-section {
+                margin-bottom: 8px;
+            }
+
             .nav-label {
                 font-size: 0.65rem;
                 font-weight: 600;
@@ -189,7 +201,6 @@
                 text-transform: uppercase;
                 padding: 0 20px;
                 margin-bottom: 4px;
-                margin-top: 16px;
             }
 
             .nav-item {
@@ -201,8 +212,8 @@
                 text-decoration: none;
                 font-size: 0.85rem;
                 font-weight: 500;
-                border-left: 3px solid transparent;
                 transition: all 0.15s;
+                border-left: 3px solid transparent;
             }
 
                 .nav-item:hover {
@@ -211,26 +222,31 @@
                 }
 
                 .nav-item.active {
-                    background: var(--purple-light);
-                    color: var(--purple);
-                    border-left-color: var(--purple);
+                    background: var(--teal-light);
+                    color: var(--teal);
+                    border-left-color: var(--teal);
                 }
 
                 .nav-item svg {
                     width: 16px;
                     height: 16px;
                     flex-shrink: 0;
+                    fill: none;
+                    stroke: currentColor;
+                    stroke-width: 2;
+                    stroke-linecap: round;
                 }
 
-            /* MAIN */
+            /* ── MAIN ── */
             .main {
                 flex: 1;
-                padding: 32px 40px;
+                padding: clamp(24px, 3vw, 40px);
+                overflow-y: auto;
             }
 
-            /* PAGE HEADER */
+            /* ── PAGE HEADER ── */
             .page-header {
-                margin-bottom: 28px;
+                margin-bottom: 24px;
             }
 
                 .page-header h1 {
@@ -241,132 +257,376 @@
                 }
 
                 .page-header p {
-                    color: var(--muted);
                     font-size: 0.875rem;
+                    color: var(--muted);
                 }
 
-            /* CARD */
+            /* ── CARD ── */
             .card {
-                background: #0b1f3a;
+                background: white;
                 border: 1px solid var(--border);
                 border-radius: 16px;
-                padding: 24px;
+                padding: 28px;
                 box-shadow: 0 2px 8px rgba(11,31,58,0.04);
             }
 
-            /* TOOLBAR */
+            /* ── TOOLBAR ── */
             .toolbar {
                 display: flex;
-                gap: 12px;
-                margin-bottom: 20px;
+                justify-content: space-between;
                 align-items: center;
+                gap: 16px;
                 flex-wrap: wrap;
+                margin-bottom: 24px;
             }
 
-            .app-finput {
+            .search-box {
                 flex: 1;
-                max-width: 300px;
-                background: var(--offwhite);
-                border: 1px solid var(--border);
-                border-radius: 10px;
-                padding: 10px 14px;
-                color: var(--navy);
-                outline: none;
-                font-size: 0.85rem;
-                font-family: 'DM Sans', sans-serif;
+                max-width: 340px;
+                min-width: 220px;
             }
 
-                .app-finput::placeholder {
+            .search-input {
+                width: 100%;
+                height: 44px;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                background: var(--offwhite);
+                padding: 0 16px;
+                outline: none;
+                font-size: 0.875rem;
+                font-family: 'DM Sans', sans-serif;
+                color: var(--navy);
+                transition: 0.2s ease;
+            }
+
+                .search-input:focus {
+                    border-color: var(--teal);
+                    background: white;
+                }
+
+                .search-input::placeholder {
                     color: var(--muted);
                 }
 
-                .app-finput:focus {
-                    border-color: var(--teal);
-                }
-
-            /* BUTTONS */
-            .btn-sm {
-                border: none;
-                border-radius: 8px;
-                padding: 10px 16px;
-                cursor: pointer;
-                font-weight: 600;
-                font-size: 0.82rem;
-                white-space: nowrap;
-                font-family: 'DM Sans', sans-serif;
-                transition: opacity 0.15s;
+            .toolbar-actions {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
             }
 
-                .btn-sm:hover {
-                    opacity: 0.88;
+            .btn {
+                height: 44px;
+                padding: 0 18px;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                font-size: 0.82rem;
+                font-weight: 600;
+                font-family: 'DM Sans', sans-serif;
+                transition: 0.2s ease;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+                .btn:hover {
+                    transform: translateY(-1px);
                 }
 
             .btn-teal {
                 background: var(--teal);
                 color: white;
+                box-shadow: 0 4px 14px rgba(13,148,136,0.25);
             }
 
-            .btn-amber {
-                background: var(--amber);
-                color: white;
+            .btn-light {
+                background: var(--teal-light);
+                color: var(--teal);
             }
 
-            .btn-blue {
-                background: var(--purple);
-                color: white;
+            /* ── TABLE ── */
+            .table-wrap {
+                overflow-x: auto;
             }
 
-            .btn-red {
-                background: var(--red);
-                color: white;
-            }
-
-            /* TABLE */
-            .table {
+            table {
                 width: 100%;
                 border-collapse: collapse;
+                min-width: 900px;
             }
 
-                .table th {
-                    font-size: 0.7rem;
-                    font-weight: 600;
-                    color: var(--muted);
-                    text-transform: uppercase;
-                    letter-spacing: 0.08em;
-                    padding: 0 0 10px;
-                    text-align: left;
-                    border-bottom: 1px solid var(--border);
-                    white-space: nowrap;
-                }
+            thead th {
+                text-align: left;
+                padding: 0 16px 12px;
+                font-size: 0.7rem;
+                font-weight: 600;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--muted);
+                border-bottom: 1px solid var(--border);
+            }
 
-                .table td {
-                    padding: 14px 0;
-                    font-size: 0.83rem;
-                    color: white;
-                    border-bottom: 1px solid var(--offwhite);
-                    vertical-align: middle;
-                    white-space: nowrap;
-                    padding-right: 16px;
-                }
+            tbody td {
+                padding: 14px 16px;
+                border-bottom: 1px solid var(--offwhite);
+                font-size: 0.83rem;
+                color: var(--navy);
+                vertical-align: middle;
+            }
 
-                .table tr:last-child td {
-                    border-bottom: none;
-                }
+            tbody tr:last-child td {
+                border-bottom: none;
+            }
 
-                .table tbody tr:hover {
-                    background: var(--offwhite);
-                }
+            tbody tr:hover {
+                background: var(--offwhite);
+            }
 
             .test-name {
                 font-weight: 600;
                 color: var(--navy);
             }
 
-            .action-group {
+            /* ── BADGES ── */
+            .badge {
+                display: inline-flex;
+                align-items: center;
+                padding: 4px 10px;
+                border-radius: 100px;
+                font-size: 0.7rem;
+                font-weight: 600;
+            }
+
+            .badge-category {
+                background: var(--blue-light);
+                color: var(--blue);
+            }
+
+            .badge-tat {
+                background: var(--green-light);
+                color: var(--green);
+            }
+
+            /* ── ACTION BUTTONS ── */
+            .actions {
                 display: flex;
+                align-items: center;
                 gap: 8px;
             }
 
+            .action-btn {
+                height: 34px;
+                padding: 0 12px;
+                border-radius: 8px;
+                border: none;
+                cursor: pointer;
+                font-size: 0.75rem;
+                font-weight: 600;
+                transition: 0.2s ease;
+                display: inline-flex;
+                align-items: center;
+                font-family: 'DM Sans', sans-serif;
+                text-decoration: none;
+            }
+
+                .action-btn:hover {
+                    transform: translateY(-1px);
+                }
+
+            .edit-btn {
+                background: var(--teal-light);
+                color: var(--teal);
+            }
+
+            .delete-btn {
+                background: var(--red-light);
+                color: var(--red);
+            }
+
+            /* ── MODAL STYLES ── */
+            .modal-bg {
+                display: none;
+                position: fixed;
+                inset: 0;
+                z-index: 200;
+                background: rgba(11,31,58,0.45);
+                align-items: center;
+                justify-content: center;
+            }
+
+                .modal-bg.open {
+                    display: flex;
+                }
+
+            .modal {
+                background: white;
+                border-radius: 20px;
+                padding: 32px 28px;
+                width: 90%;
+                max-width: 480px;
+                box-shadow: 0 20px 60px rgba(11,31,58,0.2);
+                animation: modalIn 0.18s ease;
+            }
+
+                .modal.modal-lg {
+                    max-width: 680px;
+                }
+
+            .modal-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 6px;
+            }
+
+                .modal-header h3 {
+                    font-family: 'DM Serif Display', serif;
+                    font-size: 1.2rem;
+                    color: var(--navy);
+                }
+
+            .modal-close {
+                background: var(--offwhite);
+                border: none;
+                width: 30px;
+                height: 30px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 0.8rem;
+                color: var(--muted);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: 0.15s;
+            }
+
+                .modal-close:hover {
+                    background: var(--border);
+                    color: var(--navy);
+                }
+
+            .modal-sub {
+                font-size: 0.82rem;
+                color: var(--muted);
+                margin-bottom: 20px;
+            }
+
+            .fgrid2 {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 14px;
+                margin-bottom: 14px;
+            }
+
+            .fgrid3 {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 14px;
+                margin-bottom: 14px;
+            }
+
+            .fgroup2 {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                margin-bottom: 0;
+            }
+
+                .fgroup2:not(.fgrid2 .fgroup2):not(.fgrid3 .fgroup2) {
+                    margin-bottom: 14px;
+                }
+
+            .app-label {
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: var(--navy);
+                letter-spacing: 0.02em;
+            }
+
+            .app-finput {
+                height: 40px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 0 12px;
+                font-size: 0.83rem;
+                font-family: 'DM Sans', sans-serif;
+                color: var(--navy);
+                background: var(--offwhite);
+                outline: none;
+                transition: 0.15s;
+                width: 100%;
+            }
+
+                .app-finput:focus {
+                    border-color: var(--teal);
+                    background: white;
+                }
+
+            .app-select {
+                cursor: pointer;
+            }
+
+            .app-textarea {
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 10px 12px;
+                font-size: 0.83rem;
+                font-family: 'DM Sans', sans-serif;
+                color: var(--navy);
+                background: var(--offwhite);
+                outline: none;
+                resize: vertical;
+                min-height: 80px;
+                width: 100%;
+                transition: 0.15s;
+            }
+
+                .app-textarea:focus {
+                    border-color: var(--teal);
+                    background: white;
+                }
+
+            .modal-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 22px;
+            }
+
+            .btn-full {
+                flex: 1;
+                padding: 11px 16px;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                font-size: 0.83rem;
+                font-weight: 600;
+                font-family: 'DM Sans', sans-serif;
+                transition: 0.15s;
+            }
+
+                .btn-full.blue {
+                    background: var(--teal);
+                    color: white;
+                    box-shadow: 0 4px 14px rgba(13,148,136,0.25);
+                }
+
+                    .btn-full.blue:hover {
+                        opacity: 0.9;
+                    }
+
+                .btn-full.btn-outline {
+                    background: white;
+                    color: var(--navy);
+                    border: 1px solid var(--border);
+                }
+
+                    .btn-full.btn-outline:hover {
+                        background: var(--offwhite);
+                    }
+
+            /* ── RESPONSIVE ── */
             @@media (max-width: 768px) {
                 .topbar {
                     padding: 0 20px;
@@ -384,71 +644,22 @@
                     padding: 20px 16px;
                 }
 
-                .app-finput {
-                    max-width: 100%;
-                }
-
-                .toolbar {
-                    flex-direction: column;
-                    align-items: stretch;
+                .fgrid2, .fgrid3 {
+                    grid-template-columns: 1fr;
                 }
             }
 
-            /* =========================
-               SIDEBAR (FIXED + CLEAN)
-            ========================= */
-
-            .sidebar {
-                width: 210px;
-                background: #0b1f3a; /* navy */
-                border-right: 1px solid rgba(255,255,255,0.08);
-                padding: 14px 10px;
-                flex-shrink: 0;
-            }
-
-            /* SECTION LABEL */
-            .nav-label {
-                font-size: 0.6rem;
-                letter-spacing: 0.12em;
-                margin: 14px 10px 6px;
-                color: rgba(255,255,255,0.5);
-                text-transform: uppercase;
-            }
-
-            /* NAV ITEM */
-            .nav-item {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                padding: 8px 10px;
-                border-radius: 8px;
-                font-size: 0.75rem; /* smaller text */
-                font-weight: 500;
-                color: rgba(255,255,255,0.65);
-                text-decoration: none;
-                transition: 0.2s ease-in-out;
-                margin-bottom: 2px;
-            }
-
-                /* ICON SIZE (IMPORTANT FIX) */
-                .nav-item svg {
-                    width: 14px; /* smaller icons */
-                    height: 14px;
-                    stroke: currentColor;
+            @@keyframes modalIn {
+                from {
+                    opacity: 0;
+                    transform: scale(0.96) translateY(8px);
                 }
 
-                /* HOVER */
-                .nav-item:hover {
-                    background: rgba(255,255,255,0.08);
-                    color: #ffffff;
+                to {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
                 }
-
-                /* ACTIVE STATE */
-                .nav-item.active {
-                    background: rgba(13,148,136,0.25);
-                    color: #14b8a8;
-                    border-left: 3px solid #14b8a8;
-                }
+            }
     </style>
 </head>
 <body>
@@ -466,12 +677,10 @@
         </a>
         <div class="topbar-right">
             <div class="user-chip">
-                <div class="user-avatar">
-                    @(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "M")
-                </div>
+                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "M")</div>
                 <span class="user-email">@ViewBag.Email</span>
             </div>
-            <a asp-controller="Home" asp-action="Logout" class="logout-btn">
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn" id="logout-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                     <polyline points="16 17 21 12 16 7" />
@@ -486,76 +695,44 @@
 
         <!-- SIDEBAR -->
         <aside class="sidebar">
-
-            <div class="nav-label">Main</div>
-
-            <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <rect x="3" y="3" width="7" height="7" />
-                    <rect x="14" y="3" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" />
-                    <rect x="14" y="14" width="7" height="7" />
-                </svg>
-                Dashboard
-            </a>
-
-            <a asp-controller="ManagerDashboard" asp-action="Test" class="nav-item active">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <path d="M9 3v11a3 3 0 006 0V3" />
-                    <line x1="6" y1="3" x2="18" y2="3" />
-                </svg>
-                Test Catalogue
-            </a>
-
-            <a asp-controller="ManagerDashboard" asp-action="Consumables" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                </svg>
-                Consumables
-            </a>
-
-            <a asp-controller="ManagerDashboard" asp-action="Staff" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                </svg>
-                Staff
-            </a>
-
-            <a asp-controller="ManagerDashboard" asp-action="Orders" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <path d="M16 10a4 4 0 0 1-8 0" />
-                </svg>
-                Orders
-            </a>
-
-            <a asp-controller="ManagerDashboard" asp-action="Reports" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                </svg>
-                Reports
-            </a>
-
-            <div class="nav-label">System</div>
-
-            <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.07 4.93A10 10 0 1 0 4.93 19.07 10 10 0 0 0 19.07 4.93z" />
-                </svg>
-               Profile
-            </a>
-
-            <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-                Audit Log
-            </a>
-
+            <div class="nav-section">
+                <div class="nav-label">Main</div>
+                <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+                    Dashboard
+                </a>
+                <a asp-controller="ManagerDashboard" asp-action="TestCatalogue" class="nav-item active">
+                    <svg viewBox="0 0 24 24"><path d="M9 3v11a3 3 0 006 0V3" /><line x1="6" y1="3" x2="18" y2="3" /></svg>
+                    Test Catalogue
+                </a>
+                <a asp-controller="ManagerDashboard" asp-action="Consumables" class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                    Consumables
+                </a>
+                <a asp-controller="ManagerDashboard" asp-action="Staff" class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                    Staff
+                </a>
+                <a asp-controller="ManagerDashboard" asp-action="Orders" class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                    Orders
+                </a>
+                <a asp-controller="ManagerDashboard" asp-action="Report" class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
+                    Reports
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-label">System</div>
+                <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                    Profile
+                </a>
+                <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                    Audit Log
+                </a>
+            </div>
         </aside>
 
         <!-- MAIN -->
@@ -563,70 +740,335 @@
 
             <div class="page-header">
                 <h1>Test Catalogue</h1>
-                <p>Manage test categories, test types, and sample types.</p>
+                <p>Manage haematology tests, categories, sample types and turnaround times.</p>
             </div>
 
             <div class="card">
 
                 <!-- TOOLBAR -->
                 <div class="toolbar">
-                    <input class="app-finput" placeholder="🔍 Search tests..." />
-                    <button class="btn-sm btn-amber">+ Category</button>
-                    <button class="btn-sm btn-teal">+ Test Type</button>
+                    <div class="search-box">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search tests..." />
+                    </div>
+                    <div class="toolbar-actions">
+                        <!-- ↓ opens Add Category modal -->
+                        <button class="btn btn-light" onclick="openModal('m-add-category')">+ Category</button>
+                        <!-- ↓ opens Add Test Type modal -->
+                        <button class="btn btn-teal" onclick="openModal('m-add-test-type')">+ Test Type</button>
+                    </div>
                 </div>
 
                 <!-- TABLE -->
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Test Name</th>
-                            <th>Category</th>
-                            <th>Sample Type</th>
-                            <th>Units</th>
-                            <th>Normal Range</th>
-                            <th>TAT (Min)</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-
-                        @if (Model != null && Model.Any())
-                        {
-                            foreach (var test in Model)
+                <div class="table-wrap">
+                    <table id="testTable">
+                        <thead>
+                            <tr>
+                                <th>Test Name</th>
+                                <th>Category</th>
+                                <th>Sample Type</th>
+                                <th>Units</th>
+                                <th>Normal Range</th>
+                                <th>TAT</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                foreach (var t in Model)
+                                {
+                                    <tr>
+                                        <td class="test-name">@t.TestName</td>
+                                        <td><span class="badge badge-category">@t.Category</span></td>
+                                        <td>@t.SampleType</td>
+                                        <td>@t.Units</td>
+                                        <td>@t.NormalRange</td>
+                                        <td><span class="badge badge-tat">@t.TAT mins</span></td>
+                                        <td>
+                                            <div class="actions">
+                                                <!-- ↓ opens Edit Test Type modal, populates row data -->
+                                                <button class="action-btn edit-btn"
+                                                        onclick="openEditModal('@t.TestId','@t.TestName','@t.Category','@t.SampleType','@t.TAT')">
+                                                    Edit
+                                                </button>
+                                                <a asp-controller="ManagerDashboard"
+                                                   asp-action="DeleteTest"
+                                                   asp-route-id="@t.TestId"
+                                                   class="action-btn delete-btn"
+                                                   onclick="return confirm('Delete @t.TestName?')">
+                                                    Delete
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
                             {
                                 <tr>
-                                    <td class="test-name">@test.TestName</td>
-                                    <td>@test.Category</td>
-                                    <td>@test.SampleType</td>
-                                    <td>@test.Units</td>
-                                    <td>@test.NormalRange</td>
-                                    <td>@test.TAT</td>
-                                    <td>
-                                        <div class="action-group">
-                                            <button class="btn-sm btn-blue">Edit</button>
-                                            <button class="btn-sm btn-red">Delete</button>
-                                        </div>
+                                    <td colspan="7" style="text-align:center;padding:48px;color:var(--muted);font-size:0.875rem;">
+                                        No test catalogue records found.
                                     </td>
                                 </tr>
                             }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="7"
-                                    style="text-align:center;padding:30px;color:var(--muted);">
-                                    No tests found.
-                                </td>
-                            </tr>
-                        }
-
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
 
             </div>
 
         </main>
     </div>
+
+    <!-- ══════════════════════════════════════════
+         MODAL: ADD TEST TYPE
+    ══════════════════════════════════════════ -->
+    <div class="modal-bg" id="m-add-test-type" onclick="bgClose(event, this)">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3>Add Test Type</h3>
+                <button class="modal-close" onclick="closeModal('m-add-test-type')">✕</button>
+            </div>
+            <div class="modal-sub">Define a new haematology test type.</div>
+            <div class="fgrid2">
+                <div class="fgroup2">
+                    <label class="app-label">Test Name *</label>
+                    <input class="app-finput" id="att-name" placeholder="e.g. Full Blood Count" />
+                </div>
+                <div class="fgroup2">
+                    <label class="app-label">Category *</label>
+                    <select class="app-finput app-select" id="att-cat">
+                        <option>Haematology</option>
+                        <option>Coagulation</option>
+                        <option>Immunology</option>
+                    </select>
+                </div>
+            </div>
+            <div class="fgrid2">
+                <div class="fgroup2">
+                    <label class="app-label">Sample Type *</label>
+                    <select class="app-finput app-select" id="att-sample">
+                        <option>Whole Blood</option>
+                        <option>Plasma</option>
+                        <option>Serum</option>
+                        <option>Bone Marrow</option>
+                    </select>
+                </div>
+                <div class="fgroup2">
+                    <label class="app-label">Units of Measurement</label>
+                    <select class="app-finput app-select" id="att-units">
+                        <option>Various</option>
+                        <option>g/dL</option>
+                        <option>x10³/µL</option>
+                        <option>%</option>
+                        <option>seconds</option>
+                        <option>g/L</option>
+                    </select>
+                </div>
+            </div>
+            <div class="fgrid3">
+                <div class="fgroup2">
+                    <label class="app-label">Normal Range Min</label>
+                    <input class="app-finput" id="att-min" placeholder="e.g. 12" />
+                </div>
+                <div class="fgroup2">
+                    <label class="app-label">Normal Range Max</label>
+                    <input class="app-finput" id="att-max" placeholder="e.g. 17" />
+                </div>
+                <div class="fgroup2">
+                    <label class="app-label">Turnaround (min)</label>
+                    <input class="app-finput" id="att-tat" placeholder="e.g. 60" type="number" />
+                </div>
+            </div>
+            <div class="fgroup2" style="margin-bottom:0">
+                <label class="app-label">Consumables Used</label>
+                <input class="app-finput" id="att-consumables" placeholder="e.g. EDTA Tubes, Reagent Kit FBC (comma separated)" />
+            </div>
+            <div class="modal-actions">
+                <button class="btn-full blue" onclick="addTestType()">Add Test Type</button>
+                <button class="btn-full btn-outline" onclick="closeModal('m-add-test-type')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         MODAL: EDIT TEST TYPE
+    ══════════════════════════════════════════ -->
+    <div class="modal-bg" id="m-edit-test-type" onclick="bgClose(event, this)">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3>Edit Test Type</h3>
+                <button class="modal-close" onclick="closeModal('m-edit-test-type')">✕</button>
+            </div>
+            <div class="modal-sub">Modify an existing haematology test type.</div>
+            <input type="hidden" id="ett-id" />
+            <div class="fgrid2">
+                <div class="fgroup2">
+                    <label class="app-label">Test Name *</label>
+                    <input class="app-finput" id="ett-name" />
+                </div>
+                <div class="fgroup2">
+                    <label class="app-label">Category *</label>
+                    <select class="app-finput app-select" id="ett-cat">
+                        <option>Haematology</option>
+                        <option>Coagulation</option>
+                        <option>Immunology</option>
+                    </select>
+                </div>
+            </div>
+            <div class="fgrid2">
+                <div class="fgroup2">
+                    <label class="app-label">Sample Type *</label>
+                    <select class="app-finput app-select" id="ett-sample">
+                        <option>Whole Blood</option>
+                        <option>Plasma</option>
+                        <option>Serum</option>
+                        <option>Bone Marrow</option>
+                    </select>
+                </div>
+                <div class="fgroup2">
+                    <label class="app-label">Turnaround (min)</label>
+                    <input class="app-finput" id="ett-tat" type="number" />
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-full blue" onclick="saveEditTestType()">Save Changes</button>
+                <button class="btn-full btn-outline" onclick="closeModal('m-edit-test-type')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         MODAL: ADD CATEGORY
+    ══════════════════════════════════════════ -->
+    <div class="modal-bg" id="m-add-category" onclick="bgClose(event, this)">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Add Test Category</h3>
+                <button class="modal-close" onclick="closeModal('m-add-category')">✕</button>
+            </div>
+            <div class="modal-sub">Create a new test category for the catalogue.</div>
+            <div class="fgroup2" style="margin-bottom:14px">
+                <label class="app-label">Category Name *</label>
+                <input class="app-finput" id="acat-name" placeholder="e.g. Immunohaematology" />
+            </div>
+            <div class="fgroup2" style="margin-bottom:0">
+                <label class="app-label">Description</label>
+                <textarea class="app-textarea" id="acat-desc" placeholder="Brief description of this category..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-full blue" onclick="addCategory()">Add Category</button>
+                <button class="btn-full btn-outline" onclick="closeModal('m-add-category')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         MODAL: LOGOUT CONFIRMATION
+    ══════════════════════════════════════════ -->
+    <div id="logout-modal" role="dialog" aria-modal="true"
+         style="display:none;position:fixed;inset:0;z-index:999;background:rgba(11,31,58,0.45);align-items:center;justify-content:center;">
+        <div style="background:white;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(11,31,58,0.2);animation:modalIn 0.18s ease;">
+            <div style="width:52px;height:52px;background:#fee2e2;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+            </div>
+            <h3 style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--navy);margin-bottom:8px;">Sign out?</h3>
+            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:24px;line-height:1.6;">You'll be returned to the login screen. Any unsaved changes will be lost.</p>
+            <div style="display:flex;gap:10px;">
+                <button id="logout-cancel" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:white;color:var(--navy);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancel</button>
+                <a id="logout-confirm" href="#" style="flex:1;padding:10px;border:none;border-radius:10px;background:#dc2626;color:white;font-size:0.85rem;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;font-family:'DM Sans',sans-serif;">Sign Out</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+            /* ── MODAL HELPERS ── */
+            function openModal(id) {
+                document.getElementById(id).classList.add('open');
+            }
+
+            function closeModal(id) {
+                document.getElementById(id).classList.remove('open');
+            }
+
+            function bgClose(e, el) {
+                if (e.target === el) closeModal(el.id);
+            }
+
+            /* ── EDIT MODAL: populate from row data ── */
+            function openEditModal(id, name, category, sampleType, tat) {
+                document.getElementById('ett-id').value    = id;
+                document.getElementById('ett-name').value  = name;
+                document.getElementById('ett-tat').value   = tat;
+
+                var catSel = document.getElementById('ett-cat');
+                for (var i = 0; i < catSel.options.length; i++) {
+                    if (catSel.options[i].value === category) { catSel.selectedIndex = i; break; }
+                }
+
+                var samSel = document.getElementById('ett-sample');
+                for (var j = 0; j < samSel.options.length; j++) {
+                    if (samSel.options[j].value === sampleType) { samSel.selectedIndex = j; break; }
+                }
+
+                openModal('m-edit-test-type');
+            }
+
+            /* ── ADD TEST TYPE ── */
+            function addTestType() {
+                // Wire to your controller action as needed.
+                // Example: form-submit or fetch POST.
+                closeModal('m-add-test-type');
+            }
+
+            /* ── SAVE EDIT TEST TYPE ── */
+            function saveEditTestType() {
+                // Wire to your controller action as needed.
+                closeModal('m-edit-test-type');
+            }
+
+            /* ── ADD CATEGORY ── */
+            function addCategory() {
+                // Wire to your controller action as needed.
+                closeModal('m-add-category');
+            }
+
+            /* ── SEARCH ── */
+            document.getElementById("searchInput").addEventListener("keyup", function () {
+                var val = this.value.toLowerCase();
+                document.querySelectorAll("#testTable tbody tr").forEach(function (row) {
+                    row.style.display = row.textContent.toLowerCase().includes(val) ? "" : "none";
+                });
+            });
+
+            /* ── LOGOUT MODAL ── */
+            var logoutBtn     = document.getElementById('logout-btn');
+            var logoutModal   = document.getElementById('logout-modal');
+            var logoutCancel  = document.getElementById('logout-cancel');
+            var logoutConfirm = document.getElementById('logout-confirm');
+
+            if (logoutBtn && logoutModal) {
+                logoutConfirm.href = logoutBtn.href;
+                logoutBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    logoutModal.style.display = 'flex';
+                    logoutCancel.focus();
+                });
+                function closeLogoutModal() {
+                    logoutModal.style.display = 'none';
+                    logoutBtn.focus();
+                }
+                logoutCancel.addEventListener('click', closeLogoutModal);
+                logoutModal.addEventListener('click', function (e) { if (e.target === logoutModal) closeLogoutModal(); });
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape' && logoutModal.style.display === 'flex') closeLogoutModal();
+                });
+            }
+    </script>
 
 </body>
 </html>

@@ -2,7 +2,7 @@
 {
     public class Consumable
     {
-        public int ConsumableId { get; set; }
+        public int Id { get; set; }
 
         public string ConsumableName { get; set; }
 
