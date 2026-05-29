@@ -1,0 +1,410 @@
+@model Patient.Models.DoctorProfileViewModel
+@{
+    ViewData["Title"] = "My Profile";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Profile — NMB-HLabSys</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --navy: #0b1f3a; --blue: #1a4f8a; --teal: #0d9488; --teal-light: #e8f5f3;
+            --white: #ffffff; --offwhite: #f4f7fb; --muted: #6b7a99; --border: #dde4f0;
+            --red: #dc2626; --green: #16a34a; --amber: #d97706; --sidebar-width: 240px;
+        }
+        body { font-family: 'DM Sans', sans-serif; background: var(--offwhite); color: var(--navy); min-height: 100vh; display: flex; flex-direction: column; }
+        .topnav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: var(--navy); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; height: 64px; box-shadow: 0 2px 20px rgba(0,0,0,0.25); }
+        .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .nav-logo { width: 36px; height: 36px; background: var(--teal); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .nav-logo svg { width: 20px; height: 20px; fill: white; }
+        .nav-title { font-family: 'DM Serif Display', serif; font-size: 1.05rem; color: white; line-height: 1.2; }
+        .nav-title span { display: block; font-family: 'DM Sans', sans-serif; font-size: 0.62rem; font-weight: 300; color: rgba(255,255,255,0.45); letter-spacing: 0.08em; text-transform: uppercase; }
+        .nav-right { display: flex; align-items: center; gap: 14px; }
+        .nav-user { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 14px 6px 8px; }
+        .nav-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: white; }
+        .nav-user-info { line-height: 1.3; }
+        .nav-user-name { font-size: 13px; font-weight: 500; color: white; }
+        .nav-user-role { font-size: 11px; color: rgba(255,255,255,0.45); }
+        .btn-signout { display: flex; align-items: center; gap: 7px; background: transparent; border: 1px solid rgba(255,255,255,0.18); color: rgba(255,255,255,0.7); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 7px 16px; border-radius: 7px; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+        .btn-signout:hover { background: rgba(255,255,255,0.08); color: white; }
+        .btn-signout svg { width: 14px; height: 14px; }
+        .app-body { display: flex; padding-top: 64px; min-height: 100vh; }
+        .sidebar { width: var(--sidebar-width); background: var(--white); border-right: 1px solid var(--border); position: fixed; top: 64px; bottom: 0; left: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 24px 0 20px; }
+        .sidebar-section { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); padding: 0 20px; margin: 20px 0 8px; }
+        .sidebar-section:first-child { margin-top: 0; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; font-size: 13.5px; font-weight: 400; color: var(--muted); text-decoration: none; transition: all 0.15s; border-left: 3px solid transparent; }
+        .nav-item:hover { background: var(--offwhite); color: var(--navy); }
+        .nav-item.active { background: var(--teal-light); color: var(--teal); border-left-color: var(--teal); font-weight: 500; }
+        .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .sidebar-bottom { margin-top: auto; border-top: 1px solid var(--border); padding-top: 16px; }
+        .nav-item.danger { color: var(--red); }
+        .nav-item.danger:hover { background: #fef2f2; }
+        .main { margin-left: var(--sidebar-width); flex: 1; padding: 32px 36px; }
+        .page-header { margin-bottom: 28px; }
+        .page-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--teal); margin-bottom: 6px; }
+        .page-title { font-family: 'DM Serif Display', serif; font-size: 1.8rem; color: var(--navy); line-height: 1.2; }
+        .page-sub { font-size: 13.5px; color: var(--muted); margin-top: 4px; }
+        .alert { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; border: 1px solid; margin-bottom: 22px; }
+        .alert svg { width: 15px; height: 15px; flex-shrink: 0; }
+        .alert-success { background: #f0fdf4; color: var(--green); border-color: #bbf7d0; }
+        .alert-error { background: #fef2f2; color: var(--red); border-color: #fecaca; }
+        .profile-grid { display: grid; grid-template-columns: 300px 1fr; gap: 24px; align-items: start; }
+        .card { background: var(--white); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 22px; }
+        .card-header { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+        .card-header-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .card-header-icon svg { width: 14px; height: 14px; }
+        .card-header h3 { font-family: 'DM Serif Display', serif; font-size: 1rem; color: var(--navy); font-weight: 400; flex: 1; }
+        .readonly-badge { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); background: var(--offwhite); border: 1px solid var(--border); padding: 2px 8px; border-radius: 100px; }
+        .card-body { padding: 20px; }
+        .avatar-block { display: flex; flex-direction: column; align-items: center; padding: 28px 20px 22px; text-align: center; }
+        .avatar { width: 80px; height: 80px; border-radius: 50%; background: var(--teal); display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 1.8rem; color: white; margin-bottom: 14px; }
+        .avatar-name { font-family: 'DM Serif Display', serif; font-size: 1.15rem; color: var(--navy); line-height: 1.2; }
+        .avatar-email { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+        .avatar-badge { display: inline-flex; align-items: center; gap: 5px; background: var(--teal-light); color: var(--teal); font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 100px; margin-top: 10px; border: 1px solid rgba(13,148,136,0.2); }
+        .avatar-badge::before { content: ''; width: 5px; height: 5px; background: var(--teal); border-radius: 50%; }
+        .avatar-divider { width: 100%; border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+        .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 20px 20px; }
+        .stat-item { background: var(--offwhite); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+        .stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
+        .stat-value { font-size: 13.5px; font-weight: 500; color: var(--navy); }
+        .form-section-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 12px; margin-top: 18px; }
+        .form-section-title:first-child { margin-top: 0; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+        .form-group input, .form-group select { font-family: 'DM Sans', sans-serif; font-size: 13.5px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; color: var(--navy); outline: none; background: var(--white); transition: border-color 0.2s; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(13,148,136,0.1); }
+        .form-group input[readonly] { background: var(--offwhite); color: var(--muted); cursor: not-allowed; }
+        .form-divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+        .btn { display: inline-flex; align-items: center; gap: 7px; font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 500; padding: 9px 20px; border-radius: 8px; cursor: pointer; transition: all 0.2s; text-decoration: none; border: none; }
+        .btn svg { width: 14px; height: 14px; }
+        .btn-primary { background: var(--teal); color: white; }
+        .btn-primary:hover { background: #0b7a70; }
+        .btn-danger { background: white; color: var(--red); border: 1px solid #fecaca; }
+        .btn-danger:hover { background: var(--red); color: white; border-color: var(--red); }
+        .btn-row { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
+        .field-error { color: var(--red); font-size: 11px; margin-top: 2px; }
+    </style>
+</head>
+<body>
+
+<nav class="topnav">
+    <a class="nav-brand" href="#">
+        <div class="nav-logo">
+            <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
+        </div>
+        <div class="nav-title">NMB-HLabSys <span>Haematology Lab System</span></div>
+    </a>
+    <div class="nav-right">
+        <div class="nav-user">
+            <div class="nav-avatar">D</div>
+            <div class="nav-user-info">
+                <div class="nav-user-name">@Model.Email</div>
+                <div class="nav-user-role">Doctor</div>
+            </div>
+        </div>
+        <a asp-controller="Home" asp-action="Logout" class="btn-signout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Sign Out
+        </a>
+    </div>
+</nav>
+
+<div class="app-body">
+    <aside class="sidebar">
+        <div class="sidebar-section">Main</div>
+        <a class="nav-item" asp-controller="Doctor" asp-action="DoctorDashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+            Dashboard
+        </a>
+        <a class="nav-item" asp-controller="Doctor" asp-action="PatientRecords">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+            My Patients
+        </a>
+        <a class="nav-item" asp-controller="Doctor" asp-action="TestRequests">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+            Test Requests
+        </a>
+        <a class="nav-item" asp-controller="Doctor" asp-action="ViewResults">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+            Results
+        </a>
+        <div class="sidebar-section">System</div>
+        <a class="nav-item" asp-controller="Doctor" asp-action="Alerts">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+            Activity Log
+        </a>
+        <a class="nav-item active" asp-controller="Doctor" asp-action="Profile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+            My Profile
+        </a>
+        <div class="sidebar-bottom">
+            <a class="nav-item danger" asp-controller="Home" asp-action="Logout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                Sign out
+            </a>
+        </div>
+    </aside>
+
+    <main class="main">
+        <div class="page-header">
+            <div class="page-label">Doctor Portal</div>
+            <h1 class="page-title">My Profile</h1>
+            <p class="page-sub">Manage your personal details and account security</p>
+        </div>
+
+        @if (ViewBag.Success != null)
+        {
+            <div class="alert alert-success">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                @ViewBag.Success
+            </div>
+        }
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-error">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+                @ViewBag.Error
+            </div>
+        }
+
+        <div class="profile-grid">
+
+            <!-- LEFT — Avatar & read-only summary -->
+            <div>
+                <div class="card">
+                    <div class="avatar-block">
+                        <div class="avatar">@Model.FirstName[0]@Model.LastName[0]</div>
+                        <div class="avatar-name">Dr. @Model.FirstName @Model.LastName</div>
+                        <div class="avatar-email">@Model.Email</div>
+                        <div class="avatar-badge">Doctor</div>
+                        <hr class="avatar-divider" />
+                    </div>
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <div class="stat-label">Department</div>
+                            <div class="stat-value">@Model.Department</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Specialization</div>
+                            <div class="stat-value">@Model.Specialization</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">License No.</div>
+                            <div class="stat-value" style="font-family:monospace;font-size:12px;">@Model.LicenseNumber</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Member Since</div>
+                            <div class="stat-value">@Model.RegistrationDate.ToString("MMM yyyy")</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Read-only account info -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-icon" style="background:#dbeafe;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                        </div>
+                        <h3>Account Information</h3>
+                        <span class="readonly-badge">Read Only</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label>Email Address</label>
+                            <input asp-for="Email" readonly />
+                        </div>
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label>License Number</label>
+                            <input asp-for="LicenseNumber" readonly />
+                        </div>
+                        <div class="form-group">
+                            <label>Registration Date</label>
+                            <input type="text" value="@Model.RegistrationDate.ToString("dd MMM yyyy")" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT — Editable forms -->
+            <div>
+
+                <!-- Personal Details -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-icon" style="background:var(--teal-light);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                        </div>
+                        <h3>Personal Details</h3>
+                    </div>
+                    <div class="card-body">
+                        <form asp-controller="Doctor" asp-action="UpdateProfile" method="post" id="personalForm">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="DoctorID" />
+
+                            <div class="form-section-title">Basic Information</div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label asp-for="FirstName">First Name</label>
+                                    <input asp-for="FirstName" />
+                                    <span asp-validation-for="FirstName" class="field-error"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label asp-for="LastName">Last Name</label>
+                                    <input asp-for="LastName" />
+                                    <span asp-validation-for="LastName" class="field-error"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label asp-for="CellphoneNumber">Cellphone Number</label>
+                                    <input asp-for="CellphoneNumber" />
+                                    <span asp-validation-for="CellphoneNumber" class="field-error"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label asp-for="DateOfBirth">Date of Birth</label>
+                                    <input asp-for="DateOfBirth" type="date" />
+                                    <span asp-validation-for="DateOfBirth" class="field-error"></span>
+                                </div>
+                                <div class="form-group full">
+                                    <label asp-for="HomeAddress">Home Address</label>
+                                    <input asp-for="HomeAddress" />
+                                    <span asp-validation-for="HomeAddress" class="field-error"></span>
+                                </div>
+                            </div>
+
+                            <hr class="form-divider" />
+                            <div class="form-section-title">Professional Information</div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label asp-for="Specialization">Specialization</label>
+                                    <input asp-for="Specialization" />
+                                    <span asp-validation-for="Specialization" class="field-error"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label asp-for="Department">Department</label>
+                                    <select asp-for="Department" asp-items="Model.DepartmentList">
+                                        <option value="">-- Select department --</option>
+                                    </select>
+                                    <span asp-validation-for="Department" class="field-error"></span>
+                                </div>
+                                <div class="form-group full">
+                                    <label asp-for="PracticeAddress">Practice / Hospital Address</label>
+                                    <input asp-for="PracticeAddress" />
+                                    <span asp-validation-for="PracticeAddress" class="field-error"></span>
+                                </div>
+                            </div>
+
+                            <div class="btn-row">
+                                <button type="submit" class="btn btn-primary">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Change Password -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-icon" style="background:#fef3c7;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                        </div>
+                        <h3>Change Password</h3>
+                    </div>
+                    <div class="card-body">
+                        <form asp-controller="Doctor" asp-action="ChangePassword" method="post" id="passwordForm">
+                            @Html.AntiForgeryToken()
+                            <div class="form-group" style="margin-bottom:14px;">
+                                <label>Current Password</label>
+                                <input type="password" name="CurrentPassword" required />
+                            </div>
+                            <hr class="form-divider" />
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>New Password</label>
+                                    <input type="password" name="NewPassword" id="newPass" required />
+                                </div>
+                                <div class="form-group">
+                                    <label>Confirm New Password</label>
+                                    <input type="password" name="ConfirmPassword" id="confirmPass" required />
+                                </div>
+                            </div>
+                            <div class="btn-row">
+                                <button type="submit" class="btn btn-danger">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                    Change Password
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    document.getElementById('personalForm').addEventListener('submit', function (e) {
+        const firstName = this.querySelector('[name="FirstName"]').value.trim();
+        const lastName  = this.querySelector('[name="LastName"]').value.trim();
+        const phone     = this.querySelector('[name="CellphoneNumber"]').value.trim();
+        const address   = this.querySelector('[name="HomeAddress"]').value.trim();
+        const spec      = this.querySelector('[name="Specialization"]').value.trim();
+        const practice  = this.querySelector('[name="PracticeAddress"]').value.trim();
+
+        if (firstName.length < 2 || lastName.length < 2) {
+            e.preventDefault(); alert('First and last name must each be at least 2 characters.'); return;
+        }
+        if (!/^\d{10}$/.test(phone)) {
+            e.preventDefault(); alert('Cellphone number must be exactly 10 digits.'); return;
+        }
+        if (address.length < 5) {
+            e.preventDefault(); alert('Please enter a valid home address.'); return;
+        }
+        if (spec.length < 2) {
+            e.preventDefault(); alert('Please enter a valid specialization.'); return;
+        }
+        if (practice.length < 5) {
+            e.preventDefault(); alert('Please enter a valid practice address.'); return;
+        }
+    });
+
+    document.getElementById('passwordForm').addEventListener('submit', function (e) {
+        const current = this.querySelector('[name="CurrentPassword"]').value;
+        const newPass = this.querySelector('[name="NewPassword"]').value;
+        const confirm = this.querySelector('[name="ConfirmPassword"]').value;
+
+        if (!current) {
+            e.preventDefault(); alert('Please enter your current password.'); return;
+        }
+        if (newPass.length < 8) {
+            e.preventDefault(); alert('New password must be at least 8 characters.'); return;
+        }
+        if (!/[A-Z]/.test(newPass)) {
+            e.preventDefault(); alert('New password must contain at least one uppercase letter.'); return;
+        }
+        if (!/[0-9]/.test(newPass)) {
+            e.preventDefault(); alert('New password must contain at least one number.'); return;
+        }
+        if (newPass !== confirm) {
+            e.preventDefault(); alert('New password and confirmation do not match.'); return;
+        }
+        if (newPass === current) {
+            e.preventDefault(); alert('New password cannot be the same as your current password.'); return;
+        }
+    });
+</script>
+
+</body>
+</html>
