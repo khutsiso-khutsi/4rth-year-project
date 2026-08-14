@@ -544,6 +544,8 @@
             color: var(--red);
             border: 1px solid #fecaca;
         }
+
+
     </style>
 </head>
 <body>
@@ -647,6 +649,10 @@
             <div class="card">
                 <div class="search-bar">
                     <input class="search-input" type="text" id="searchInput" placeholder="Search categories..." onkeyup="filterTable()" />
+                    <form method="get" asp-controller="Admin" asp-action="MedicationCategories" style="margin-left:12px;display:flex;align-items:center;gap:8px;">
+                        <label style="font-size:13px;color:var(--muted);">Show inactive</label>
+                        <input type="checkbox" name="showInactive" value="true" onchange="this.form.submit()" @(ViewData["ShowInactive"] as bool? == true ? "checked" : "") />
+                    </form>
                 </div>
 
                 @{
@@ -674,14 +680,33 @@
                         <tbody>
                             @foreach (var cat in categories)
                             {
-                                <tr>
+                                var inactive = (cat.GetType().GetProperty("IsActive") != null) ? (bool?)cat.GetType().GetProperty("IsActive")!.GetValue(cat) : true;
+                                var isInactive = inactive == false;
+                                <tr class="@(isInactive ? "inactive-row" : "")">
                                     <td>@cat.MedicationCategoryID</td>
-                                    <td><strong>@cat.CategoryName</strong></td>
-                                    <td>@(cat.Description ?? "—")</td>
+                                    <td>
+                                        <strong style="@(isInactive ? "text-decoration:line-through;opacity:0.6;" : "")">@cat.CategoryName</strong>
+                                        @if (isInactive)
+                                        {
+                                            <span class="pill pill-inactive">Inactive</span>
+                                        }
+                                    </td>
+                                    <td style="@(isInactive ? "opacity:0.6;" : "")">@(cat.Description ?? "—")</td>
                                     <td>
                                         <div class="action-btns">
-                                            <button class="btn-sm" onclick="openEditModal(@cat.MedicationCategoryID, '@cat.CategoryName.Replace("'", "\\'")', '@(cat.Description?.Replace("'", "\\'") ?? "")')">Edit</button>
-                                            <button class="btn-sm danger" onclick="openDeleteModal(@cat.MedicationCategoryID, '@cat.CategoryName.Replace("'", "\\'")')">Delete</button>
+                                            @if (!isInactive)
+                                            {
+                                                <button class="btn-sm" onclick="openEditModal(@cat.MedicationCategoryID, '@cat.CategoryName.Replace("'", "\\'")', '@(cat.Description?.Replace("'", "\\'") ?? "")')">Edit</button>
+                                                <button class="btn-sm danger" onclick="openDeleteModal(@cat.MedicationCategoryID, '@cat.CategoryName.Replace("'", "\\'")')">Delete</button>
+                                            }
+                                            else
+                                            {
+                                                <form method="post" asp-controller="Admin" asp-action="RestoreMedicationCategory" style="display:inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@cat.MedicationCategoryID" />
+                                                    <button type="submit" class="btn-sm">Restore</button>
+                                                </form>
+                                            }
                                         </div>
                                     </td>
                                 </tr>

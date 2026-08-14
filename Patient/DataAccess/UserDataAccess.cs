@@ -13,7 +13,7 @@ namespace Patient.DataAccess
             _connectionString = connectionString;
         }
 
-        public (UserSession? user, string? passwordHash, bool isVerified) GetUserLoginData(string username)
+        public (UserSession? user, string? passwordHash) GetUserLoginData(string username)
         {
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("sp_LoginUser", conn);
@@ -32,12 +32,11 @@ namespace Patient.DataAccess
                     Email = reader.GetString(reader.GetOrdinal("Email")),
                     RoleID = reader.GetInt32(reader.GetOrdinal("RoleID")),
                     RoleName = reader.GetString(reader.GetOrdinal("RoleName")),
-                    IsEmailVerified = reader.GetBoolean(reader.GetOrdinal("IsEmailVerified")),
                 };
-                return (user, passwordHash, user.IsEmailVerified);
+                return (user, passwordHash);
             }
 
-            return (null, null, false);
+            return (null, null);
         }
 
         public void UpdateLastLogin(int userId)
@@ -156,29 +155,62 @@ namespace Patient.DataAccess
 
         public List<TestRequest> GetPatientTestRequests(int patientId)
         {
-            var requests = new List<TestRequest>();
+            // Call stored procedure dbo.GetPatientTestRequests which returns one row per request item
+            var list = new List<TestRequest>();
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("sp_GetPatientTestRequests", conn);
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.Parameters.AddWithValue("@PatientID", patientId);
             conn.Open();
             using var reader = cmd.ExecuteReader();
+
+            var map = new Dictionary<int, TestRequest>();
             while (reader.Read())
             {
-                requests.Add(new TestRequest
+                var requestId = reader.GetInt32(reader.GetOrdinal("RequestID"));
+                if (!map.TryGetValue(requestId, out var req))
                 {
-                    RequestID = reader.GetInt32(0),
-                    RequestNumber = reader.GetString(1),
-                    RequestDate = reader.GetDateTime(2),
-                    Urgency = reader.GetString(3),
-                    RequestStatus = reader.GetString(4),
-                    ClinicalNotes = reader.IsDBNull(5) ? null : reader.GetString(5),
-                    ReleaseNotes = reader.IsDBNull(6) ? null : reader.GetString(6),
-                    ReleasedDate = reader.IsDBNull(7) ? null : reader.GetDateTime(7),
-                    DoctorName = reader.GetString(8)
-                });
+                    req = new TestRequest
+                    {
+                        RequestID = requestId,
+                        RequestNumber = reader.IsDBNull(reader.GetOrdinal("RequestNumber")) ? "" : reader.GetString(reader.GetOrdinal("RequestNumber")),
+                        RequestDate = reader.GetDateTime(reader.GetOrdinal("RequestDate")),
+                        Urgency = reader.IsDBNull(reader.GetOrdinal("Urgency")) ? "" : reader.GetString(reader.GetOrdinal("Urgency")),
+                        RequestStatus = reader.IsDBNull(reader.GetOrdinal("RequestStatus")) ? "" : reader.GetString(reader.GetOrdinal("RequestStatus")),
+                        ClinicalNotes = reader.IsDBNull(reader.GetOrdinal("ClinicalNotes")) ? null : reader.GetString(reader.GetOrdinal("ClinicalNotes")),
+                        ReleaseNotes = reader.IsDBNull(reader.GetOrdinal("ReleaseNotes")) ? null : reader.GetString(reader.GetOrdinal("ReleaseNotes")),
+                        ReleasedDate = reader.IsDBNull(reader.GetOrdinal("ReleasedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ReleasedDate")),
+                        DoctorName = reader.IsDBNull(reader.GetOrdinal("DoctorName")) ? "" : reader.GetString(reader.GetOrdinal("DoctorName")),
+                        Items = new List<TestRequestItem>()
+                    };
+                    map[requestId] = req;
+                }
+
+                // If row contains item data, add it
+                if (!reader.IsDBNull(reader.GetOrdinal("RequestItemID")))
+                {
+                    var item = new TestRequestItem
+                    {
+                        RequestItemID = reader.GetInt32(reader.GetOrdinal("RequestItemID")),
+                        RequestID = requestId,
+                        TestName = reader.IsDBNull(reader.GetOrdinal("TestName")) ? "" : reader.GetString(reader.GetOrdinal("TestName")),
+                        CategoryName = reader.IsDBNull(reader.GetOrdinal("CategoryName")) ? "" : reader.GetString(reader.GetOrdinal("CategoryName")),
+                        ItemStatus = reader.IsDBNull(reader.GetOrdinal("ItemStatus")) ? "" : reader.GetString(reader.GetOrdinal("ItemStatus")),
+                        ResultValue = reader.IsDBNull(reader.GetOrdinal("ResultValue")) ? null : reader.GetDecimal(reader.GetOrdinal("ResultValue")),
+                        ResultNotes = reader.IsDBNull(reader.GetOrdinal("ResultNotes")) ? null : reader.GetString(reader.GetOrdinal("ResultNotes")),
+                        IsAbnormal = !reader.IsDBNull(reader.GetOrdinal("IsAbnormal")) && reader.GetBoolean(reader.GetOrdinal("IsAbnormal")),
+                        CompletionDateTime = reader.IsDBNull(reader.GetOrdinal("CompletionDateTime")) ? null : reader.GetDateTime(reader.GetOrdinal("CompletionDateTime")),
+                        VerificationDateTime = reader.IsDBNull(reader.GetOrdinal("VerificationDateTime")) ? null : reader.GetDateTime(reader.GetOrdinal("VerificationDateTime")),
+                        UnitName = reader.IsDBNull(reader.GetOrdinal("UnitName")) ? null : reader.GetString(reader.GetOrdinal("UnitName")),
+                        NormalRangeMin = reader.IsDBNull(reader.GetOrdinal("NormalRangeMin")) ? null : reader.GetDecimal(reader.GetOrdinal("NormalRangeMin")),
+                        NormalRangeMax = reader.IsDBNull(reader.GetOrdinal("NormalRangeMax")) ? null : reader.GetDecimal(reader.GetOrdinal("NormalRangeMax"))
+                    };
+                    req.Items.Add(item);
+                }
             }
-            return requests;
+
+            list.AddRange(map.Values);
+            return list;
         }
 
         public List<TestRequestItem> GetTestRequestItems(int requestId)
@@ -237,7 +269,7 @@ namespace Patient.DataAccess
                 while (dr.Read())
                     vm.Conditions.Add(new PatientCondition
                     {
-                        PatientConditionID = (int)dr["PatientConditionID"],
+                        PatientID = (int)dr["PatientID"],
                         ConditionID = (int)dr["ConditionID"],
                         ConditionName = dr["ConditionName"].ToString()!,
                         DiagnosedDate = dr["DiagnosedDate"] as DateTime?,
@@ -318,12 +350,13 @@ namespace Patient.DataAccess
             cmd.ExecuteNonQuery();
         }
 
-        public void RemovePatientCondition(int patientConditionId)
+        public void RemovePatientCondition(int patientId, int conditionId)
         {
             using var con = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("sp_RemovePatientCondition", con);
             cmd.CommandType = CommandType.StoredProcedure;
-            cmd.Parameters.AddWithValue("@PatientConditionID", patientConditionId);
+            cmd.Parameters.AddWithValue("@PatientID", patientId);
+            cmd.Parameters.AddWithValue("@ConditionID", conditionId);
             con.Open();
             cmd.ExecuteNonQuery();
         }
@@ -523,7 +556,7 @@ namespace Patient.DataAccess
         }
 
         public void UpdatePatientProfile(int patientId, string firstName, string lastName,
-            DateTime dob, string cellphone, string homeAddress)
+    DateTime dob, string cellphone, string homeAddress, string email)
         {
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("sp_UpdatePatientProfile", conn);
@@ -534,6 +567,7 @@ namespace Patient.DataAccess
             cmd.Parameters.AddWithValue("@DateOfBirth", dob);
             cmd.Parameters.AddWithValue("@CellphoneNumber", cellphone);
             cmd.Parameters.AddWithValue("@HomeAddress", homeAddress);
+            cmd.Parameters.AddWithValue("@Email", email);
             conn.Open();
             cmd.ExecuteNonQuery();
         }

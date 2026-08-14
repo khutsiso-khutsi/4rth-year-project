@@ -13,6 +13,7 @@ namespace Patient.Models
         public string ConditionName { get; set; } = "";
         public DateTime? DiagnosedDate { get; set; }
         public string? Notes { get; set; }
+        public int PatientID { get; set; }
     }
 
     public class PatientAllergy

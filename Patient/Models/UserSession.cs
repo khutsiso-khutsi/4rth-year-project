@@ -13,7 +13,7 @@ namespace Patient.Models
         public string RoleName { get; set; }
         public string FullName { get; set; }
         public int RoleID { get; set; }
-        public bool IsEmailVerified { get; set; }
+        // IsEmailVerified removed: not present in database; login flow does not require it.
     }
 
     public class LoginViewModel

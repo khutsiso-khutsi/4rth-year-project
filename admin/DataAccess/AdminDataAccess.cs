@@ -36,12 +36,13 @@ namespace admin.DataAccess
 
         // CONDITION CATEGORIES 
 
-        public List<ConditionCategory> GetAllConditionCategories()
+        public List<ConditionCategory> GetAllConditionCategories(bool includeInactive = false)
         {
             var list = new List<ConditionCategory>();
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("sp_GetAllConditionCategories", conn);
             cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@IncludeInactive", includeInactive ? 1 : 0);
             conn.Open();
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
@@ -117,12 +118,13 @@ namespace admin.DataAccess
 
         // MEDICAL CONDITIONS 
 
-        public List<MedicalCondition> GetAllConditions()
+        public List<MedicalCondition> GetAllConditions(bool includeInactive = false)
         {
             var list = new List<MedicalCondition>();
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("sp_GetAllConditions", conn);
             cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@IncludeInactive", includeInactive ? 1 : 0);
             conn.Open();
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
@@ -204,12 +206,13 @@ namespace admin.DataAccess
 
         // ALLERGY CATEGORIES 
 
-        public List<AllergyCategory> GetAllAllergyCategories()
+        public List<AllergyCategory> GetAllAllergyCategories(bool includeInactive = false)
         {
             var list = new List<AllergyCategory>();
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("sp_GetAllAllergyCategories", conn);
             cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@IncludeInactive", includeInactive ? 1 : 0);
             conn.Open();
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
@@ -283,12 +286,13 @@ namespace admin.DataAccess
 
         //  ALLERGIES 
 
-        public List<Allergy> GetAllAllergies()
+        public List<Allergy> GetAllAllergies(bool includeInactive = false)
         {
             var list = new List<Allergy>();
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("sp_GetAllAllergies", conn);
             cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@IncludeInactive", includeInactive ? 1 : 0);
             conn.Open();
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
@@ -299,9 +303,26 @@ namespace admin.DataAccess
                     Description = reader.IsDBNull(reader.GetOrdinal("Description"))
                                           ? null : reader.GetString(reader.GetOrdinal("Description")),
                     AllergyCategoryID = reader.GetInt32(reader.GetOrdinal("AllergyCategoryID")),
-                    CategoryName = reader.IsDBNull(reader.GetOrdinal("CategoryName"))
-                                          ? null : reader.GetString(reader.GetOrdinal("CategoryName"))
+                    CategoryName = reader.IsDBNull(reader.GetOrdinal("CategoryName")) ? null : reader.GetString(reader.GetOrdinal("CategoryName"))
                 });
+            // If CategoryName is missing from the proc result, attempt to look it up directly
+            foreach (var a in list)
+            {
+                if (string.IsNullOrWhiteSpace(a.CategoryName) && a.AllergyCategoryID > 0)
+                {
+                    try
+                    {
+                        using var lookupConn = new SqlConnection(_connectionString);
+                        using var lookupCmd = new SqlCommand("SELECT CategoryName FROM AllergyCategories WHERE AllergyCategoryID = @ID", lookupConn);
+                        lookupCmd.Parameters.AddWithValue("@ID", a.AllergyCategoryID);
+                        lookupConn.Open();
+                        var res = lookupCmd.ExecuteScalar();
+                        if (res != null && res != DBNull.Value)
+                            a.CategoryName = res.ToString();
+                    }
+                    catch { /* ignore lookup errors */ }
+                }
+            }
             return list;
         }
 
@@ -370,12 +391,13 @@ namespace admin.DataAccess
 
         // MEDICATION CATEGORIES
 
-        public List<MedicationCategory> GetAllMedicationCategories()
+        public List<MedicationCategory> GetAllMedicationCategories(bool includeInactive = false)
         {
             var list = new List<MedicationCategory>();
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("sp_GetAllMedicationCategories", conn);
             cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@IncludeInactive", includeInactive ? 1 : 0);
             conn.Open();
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
@@ -449,12 +471,13 @@ namespace admin.DataAccess
 
         //MEDICATIONS
 
-        public List<Medication> GetAllMedications()
+        public List<Medication> GetAllMedications(bool includeInactive = false)
         {
             var list = new List<Medication>();
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("sp_GetAllMedications", conn);
             cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@IncludeInactive", includeInactive ? 1 : 0);
             conn.Open();
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
@@ -532,6 +555,91 @@ namespace admin.DataAccess
             using var reader = cmd.ExecuteReader();
             if (reader.Read()) return reader.GetString(reader.GetOrdinal("Result"));
             return "ERROR";
+        }
+
+        // RESTORE METHODS (soft-undelete)
+        public string RestoreConditionCategory(int id)
+        {
+            try
+            {
+                using var conn = new SqlConnection(_connectionString);
+                using var cmd = new SqlCommand("UPDATE MedicalConditionCategories SET IsActive = 1, DeletedAt = NULL WHERE ConditionCategoryID = @ID", conn);
+                cmd.Parameters.AddWithValue("@ID", id);
+                conn.Open();
+                var affected = cmd.ExecuteNonQuery();
+                return affected > 0 ? "SUCCESS" : "NOT_FOUND";
+            }
+            catch { return "ERROR"; }
+        }
+
+        public string RestoreCondition(int id)
+        {
+            try
+            {
+                using var conn = new SqlConnection(_connectionString);
+                using var cmd = new SqlCommand("UPDATE MedicalConditions SET IsActive = 1, DeletedAt = NULL WHERE ConditionID = @ID", conn);
+                cmd.Parameters.AddWithValue("@ID", id);
+                conn.Open();
+                var affected = cmd.ExecuteNonQuery();
+                return affected > 0 ? "SUCCESS" : "NOT_FOUND";
+            }
+            catch { return "ERROR"; }
+        }
+
+        public string RestoreAllergyCategory(int id)
+        {
+            try
+            {
+                using var conn = new SqlConnection(_connectionString);
+                using var cmd = new SqlCommand("UPDATE AllergyCategories SET IsActive = 1, DeletedAt = NULL WHERE AllergyCategoryID = @ID", conn);
+                cmd.Parameters.AddWithValue("@ID", id);
+                conn.Open();
+                var affected = cmd.ExecuteNonQuery();
+                return affected > 0 ? "SUCCESS" : "NOT_FOUND";
+            }
+            catch { return "ERROR"; }
+        }
+
+        public string RestoreAllergy(int id)
+        {
+            try
+            {
+                using var conn = new SqlConnection(_connectionString);
+                using var cmd = new SqlCommand("UPDATE Allergies SET IsActive = 1, DeletedAt = NULL WHERE AllergyID = @ID", conn);
+                cmd.Parameters.AddWithValue("@ID", id);
+                conn.Open();
+                var affected = cmd.ExecuteNonQuery();
+                return affected > 0 ? "SUCCESS" : "NOT_FOUND";
+            }
+            catch { return "ERROR"; }
+        }
+
+        public string RestoreMedicationCategory(int id)
+        {
+            try
+            {
+                using var conn = new SqlConnection(_connectionString);
+                using var cmd = new SqlCommand("UPDATE MedicationCategories SET IsActive = 1, DeletedAt = NULL WHERE MedicationCategoryID = @ID", conn);
+                cmd.Parameters.AddWithValue("@ID", id);
+                conn.Open();
+                var affected = cmd.ExecuteNonQuery();
+                return affected > 0 ? "SUCCESS" : "NOT_FOUND";
+            }
+            catch { return "ERROR"; }
+        }
+
+        public string RestoreMedication(int id)
+        {
+            try
+            {
+                using var conn = new SqlConnection(_connectionString);
+                using var cmd = new SqlCommand("UPDATE Medications SET IsActive = 1, DeletedAt = NULL WHERE MedicationID = @ID", conn);
+                cmd.Parameters.AddWithValue("@ID", id);
+                conn.Open();
+                var affected = cmd.ExecuteNonQuery();
+                return affected > 0 ? "SUCCESS" : "NOT_FOUND";
+            }
+            catch { return "ERROR"; }
         }
 
         // ACTIVITY LOG
