@@ -398,6 +398,8 @@
             color: #166534;
         }
 
+
+
         .action-btns {
             display: flex;
             gap: 8px;
@@ -682,6 +684,10 @@
                             <option value="@cat.CategoryName">@cat.CategoryName</option>
                         }
                     </select>
+                    <form method="get" asp-controller="Admin" asp-action="Medications" style="margin-left:12px;display:flex;align-items:center;gap:8px;">
+                        <label style="font-size:13px;color:var(--muted);">Show inactive</label>
+                        <input type="checkbox" name="showInactive" value="true" onchange="this.form.submit()" @(ViewData["ShowInactive"] as bool? == true ? "checked" : "") />
+                    </form>
                 </div>
 
                 @{
@@ -710,15 +716,34 @@
                         <tbody>
                             @foreach (var med in medications)
                             {
-                                <tr>
+                                var inactive = (med.GetType().GetProperty("IsActive") != null) ? (bool?)med.GetType().GetProperty("IsActive")!.GetValue(med) : true;
+                                var isInactive = inactive == false;
+                                <tr class="@(isInactive ? "inactive-row" : "")">
                                     <td>@med.MedicationID</td>
-                                    <td><strong>@med.MedicationName</strong></td>
+                                    <td>
+                                        <strong style="@(isInactive ? "text-decoration:line-through;opacity:0.6;" : "")">@med.MedicationName</strong>
+                                        @if (isInactive)
+                                        {
+                                            <span class="pill pill-inactive">Inactive</span>
+                                        }
+                                    </td>
                                     <td><span class="pill pill-green">@(med.CategoryName ?? "—")</span></td>
-                                    <td>@(med.Description ?? "—")</td>
+                                    <td style="@(isInactive ? "opacity:0.6;" : "")">@(med.Description ?? "—")</td>
                                     <td>
                                         <div class="action-btns">
-                                            <button class="btn-sm" onclick="openEditModal(@med.MedicationID, '@med.MedicationName.Replace("'", "\\'")', '@(med.Description?.Replace("'", "\\'") ?? "")', @med.MedicationCategoryID)">Edit</button>
-                                            <button class="btn-sm danger" onclick="openDeleteModal(@med.MedicationID, '@med.MedicationName.Replace("'", "\\'")')">Delete</button>
+                                            @if (!isInactive)
+                                            {
+                                                <button class="btn-sm" onclick="openEditModal(@med.MedicationID, '@med.MedicationName.Replace("'", "\\'")', '@(med.Description?.Replace("'", "\\'") ?? "")', @med.MedicationCategoryID)">Edit</button>
+                                                <button class="btn-sm danger" onclick="openDeleteModal(@med.MedicationID, '@med.MedicationName.Replace("'", "\\'")')">Delete</button>
+                                            }
+                                            else
+                                            {
+                                                <form method="post" asp-controller="Admin" asp-action="RestoreMedication" style="display:inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@med.MedicationID" />
+                                                    <button type="submit" class="btn-sm">Restore</button>
+                                                </form>
+                                            }
                                         </div>
                                     </td>
                                 </tr>

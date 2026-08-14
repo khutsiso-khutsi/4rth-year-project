@@ -37,7 +37,7 @@ namespace _4th_year_set_up.Controllers
         [HttpPost]
         public IActionResult Login(string Username, string Password)
         {
-            var (user, passwordHash, isVerified) = _userRepo.GetUserLoginData(Username.Trim());
+            var (user, passwordHash) = _userRepo.GetUserLoginData(Username.Trim());
 
             if (user == null || passwordHash == null)
             {

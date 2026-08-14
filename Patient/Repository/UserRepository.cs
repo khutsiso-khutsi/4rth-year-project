@@ -12,7 +12,7 @@ namespace Patient.Repository
             _dataAccess = new UserDataAccess(connectionString);
         }
 
-        public (UserSession? user, string? passwordHash, bool isVerified) GetUserLoginData(string username)
+        public (UserSession? user, string? passwordHash) GetUserLoginData(string username)
         {
             return _dataAccess.GetUserLoginData(username);
         }
@@ -66,8 +66,8 @@ namespace Patient.Repository
         public void AddPatientCondition(int patientId, int conditionId, DateTime? diagnosedDate, string? notes)
             => _dataAccess.AddPatientCondition(patientId, conditionId, diagnosedDate, notes);
 
-        public void RemovePatientCondition(int patientConditionId)
-            => _dataAccess.RemovePatientCondition(patientConditionId);
+        public void RemovePatientCondition(int patientId, int conditionId)
+    => _dataAccess.RemovePatientCondition(patientId, conditionId);
 
         public void AddPatientAllergy(int patientId, int allergyId, string? severity, string? notes)
             => _dataAccess.AddPatientAllergy(patientId, allergyId, severity, notes);
@@ -101,9 +101,10 @@ namespace Patient.Repository
     => _dataAccess.GetPatientProfile(patientId);
 
         public void UpdatePatientProfile(int patientId, string firstName, string lastName,
-            DateTime dob, string cellphone, string homeAddress)
-            => _dataAccess.UpdatePatientProfile(patientId, firstName, lastName, dob, cellphone, homeAddress);
-
+     DateTime dob, string cellphone, string homeAddress, string email)
+        {
+            _dataAccess.UpdatePatientProfile(patientId, firstName, lastName, dob, cellphone, homeAddress, email);
+        }
         public void ChangePatientPassword(int userId, string newPasswordHash)
             => _dataAccess.ChangePatientPassword(userId, newPasswordHash);
 

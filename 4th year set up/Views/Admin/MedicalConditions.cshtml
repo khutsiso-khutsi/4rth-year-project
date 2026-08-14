@@ -407,6 +407,7 @@
             color: var(--blue);
         }
 
+
         .action-btns {
             display: flex;
             gap: 8px;
@@ -691,6 +692,10 @@
                             <option value="@cat.CategoryName">@cat.CategoryName</option>
                         }
                     </select>
+                    <form method="get" asp-controller="Admin" asp-action="MedicalConditions" style="margin-left:12px;display:flex;align-items:center;gap:8px;">
+                        <label style="font-size:13px;color:var(--muted);">Show inactive</label>
+                        <input type="checkbox" name="showInactive" value="true" onchange="this.form.submit()" @(ViewData["ShowInactive"] as bool? == true ? "checked" : "") />
+                    </form>
                 </div>
 
                 @{
@@ -719,15 +724,34 @@
                         <tbody>
                             @foreach (var condition in conditions)
                             {
-                                <tr>
+                                var inactive = (condition.GetType().GetProperty("IsActive") != null) ? (bool?)condition.GetType().GetProperty("IsActive")!.GetValue(condition) : true;
+                                var isInactive = inactive == false;
+                                <tr class="@(isInactive ? "inactive-row" : "")">
                                     <td>@condition.ConditionID</td>
-                                    <td><strong>@condition.ConditionName</strong></td>
+                                    <td>
+                                        <strong style="@(isInactive ? "text-decoration:line-through;opacity:0.6;" : "")">@condition.ConditionName</strong>
+                                        @if (isInactive)
+                                        {
+                                            <span class="pill pill-inactive">Inactive</span>
+                                        }
+                                    </td>
                                     <td><span class="pill pill-blue">@(condition.CategoryName ?? "—")</span></td>
-                                    <td>@(condition.Description ?? "—")</td>
+                                    <td style="@(isInactive ? "opacity:0.6;" : "")">@(condition.Description ?? "—")</td>
                                     <td>
                                         <div class="action-btns">
-                                            <button class="btn-sm" onclick="openEditModal(@condition.ConditionID, '@condition.ConditionName.Replace("'", "\\'")', '@(condition.Description?.Replace("'", "\\'") ?? "")', @condition.ConditionCategoryID)">Edit</button>
-                                            <button class="btn-sm danger" onclick="openDeleteModal(@condition.ConditionID, '@condition.ConditionName.Replace("'", "\\'")')">Delete</button>
+                                            @if (!isInactive)
+                                            {
+                                                <button class="btn-sm" onclick="openEditModal(@condition.ConditionID, '@condition.ConditionName.Replace("'", "\\'")', '@(condition.Description?.Replace("'", "\\'") ?? "")', @condition.ConditionCategoryID)">Edit</button>
+                                                <button class="btn-sm danger" onclick="openDeleteModal(@condition.ConditionID, '@condition.ConditionName.Replace("'", "\\'")')">Delete</button>
+                                            }
+                                            else
+                                            {
+                                                <form method="post" asp-controller="Admin" asp-action="RestoreCondition" style="display:inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@condition.ConditionID" />
+                                                    <button type="submit" class="btn-sm">Restore</button>
+                                                </form>
+                                            }
                                         </div>
                                     </td>
                                 </tr>

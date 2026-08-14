@@ -682,6 +682,10 @@
                             <option value="@cat.CategoryName">@cat.CategoryName</option>
                         }
                     </select>
+                    <form method="get" asp-controller="Admin" asp-action="Allergies" style="margin-left:12px;display:flex;align-items:center;gap:8px;">
+                        <label style="font-size:13px;color:var(--muted);">Show inactive</label>
+                        <input type="checkbox" name="showInactive" value="true" onchange="this.form.submit()" @(ViewData["ShowInactive"] as bool? == true ? "checked" : "") />
+                    </form>
                 </div>
 
                 @{
@@ -710,15 +714,33 @@
                         <tbody>
                             @foreach (var allergy in allergies)
                             {
-                                <tr>
+                                var inactive = allergy.IsActive == false;
+                                <tr class="@(inactive ? "inactive-row" : "")">
                                     <td>@allergy.AllergyID</td>
-                                    <td><strong>@allergy.AllergyName</strong></td>
-                                    <td><span class="pill pill-red">@(allergy.CategoryName ?? "—")</span></td>
-                                    <td>@(allergy.Description ?? "—")</td>
+                                    <td>
+                                        <strong style="@(inactive ? "text-decoration:line-through;opacity:0.6;" : "")">@allergy.AllergyName</strong>
+                                        @if (inactive)
+                                        {
+                                            <span class="pill pill-inactive">Inactive</span>
+                                        }
+                                    </td>
+                                    <td><span class="pill pill-red">@((!string.IsNullOrWhiteSpace(allergy.CategoryName) ? allergy.CategoryName : "—"))</span></td>
+                                    <td style="@(inactive ? "opacity:0.6;" : "")">@(allergy.Description ?? "—")</td>
                                     <td>
                                         <div class="action-btns">
-                                            <button class="btn-sm" onclick="openEditModal(@allergy.AllergyID, '@allergy.AllergyName.Replace("'", "\\'")', '@(allergy.Description?.Replace("'", "\\'") ?? "")', @allergy.AllergyCategoryID)">Edit</button>
-                                            <button class="btn-sm danger" onclick="openDeleteModal(@allergy.AllergyID, '@allergy.AllergyName.Replace("'", "\\'")')">Delete</button>
+                                            @if (!inactive)
+                                            {
+                                                <button class="btn-sm" onclick="openEditModal(@allergy.AllergyID, '@allergy.AllergyName.Replace("'", "\\'")', '@(allergy.Description?.Replace("'", "\\'") ?? "")', @allergy.AllergyCategoryID)">Edit</button>
+                                                <button class="btn-sm danger" onclick="openDeleteModal(@allergy.AllergyID, '@allergy.AllergyName.Replace("'", "\\'")')">Delete</button>
+                                            }
+                                            else
+                                            {
+                                                <form method="post" asp-controller="Admin" asp-action="RestoreAllergy" style="display:inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@allergy.AllergyID" />
+                                                    <button type="submit" class="btn-sm">Restore</button>
+                                                </form>
+                                            }
                                         </div>
                                     </td>
                                 </tr>

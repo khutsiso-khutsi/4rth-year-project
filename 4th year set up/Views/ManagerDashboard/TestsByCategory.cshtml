@@ -1,0 +1,383 @@
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model LabManager.Models.TestsByCategoryReportViewModel
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+
+    <title>
+        Tests by Category —
+        @Model.FromDate.ToString("dd MMM yyyy")
+        to
+        @Model.ToDate.ToString("dd MMM yyyy")
+    </title>
+
+    <style>
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                color: #0b1f3a;
+                background: white;
+                padding: 32px 40px;
+                font-size: 13px;
+            }
+
+            .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 28px;
+                border-bottom: 2px solid #0d9488;
+                padding-bottom: 16px;
+            }
+
+            .brand {
+                font-size: 1.2rem;
+                font-weight: 700;
+                color: #0b1f3a;
+            }
+
+                .brand span {
+                    display: block;
+                    font-size: 10px;
+                    font-weight: 400;
+                    color: #6b7a99;
+                    letter-spacing: 0.08em;
+                    text-transform: uppercase;
+                    margin-top: 2px;
+                }
+
+            .print-date {
+                font-size: 11px;
+                color: #6b7a99;
+                text-align: right;
+            }
+
+            .section-title {
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: #6b7a99;
+                margin-bottom: 6px;
+                margin-top: 20px;
+            }
+
+            .meta-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+                background: #f4f7fb;
+                border-radius: 10px;
+                padding: 16px;
+                margin-bottom: 20px;
+            }
+
+            .meta-item label {
+                display: block;
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+                color: #6b7a99;
+                margin-bottom: 3px;
+            }
+
+            .meta-item span {
+                font-weight: 600;
+                font-size: 13px;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 8px;
+            }
+
+            th {
+                text-align: left;
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+                color: #6b7a99;
+                padding: 8px 10px;
+                border-bottom: 2px solid #dde4f0;
+            }
+
+            td {
+                padding: 10px 10px;
+                border-bottom: 1px solid #dde4f0;
+                font-size: 12.5px;
+                vertical-align: middle;
+            }
+
+            tr.total-row td {
+                border-top: 2px solid #dde4f0;
+                border-bottom: none;
+                font-weight: 700;
+                padding-top: 12px;
+            }
+
+            .count-val {
+                font-weight: 700;
+            }
+
+            .pct-cell {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .pct-bar-track {
+                flex: 1;
+                height: 6px;
+                border-radius: 100px;
+                background: #eef1f7;
+                overflow: hidden;
+            }
+
+            .pct-bar-fill {
+                height: 100%;
+                border-radius: 100px;
+                background: #0d9488;
+            }
+
+            .pct-label {
+                font-size: 11px;
+                color: #6b7a99;
+                min-width: 34px;
+                text-align: right;
+            }
+
+            .footer {
+                margin-top: 40px;
+                border-top: 1px solid #dde4f0;
+                padding-top: 12px;
+                display: flex;
+                justify-content: space-between;
+                font-size: 10.5px;
+                color: #6b7a99;
+            }
+
+            .print-btn {
+                position: fixed;
+                bottom: 28px;
+                right: 28px;
+                background: #0d9488;
+                color: white;
+                border: none;
+                padding: 12px 22px;
+                border-radius: 10px;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                box-shadow: 0 4px 16px rgba(13,148,136,0.35);
+            }
+
+                .print-btn:hover {
+                    background: #0b7d73;
+                }
+
+            @@media print {
+
+                .print-btn {
+                    display: none;
+                }
+
+                body {
+                    padding: 16px;
+                }
+            }
+
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+
+        <div>
+            <div class="brand">
+                NMB-HLabSys
+                <span>Haematology Laboratory System</span>
+            </div>
+
+            <div style="margin-top:8px;font-size:12px;color:#6b7a99;">
+                Management Report — Tests Performed by Category
+            </div>
+        </div>
+
+        <div class="print-date">
+            Printed: @DateTime.Now.ToString("dd MMM yyyy HH:mm")
+            <br />
+            <span style="font-size:10px;">
+                Internal management report
+            </span>
+        </div>
+
+    </div>
+
+
+    <div class="section-title">
+        Report Parameters
+    </div>
+
+
+    <div class="meta-grid">
+
+        <div class="meta-item">
+            <label>From</label>
+            <span>@Model.FromDate.ToString("dd MMM yyyy")</span>
+        </div>
+
+        <div class="meta-item">
+            <label>To</label>
+            <span>@Model.ToDate.ToString("dd MMM yyyy")</span>
+        </div>
+
+        <div class="meta-item">
+            <label>Categories</label>
+            <span>@Model.Categories.Count</span>
+        </div>
+
+        <div class="meta-item">
+            <label>Total Tests</label>
+            <span>@Model.TotalTests</span>
+        </div>
+
+    </div>
+
+
+    <div class="section-title">
+        Tests Performed by Category
+    </div>
+
+
+    @if (Model.Categories == null || !Model.Categories.Any())
+    {
+        <p style="color:#6b7a99;font-style:italic;padding:12px 0;">
+            No completed tests were found in the selected date range.
+        </p>
+    }
+    else
+    {
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Tests Performed</th>
+                    <th>Share of Total</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @foreach (var category in Model.Categories)
+                {
+                    <tr>
+
+                        <td>
+                            <strong>@category.CategoryName</strong>
+                        </td>
+
+                        <td>
+                            <span class="count-val">
+                                @category.TestCount
+                            </span>
+                        </td>
+
+                        <td>
+
+                            <div class="pct-cell">
+
+                                <div class="pct-bar-track">
+
+                                    <div class="pct-bar-fill"
+                                         style="width: @(category.Percentage.ToString("0.0"))%;">
+                                    </div>
+
+                                </div>
+
+                                <span class="pct-label">
+                                    @category.Percentage.ToString("0.0")%
+                                </span>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+                }
+
+
+                <tr class="total-row">
+
+                    <td>Total</td>
+
+                    <td>@Model.TotalTests</td>
+
+                    <td>100.0%</td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+    }
+
+
+    <div class="footer">
+
+        <span>
+            NMB-HLabSys · Haematology Laboratory System
+        </span>
+
+        <span>
+            Internal management report · @DateTime.Now.ToString("yyyy")
+        </span>
+
+    </div>
+
+
+    <button class="print-btn" onclick="window.print()">
+
+        <svg width="15"
+             height="15"
+             viewBox="0 0 24 24"
+             fill="none"
+             stroke="currentColor"
+             stroke-width="2"
+             stroke-linecap="round">
+
+            <polyline points="6 9 6 2 18 2 18 9" />
+
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+
+            <rect x="6"
+                  y="14"
+                  width="12"
+                  height="8" />
+
+        </svg>
+
+        Save as PDF / Print
+
+    </button>
+
+</body>
+</html>

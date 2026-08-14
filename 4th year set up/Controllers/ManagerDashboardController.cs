@@ -515,35 +515,75 @@ namespace _4th_year_set_up.Controllers
                 "~/Views/ManagerDashboard/Index.cshtml");
         }
 
-        public IActionResult Report() {
-            
-            return View("~/Views/ManagerDashboard/Index.cshtml");
-        
+        // =========================================================
+        // REPORT
+        // =========================================================
+
+        public IActionResult Report()
+        {
+            return RedirectToAction(nameof(TestsByCategory));
         }
-        //[HttpPost]
-        //public IActionResult GeneratePdf(DateTime startDate, DateTime endDate)
-        //{
-        //    // DEMO DATA
-        //    var reportData = new List<TestCategoryReport>
-        //{
-        //   new TestCategoryReport { Category = "Full Blood Count", TotalTests = 45 },
-        //    new TestCategoryReport { Category = "Differential Count", TotalTests = 28 },
-        //   new TestCategoryReport { Category = "Peripheral Blood Film", TotalTests = 19 },
-        //   new TestCategoryReport { Category = "Coagulation Studies", TotalTests = 13 }
-        // };
 
-        //    ViewBag.StartDate = startDate;
-        //    ViewBag.EndDate = endDate;
 
-        //    return new ViewAsPdf("ReportPdf", reportData)
-        //    {
-        //        FileName = "LaboratoryReport.pdf",
-        //        PageSize = Rotativa.AspNetCore.Options.Size.A4,
-        //        PageOrientation = Rotativa.AspNetCore.Options.Orientation.Portrait
-        //    };
-        //}
+        [HttpGet]
+        public IActionResult TestsByCategory()
+        {
+            SetSession();
+
+            // Report date variables
+            DateTime fromDate = new DateTime(2026, 8, 1);
+            DateTime toDate = new DateTime(2026, 8, 30);
+
+            // Category variables
+            var categories = new List<CategoryReportItemViewModel>
+    {
+        new CategoryReportItemViewModel
+        {
+            CategoryName = "Full Blood Count",
+            TestCount = 120
+        },
+
+        new CategoryReportItemViewModel
+        {
+            CategoryName = "Coagulation",
+            TestCount = 70
+        },
+
+        new CategoryReportItemViewModel
+        {
+            CategoryName = "Blood Chemistry",
+            TestCount = 60
+        }
+    };
+
+            // Calculate total tests
+            int totalTests = categories.Sum(x => x.TestCount);
+
+            // Calculate percentage
+            foreach (var category in categories)
+            {
+                category.Percentage = totalTests > 0
+                    ? ((decimal)category.TestCount / totalTests) * 100
+                    : 0;
+            }
+
+            // Create ViewModel
+            var report = new TestsByCategoryReportViewModel
+            {
+                FromDate = fromDate,
+                ToDate = toDate,
+                TotalTests = totalTests,
+                Categories = categories
+            };
+
+            // Return the report View
+            return View(
+                "~/Views/ManagerDashboard/TestsByCategory.cshtml",
+                report);
+        }
+
+    }
+
 }
 
 
-}
-       

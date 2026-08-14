@@ -586,11 +586,11 @@
                 <!-- ACCOUNT DETAILS SECTION -->
                 <div class="section-label">Account Details</div>
 
-                <!-- Username -->
+                <!-- Username (auto-filled from Email) -->
                 <div class="field">
                     <label for="username">Username</label>
                     <div class="input-wrap">
-                        <input type="text" id="username" name="Username" placeholder="Choose a username" autocomplete="username" />
+                        <input type="text" id="username" name="Username" placeholder="Your email will be used as username" autocomplete="username" readonly />
                     </div>
                     <div class="val-msg" id="username-msg"></div>
                 </div>
@@ -772,6 +772,72 @@
                     Create Account
                 </button>
             </form>
+
+            <script>
+                (function(){
+                    // When email changes, copy into username (readonly)
+                    var email = document.getElementById('email');
+                    var username = document.getElementById('username');
+                    var idNumber = document.getElementById('idNumber');
+                    var dob = document.getElementById('dateOfBirth');
+
+                    function syncEmailToUsername(){
+                        if(!email || !username) return;
+                        username.value = email.value || '';
+                    }
+
+                    email?.addEventListener('input', function(){
+                        syncEmailToUsername();
+                    });
+
+                    // On load sync in case browser autofills
+                    document.addEventListener('DOMContentLoaded', function(){ syncEmailToUsername(); });
+
+                    // SA ID parsing: YYMMDDxxxxxx -> populate dateOfBirth
+                    // Accepts 13-digit SA ID. Uses 2-digit year and assumes 1900/2000 century by reasonable cutoff.
+                    function parseSAIDToDOB(id){
+                        if(!id || id.length < 6) return null;
+                        var y = id.substring(0,2);
+                        var m = id.substring(2,4);
+                        var d = id.substring(4,6);
+                        if(!/^[0-9]{6}$/.test(y+m+d)) return null;
+                        var yy = parseInt(y, 10);
+                        var mm = parseInt(m, 10);
+                        var dd = parseInt(d, 10);
+                        if(mm < 1 || mm > 12) return null;
+                        if(dd < 1 || dd > 31) return null;
+                        // Choose century: if yy > currentYear%100 -> 1900s, else 2000s
+                        var today = new Date();
+                        var cutoff = today.getFullYear() % 100;
+                        var century = (yy > cutoff) ? 1900 : 2000;
+                        var fullYear = century + yy;
+                        // Build ISO date string yyyy-mm-dd
+                        var mmStr = (mm < 10 ? '0' + mm : '' + mm);
+                        var ddStr = (dd < 10 ? '0' + dd : '' + dd);
+                        return fullYear + '-' + mmStr + '-' + ddStr;
+                    }
+
+                    idNumber?.addEventListener('input', function(){
+                        var v = idNumber.value.replace(/\D/g,'');
+                        // limit to 13 numeric chars
+                        if(v.length > 13) v = v.substr(0,13);
+                        idNumber.value = v;
+                        if(v.length >= 6){
+                            var iso = parseSAIDToDOB(v);
+                            if(iso){
+                                dob.value = iso;
+                                dob.classList.add('valid');
+                            }
+                        }
+                    });
+
+                    // Before submit ensure Username is set to Email (defensive)
+                    var form = document.getElementById('registerForm');
+                    form?.addEventListener('submit', function(e){
+                        syncEmailToUsername();
+                    });
+                })();
+            </script>
 
             <p class="signin-link">Already have an account? <a asp-controller="Home" asp-action="Login">Sign in</a></p>
         </div>

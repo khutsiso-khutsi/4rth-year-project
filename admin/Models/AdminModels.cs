@@ -11,6 +11,8 @@ namespace admin.Models
         public int ConditionCategoryID { get; set; }
         public string CategoryName { get; set; }
         public string? Description { get; set; }
+        public bool IsActive { get; set; } = true;
+        public DateTime? DeletedAt { get; set; }
     }
 
     public class MedicalCondition
@@ -20,6 +22,8 @@ namespace admin.Models
         public string? Description { get; set; }
         public int ConditionCategoryID { get; set; }
         public string? CategoryName { get; set; }
+        public bool IsActive { get; set; } = true;
+        public DateTime? DeletedAt { get; set; }
     }
 
     public class AllergyCategory
@@ -27,6 +31,8 @@ namespace admin.Models
         public int AllergyCategoryID { get; set; }
         public string CategoryName { get; set; }
         public string? Description { get; set; }
+        public bool IsActive { get; set; } = true;
+        public DateTime? DeletedAt { get; set; }
     }
 
     public class Allergy
@@ -36,6 +42,8 @@ namespace admin.Models
         public string? Description { get; set; }
         public int AllergyCategoryID { get; set; }
         public string? CategoryName { get; set; }
+        public bool IsActive { get; set; } = true;
+        public DateTime? DeletedAt { get; set; }
     }
 
     public class MedicationCategory
@@ -43,6 +51,8 @@ namespace admin.Models
         public int MedicationCategoryID { get; set; }
         public string CategoryName { get; set; }
         public string? Description { get; set; }
+        public bool IsActive { get; set; } = true;
+        public DateTime? DeletedAt { get; set; }
     }
 
     public class Medication
@@ -52,6 +62,8 @@ namespace admin.Models
         public string? Description { get; set; }
         public int MedicationCategoryID { get; set; }
         public string? CategoryName { get; set; }
+        public bool IsActive { get; set; } = true;
+        public DateTime? DeletedAt { get; set; }
     }
 
     public class ActivityLog

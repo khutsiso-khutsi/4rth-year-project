@@ -20,3 +20,15 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* Inactive badge used across admin views */
+.pill-inactive {
+  display: inline-block;
+  background: #e2e8f0; /* muted grey */
+  color: #334155; /* dark muted */
+  font-weight: 600;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 100px;
+  margin-left: 8px;
+}
