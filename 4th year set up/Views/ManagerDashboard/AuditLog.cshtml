@@ -1,5 +1,6 @@
-﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
-@model LabManager.Models.TestsByCategoryReportViewModel
+﻿@using LabManager.Models
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model LabManager.Models.AuditLogViewModel
 @{
     Layout = null;
 }
@@ -10,7 +11,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Laboratory Test Report</title>
+    <title>Audit Log — NMB-HLabSys</title>
 
     <style>
 
@@ -23,14 +24,20 @@
                 --offwhite: #f4f7fb;
                 --muted: #6b7a99;
                 --border: #dde4f0;
+                --amber: #b45309;
+                --amber-light: rgba(217, 119, 6, 0.1);
+                --red: #b91c1c;
+                --red-light: rgba(220, 38, 38, 0.1);
+                --blue: #1d4ed8;
+                --blue-light: rgba(37, 99, 235, 0.1);
             }
 
             * {
                 box-sizing: border-box;
             }
 
-            html, body {
-                height: 100%;
+            html, body, .page {
+                width: 100%;
             }
 
             body {
@@ -128,7 +135,7 @@
             .user-email {
                 font-size: 0.8rem;
                 color: rgba(255,255,255,0.75);
-                max-width: 160px;
+                max-width: 200px;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
@@ -160,10 +167,6 @@
                 }
 
             /* ================= PAGE LAYOUT ================= */
-
-            html, body, .page {
-                width: 100%;
-            }
 
             .page {
                 display: flex;
@@ -237,6 +240,15 @@
                 overflow-y: auto;
             }
 
+            .eyebrow {
+                color: var(--teal);
+                font-size: 0.72rem;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                margin-bottom: 6px;
+            }
+
             h1 {
                 font-family: Georgia, 'Times New Roman', serif;
                 color: var(--navy);
@@ -250,7 +262,7 @@
                 font-size: 0.9rem;
             }
 
-            .report-container {
+            .panel {
                 width: 100%;
                 background: white;
                 border-radius: 12px;
@@ -258,7 +270,7 @@
                 box-shadow: 0 2px 8px rgba(11,31,58,0.04);
             }
 
-            /* ================= FILTER BAR ================= */
+            /* ================= FILTER FORM ================= */
 
             .filter-bar {
                 display: flex;
@@ -283,7 +295,8 @@
                     color: var(--muted);
                 }
 
-                .field input {
+                .field input,
+                .field select {
                     border: 1px solid var(--border);
                     border-radius: 8px;
                     padding: 9px 12px;
@@ -292,7 +305,8 @@
                     background: white;
                 }
 
-                    .field input:focus {
+                    .field input:focus,
+                    .field select:focus {
                         outline: none;
                         border-color: var(--teal);
                     }
@@ -342,118 +356,68 @@
                 border-bottom: none;
             }
 
-            tbody tr:hover {
-                background: var(--offwhite);
-            }
-
-            .category-name {
-                font-weight: 600;
-            }
-
-            .pill {
-                display: inline-block;
-                padding: 4px 12px;
-                border-radius: 100px;
+            .ref-id {
+                color: var(--muted);
+                font-family: 'Courier New', monospace;
                 font-size: 0.82rem;
+            }
+
+            .badge {
+                display: inline-block;
+                padding: 4px 10px;
+                border-radius: 100px;
+                font-size: 0.72rem;
                 font-weight: 700;
+                letter-spacing: 0.02em;
+            }
+
+            .badge-created {
                 background: var(--teal-light);
                 color: var(--teal);
             }
 
-            tfoot td {
-                background: var(--teal);
-                color: white;
-                font-weight: 700;
-                border-bottom: none;
+            .badge-updated {
+                background: var(--amber-light);
+                color: var(--amber);
             }
 
-            /* ================= FOOTER ================= */
+            .badge-deleted {
+                background: var(--red-light);
+                color: var(--red);
+            }
 
-            .footer {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 20px 30px;
-                border-top: 1px solid var(--border);
+            .badge-login {
+                background: var(--blue-light);
+                color: var(--blue);
+            }
+
+            .badge-logout {
+                background: var(--offwhite);
                 color: var(--muted);
-                font-size: 0.8rem;
             }
 
-            /* ================= PRINT BUTTON ================= */
-
-            .print-btn {
-                margin: 20px 30px 30px;
-                background: var(--teal);
-                color: white;
-                border: none;
-                padding: 12px 18px;
-                border-radius: 8px;
-                font-size: 0.85rem;
-                font-weight: 600;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                gap: 8px;
+            .badge-approved {
+                background: var(--teal-light);
+                color: var(--teal);
             }
 
-                .print-btn:hover {
-                    background: #0b7d73;
-                }
-
-            /* ================= RESPONSIVE ================= */
-
-            @@media (max-width: 768px) {
-
-                .topbar {
-                    padding: 0 20px;
-                }
-
-                .sidebar {
-                    display: none;
-                }
-
-                .user-email {
-                    display: none;
-                }
-
-                .main {
-                    padding: 20px;
-                }
-
-                .footer {
-                    flex-direction: column;
-                    align-items: flex-start;
-                    gap: 8px;
-                }
+            .badge-rejected {
+                background: var(--red-light);
+                color: var(--red);
             }
 
-            /* ================= PRINT ================= */
+            .empty-state {
+                padding: 60px 30px;
+                text-align: center;
+                color: var(--muted);
+                font-size: 0.9rem;
+            }
 
-            @@media print {
-
-                .topbar,
-                .sidebar,
-                .filter-bar,
-                .print-btn {
-                    display: none !important;
-                }
-
-                body {
-                    background: white;
-                }
-
-                .page {
-                    display: block;
-                }
-
-                .main {
-                    padding: 0;
-                }
-
-                .report-container {
-                    border: none;
-                    box-shadow: none;
-                }
+            .result-count {
+                padding: 16px 30px;
+                color: var(--muted);
+                font-size: 0.78rem;
+                border-top: 1px solid var(--border);
             }
 
     </style>
@@ -517,17 +481,10 @@
                asp-action="Logout"
                class="logout-btn">
 
-                <svg viewBox="0 0 24 24"
-                     fill="none"
-                     stroke="currentColor"
-                     stroke-width="2"
-                     stroke-linecap="round"
-                     stroke-linejoin="round">
-
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                     <polyline points="16 17 21 12 16 7" />
                     <line x1="21" y1="12" x2="9" y2="12" />
-
                 </svg>
 
                 Sign Out
@@ -552,77 +509,49 @@
                     Main
                 </div>
 
-                <a asp-controller="ManagerDashboard"
-                   asp-action="Index"
-                   class="nav-item">
-
+                <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="3" width="7" height="7" />
                         <rect x="14" y="3" width="7" height="7" />
                         <rect x="14" y="14" width="7" height="7" />
                         <rect x="3" y="14" width="7" height="7" />
                     </svg>
-
                     Dashboard
-
                 </a>
 
-                <a asp-controller="ManagerDashboard"
-                   asp-action="TestCatalogue"
-                   class="nav-item">
-
+                <a asp-controller="ManagerDashboard" asp-action="TestCatalogue" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="4 7 4 4 20 4 20 7" />
                         <line x1="9" y1="20" x2="15" y2="20" />
                         <line x1="12" y1="4" x2="12" y2="20" />
                     </svg>
-
                     Test Catalogue
-
                 </a>
 
-                <a asp-controller="ManagerDashboard"
-                   asp-action="Consumables"
-                   class="nav-item">
-
+                <a asp-controller="ManagerDashboard" asp-action="Consumables" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                         <polyline points="14 2 14 8 20 8" />
                     </svg>
-
                     Consumables
-
                 </a>
 
-                <a asp-controller="ManagerDashboard"
-                   asp-action="Staff"
-                   class="nav-item">
-
+                <a asp-controller="ManagerDashboard" asp-action="Staff" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                     </svg>
-
                     Staff
-
                 </a>
 
-                <a asp-controller="ManagerDashboard"
-                   asp-action="Orders"
-                   class="nav-item">
-
+                <a asp-controller="ManagerDashboard" asp-action="Orders" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                     </svg>
-
                     Orders
-
                 </a>
 
-                <a asp-controller="ManagerDashboard"
-                   asp-action="TestsByCategory"
-                   class="nav-item active">
-
+                <a asp-controller="ManagerDashboard" asp-action="TestsByCategory" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                         <polyline points="14 2 14 8 20 8" />
@@ -630,9 +559,7 @@
                         <line x1="16" y1="17" x2="8" y2="17" />
                         <polyline points="10 9 9 9 8 9" />
                     </svg>
-
                     Reports
-
                 </a>
 
             </div>
@@ -643,47 +570,38 @@
                     System
                 </div>
 
-                <a asp-controller="ManagerDashboard"
-                   asp-action="Profile"
-                   class="nav-item">
-
+                <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                     </svg>
-
                     Profile
-
                 </a>
 
-                <a asp-controller="ManagerDashboard"
-                   asp-action="AuditLog"
-                   class="nav-item">
-
+                <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item active">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                     </svg>
-
                     Audit Log
-
                 </a>
 
             </div>
 
         </aside>
 
-        <!-- ================= REPORT ================= -->
+        <!-- ================= AUDIT LOG ================= -->
 
         <main class="main">
 
-            <h1>Laboratory Test Report</h1>
-            <div class="subtitle">Breakdown of tests performed by category for the selected period.</div>
+            <div class="eyebrow">System</div>
+            <h1>Audit Log</h1>
+            <div class="subtitle">A record of every create, update, delete and sign-in across the system.</div>
 
-            <div class="report-container">
+            <div class="panel">
 
                 <!-- ================= FILTER FORM ================= -->
 
-                <form method="get" asp-controller="ManagerDashboard" asp-action="TestsByCategory" class="filter-bar">
+                <form method="get" asp-controller="ManagerDashboard" asp-action="AuditLog" class="filter-bar">
 
                     <div class="field">
                         <label for="from">From</label>
@@ -695,129 +613,69 @@
                         <input type="date" id="to" name="to" value="@Model.ToDate.ToString("yyyy-MM-dd")" />
                     </div>
 
+                    <div class="field">
+                        <label for="action">Action</label>
+                        <select id="action" name="action">
+                            <option value="">All actions</option>
+                            @foreach (var act in Enum.GetValues(typeof(AuditAction)).Cast<AuditAction>())
+                            {
+                                <option value="@act" selected="@(Model.ActionFilter == act)">@act</option>
+                            }
+                        </select>
+                    </div>
+
                     <button type="submit" class="filter-btn">Filter</button>
 
                 </form>
 
-                <table>
+                <!-- ================= TABLE ================= -->
+                @if (Model.Entries != null && Model.Entries.Any())
+                {
+                    <table>
 
-                    <thead>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Module</th>
+                                <th>Reference</th>
+                                <th>Details</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
 
-                        <tr>
-
-                            <th>
-                                Category
-                            </th>
-
-                            <th>
-                                Total Tests
-                            </th>
-
-                            <th>
-                                Percentage
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        @if (Model.Categories != null && Model.Categories.Any())
-                        {
-                            foreach (var item in Model.Categories)
+                        <tbody>
+                            @foreach (var entry in Model.Entries)
                             {
                                 <tr>
-
-                                    <td class="category-name">
-                                        @item.CategoryName
-                                    </td>
-
                                     <td>
-                                        <span class="pill">@item.TestCount</span>
+                                        <div style="font-weight:600;">@entry.UserEmail</div>
+                                        <div style="color:var(--muted); font-size:0.78rem;">@entry.UserRole</div>
                                     </td>
-
                                     <td>
-                                        @item.Percentage.ToString("0.00")%
+                                        <span class="badge badge-@entry.Action.ToString().ToLower()">@entry.Action</span>
                                     </td>
-
+                                    <td>@entry.Module</td>
+                                    <td class="ref-id">@entry.ReferenceId</td>
+                                    <td>@entry.Details</td>
+                                    <td>@entry.Timestamp.ToString("yyyy-MM-dd HH:mm")</td>
                                 </tr>
                             }
-                        }
-                        else
-                        {
-                            <tr>
+                        </tbody>
 
-                                <td colspan="3">
-                                    No test category data available.
-                                </td>
+                    </table>
 
-                            </tr>
-                        }
-
-                    </tbody>
-
-                    <tfoot>
-
-                        <tr>
-
-                            <td>
-                                Total
-                            </td>
-
-                            <td>
-                                @Model.TotalTests
-                            </td>
-
-                            <td>
-                                100.00%
-                            </td>
-
-                        </tr>
-
-                    </tfoot>
-
-                </table>
-
-                <button class="print-btn"
-                        onclick="window.print()">
-
-                    <svg width="15"
-                         height="15"
-                         viewBox="0 0 24 24"
-                         fill="none"
-                         stroke="currentColor"
-                         stroke-width="2"
-                         stroke-linecap="round">
-
-                        <polyline points="6 9 6 2 18 2 18 9" />
-
-                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-
-                        <rect x="6"
-                              y="14"
-                              width="12"
-                              height="8" />
-
-                    </svg>
-
-                    Save as PDF / Print
-
-                </button>
-
-                <!-- ================= FOOTER ================= -->
-
-                <div class="footer">
-
-                    <span>
-                        NMB-HLabSys · Haematology Laboratory System
-                    </span>
-
-                    <span>
-                        Internal management report · @DateTime.Now.ToString("yyyy")
-                    </span>
-
-                </div>
+                    <div class="result-count">
+                        Showing @Model.TotalCount entr@(Model.TotalCount == 1 ? "y" : "ies")
+                        from @Model.FromDate.ToString("dd MMM yyyy") to @Model.ToDate.ToString("dd MMM yyyy")
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        No audit activity found for the selected date range.
+                    </div>
+                }
 
             </div>
 
@@ -828,3 +686,4 @@
 </body>
 
 </html>
+
