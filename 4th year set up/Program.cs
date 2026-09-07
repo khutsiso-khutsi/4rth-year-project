@@ -1,5 +1,7 @@
 ﻿using _4th_year_set_up.Services;
 using admin.Repository;
+using LabManager.DataAccess;
+using LabManager.Repository;
 using Microsoft.Data.SqlClient;
 using Patient.Repository;
 using Rotativa.AspNetCore;
@@ -29,6 +31,13 @@ builder.Services.AddScoped<AdminRepository>(provider =>
     new AdminRepository(
         builder.Configuration.GetConnectionString("DefaultConnection")!));
 
+
+//Lab Manager
+builder.Services.AddTransient<ISqlDataAcess ,SqlDataAccess>(); 
+builder.Services.AddTransient<IConsumablesRepository, ConsumablesRepository>();
+builder.Services.AddTransient<IOrderRepository, OrderRepository>();
+builder.Services.AddTransient<ITestCategoryrepository,TestCategoryRepository>();
+builder.Services.AddTransient<IStaffRepository, StaffRepository>();
 
 
 var app = builder.Build();

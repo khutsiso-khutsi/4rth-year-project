@@ -608,32 +608,110 @@
                     background: white;
                 }
 
-            .checkbox-group {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-                margin-top: 4px;
+            /* ── TEST CATEGORY MULTI-SELECT DROPDOWN ── */
+
+            .test-category-dropdown {
+                position: relative;
+                width: 100%;
             }
 
-            .checkbox-item {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                padding: 10px 14px;
+            .test-category-toggle {
+                width: 100%;
+                min-height: 46px;
+                padding: 0 14px;
+                border: 1px solid var(--border);
                 border-radius: 10px;
                 background: var(--offwhite);
-                border: 1px solid var(--border);
-                font-size: 0.8rem;
                 color: var(--navy);
-                font-weight: 500;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.85rem;
                 cursor: pointer;
-                transition: 0.15s;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                text-align: left;
+                transition: 0.2s;
             }
 
-                .checkbox-item:has(input:checked) {
-                    background: var(--teal-light);
+                .test-category-toggle:hover,
+                .test-category-toggle.open {
                     border-color: var(--teal);
+                    background: white;
+                }
+
+            .test-category-toggle-text {
+                color: var(--muted);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+                .test-category-toggle-text.has-selection {
+                    color: var(--navy);
+                    font-weight: 500;
+                }
+
+            .test-category-arrow {
+                font-size: 0.72rem;
+                flex-shrink: 0;
+                transition: transform 0.2s;
+            }
+
+            .test-category-toggle.open .test-category-arrow {
+                transform: rotate(180deg);
+            }
+
+            .test-category-menu {
+                position: absolute;
+                top: calc(100% + 6px);
+                left: 0;
+                width: 100%;
+                max-height: 240px;
+                overflow-y: auto;
+                background: white;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 8px;
+                box-shadow: 0 12px 30px rgba(11,31,58,0.14);
+                z-index: 60;
+                display: none;
+            }
+
+                .test-category-menu.open {
+                    display: block;
+                }
+
+            .test-category-option {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 11px 12px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 0.82rem;
+                color: var(--navy);
+                font-weight: 500;
+                transition: 0.15s;
+                user-select: none;
+            }
+
+                .test-category-option:hover {
+                    background: var(--offwhite);
+                }
+
+                .test-category-option:has(input:checked) {
+                    background: var(--teal-light);
                     color: var(--teal);
+                    font-weight: 600;
+                }
+
+                .test-category-option input[type="checkbox"] {
+                    width: 17px;
+                    height: 17px;
+                    accent-color: var(--teal);
+                    cursor: pointer;
+                    flex-shrink: 0;
                 }
 
             .modal-actions {
@@ -1016,11 +1094,9 @@
                                     {
                                         <tr class="row-clickable"
                                             data-id="@d.Id"
-        
                                             data-fullname="@d.FullName"
                                             data-email="@d.Email"
                                             data-hpcsa="@d.HpcsaNumber"
-                                      
                                             data-active="@d.IsActive.ToString().ToLower()"
                                             onclick="openDoctorView(this)">
 
@@ -1111,7 +1187,6 @@
                                     {
                                         <tr class="row-clickable"
                                             data-id="@t.Id"
-                                           
                                             data-fullname="@t.FullName"
                                             data-email="@t.Email"
                                             data-employeenumber="@t.EmployeeNumber"
@@ -1385,27 +1460,55 @@
 
                         <label class="form-label">Test Categories</label>
 
-                        <div class="checkbox-group" id="techCheckboxGroup">
+                        <div class="test-category-dropdown">
 
-                            <label class="checkbox-item">
-                                <input type="checkbox" name="testTypes" value="FBC" />
-                                FBC
-                            </label>
+                            <button type="button"
+                                    class="test-category-toggle"
+                                    id="testCategoryToggle"
+                                    aria-expanded="false"
+                                    aria-controls="techCheckboxGroup">
 
-                            <label class="checkbox-item">
-                                <input type="checkbox" name="testTypes" value="Diff Count" />
-                                Diff Count
-                            </label>
+                                <span class="test-category-toggle-text"
+                                      id="testCategoryText">
+                                    Select test categories
+                                </span>
 
-                            <label class="checkbox-item">
-                                <input type="checkbox" name="testTypes" value="Coagulation" />
-                                Coagulation
-                            </label>
+                                <span class="test-category-arrow">▼</span>
 
-                            <label class="checkbox-item">
-                                <input type="checkbox" name="testTypes" value="PBF" />
-                                PBF
-                            </label>
+                            </button>
+
+                            <div class="test-category-menu"
+                                 id="techCheckboxGroup">
+
+                                <label class="test-category-option">
+                                    <input type="checkbox"
+                                           name="testTypes"
+                                           value="FBC" />
+                                    <span>FBC</span>
+                                </label>
+
+                                <label class="test-category-option">
+                                    <input type="checkbox"
+                                           name="testTypes"
+                                           value="Diff Count" />
+                                    <span>Diff Count</span>
+                                </label>
+
+                                <label class="test-category-option">
+                                    <input type="checkbox"
+                                           name="testTypes"
+                                           value="Coagulation" />
+                                    <span>Coagulation</span>
+                                </label>
+
+                                <label class="test-category-option">
+                                    <input type="checkbox"
+                                           name="testTypes"
+                                           value="PBF" />
+                                    <span>PBF</span>
+                                </label>
+
+                            </div>
 
                         </div>
 
@@ -1597,6 +1700,85 @@
                 document.getElementById('doctorId').value = '';
             });
 
+            /* ── TEST CATEGORY MULTI-SELECT DROPDOWN ── */
+
+            var testCategoryToggle = document.getElementById('testCategoryToggle');
+            var testCategoryMenu = document.getElementById('techCheckboxGroup');
+            var testCategoryText = document.getElementById('testCategoryText');
+
+            function updateTestCategoryDropdown() {
+
+                if (!testCategoryMenu || !testCategoryText) {
+                    return;
+                }
+
+                var checkboxes = testCategoryMenu.querySelectorAll('input[type="checkbox"]');
+
+                var selected = Array.from(checkboxes)
+                    .filter(function (cb) {
+                        return cb.checked;
+                    })
+                    .map(function (cb) {
+                        return cb.value;
+                    });
+
+                if (selected.length === 0) {
+
+                    testCategoryText.textContent = 'Select test categories';
+                    testCategoryText.classList.remove('has-selection');
+
+                }
+                else {
+
+                    testCategoryText.textContent = selected.join(', ');
+                    testCategoryText.classList.add('has-selection');
+
+                }
+            }
+
+            function closeTestCategoryDropdown() {
+
+                if (!testCategoryMenu || !testCategoryToggle) {
+                    return;
+                }
+
+                testCategoryMenu.classList.remove('open');
+                testCategoryToggle.classList.remove('open');
+                testCategoryToggle.setAttribute('aria-expanded', 'false');
+            }
+
+            if (testCategoryToggle && testCategoryMenu) {
+
+                testCategoryToggle.addEventListener('click', function (e) {
+
+                    e.stopPropagation();
+
+                    var isOpen = testCategoryMenu.classList.toggle('open');
+
+                    testCategoryToggle.classList.toggle('open', isOpen);
+                    testCategoryToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+                });
+
+                testCategoryMenu
+                    .querySelectorAll('input[type="checkbox"]')
+                    .forEach(function (checkbox) {
+
+                        checkbox.addEventListener('change', function () {
+                            updateTestCategoryDropdown();
+                        });
+
+                    });
+
+                testCategoryMenu.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+
+                document.addEventListener('click', function () {
+                    closeTestCategoryDropdown();
+                });
+            }
+
             /* ── TECHNICIAN: row click → view modal ── */
 
             function openTechView(row) {
@@ -1649,6 +1831,9 @@
                     cb.checked = types.indexOf(cb.value) !== -1;
                 });
 
+                updateTestCategoryDropdown();
+                closeTestCategoryDropdown();
+
                 openModal('techModal');
             }
 
@@ -1660,6 +1845,9 @@
                 document.getElementById('techForm').setAttribute('action', '/ManagerDashboard/AddTechnician');
                 document.getElementById('techForm').reset();
                 document.getElementById('techId').value = '';
+
+                updateTestCategoryDropdown();
+                closeTestCategoryDropdown();
             });
 
     </script>

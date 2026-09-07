@@ -15,7 +15,9 @@ namespace LabManager.Models
 
         public string Category { get; set; }
 
-        public string SampleType { get; set; }
+        public int CategoryId {  get; set; }
+
+        public string SampleTypeId { get; set; }
 
         public string UnitMeasurement { get; set; }
 
@@ -29,6 +31,8 @@ namespace LabManager.Models
         public string NormalRange { get; set; }
         public string Units { get; set; }
         public int TAT { get; set; }
+
+
         public int TestId { get; set; }
     }
 

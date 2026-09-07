@@ -38,7 +38,7 @@ namespace LabManager.Repository
         {
             try
             {
-                await _dataAcess.SaveData ("", new { test.TestName, test.Category, test.TurnaroundTime, test.ConsumablesUsed, test.UnitMeasurement, test.NormalRangeMax, test.NormalRangeMin, test.SampleType, });
+                await _dataAcess.SaveData ("", new { test.TestName, test.CategoryId, test.SampleTypeId, test.TurnaroundTime, test.ConsumablesUsed, test.UnitMeasurement, test.NormalRangeMax, test.NormalRangeMin,  });
                 return true;
             }
             catch (Exception ex) {
