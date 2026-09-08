@@ -63,9 +63,9 @@ namespace _4th_year_set_up.Controllers
             return RedirectToAction(nameof(ReceiveSamples));
         }
 
-        public IActionResult Dashboard()
-        {
+        //public IActionResult Dashboard()
+        //{
 
-        }
+        //}
     }
 }
