@@ -1,12 +1,8 @@
 ﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
-@model LabManager.Models.UserProfileViewModel;
-
+@model LabManager.Models.UserProfileViewModel
 @{
+    ViewData["Title"] = "My Profile";
     Layout = null;
-    ViewData["Title"] = "Profile";
-
-    var email = ViewBag.Email?.ToString();
-    var initial = !string.IsNullOrEmpty(email) ? email.Substring(0, 1).ToUpper() : "P";
 }
 
 <!DOCTYPE html>
@@ -14,10 +10,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Profile — NMB-HLabSys</title>
-
+    <title>My Profile — NMB-HLabSys</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-
     <style>
             *, *::before, *::after {
                 box-sizing: border-box;
@@ -30,20 +24,23 @@
                 --navy2: #122848;
                 --teal: #0d9488;
                 --teal-light: rgba(13,148,136,0.1);
-                --offwhite: #f4f7fb;
                 --white: #ffffff;
+                --offwhite: #f4f7fb;
                 --muted: #6b7a99;
                 --border: #dde4f0;
                 --red: #dc2626;
+                --green: #16a34a;
+                --amber: #d97706;
             }
 
             body {
                 font-family: 'DM Sans', sans-serif;
                 background: var(--offwhite);
                 color: var(--navy);
+                min-height: 100vh;
             }
 
-            /* ================= TOPBAR (MATCH DASHBOARD) ================= */
+            /* TOPBAR */
             .topbar {
                 background: var(--navy);
                 padding: 0 40px;
@@ -74,54 +71,99 @@
                 justify-content: center;
             }
 
+                .brand-logo svg {
+                    width: 18px;
+                    height: 18px;
+                    fill: white;
+                }
+
             .brand-name {
                 font-family: 'DM Serif Display', serif;
                 color: white;
                 font-size: 1.1rem;
+                line-height: 1.1;
             }
+
+                .brand-name span {
+                    display: block;
+                    font-family: 'DM Sans', sans-serif;
+                    font-size: 0.6rem;
+                    font-weight: 300;
+                    color: rgba(255,255,255,0.4);
+                    letter-spacing: 0.1em;
+                    text-transform: uppercase;
+                }
 
             .topbar-right {
                 display: flex;
                 align-items: center;
-                gap: 14px;
+                gap: 16px;
             }
 
             .user-chip {
                 display: flex;
                 align-items: center;
                 gap: 10px;
-                background: rgba(255,255,255,0.08);
+                background: rgba(255,255,255,0.07);
+                border: 1px solid rgba(255,255,255,0.1);
                 border-radius: 100px;
-                padding: 6px 12px;
-                color: white;
+                padding: 6px 14px 6px 8px;
             }
 
             .user-avatar {
                 width: 28px;
                 height: 28px;
-                border-radius: 50%;
                 background: var(--teal);
+                border-radius: 50%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                font-size: 0.75rem;
                 font-weight: 600;
+                color: white;
+            }
+
+            .user-email {
+                font-size: 0.8rem;
+                color: rgba(255,255,255,0.75);
+                max-width: 160px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
 
             .logout-btn {
-                color: white;
-                padding: 8px 14px;
-                border: 1px solid rgba(255,255,255,0.2);
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.12);
+                color: rgba(255,255,255,0.8);
+                padding: 8px 16px;
                 border-radius: 8px;
                 text-decoration: none;
+                font-size: 0.82rem;
+                font-weight: 500;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                gap: 6px;
             }
 
-            /* ================= LAYOUT ================= */
+                .logout-btn:hover {
+                    background: rgba(255,255,255,0.15);
+                    color: white;
+                }
+
+                .logout-btn svg {
+                    width: 14px;
+                    height: 14px;
+                }
+
+            /* LAYOUT */
             .page {
                 display: flex;
                 min-height: calc(100vh - 64px);
             }
 
-            /* ================= SIDEBAR (MATCH DASHBOARD EXACTLY) ================= */
+            /* SIDEBAR */
             .sidebar {
                 width: 220px;
                 background: white;
@@ -132,6 +174,10 @@
                 top: 64px;
                 height: calc(100vh - 64px);
                 overflow-y: auto;
+            }
+
+            .nav-section {
+                margin-bottom: 8px;
             }
 
             .nav-label {
@@ -171,257 +217,769 @@
                 .nav-item svg {
                     width: 16px;
                     height: 16px;
+                    flex-shrink: 0;
                 }
 
-            /* ================= MAIN (UNCHANGED CONTENT) ================= */
+            /* MAIN */
             .main {
                 flex: 1;
-                padding: 30px;
+                padding: clamp(24px, 3vw, 40px);
+                overflow-y: auto;
             }
 
-            .page-header h1 {
+            /* HERO */
+            .hero {
+                background: var(--navy);
+                border-radius: 20px;
+                padding: 32px 36px;
+                margin-bottom: 32px;
+                position: relative;
+                overflow: hidden;
+            }
+
+                .hero::before {
+                    content: '';
+                    position: absolute;
+                    inset: 0;
+                    background: radial-gradient(ellipse 60% 80% at 90% 50%, rgba(13,148,136,0.2) 0%, transparent 60%);
+                }
+
+                .hero::after {
+                    content: '';
+                    position: absolute;
+                    inset: 0;
+                    background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+                    background-size: 40px 40px;
+                }
+
+            .hero-content {
+                position: relative;
+                z-index: 2;
+            }
+
+            .hero-tag {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                background: rgba(13,148,136,0.15);
+                border: 1px solid rgba(13,148,136,0.3);
+                color: #5eead4;
+                font-size: 0.68rem;
+                font-weight: 600;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                padding: 4px 10px;
+                border-radius: 100px;
+                margin-bottom: 14px;
+            }
+
+                .hero-tag::before {
+                    content: '';
+                    width: 5px;
+                    height: 5px;
+                    background: #5eead4;
+                    border-radius: 50%;
+                }
+
+            .hero h1 {
                 font-family: 'DM Serif Display', serif;
-                font-size: 1.8rem;
+                font-size: clamp(1.5rem, 2.5vw, 2.2rem);
+                color: white;
+                margin-bottom: 8px;
+                line-height: 1.2;
             }
 
+                .hero h1 span {
+                    color: #5eead4;
+                    font-style: italic;
+                }
+
+            .hero p {
+                color: rgba(255,255,255,0.5);
+                font-size: 0.88rem;
+                font-weight: 300;
+            }
+
+            /* ALERTS */
+            .alert {
+                padding: 12px 16px;
+                border-radius: 10px;
+                margin-bottom: 24px;
+                font-size: 0.875rem;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                border: 1px solid;
+                animation: slideDown 0.3s ease;
+            }
+
+            @@keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-8px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .alert svg {
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+            }
+
+            .alert-success {
+                background: #f0fdf4;
+                color: var(--green);
+                border-color: #bbf7d0;
+            }
+
+            .alert-error {
+                background: #fef2f2;
+                color: var(--red);
+                border-color: #fecaca;
+            }
+
+            /* GRID */
             .grid {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 20px;
-                margin-top: 20px;
+                gap: 24px;
+                align-items: start;
             }
 
+            @@media (max-width: 900px) {
+                .grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            /* CARDS */
             .card {
                 background: white;
                 border: 1px solid var(--border);
-                border-radius: 14px;
-                padding: 22px;
+                border-radius: 16px;
+                padding: 24px;
+                margin-bottom: 20px;
+                box-shadow: 0 2px 8px rgba(11,31,58,0.04);
             }
 
-            .section-title {
-                font-weight: 700;
-                margin-bottom: 16px;
+                .card:last-child {
+                    margin-bottom: 0;
+                }
+
+            .card-title {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 20px;
             }
 
+            .card-title-icon {
+                width: 32px;
+                height: 32px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+                .card-title-icon svg {
+                    width: 15px;
+                    height: 15px;
+                }
+
+            .card-title h3 {
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.05rem;
+                color: var(--navy);
+                font-weight: 400;
+            }
+
+            .readonly-badge {
+                font-size: 0.62rem;
+                background: var(--offwhite);
+                color: var(--muted);
+                padding: 2px 8px;
+                border-radius: 100px;
+                border: 1px solid var(--border);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                font-weight: 600;
+                margin-left: auto;
+            }
+
+            /* AVATAR CARD */
+            .avatar-card {
+                display: flex;
+                align-items: center;
+                gap: 18px;
+            }
+
+            .avatar {
+                width: 64px;
+                height: 64px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, var(--teal), #0891b2);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.5rem;
+                color: white;
+                flex-shrink: 0;
+                box-shadow: 0 4px 12px rgba(13,148,136,0.3);
+            }
+
+            .avatar-info {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .profile-name {
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.2rem;
+                color: var(--navy);
+                line-height: 1.2;
+            }
+
+            .profile-meta {
+                font-size: 0.78rem;
+                color: var(--muted);
+                margin-top: 3px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .profile-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                background: var(--teal-light);
+                color: var(--teal);
+                font-size: 0.7rem;
+                font-weight: 600;
+                padding: 3px 10px;
+                border-radius: 100px;
+                margin-top: 8px;
+                border: 1px solid rgba(13,148,136,0.2);
+            }
+
+                .profile-badge::before {
+                    content: '';
+                    width: 5px;
+                    height: 5px;
+                    background: var(--teal);
+                    border-radius: 50%;
+                }
+
+            /* FORM */
             .form-group {
                 display: flex;
                 flex-direction: column;
                 gap: 6px;
-                margin-bottom: 14px;
+                margin-bottom: 16px;
             }
 
+                .form-group:last-of-type {
+                    margin-bottom: 0;
+                }
+
                 .form-group label {
-                    font-size: 12px;
+                    font-size: 0.72rem;
                     color: var(--muted);
+                    text-transform: uppercase;
+                    letter-spacing: 0.06em;
+                    font-weight: 600;
                 }
 
                 .form-group input {
-                    padding: 10px;
-                    border: 1px solid var(--border);
-                    border-radius: 8px;
                     background: var(--offwhite);
+                    border: 1px solid var(--border);
+                    color: var(--navy);
+                    padding: 10px 14px;
+                    border-radius: 10px;
+                    font-size: 0.875rem;
+                    font-family: inherit;
+                    outline: none;
+                    transition: border-color 0.2s, box-shadow 0.2s;
+                    width: 100%;
                 }
 
-            .readonly {
-                background: #eee;
-                color: var(--muted);
+                    .form-group input:focus {
+                        border-color: var(--teal);
+                        box-shadow: 0 0 0 3px var(--teal-light);
+                        background: white;
+                    }
+
+                    .form-group input.error {
+                        border-color: var(--red);
+                        box-shadow: 0 0 0 3px rgba(220,38,38,0.08);
+                    }
+
+                    .form-group input[readonly] {
+                        background: #eef1f7;
+                        color: var(--muted);
+                        cursor: not-allowed;
+                    }
+
+            .field-error {
+                font-size: 0.72rem;
+                color: var(--red);
+                font-weight: 500;
+                display: none;
+                margin-top: 2px;
             }
 
-            .btn {
-                padding: 10px 16px;
-                border-radius: 8px;
-                border: none;
-                cursor: pointer;
-            }
+                .field-error.visible {
+                    display: block;
+                }
 
-            .btn-teal {
-                background: var(--teal);
-                color: white;
-            }
-
-            .btn-red {
-                background: var(--red);
-                color: white;
+            .form-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
             }
 
             .divider {
-                margin: 14px 0;
+                border: none;
                 border-top: 1px solid var(--border);
+                margin: 20px 0;
+            }
+
+            /* PASSWORD INPUT WRAPPER */
+            .password-wrap {
+                position: relative;
+            }
+
+                .password-wrap input {
+                    padding-right: 44px;
+                }
+
+            .toggle-pw {
+                position: absolute;
+                right: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: none;
+                border: none;
+                cursor: pointer;
+                color: var(--muted);
+                padding: 4px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: color 0.2s;
+            }
+
+                .toggle-pw:hover {
+                    color: var(--navy);
+                }
+
+                .toggle-pw svg {
+                    width: 16px;
+                    height: 16px;
+                    pointer-events: none;
+                }
+
+            /* PASSWORD STRENGTH */
+            .strength-bar {
+                display: flex;
+                gap: 4px;
+                margin-top: 6px;
+            }
+
+            .strength-segment {
+                height: 3px;
+                flex: 1;
+                border-radius: 2px;
+                background: var(--border);
+                transition: background 0.3s;
+            }
+
+            .strength-label {
+                font-size: 0.7rem;
+                font-weight: 600;
+                margin-top: 4px;
+                height: 14px;
+            }
+
+            .strength-weak .strength-segment:nth-child(1) {
+                background: var(--red);
+            }
+
+            .strength-fair .strength-segment:nth-child(1),
+            .strength-fair .strength-segment:nth-child(2) {
+                background: var(--amber);
+            }
+
+            .strength-good .strength-segment:nth-child(1),
+            .strength-good .strength-segment:nth-child(2),
+            .strength-good .strength-segment:nth-child(3) {
+                background: var(--teal);
+            }
+
+            .strength-strong .strength-segment {
+                background: var(--green);
+            }
+
+            .strength-weak .strength-label {
+                color: var(--red);
+            }
+
+            .strength-fair .strength-label {
+                color: var(--amber);
+            }
+
+            .strength-good .strength-label {
+                color: var(--teal);
+            }
+
+            .strength-strong .strength-label {
+                color: var(--green);
+            }
+
+            /* BUTTONS */
+            .btn {
+                padding: 10px 24px;
+                border: none;
+                border-radius: 10px;
+                font-size: 0.875rem;
+                cursor: pointer;
+                font-family: inherit;
+                font-weight: 600;
+                transition: all 0.2s;
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+            }
+
+                .btn svg {
+                    width: 14px;
+                    height: 14px;
+                }
+
+            .btn-primary {
+                background: var(--teal);
+                color: white;
+                box-shadow: 0 2px 8px rgba(13,148,136,0.25);
+            }
+
+                .btn-primary:hover {
+                    background: #0f766e;
+                    box-shadow: 0 4px 14px rgba(13,148,136,0.35);
+                }
+
+                .btn-primary:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                }
+
+            .btn-danger {
+                background: white;
+                color: var(--red);
+                border: 1px solid #fecaca;
+                box-shadow: 0 2px 8px rgba(220,38,38,0.08);
+            }
+
+                .btn-danger:hover {
+                    background: var(--red);
+                    color: white;
+                    border-color: var(--red);
+                }
+
+                .btn-danger:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                }
+
+            .btn-row {
+                margin-top: 20px;
+            }
+
+            /* RESPONSIVE */
+            @@media (max-width: 768px) {
+                .topbar {
+                    padding: 0 20px;
+                }
+
+                .user-email {
+                    display: none;
+                }
+
+                .sidebar {
+                    display: none;
+                }
+
+                .main {
+                    padding: 20px 16px;
+                }
+
+                .hero {
+                    padding: 24px 20px;
+                }
+
+                .form-row {
+                    grid-template-columns: 1fr;
+                }
             }
     </style>
 </head>
-
 <body>
 
     <!-- TOPBAR -->
     <div class="topbar">
         <a class="brand" asp-controller="Home" asp-action="Index">
-            <div class="brand-logo"></div>
-            <div class="brand-name">NMB-HLabSys</div>
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
+            </div>
+            <div class="brand-name">
+                NMB-HLabSys
+                <span>Haematology Lab System</span>
+            </div>
         </a>
-
         <div class="topbar-right">
             <div class="user-chip">
-                <div class="user-avatar">@initial</div>
-                <span>@email</span>
+                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "M")</div>
+                <span class="user-email">@ViewBag.Email</span>
             </div>
-
-            <a asp-controller="Home" asp-action="Logout" class="logout-btn">Logout</a>
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Sign Out
+            </a>
         </div>
     </div>
 
     <div class="page">
 
+        <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="nav-section">
                 <div class="nav-label">Main</div>
-                <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item active">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <rect x="3" y="3" width="7" height="7" />
-                        <rect x="14" y="3" width="7" height="7" />
-                        <rect x="3" y="14" width="7" height="7" />
-                        <rect x="14" y="14" width="7" height="7" />
-                    </svg>
+                <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
                     Dashboard
                 </a>
                 <a asp-controller="ManagerDashboard" asp-action="TestCatalogue" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M9 3v11a3 3 0 006 0V3" />
-                        <line x1="6" y1="3" x2="18" y2="3" />
-                    </svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3v11a3 3 0 006 0V3" /><line x1="6" y1="3" x2="18" y2="3" /></svg>
                     Test Catalogue
                 </a>
                 <a asp-controller="ManagerDashboard" asp-action="Consumables" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                    </svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
                     Consumables
                 </a>
                 <a asp-controller="ManagerDashboard" asp-action="Staff" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                    </svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                     Staff
                 </a>
                 <a asp-controller="ManagerDashboard" asp-action="Orders" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                    </svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
                     Orders
                 </a>
                 <a asp-controller="ManagerDashboard" asp-action="Report" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                        <line x1="16" y1="13" x2="8" y2="13" />
-                        <line x1="16" y1="17" x2="8" y2="17" />
-                    </svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
                     Reports
                 </a>
             </div>
             <div class="nav-section">
                 <div class="nav-label">System</div>
-                <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                    </svg>
+                <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                     Profile
                 </a>
                 <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    </svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                     Audit Log
                 </a>
             </div>
         </aside>
 
-        <!-- MAIN CONTENT (UNCHANGED) -->
+        <!-- MAIN CONTENT -->
         <main class="main">
 
-            <div class="page-header">
-                <h1>My Profile</h1>
-                <p>Manage personal details and security settings</p>
+            <!-- HERO -->
+            <div class="hero">
+                <div class="hero-content">
+                    <div class="hero-tag">My Profile</div>
+                    <h1>Account <span>Settings</span></h1>
+                    <p>Manage your personal details and account security.</p>
+                </div>
             </div>
+
+            <!-- ALERTS -->
+            @if (ViewBag.Success != null)
+            {
+                <div class="alert alert-success">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    @ViewBag.Success
+                </div>
+            }
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert alert-error">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+                    @ViewBag.Error
+                </div>
+            }
 
             <div class="grid">
 
-                <div class="card">
-                    <div class="section-title">Account Information (Read Only)</div>
+                <!-- ══ LEFT COLUMN ══ -->
+                <div>
 
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input class="readonly" value="@Model.Email" readonly />
+                    <!-- AVATAR SUMMARY -->
+                    <div class="card">
+                        <div class="avatar-card">
+                            <div class="avatar">@Model.FirstName[0]@Model.LastName[0]</div>
+                            <div class="avatar-info">
+                                <div class="profile-name">@Model.FirstName @Model.LastName</div>
+                                <div class="profile-meta">@Model.Email</div>
+                                <div class="profile-meta">Member since @Model.RegistrationDate.ToString("dd MMM yyyy")</div>
+                                <div class="profile-badge">Manager</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>ID Number</label>
-                        <input class="readonly" value="@Model.IDNumber" readonly />
+                    <!-- ACCOUNT INFORMATION (Read Only) -->
+                    <div class="card">
+                        <div class="card-title">
+                            <div class="card-title-icon" style="background:#dbeafe">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                            </div>
+                            <h3>Account Information</h3>
+                            <span class="readonly-badge">Read Only</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="text" value="@Model.Email" readonly />
+                        </div>
+                        <div class="form-group">
+                            <label>SA ID Number</label>
+                            <input type="text" value="@Model.IDNumber" readonly />
+                        </div>
+                        <div class="form-group">
+                            <label>Registration Date</label>
+                            <input type="text" value="@Model.RegistrationDate.ToString("dd MMM yyyy")" readonly />
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Registration Date</label>
-                        <input class="readonly" value="@Model.RegistrationDate.ToString("dd MMM yyyy")" readonly />
+                </div>
+
+                <!-- ══ RIGHT COLUMN ══ -->
+                <div>
+
+                    <!-- UPDATE PROFILE -->
+                    <div class="card">
+                        <div class="card-title">
+                            <div class="card-title-icon" style="background:rgba(13,148,136,0.1)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                            </div>
+                            <h3>Update Profile</h3>
+                        </div>
+                        <form id="profileForm" asp-controller="ManagerDashboard" asp-action="UpdateProfile" method="post" novalidate>
+                            @Html.AntiForgeryToken()
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="FirstName">First Name</label>
+                                    <input type="text" id="FirstName" name="FirstName" value="@Model.FirstName" autocomplete="given-name" />
+                                    <span class="field-error" id="err-firstname">Please enter a valid first name.</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="LastName">Last Name</label>
+                                    <input type="text" id="LastName" name="LastName" value="@Model.LastName" autocomplete="family-name" />
+                                    <span class="field-error" id="err-lastname">Please enter a valid last name.</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="CellphoneNumber">Cellphone Number</label>
+                                <input type="tel" id="CellphoneNumber" name="CellphoneNumber" value="@Model.CellphoneNumber" placeholder="0812345678" autocomplete="tel" maxlength="10" />
+                                <span class="field-error" id="err-phone">Please enter a valid 10-digit SA cellphone number.</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="HomeAddress">Home Address</label>
+                                <input type="text" id="HomeAddress" name="HomeAddress" value="@Model.HomeAddress" placeholder="123 Main Street, City" autocomplete="street-address" />
+                                <span class="field-error" id="err-address">Please enter a valid home address (min. 5 characters).</span>
+                            </div>
+                            <div class="btn-row">
+                                <button type="submit" id="saveBtn" class="btn btn-primary">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
                     </div>
+
+                    <!-- CHANGE PASSWORD -->
+                    <div class="card">
+                        <div class="card-title">
+                            <div class="card-title-icon" style="background:#fef3c7">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>
+                            </div>
+                            <h3>Change Password</h3>
+                        </div>
+                        <form id="passwordForm" asp-controller="ManagerDashboard" asp-action="ChangePassword" method="post" novalidate>
+                            @Html.AntiForgeryToken()
+                            <div class="form-group">
+                                <label for="CurrentPassword">Current Password</label>
+                                <div class="password-wrap">
+                                    <input type="password" id="CurrentPassword" name="CurrentPassword" autocomplete="current-password" />
+                                    <button type="button" class="toggle-pw" data-target="CurrentPassword" aria-label="Toggle password visibility">
+                                        <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                                        <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                                    </button>
+                                </div>
+                                <span class="field-error" id="err-current">Please enter your current password.</span>
+                            </div>
+                            <hr class="divider" />
+                            <div class="form-group">
+                                <label for="NewPassword">New Password</label>
+                                <div class="password-wrap">
+                                    <input type="password" id="NewPassword" name="NewPassword" autocomplete="new-password" />
+                                    <button type="button" class="toggle-pw" data-target="NewPassword" aria-label="Toggle password visibility">
+                                        <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                                        <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                                    </button>
+                                </div>
+                                <div class="strength-bar" id="strengthBar">
+                                    <div class="strength-segment"></div>
+                                    <div class="strength-segment"></div>
+                                    <div class="strength-segment"></div>
+                                    <div class="strength-segment"></div>
+                                </div>
+                                <div class="strength-label" id="strengthLabel"></div>
+                                <span class="field-error" id="err-newpass">Password must be at least 8 characters with 1 uppercase letter and 1 number.</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="ConfirmPassword">Confirm New Password</label>
+                                <div class="password-wrap">
+                                    <input type="password" id="ConfirmPassword" name="ConfirmPassword" autocomplete="new-password" />
+                                    <button type="button" class="toggle-pw" data-target="ConfirmPassword" aria-label="Toggle password visibility">
+                                        <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                                        <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                                    </button>
+                                </div>
+                                <span class="field-error" id="err-confirm">Passwords do not match.</span>
+                            </div>
+                            <div class="btn-row">
+                                <button type="submit" id="changePassBtn" class="btn btn-danger">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                    Change Password
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
                 </div>
-
-                <div class="card">
-                    <div class="section-title">Update Profile</div>
-
-                    <form asp-action="UpdateProfile" method="post">
-                        <div class="form-group">
-                            <label>First Name</label>
-                            <input name="FirstName" value="@Model.FirstName" />
-                        </div>
-
-                        <div class="form-group">
-                            <label>Last Name</label>
-                            <input name="LastName" value="@Model.LastName" />
-                        </div>
-
-                        <div class="form-group">
-                            <label>Phone</label>
-                            <input name="CellphoneNumber" value="@Model.CellphoneNumber" />
-                        </div>
-
-                        <div class="form-group">
-                            <label>Address</label>
-                            <input name="HomeAddress" value="@Model.HomeAddress" />
-                        </div>
-
-                        <button class="btn btn-teal">Save Changes</button>
-                    </form>
-                </div>
-
-                <div class="card">
-                    <div class="section-title">Change Password</div>
-
-                    <form asp-action="ChangePassword" method="post">
-
-                        <div class="form-group">
-                            <label>Current Password</label>
-                            <input type="password" name="CurrentPassword" />
-                        </div>
-
-                        <hr class="divider" />
-
-                        <div class="form-group">
-                            <label>New Password</label>
-                            <input type="password" name="NewPassword" />
-                        </div>
-
-                        <div class="form-group">
-                            <label>Confirm Password</label>
-                            <input type="password" name="ConfirmPassword" />
-                        </div>
-
-                        <button class="btn btn-red">Change Password</button>
-                    </form>
-                </div>
-
             </div>
 
         </main>
@@ -429,3 +987,104 @@
 
 </body>
 </html>
+
+<script>
+    /* ── Show/Hide password toggle ── */
+    document.querySelectorAll('.toggle-pw').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const input = document.getElementById(btn.dataset.target);
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            btn.querySelector('.icon-eye').style.display     = isHidden ? 'none'  : '';
+            btn.querySelector('.icon-eye-off').style.display = isHidden ? ''      : 'none';
+        });
+    });
+
+    /* ── Helpers ── */
+    function showError(inputEl, errorEl) { inputEl.classList.add('error'); errorEl.classList.add('visible'); }
+    function clearError(inputEl, errorEl) { inputEl.classList.remove('error'); errorEl.classList.remove('visible'); }
+
+    /* ── Phone: digits only ── */
+    const phoneInput = document.getElementById('CellphoneNumber');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', () => {
+            phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 10);
+            phoneInput.classList.remove('error');
+        });
+    }
+    document.getElementById('HomeAddress')?.addEventListener('input', function () { this.classList.remove('error'); });
+    document.getElementById('FirstName')?.addEventListener('input', function () { this.classList.remove('error'); });
+    document.getElementById('LastName')?.addEventListener('input', function () { this.classList.remove('error'); });
+
+    /* ── Profile form ── */
+    document.getElementById('profileForm').addEventListener('submit', function (e) {
+        let valid = true;
+        const first = document.getElementById('FirstName');
+        const last  = document.getElementById('LastName');
+        const ph = document.getElementById('CellphoneNumber');
+        const ad = document.getElementById('HomeAddress');
+
+        clearError(first, document.getElementById('err-firstname'));
+        clearError(last,  document.getElementById('err-lastname'));
+        clearError(ph, document.getElementById('err-phone'));
+        clearError(ad, document.getElementById('err-address'));
+
+        if (first.value.trim().length < 1) { showError(first, document.getElementById('err-firstname')); valid = false; }
+        if (last.value.trim().length < 1)  { showError(last,  document.getElementById('err-lastname'));  valid = false; }
+        if (!/^0[6-8]\d{8}$/.test(ph.value.trim()))  { showError(ph, document.getElementById('err-phone'));    valid = false; }
+        if (ad.value.trim().length < 5)               { showError(ad, document.getElementById('err-address')); valid = false; }
+
+        if (!valid) { e.preventDefault(); this.querySelector('.error')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    });
+
+    /* ── Password strength ── */
+    const newPassInput  = document.getElementById('NewPassword');
+    const strengthBar   = document.getElementById('strengthBar');
+    const strengthLabel = document.getElementById('strengthLabel');
+
+    function getStrength(pw) {
+        let score = 0;
+        if (pw.length >= 8)  score++;
+        if (pw.length >= 12) score++;
+        if (/[A-Z]/.test(pw) && /[0-9]/.test(pw)) score++;
+        if (/[^A-Za-z0-9]/.test(pw)) score++;
+        return score;
+    }
+
+    newPassInput.addEventListener('input', () => {
+        const pw = newPassInput.value;
+        strengthBar.className = 'strength-bar';
+        strengthLabel.textContent = '';
+        if (!pw) return;
+        const score = getStrength(pw);
+        const levels = ['', 'strength-weak', 'strength-fair', 'strength-good', 'strength-strong'];
+        const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+        strengthBar.classList.add(levels[score]);
+        strengthLabel.textContent = labels[score];
+        newPassInput.classList.remove('error');
+    });
+
+    /* ── Password form ── */
+    document.getElementById('passwordForm').addEventListener('submit', function (e) {
+        let valid = true;
+        const cur  = document.getElementById('CurrentPassword');
+        const np   = document.getElementById('NewPassword');
+        const conf = document.getElementById('ConfirmPassword');
+        const errNp = document.getElementById('err-newpass');
+
+        clearError(cur,  document.getElementById('err-current'));
+        clearError(np,   errNp);
+        clearError(conf, document.getElementById('err-confirm'));
+
+        if (!cur.value) { showError(cur, document.getElementById('err-current')); valid = false; }
+
+        const pwOk = np.value.length >= 8 && /[A-Z]/.test(np.value) && /[0-9]/.test(np.value);
+        if (!pwOk) { errNp.textContent = 'Password must be at least 8 characters with 1 uppercase letter and 1 number.'; showError(np, errNp); valid = false; }
+
+        if (np.value !== conf.value || !conf.value) { showError(conf, document.getElementById('err-confirm')); valid = false; }
+
+        if (valid && np.value === cur.value) { errNp.textContent = 'New password cannot be the same as your current password.'; showError(np, errNp); valid = false; }
+
+        if (!valid) { e.preventDefault(); this.querySelector('.error')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    });
+</script>

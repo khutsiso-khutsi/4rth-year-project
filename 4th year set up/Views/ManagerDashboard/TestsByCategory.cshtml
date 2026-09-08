@@ -1,0 +1,830 @@
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model LabManager.Models.TestsByCategoryReportViewModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Laboratory Test Report</title>
+
+    <style>
+
+            :root {
+                --navy: #0b1f3a;
+                --navy2: #122848;
+                --teal: #0d9488;
+                --teal-light: rgba(13, 148, 136, 0.1);
+                --white: #ffffff;
+                --offwhite: #f4f7fb;
+                --muted: #6b7a99;
+                --border: #dde4f0;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html, body {
+                height: 100%;
+            }
+
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                background: var(--offwhite);
+                color: var(--navy);
+            }
+
+            /* ================= TOP NAVBAR ================= */
+
+            .topbar {
+                background: var(--navy);
+                padding: 0 40px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                height: 64px;
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+            }
+
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                text-decoration: none;
+            }
+
+            .brand-logo {
+                width: 34px;
+                height: 34px;
+                background: var(--teal);
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+                .brand-logo svg {
+                    width: 18px;
+                    height: 18px;
+                    fill: white;
+                }
+
+            .brand-name {
+                color: white;
+                font-family: Georgia, 'Times New Roman', serif;
+                font-size: 1.15rem;
+                font-weight: bold;
+                line-height: 1.1;
+            }
+
+                .brand-name span {
+                    display: block;
+                    font-size: 0.6rem;
+                    font-weight: normal;
+                    color: rgba(255,255,255,0.5);
+                    letter-spacing: 0.1em;
+                    text-transform: uppercase;
+                }
+
+            .topbar-right {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
+
+            .user-chip {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                background: rgba(255,255,255,0.07);
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 100px;
+                padding: 6px 14px 6px 8px;
+            }
+
+            .user-avatar {
+                width: 28px;
+                height: 28px;
+                background: var(--teal);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: white;
+            }
+
+            .user-email {
+                font-size: 0.8rem;
+                color: rgba(255,255,255,0.75);
+                max-width: 160px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .logout-btn {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.12);
+                color: rgba(255,255,255,0.8);
+                padding: 8px 16px;
+                border-radius: 8px;
+                text-decoration: none;
+                font-size: 0.82rem;
+                font-weight: 500;
+            }
+
+                .logout-btn svg {
+                    width: 15px;
+                    height: 15px;
+                    flex-shrink: 0;
+                }
+
+                .logout-btn:hover {
+                    background: rgba(255,255,255,0.15);
+                    color: white;
+                }
+
+            /* ================= PAGE LAYOUT ================= */
+
+            html, body, .page {
+                width: 100%;
+            }
+
+            .page {
+                display: flex;
+                min-height: calc(100vh - 64px);
+            }
+
+            /* ================= SIDEBAR ================= */
+
+            .sidebar {
+                width: 220px;
+                background: white;
+                border-right: 1px solid var(--border);
+                padding: 24px 0;
+                flex-shrink: 0;
+                position: sticky;
+                top: 64px;
+                height: calc(100vh - 64px);
+                overflow-y: auto;
+            }
+
+            .nav-section {
+                margin-bottom: 8px;
+            }
+
+            .nav-label {
+                font-size: 0.65rem;
+                font-weight: 600;
+                color: var(--muted);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                padding: 0 20px;
+                margin-bottom: 4px;
+            }
+
+            .nav-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 20px;
+                color: var(--muted);
+                text-decoration: none;
+                font-size: 0.85rem;
+                font-weight: 500;
+                transition: all 0.15s;
+                border-left: 3px solid transparent;
+            }
+
+                .nav-item:hover {
+                    background: var(--offwhite);
+                    color: var(--navy);
+                }
+
+                .nav-item.active {
+                    background: var(--teal-light);
+                    color: var(--teal);
+                    border-left-color: var(--teal);
+                }
+
+                .nav-item svg {
+                    width: 16px;
+                    height: 16px;
+                    flex-shrink: 0;
+                }
+
+            /* ================= MAIN CONTENT ================= */
+
+            .main {
+                flex: 1;
+                min-width: 0;
+                padding: 40px;
+                overflow-y: auto;
+            }
+
+            h1 {
+                font-family: Georgia, 'Times New Roman', serif;
+                color: var(--navy);
+                margin: 0 0 6px;
+                font-size: 1.8rem;
+            }
+
+            .subtitle {
+                color: var(--muted);
+                margin-bottom: 24px;
+                font-size: 0.9rem;
+            }
+
+            .report-container {
+                width: 100%;
+                background: white;
+                border-radius: 12px;
+                border: 1px solid var(--border);
+                box-shadow: 0 2px 8px rgba(11,31,58,0.04);
+            }
+
+            /* ================= FILTER BAR ================= */
+
+            .filter-bar {
+                display: flex;
+                align-items: flex-end;
+                gap: 20px;
+                flex-wrap: wrap;
+                padding: 24px 30px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .field {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+                .field label {
+                    font-size: 0.68rem;
+                    font-weight: 700;
+                    letter-spacing: 0.08em;
+                    text-transform: uppercase;
+                    color: var(--muted);
+                }
+
+                .field input {
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    padding: 9px 12px;
+                    font-size: 0.85rem;
+                    color: var(--navy);
+                    background: white;
+                }
+
+                    .field input:focus {
+                        outline: none;
+                        border-color: var(--teal);
+                    }
+
+            .filter-btn {
+                background: var(--teal);
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 8px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
+                .filter-btn:hover {
+                    background: #0b7d73;
+                }
+
+            /* ================= TABLE ================= */
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            th {
+                text-align: left;
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--muted);
+                padding: 14px 30px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            td {
+                padding: 16px 30px;
+                border-bottom: 1px solid var(--border);
+                font-size: 0.88rem;
+                color: var(--navy);
+                vertical-align: middle;
+            }
+
+            tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            tbody tr:hover {
+                background: var(--offwhite);
+            }
+
+            .category-name {
+                font-weight: 600;
+            }
+
+            .pill {
+                display: inline-block;
+                padding: 4px 12px;
+                border-radius: 100px;
+                font-size: 0.82rem;
+                font-weight: 700;
+                background: var(--teal-light);
+                color: var(--teal);
+            }
+
+            tfoot td {
+                background: var(--teal);
+                color: white;
+                font-weight: 700;
+                border-bottom: none;
+            }
+
+            /* ================= FOOTER ================= */
+
+            .footer {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px 30px;
+                border-top: 1px solid var(--border);
+                color: var(--muted);
+                font-size: 0.8rem;
+            }
+
+            /* ================= PRINT BUTTON ================= */
+
+            .print-btn {
+                margin: 20px 30px 30px;
+                background: var(--teal);
+                color: white;
+                border: none;
+                padding: 12px 18px;
+                border-radius: 8px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+                .print-btn:hover {
+                    background: #0b7d73;
+                }
+
+            /* ================= RESPONSIVE ================= */
+
+            @@media (max-width: 768px) {
+
+                .topbar {
+                    padding: 0 20px;
+                }
+
+                .sidebar {
+                    display: none;
+                }
+
+                .user-email {
+                    display: none;
+                }
+
+                .main {
+                    padding: 20px;
+                }
+
+                .footer {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 8px;
+                }
+            }
+
+            /* ================= PRINT ================= */
+
+            @@media print {
+
+                .topbar,
+                .sidebar,
+                .filter-bar,
+                .print-btn {
+                    display: none !important;
+                }
+
+                body {
+                    background: white;
+                }
+
+                .page {
+                    display: block;
+                }
+
+                .main {
+                    padding: 0;
+                }
+
+                .report-container {
+                    border: none;
+                    box-shadow: none;
+                }
+            }
+
+    </style>
+
+</head>
+
+<body>
+
+    <!-- ================= TOP NAVBAR ================= -->
+
+    <div class="topbar">
+
+        <a class="brand"
+           asp-controller="ManagerDashboard"
+           asp-action="Index">
+
+            <div class="brand-logo">
+
+                <svg viewBox="0 0 24 24">
+
+                    <path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" />
+
+                    <circle cx="12"
+                            cy="17"
+                            r="4"
+                            opacity="0.6" />
+
+                </svg>
+
+            </div>
+
+            <div class="brand-name">
+
+                NMB-HLabSys
+
+                <span>
+                    Haematology Lab System
+                </span>
+
+            </div>
+
+        </a>
+
+        <div class="topbar-right">
+
+            <div class="user-chip">
+
+                <div class="user-avatar">
+
+                    @(ViewBag.Email?.ToString()?.Substring(0, 1).ToUpper() ?? "M")
+
+                </div>
+
+                <span class="user-email">
+                    @ViewBag.Email
+                </span>
+
+            </div>
+
+            <a asp-controller="Home"
+               asp-action="Logout"
+               class="logout-btn">
+
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2"
+                     stroke-linecap="round"
+                     stroke-linejoin="round">
+
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+
+                </svg>
+
+                Sign Out
+
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- ================= PAGE ================= -->
+
+    <div class="page">
+
+        <!-- ================= SIDEBAR ================= -->
+
+        <aside class="sidebar">
+
+            <div class="nav-section">
+
+                <div class="nav-label">
+                    Main
+                </div>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Index"
+                   class="nav-item">
+
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                    </svg>
+
+                    Dashboard
+
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="TestCatalogue"
+                   class="nav-item">
+
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="4 7 4 4 20 4 20 7" />
+                        <line x1="9" y1="20" x2="15" y2="20" />
+                        <line x1="12" y1="4" x2="12" y2="20" />
+                    </svg>
+
+                    Test Catalogue
+
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Consumables"
+                   class="nav-item">
+
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+
+                    Consumables
+
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Staff"
+                   class="nav-item">
+
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+
+                    Staff
+
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Orders"
+                   class="nav-item">
+
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                    </svg>
+
+                    Orders
+
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="TestsByCategory"
+                   class="nav-item active">
+
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <polyline points="10 9 9 9 8 9" />
+                    </svg>
+
+                    Reports
+
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-label">
+                    System
+                </div>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Profile"
+                   class="nav-item">
+
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+
+                    Profile
+
+                </a>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="AuditLog"
+                   class="nav-item">
+
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+
+                    Audit Log
+
+                </a>
+
+            </div>
+
+        </aside>
+
+        <!-- ================= REPORT ================= -->
+
+        <main class="main">
+
+            <h1>Laboratory Test Report</h1>
+            <div class="subtitle">Breakdown of tests performed by category for the selected period.</div>
+
+            <div class="report-container">
+
+                <!-- ================= FILTER FORM ================= -->
+
+                <form method="get" asp-controller="ManagerDashboard" asp-action="TestsByCategory" class="filter-bar">
+
+                    <div class="field">
+                        <label for="from">From</label>
+                        <input type="date" id="from" name="from" value="@Model.FromDate.ToString("yyyy-MM-dd")" />
+                    </div>
+
+                    <div class="field">
+                        <label for="to">To</label>
+                        <input type="date" id="to" name="to" value="@Model.ToDate.ToString("yyyy-MM-dd")" />
+                    </div>
+
+                    <button type="submit" class="filter-btn">Filter</button>
+
+                </form>
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Category
+                            </th>
+
+                            <th>
+                                Total Tests
+                            </th>
+
+                            <th>
+                                Percentage
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @if (Model.Categories != null && Model.Categories.Any())
+                        {
+                            foreach (var item in Model.Categories)
+                            {
+                                <tr>
+
+                                    <td class="category-name">
+                                        @item.CategoryName
+                                    </td>
+
+                                    <td>
+                                        <span class="pill">@item.TestCount</span>
+                                    </td>
+
+                                    <td>
+                                        @item.Percentage.ToString("0.00")%
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+
+                                <td colspan="3">
+                                    No test category data available.
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                    <tfoot>
+
+                        <tr>
+
+                            <td>
+                                Total
+                            </td>
+
+                            <td>
+                                @Model.TotalTests
+                            </td>
+
+                            <td>
+                                100.00%
+                            </td>
+
+                        </tr>
+
+                    </tfoot>
+
+                </table>
+
+                <button class="print-btn"
+                        onclick="window.print()">
+
+                    <svg width="15"
+                         height="15"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round">
+
+                        <polyline points="6 9 6 2 18 2 18 9" />
+
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+
+                        <rect x="6"
+                              y="14"
+                              width="12"
+                              height="8" />
+
+                    </svg>
+
+                    Save as PDF / Print
+
+                </button>
+
+                <!-- ================= FOOTER ================= -->
+
+                <div class="footer">
+
+                    <span>
+                        NMB-HLabSys · Haematology Laboratory System
+                    </span>
+
+                    <span>
+                        Internal management report · @DateTime.Now.ToString("yyyy")
+                    </span>
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+</body>
+
+</html>

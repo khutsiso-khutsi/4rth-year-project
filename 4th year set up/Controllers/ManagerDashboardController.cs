@@ -515,35 +515,189 @@ namespace _4th_year_set_up.Controllers
                 "~/Views/ManagerDashboard/Index.cshtml");
         }
 
-        public IActionResult Report() {
-            
-            return View("~/Views/ManagerDashboard/Index.cshtml");
-        
+        // =========================================================
+        // REPORT
+        // =========================================================
+
+        public IActionResult Report()
+        {
+            return RedirectToAction(nameof(TestsByCategory));
         }
-        //[HttpPost]
-        //public IActionResult GeneratePdf(DateTime startDate, DateTime endDate)
-        //{
-        //    // DEMO DATA
-        //    var reportData = new List<TestCategoryReport>
-        //{
-        //   new TestCategoryReport { Category = "Full Blood Count", TotalTests = 45 },
-        //    new TestCategoryReport { Category = "Differential Count", TotalTests = 28 },
-        //   new TestCategoryReport { Category = "Peripheral Blood Film", TotalTests = 19 },
-        //   new TestCategoryReport { Category = "Coagulation Studies", TotalTests = 13 }
-        // };
 
-        //    ViewBag.StartDate = startDate;
-        //    ViewBag.EndDate = endDate;
+        [HttpGet]
+        public IActionResult TestsByCategory(DateTime? from, DateTime? to)
+        {
+            SetSession();
 
-        //    return new ViewAsPdf("ReportPdf", reportData)
-        //    {
-        //        FileName = "LaboratoryReport.pdf",
-        //        PageSize = Rotativa.AspNetCore.Options.Size.A4,
-        //        PageOrientation = Rotativa.AspNetCore.Options.Orientation.Portrait
-        //    };
-        //}
+            // Report date variables — default to the demo month if the user
+            // hasn't picked a range yet
+            DateTime fromDate = from ?? new DateTime(2026, 8, 1);
+            DateTime toDate = to ?? new DateTime(2026, 8, 30);
+
+            // Category variables
+            var categories = new List<CategoryReportItemViewModel>
+    {
+        new CategoryReportItemViewModel
+        {
+            CategoryName = "Full Blood Count",
+            TestCount = 120
+        },
+
+        new CategoryReportItemViewModel
+        {
+            CategoryName = "Coagulation",
+            TestCount = 70
+        },
+
+        new CategoryReportItemViewModel
+        {
+            CategoryName = "Blood Chemistry",
+            TestCount = 60
+        }
+    };
+
+            // TODO: once test requests are date-stamped in the data source,
+            // filter them here before aggregating, e.g.:
+            // categories = allRequests
+            //     .Where(r => r.RequestDate.Date >= fromDate.Date && r.RequestDate.Date <= toDate.Date)
+            //     .GroupBy(r => r.CategoryName)
+            //     .Select(g => new CategoryReportItemViewModel
+            //     {
+            //         CategoryName = g.Key,
+            //         TestCount = g.Count()
+            //     })
+            //     .ToList();
+
+            // Calculate total tests
+            int totalTests = categories.Sum(x => x.TestCount);
+
+            // Calculate percentage
+            foreach (var category in categories)
+            {
+                category.Percentage = totalTests > 0
+                    ? ((decimal)category.TestCount / totalTests) * 100
+                    : 0;
+            }
+
+            // Create ViewModel
+            var report = new TestsByCategoryReportViewModel
+            {
+                FromDate = fromDate,
+                ToDate = toDate,
+                TotalTests = totalTests,
+                Categories = categories
+            };
+
+            // Return the report View
+            return View(
+                "~/Views/ManagerDashboard/TestsByCategory.cshtml",
+                report);
+        }
+
+
+
+
+        private static readonly List<AuditLogEntry> _demoAuditLogs = new()
+        {
+            new AuditLogEntry
+            {
+                Id = 1,
+                Timestamp = DateTime.Today.AddDays(-1).AddHours(9).AddMinutes(12),
+                UserEmail = "manager@nmbhdl.co.za",
+                UserRole = "Manager",
+                Action = AuditAction.Created,
+                Module = "Staff",
+                ReferenceId = "STF-014",
+                Details = "Added new staff member Sipho Khumalo",
+                IpAddress = "10.0.0.14"
+            },
+            new AuditLogEntry
+            {
+                Id = 2,
+                Timestamp = DateTime.Today.AddDays(-1).AddHours(11).AddMinutes(40),
+                UserEmail = "dev-doctor@test.com",
+                UserRole = "Doctor",
+                Action = AuditAction.Updated,
+                Module = "Test Request",
+                ReferenceId = "REQ-889",
+                Details = "Marked Haemoglobin result as reviewed",
+                IpAddress = "10.0.0.22"
+            },
+            new AuditLogEntry
+            {
+                Id = 3,
+                Timestamp = DateTime.Today.AddDays(-2).AddHours(8).AddMinutes(5),
+                UserEmail = "manager@nmbhdl.co.za",
+                UserRole = "Manager",
+                Action = AuditAction.Deleted,
+                Module = "Consumables",
+                ReferenceId = "CON-102",
+                Details = "Removed expired reagent batch",
+                IpAddress = "10.0.0.14"
+            },
+            new AuditLogEntry
+            {
+                Id = 4,
+                Timestamp = DateTime.Today.AddDays(-2).AddHours(16).AddMinutes(50),
+                UserEmail = "manager@nmbhdl.co.za",
+                UserRole = "Manager",
+                Action = AuditAction.Login,
+                Module = "Auth",
+                ReferenceId = "-",
+                Details = "Signed in",
+                IpAddress = "10.0.0.14"
+            },
+            new AuditLogEntry
+            {
+                Id = 5,
+                Timestamp = DateTime.Today.AddDays(-3).AddHours(14).AddMinutes(3),
+                UserEmail = "dev-doctor@test.com",
+                UserRole = "Doctor",
+                Action = AuditAction.Approved,
+                Module = "Test Request",
+                ReferenceId = "REQ-890",
+                Details = "Approved Prothrombin Time result",
+                IpAddress = "10.0.0.22"
+            },
+            new AuditLogEntry
+            {
+                Id = 6,
+                Timestamp = DateTime.Today.AddDays(-4).AddHours(17).AddMinutes(30),
+                UserEmail = "manager@nmbhdl.co.za",
+                UserRole = "Manager",
+                Action = AuditAction.Logout,
+                Module = "Auth",
+                ReferenceId = "-",
+                Details = "Signed out",
+                IpAddress = "10.0.0.14"
+            }
+        };
+
+        // GET: /ManagerDashboard/AuditLog
+        [HttpGet]
+        public IActionResult AuditLog(DateTime? from, DateTime? to, AuditAction? action)
+        {
+            // Default window: last 5 days, matching the Doctor Alerts page convention
+            var toDate = to ?? DateTime.Today;
+            var fromDate = from ?? toDate.AddDays(-5);
+
+            var entries = _demoAuditLogs
+                .Where(a => a.Timestamp.Date >= fromDate.Date && a.Timestamp.Date <= toDate.Date)
+                .Where(a => !action.HasValue || a.Action == action.Value)
+                .OrderByDescending(a => a.Timestamp)
+                .ToList();
+
+            var model = new AuditLogViewModel
+            {
+                FromDate = fromDate,
+                ToDate = toDate,
+                ActionFilter = action,
+                Entries = entries
+            };
+
+            return View("~/Views/ManagerDashboard/AuditLog.cshtml", model);
+        }
+    }
 }
 
 
-}
-       

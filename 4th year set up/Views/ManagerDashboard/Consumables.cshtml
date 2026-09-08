@@ -377,6 +377,10 @@
                 border-bottom: none;
             }
 
+            tbody tr.row-clickable {
+                cursor: pointer;
+            }
+
             tbody tr:hover {
                 background: var(--offwhite);
             }
@@ -496,6 +500,10 @@
                 box-shadow: 0 20px 60px rgba(11,31,58,0.2);
                 animation: modalIn 0.18s ease;
             }
+
+                .modal.view-modal {
+                    max-width: 520px;
+                }
 
             .modal-header {
                 display: flex;
@@ -623,6 +631,123 @@
                         background: var(--offwhite);
                     }
 
+            /* ── VIEW MODAL (row detail, matches Doctor Alerts style) ── */
+            .view-tag {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--teal);
+                margin-bottom: 6px;
+            }
+
+            .view-modal-title {
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.5rem;
+                color: var(--navy);
+            }
+
+            .view-header-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 20px;
+                padding-bottom: 18px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .status-box {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                border: 1px solid var(--green-light);
+                background: var(--green-light);
+                border-radius: 12px;
+                padding: 16px 18px;
+                margin-bottom: 22px;
+            }
+
+                .status-box.status-box-amber {
+                    background: var(--amber-light);
+                    border-color: rgba(217,119,6,0.25);
+                }
+
+                .status-box.status-box-red {
+                    background: var(--red-light);
+                    border-color: rgba(220,38,38,0.25);
+                }
+
+            .status-box-icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 10px;
+                background: var(--green);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+                .status-box-icon svg {
+                    width: 20px;
+                    height: 20px;
+                    fill: none;
+                    stroke: white;
+                    stroke-width: 2;
+                    stroke-linecap: round;
+                    stroke-linejoin: round;
+                }
+
+            .status-box.status-box-amber .status-box-icon {
+                background: var(--amber);
+            }
+
+            .status-box.status-box-red .status-box-icon {
+                background: var(--red);
+            }
+
+            .status-box-value {
+                font-size: 1.15rem;
+                font-weight: 700;
+                color: var(--navy);
+            }
+
+            .status-box-sub {
+                font-size: 0.78rem;
+                color: var(--muted);
+                margin-top: 2px;
+            }
+
+            .info-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 18px 24px;
+                margin-bottom: 4px;
+            }
+
+            .info-item {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .info-label {
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+
+            .info-value {
+                font-size: 0.9rem;
+                font-weight: 600;
+                color: var(--navy);
+            }
+
             /* ── RESPONSIVE ── */
             @@media (max-width: 768px) {
                 .topbar {
@@ -642,6 +767,10 @@
                 }
 
                 .fgrid2 {
+                    grid-template-columns: 1fr;
+                }
+
+                .info-grid {
                     grid-template-columns: 1fr;
                 }
             }
@@ -774,7 +903,13 @@
                             {
                                 foreach (var c in Model)
                                 {
-                                    <tr>
+                                    <tr class="row-clickable"
+                                        data-name="@c.ConsumableName"
+                                        data-supplier="@c.Supplier"
+                                        data-onhand="@c.OnHand"
+                                        data-reorder="@c.ReorderLevel"
+                                        data-status="@c.StockStatus"
+                                        onclick="openConsumableView(this)">
                                         <td class="fw-bold">@c.ConsumableName</td>
                                         <td>@c.Supplier</td>
                                         <td>
@@ -810,14 +945,15 @@
                                             <div class="table-actions">
                                                 <!-- ↓ opens Adjust Stock modal, populates row data -->
                                                 <button class="action-btn adjust-btn"
-                                                        onclick="openAdjustModal('@c.ConsumableName', @c.OnHand, @c.ReorderLevel)">
+                                                        onclick="event.stopPropagation(); openAdjustModal('@c.ConsumableName', @c.OnHand, @c.ReorderLevel)">
                                                     Adjust
                                                 </button>
                                                 @if (c.StockStatus != "Good")
                                                 {
                                                     <a asp-controller="ManagerDashboard"
                                                        asp-action="Orders"
-                                                       class="action-btn order-btn">Order</a>
+                                                       class="action-btn order-btn"
+                                                       onclick="event.stopPropagation()">Order</a>
                                                 }
                                             </div>
                                         </td>
@@ -839,6 +975,55 @@
             </div>
 
         </main>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         MODAL: CONSUMABLE VIEW (row-click detail, styled like Abnormal Result Alert)
+    ══════════════════════════════════════════ -->
+    <div class="modal-bg" id="m-view-consumable" onclick="bgClose(event, this)">
+        <div class="modal view-modal">
+            <div class="view-header-row">
+                <div>
+                    <div class="view-tag">Consumable</div>
+                    <div class="view-modal-title" id="cv-name">—</div>
+                </div>
+                <button class="modal-close" onclick="closeModal('m-view-consumable')">✕</button>
+            </div>
+
+            <div class="status-box" id="cv-status-box">
+                <div class="status-box-icon">
+                    <svg viewBox="0 0 24 24"><path d="M20.59 13.41 12 22l-8.59-8.59A2 2 0 0 1 3 12V4a1 1 0 0 1 1-1h8a2 2 0 0 1 1.41.59l7.18 7.18a2 2 0 0 1 0 2.82z" /><circle cx="7.5" cy="7.5" r="1.5" /></svg>
+                </div>
+                <div>
+                    <div class="status-box-value" id="cv-status-value">Good</div>
+                    <div class="status-box-sub" id="cv-status-sub">On hand: —</div>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Supplier</div>
+                    <div class="info-value" id="cv-supplier">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Reorder Level</div>
+                    <div class="info-value" id="cv-reorder">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">On Hand</div>
+                    <div class="info-value" id="cv-onhand">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Stock Status</div>
+                    <div class="info-value" id="cv-statustext">—</div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-full btn-outline" onclick="closeModal('m-view-consumable')">Close</button>
+                <button class="btn-full blue" id="cv-adjust-btn">Adjust Stock</button>
+            </div>
+        </div>
     </div>
 
     <!-- ══════════════════════════════════════════
@@ -978,6 +1163,43 @@
 
             function bgClose(e, el) {
                 if (e.target === el) closeModal(el.id);
+            }
+
+            /* ── CONSUMABLE VIEW: row click → detail modal ── */
+            function openConsumableView(row) {
+                var d = row.dataset;
+                var onHand = parseInt(d.onhand, 10);
+                var reorder = parseInt(d.reorder, 10);
+                var status = d.status; // "Low" | "Medium" | Good/other
+
+                document.getElementById('cv-name').textContent = d.name;
+                document.getElementById('cv-supplier').textContent = d.supplier;
+                document.getElementById('cv-reorder').textContent = reorder;
+                document.getElementById('cv-onhand').textContent = onHand;
+
+                var statusLabel = status === 'Low' ? 'Low Stock' : (status === 'Medium' ? 'Medium' : 'Good');
+                document.getElementById('cv-statustext').textContent = statusLabel;
+
+                var box = document.getElementById('cv-status-box');
+                var val = document.getElementById('cv-status-value');
+                var sub = document.getElementById('cv-status-sub');
+
+                box.classList.remove('status-box-amber', 'status-box-red');
+                if (status === 'Low') {
+                    box.classList.add('status-box-red');
+                } else if (status === 'Medium') {
+                    box.classList.add('status-box-amber');
+                }
+
+                val.textContent = statusLabel;
+                sub.textContent = 'On hand: ' + onHand + ' units · Reorder level: ' + reorder;
+
+                document.getElementById('cv-adjust-btn').onclick = function () {
+                    closeModal('m-view-consumable');
+                    openAdjustModal(d.name, onHand, reorder);
+                };
+
+                openModal('m-view-consumable');
             }
 
             /* ── ADJUST MODAL: populate from row data ── */

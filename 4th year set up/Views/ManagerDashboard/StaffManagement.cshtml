@@ -19,643 +19,848 @@
 
     <style>
 
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        :root {
-            --navy: #0b1f3a;
-            --teal: #0d9488;
-            --teal-light: rgba(13,148,136,0.1);
-            --offwhite: #f4f7fb;
-            --white: #ffffff;
-            --muted: #6b7a99;
-            --border: #dde4f0;
-            --red: #dc2626;
-            --red-light: rgba(220,38,38,0.1);
-            --green: #16a34a;
-            --green-light: rgba(22,163,74,0.1);
-            --amber: #d97706;
-            --amber-light: rgba(217,119,6,0.1);
-            --blue: #1d4ed8;
-            --blue-light: rgba(29,78,216,0.1);
-        }
-
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--offwhite);
-            color: var(--navy);
-            min-height: 100vh;
-        }
-
-        a {
-            text-decoration: none;
-        }
-
-        /* ── TOPBAR ── */
-
-        .topbar {
-            background: var(--navy);
-            padding: 0 40px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 64px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .brand-logo {
-            width: 34px;
-            height: 34px;
-            background: var(--teal);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-            .brand-logo svg {
-                width: 18px;
-                height: 18px;
-                fill: white;
+            *, *::before, *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
             }
 
-        .brand-name {
-            font-family: 'DM Serif Display', serif;
-            color: white;
-            font-size: 1.1rem;
-            line-height: 1.1;
-        }
+            :root {
+                --navy: #0b1f3a;
+                --teal: #0d9488;
+                --teal-light: rgba(13,148,136,0.1);
+                --offwhite: #f4f7fb;
+                --white: #ffffff;
+                --muted: #6b7a99;
+                --border: #dde4f0;
+                --red: #dc2626;
+                --red-light: rgba(220,38,38,0.1);
+                --green: #16a34a;
+                --green-light: rgba(22,163,74,0.1);
+                --amber: #d97706;
+                --amber-light: rgba(217,119,6,0.1);
+                --blue: #1d4ed8;
+                --blue-light: rgba(29,78,216,0.1);
+            }
 
-            .brand-name span {
-                display: block;
+            body {
                 font-family: 'DM Sans', sans-serif;
-                font-size: 0.6rem;
-                font-weight: 300;
-                color: rgba(255,255,255,0.4);
-                letter-spacing: 0.1em;
-                text-transform: uppercase;
+                background: var(--offwhite);
+                color: var(--navy);
+                min-height: 100vh;
             }
 
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
+            a {
+                text-decoration: none;
+            }
 
-        .user-chip {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 100px;
-            padding: 6px 14px 6px 8px;
-        }
+            /* ── TOPBAR ── */
 
-        .user-avatar {
-            width: 28px;
-            height: 28px;
-            background: var(--teal);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: white;
-        }
+            .topbar {
+                background: var(--navy);
+                padding: 0 40px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                height: 64px;
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+            }
 
-        .user-email {
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.75);
-            max-width: 160px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
 
-        .logout-btn {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            color: rgba(255,255,255,0.8);
-            padding: 8px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 0.82rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-        }
+            .brand-logo {
+                width: 34px;
+                height: 34px;
+                background: var(--teal);
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
 
-            .logout-btn:hover {
-                background: rgba(255,255,255,0.15);
+                .brand-logo svg {
+                    width: 18px;
+                    height: 18px;
+                    fill: white;
+                }
+
+            .brand-name {
+                font-family: 'DM Serif Display', serif;
+                color: white;
+                font-size: 1.1rem;
+                line-height: 1.1;
+            }
+
+                .brand-name span {
+                    display: block;
+                    font-family: 'DM Sans', sans-serif;
+                    font-size: 0.6rem;
+                    font-weight: 300;
+                    color: rgba(255,255,255,0.4);
+                    letter-spacing: 0.1em;
+                    text-transform: uppercase;
+                }
+
+            .topbar-right {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
+
+            .user-chip {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                background: rgba(255,255,255,0.07);
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 100px;
+                padding: 6px 14px 6px 8px;
+            }
+
+            .user-avatar {
+                width: 28px;
+                height: 28px;
+                background: var(--teal);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.75rem;
+                font-weight: 600;
                 color: white;
             }
 
-            .logout-btn svg {
-                width: 14px;
-                height: 14px;
+            .user-email {
+                font-size: 0.8rem;
+                color: rgba(255,255,255,0.75);
+                max-width: 160px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
 
-        /* ── LAYOUT ── */
-
-        .page {
-            display: flex;
-            min-height: calc(100vh - 64px);
-        }
-
-        /* ── SIDEBAR ── */
-
-        .sidebar {
-            width: 220px;
-            background: white;
-            border-right: 1px solid var(--border);
-            padding: 24px 0;
-            flex-shrink: 0;
-            position: sticky;
-            top: 64px;
-            height: calc(100vh - 64px);
-            overflow-y: auto;
-        }
-
-        .nav-section {
-            margin-bottom: 8px;
-        }
-
-        .nav-label {
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: var(--muted);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            padding: 0 20px;
-            margin-bottom: 4px;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 20px;
-            color: var(--muted);
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.15s;
-            border-left: 3px solid transparent;
-        }
-
-            .nav-item:hover {
-                background: var(--offwhite);
-                color: var(--navy);
+            .logout-btn {
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.12);
+                color: rgba(255,255,255,0.8);
+                padding: 8px 16px;
+                border-radius: 8px;
+                text-decoration: none;
+                font-size: 0.82rem;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s;
             }
 
-            .nav-item.active {
-                background: var(--teal-light);
-                color: var(--teal);
-                border-left-color: var(--teal);
+                .logout-btn:hover {
+                    background: rgba(255,255,255,0.15);
+                    color: white;
+                }
+
+                .logout-btn svg {
+                    width: 14px;
+                    height: 14px;
+                }
+
+            /* ── LAYOUT ── */
+
+            .page {
+                display: flex;
+                min-height: calc(100vh - 64px);
             }
 
-            .nav-item svg {
-                width: 16px;
-                height: 16px;
+            /* ── SIDEBAR ── */
+
+            .sidebar {
+                width: 220px;
+                background: white;
+                border-right: 1px solid var(--border);
+                padding: 24px 0;
                 flex-shrink: 0;
-                fill: none;
-                stroke: currentColor;
-                stroke-width: 2;
-                stroke-linecap: round;
+                position: sticky;
+                top: 64px;
+                height: calc(100vh - 64px);
+                overflow-y: auto;
             }
 
-        /* ── MAIN ── */
+            .nav-section {
+                margin-bottom: 8px;
+            }
 
-        .main {
-            flex: 1;
-            padding: clamp(24px, 3vw, 40px);
-            overflow-y: auto;
-        }
-
-        /* ── PAGE HEADER ── */
-
-        .page-header {
-            margin-bottom: 24px;
-        }
-
-            .page-header h1 {
-                font-family: 'DM Serif Display', serif;
-                font-size: 1.8rem;
-                color: var(--navy);
+            .nav-label {
+                font-size: 0.65rem;
+                font-weight: 600;
+                color: var(--muted);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                padding: 0 20px;
                 margin-bottom: 4px;
             }
 
-            .page-header p {
-                font-size: 0.875rem;
-                color: var(--muted);
-            }
-
-        /* ── GRID ── */
-
-        .content-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-        }
-
-        /* ── CARD ── */
-
-        .card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 28px;
-            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .section-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--navy);
-        }
-
-        /* ── BUTTONS ── */
-
-        .btn {
-            height: 44px;
-            padding: 0 18px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 0.82rem;
-            font-weight: 600;
-            font-family: 'DM Sans', sans-serif;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            text-decoration: none;
-        }
-
-            .btn:hover {
-                transform: translateY(-1px);
-            }
-
-        .btn-teal {
-            background: var(--teal);
-            color: white;
-            box-shadow: 0 4px 14px rgba(13,148,136,0.25);
-        }
-
-        .btn-light {
-            background: var(--teal-light);
-            color: var(--teal);
-        }
-
-        /* ── TABLE ── */
-
-        .table-wrap {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 520px;
-        }
-
-        thead th {
-            text-align: left;
-            padding: 0 16px 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--muted);
-            border-bottom: 1px solid var(--border);
-        }
-
-        tbody td {
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--offwhite);
-            font-size: 0.83rem;
-            color: var(--navy);
-            vertical-align: middle;
-        }
-
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        tbody tr:hover {
-            background: var(--offwhite);
-        }
-
-        .staff-name {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .staff-email {
-            font-size: 0.76rem;
-            color: var(--muted);
-        }
-
-        .mono {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 5px 10px;
-            border-radius: 100px;
-            background: var(--blue-light);
-            color: var(--blue);
-            font-size: 0.72rem;
-            font-weight: 700;
-            font-family: monospace;
-        }
-
-        .tag {
-            display: inline-flex;
-            align-items: center;
-            padding: 5px 10px;
-            border-radius: 100px;
-            background: var(--teal-light);
-            color: var(--teal);
-            font-size: 0.72rem;
-            font-weight: 600;
-        }
-
-        /* ── STATUS ── */
-
-        .status {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 10px;
-            border-radius: 100px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-
-        .status-good {
-            background: var(--green-light);
-            color: var(--green);
-        }
-
-        .status-low {
-            background: var(--red-light);
-            color: var(--red);
-        }
-
-        /* ── EMPTY ── */
-
-        .empty-cell {
-            text-align: center;
-            padding: 48px;
-            color: var(--muted);
-            font-size: 0.875rem;
-        }
-
-        /* ── MODAL ── */
-
-        .modal-bg {
-            position: fixed;
-            inset: 0;
-            background: rgba(11,31,58,0.45);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 999;
-            padding: 20px;
-        }
-
-            .modal-bg.open {
+            .nav-item {
                 display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 20px;
+                color: var(--muted);
+                text-decoration: none;
+                font-size: 0.85rem;
+                font-weight: 500;
+                transition: all 0.15s;
+                border-left: 3px solid transparent;
             }
 
-        .modal {
-            width: 100%;
-            max-width: 620px;
-            background: white;
-            border-radius: 20px;
-            padding: 32px 28px;
-            position: relative;
-            box-shadow: 0 20px 60px rgba(11,31,58,0.2);
-            animation: modalIn 0.18s ease;
-        }
+                .nav-item:hover {
+                    background: var(--offwhite);
+                    color: var(--navy);
+                }
 
-        @@keyframes modalIn {
-            from {
-                opacity: 0;
-                transform: scale(0.96) translateY(8px);
+                .nav-item.active {
+                    background: var(--teal-light);
+                    color: var(--teal);
+                    border-left-color: var(--teal);
+                }
+
+                .nav-item svg {
+                    width: 16px;
+                    height: 16px;
+                    flex-shrink: 0;
+                    fill: none;
+                    stroke: currentColor;
+                    stroke-width: 2;
+                    stroke-linecap: round;
+                }
+
+            /* ── MAIN ── */
+
+            .main {
+                flex: 1;
+                padding: clamp(24px, 3vw, 40px);
+                overflow-y: auto;
             }
 
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
+            /* ── PAGE HEADER ── */
 
-        .modal-close {
-            position: absolute;
-            top: 18px;
-            right: 18px;
-            width: 38px;
-            height: 38px;
-            border: none;
-            border-radius: 10px;
-            background: var(--offwhite);
-            color: var(--navy);
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 700;
-        }
-
-        .modal h2 {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.5rem;
-            color: var(--navy);
-            margin-bottom: 6px;
-        }
-
-        .modal p {
-            font-size: 0.85rem;
-            color: var(--muted);
-            margin-bottom: 24px;
-            line-height: 1.6;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 18px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 18px;
-        }
-
-            .form-group.full {
-                grid-column: span 2;
+            .page-header {
+                margin-bottom: 24px;
             }
 
-        .form-label {
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: var(--navy);
-        }
+                .page-header h1 {
+                    font-family: 'DM Serif Display', serif;
+                    font-size: 1.8rem;
+                    color: var(--navy);
+                    margin-bottom: 4px;
+                }
 
-        .form-input {
-            height: 46px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            background: var(--offwhite);
-            padding: 0 14px;
-            outline: none;
-            font-size: 0.85rem;
-            font-family: 'DM Sans', sans-serif;
-            transition: 0.2s;
-            color: var(--navy);
-        }
+                .page-header p {
+                    font-size: 0.875rem;
+                    color: var(--muted);
+                }
 
-            .form-input:focus {
-                border-color: var(--teal);
+            /* ── GRID ── */
+
+            .content-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 24px;
+            }
+
+            /* ── CARD ── */
+
+            .card {
                 background: white;
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                padding: 28px;
+                box-shadow: 0 2px 8px rgba(11,31,58,0.04);
             }
 
-        .checkbox-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 4px;
-        }
+            .card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+                margin-bottom: 20px;
+            }
 
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 14px;
-            border-radius: 10px;
-            background: var(--offwhite);
-            border: 1px solid var(--border);
-            font-size: 0.8rem;
-            color: var(--navy);
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.15s;
-        }
+            .header-actions {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
 
-            .checkbox-item:has(input:checked) {
+            .section-title {
+                font-size: 1rem;
+                font-weight: 700;
+                color: var(--navy);
+            }
+
+            /* ── BUTTONS ── */
+
+            .btn {
+                height: 44px;
+                padding: 0 18px;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                font-size: 0.82rem;
+                font-weight: 600;
+                font-family: 'DM Sans', sans-serif;
+                transition: 0.2s;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                text-decoration: none;
+            }
+
+                .btn:hover {
+                    transform: translateY(-1px);
+                }
+
+            .btn-teal {
+                background: var(--teal);
+                color: white;
+                box-shadow: 0 4px 14px rgba(13,148,136,0.25);
+            }
+
+            .btn-light {
                 background: var(--teal-light);
-                border-color: var(--teal);
                 color: var(--teal);
             }
 
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 24px;
-        }
-
-        .btn-modal {
-            flex: 1;
-            height: 46px;
-            border-radius: 10px;
-            border: none;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-        }
-
-        .btn-save {
-            background: var(--teal);
-            color: white;
-        }
-
-        .btn-cancel {
-            background: var(--offwhite);
-            color: var(--navy);
-            border: 1px solid var(--border);
-        }
-
-        .modal-icon {
-            width: 52px;
-            height: 52px;
-            background: #fee2e2;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 18px;
-        }
-
-        /* ── RESPONSIVE ── */
-
-        @@media (max-width: 1100px) {
-
-            .content-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @@media (max-width: 768px) {
-
-            .topbar {
-                padding: 0 20px;
+            .btn-outline {
+                background: white;
+                color: var(--navy);
+                border: 1px solid var(--border);
             }
 
-            .user-email {
+                .btn-outline:hover {
+                    border-color: var(--teal);
+                    color: var(--teal);
+                }
+
+            /* ── TABLE ── */
+
+            .table-wrap {
+                overflow-x: auto;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 560px;
+            }
+
+            thead th {
+                text-align: left;
+                padding: 0 16px 12px;
+                font-size: 0.7rem;
+                font-weight: 600;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--muted);
+                border-bottom: 1px solid var(--border);
+            }
+
+                thead th.actions-col {
+                    text-align: right;
+                }
+
+            tbody td {
+                padding: 14px 16px;
+                border-bottom: 1px solid var(--offwhite);
+                font-size: 0.83rem;
+                color: var(--navy);
+                vertical-align: middle;
+            }
+
+            tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            tbody tr.row-clickable {
+                cursor: pointer;
+            }
+
+                tbody tr.row-clickable:hover {
+                    background: var(--offwhite);
+                }
+
+            .staff-name {
+                font-weight: 600;
+                margin-bottom: 4px;
+            }
+
+            .staff-email {
+                font-size: 0.76rem;
+                color: var(--muted);
+            }
+
+            .mono {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 5px 10px;
+                border-radius: 100px;
+                background: var(--blue-light);
+                color: var(--blue);
+                font-size: 0.72rem;
+                font-weight: 700;
+                font-family: monospace;
+            }
+
+            .tag {
+                display: inline-flex;
+                align-items: center;
+                padding: 5px 10px;
+                border-radius: 100px;
+                background: var(--teal-light);
+                color: var(--teal);
+                font-size: 0.72rem;
+                font-weight: 600;
+            }
+
+            /* ── STATUS ── */
+
+            .status {
+                display: inline-flex;
+                align-items: center;
+                padding: 4px 10px;
+                border-radius: 100px;
+                font-size: 0.7rem;
+                font-weight: 600;
+            }
+
+            .status-good {
+                background: var(--green-light);
+                color: var(--green);
+            }
+
+            .status-low {
+                background: var(--red-light);
+                color: var(--red);
+            }
+
+            /* ── ACTIONS CELL ── */
+
+            .actions-cell {
+                text-align: right;
+                white-space: nowrap;
+            }
+
+            .btn-row-edit {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                padding: 6px 12px;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+                background: white;
+                color: var(--navy);
+                font-size: 0.72rem;
+                font-weight: 600;
+                font-family: 'DM Sans', sans-serif;
+                cursor: pointer;
+                transition: 0.15s;
+            }
+
+                .btn-row-edit:hover {
+                    background: var(--teal-light);
+                    border-color: var(--teal);
+                    color: var(--teal);
+                }
+
+                .btn-row-edit svg {
+                    width: 12px;
+                    height: 12px;
+                    fill: none;
+                    stroke: currentColor;
+                    stroke-width: 2;
+                    stroke-linecap: round;
+                }
+
+            /* ── EMPTY ── */
+
+            .empty-cell {
+                text-align: center;
+                padding: 48px;
+                color: var(--muted);
+                font-size: 0.875rem;
+            }
+
+            /* ── MODAL ── */
+
+            .modal-bg {
+                position: fixed;
+                inset: 0;
+                background: rgba(11,31,58,0.45);
                 display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 999;
+                padding: 20px;
             }
 
-            .sidebar {
-                display: none;
+                .modal-bg.open {
+                    display: flex;
+                }
+
+            .modal {
+                width: 100%;
+                max-width: 620px;
+                background: white;
+                border-radius: 20px;
+                padding: 32px 28px;
+                position: relative;
+                box-shadow: 0 20px 60px rgba(11,31,58,0.2);
+                animation: modalIn 0.18s ease;
             }
 
-            .main {
-                padding: 20px 16px;
+            @@keyframes modalIn {
+                from {
+                    opacity: 0;
+                    transform: scale(0.96) translateY(8px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
+                }
+            }
+
+            .modal-close {
+                position: absolute;
+                top: 18px;
+                right: 18px;
+                width: 38px;
+                height: 38px;
+                border: none;
+                border-radius: 10px;
+                background: var(--offwhite);
+                color: var(--navy);
+                cursor: pointer;
+                font-size: 1rem;
+                font-weight: 700;
+            }
+
+            .modal h2 {
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.5rem;
+                color: var(--navy);
+                margin-bottom: 6px;
+            }
+
+            .modal p {
+                font-size: 0.85rem;
+                color: var(--muted);
+                margin-bottom: 24px;
+                line-height: 1.6;
             }
 
             .form-grid {
-                grid-template-columns: 1fr;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 18px;
             }
 
-            .form-group.full {
-                grid-column: span 1;
+            .form-group {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                margin-bottom: 18px;
             }
+
+                .form-group.full {
+                    grid-column: span 2;
+                }
+
+            .form-label {
+                font-size: 0.82rem;
+                font-weight: 600;
+                color: var(--navy);
+            }
+
+            .form-input {
+                height: 46px;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                background: var(--offwhite);
+                padding: 0 14px;
+                outline: none;
+                font-size: 0.85rem;
+                font-family: 'DM Sans', sans-serif;
+                transition: 0.2s;
+                color: var(--navy);
+            }
+
+                .form-input:focus {
+                    border-color: var(--teal);
+                    background: white;
+                }
+
+            .checkbox-group {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-top: 4px;
+            }
+
+            .checkbox-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 14px;
+                border-radius: 10px;
+                background: var(--offwhite);
+                border: 1px solid var(--border);
+                font-size: 0.8rem;
+                color: var(--navy);
+                font-weight: 500;
+                cursor: pointer;
+                transition: 0.15s;
+            }
+
+                .checkbox-item:has(input:checked) {
+                    background: var(--teal-light);
+                    border-color: var(--teal);
+                    color: var(--teal);
+                }
 
             .modal-actions {
-                flex-direction: column;
+                display: flex;
+                gap: 10px;
+                margin-top: 24px;
             }
-        }
+
+            .btn-modal {
+                flex: 1;
+                height: 46px;
+                border-radius: 10px;
+                border: none;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.85rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-decoration: none;
+            }
+
+            .btn-save {
+                background: var(--teal);
+                color: white;
+            }
+
+            .btn-cancel {
+                background: var(--offwhite);
+                color: var(--navy);
+                border: 1px solid var(--border);
+            }
+
+            .modal-icon {
+                width: 52px;
+                height: 52px;
+                background: #fee2e2;
+                border-radius: 14px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 18px;
+            }
+
+            /* ── VIEW MODAL (row detail, matches Doctor Alerts style) ── */
+
+            .view-modal .modal-header-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 20px;
+                padding-bottom: 18px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .view-tag {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--teal);
+                margin-bottom: 6px;
+            }
+
+            .view-modal h2 {
+                margin-bottom: 0;
+            }
+
+            .status-box {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                border: 1px solid var(--amber-light);
+                background: var(--amber-light);
+                border-radius: 12px;
+                padding: 16px 18px;
+                margin-bottom: 22px;
+            }
+
+                .status-box.status-box-green {
+                    background: var(--green-light);
+                    border-color: rgba(22,163,74,0.25);
+                }
+
+                .status-box.status-box-red {
+                    background: var(--red-light);
+                    border-color: rgba(220,38,38,0.25);
+                }
+
+                .status-box.status-box-blue {
+                    background: var(--blue-light);
+                    border-color: rgba(29,78,216,0.2);
+                }
+
+            .status-box-icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 10px;
+                background: var(--amber);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+                .status-box-icon svg {
+                    width: 20px;
+                    height: 20px;
+                    fill: none;
+                    stroke: white;
+                    stroke-width: 2;
+                    stroke-linecap: round;
+                    stroke-linejoin: round;
+                }
+
+            .status-box.status-box-green .status-box-icon {
+                background: var(--green);
+            }
+
+            .status-box.status-box-red .status-box-icon {
+                background: var(--red);
+            }
+
+            .status-box.status-box-blue .status-box-icon {
+                background: var(--blue);
+            }
+
+            .status-box-value {
+                font-size: 1.15rem;
+                font-weight: 700;
+                color: var(--navy);
+            }
+
+            .status-box-sub {
+                font-size: 0.78rem;
+                color: var(--muted);
+                margin-top: 2px;
+            }
+
+            .info-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 18px 24px;
+                margin-bottom: 4px;
+            }
+
+            .info-item {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .info-label {
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+
+            .info-value {
+                font-size: 0.9rem;
+                font-weight: 600;
+                color: var(--navy);
+            }
+
+            .view-divider {
+                border: none;
+                border-top: 1px solid var(--border);
+                margin: 20px 0;
+            }
+
+            .view-tags-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-top: 6px;
+            }
+
+            /* ── RESPONSIVE ── */
+
+            @@media (max-width: 1100px) {
+
+                .content-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            @@media (max-width: 768px) {
+
+                .topbar {
+                    padding: 0 20px;
+                }
+
+                .user-email {
+                    display: none;
+                }
+
+                .sidebar {
+                    display: none;
+                }
+
+                .main {
+                    padding: 20px 16px;
+                }
+
+                .form-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .form-group.full {
+                    grid-column: span 1;
+                }
+
+                .modal-actions {
+                    flex-direction: column;
+                }
+
+                .info-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
 
     </style>
 
@@ -684,7 +889,7 @@
         <div class="topbar-right">
 
             <div class="user-chip">
-                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0,1).ToUpper() ?? "M")</div>
+                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "M")</div>
                 <span class="user-email">@ViewBag.Email</span>
             </div>
 
@@ -799,6 +1004,7 @@
                                     <th>Doctor</th>
                                     <th>HPCSA</th>
                                     <th>Status</th>
+                                    <th class="actions-col">Actions</th>
                                 </tr>
                             </thead>
 
@@ -808,7 +1014,15 @@
                                 {
                                     foreach (var d in Model.Doctors)
                                     {
-                                        <tr>
+                                        <tr class="row-clickable"
+                                            data-id="@d.Id"
+        
+                                            data-fullname="@d.FullName"
+                                            data-email="@d.Email"
+                                            data-hpcsa="@d.HpcsaNumber"
+                                      
+                                            data-active="@d.IsActive.ToString().ToLower()"
+                                            onclick="openDoctorView(this)">
 
                                             <td>
                                                 <div class="staff-name">@d.FullName</div>
@@ -836,13 +1050,20 @@
 
                                             </td>
 
+                                            <td class="actions-cell">
+                                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openDoctorEdit(this.closest('tr'))">
+                                                    <svg viewBox="0 0 24 24"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
+                                                    Edit
+                                                </button>
+                                            </td>
+
                                         </tr>
                                     }
                                 }
                                 else
                                 {
                                     <tr>
-                                        <td colspan="3" class="empty-cell">
+                                        <td colspan="4" class="empty-cell">
                                             No doctors found.
                                         </td>
                                     </tr>
@@ -878,6 +1099,7 @@
                                     <th>Technician</th>
                                     <th>Employee #</th>
                                     <th>Assigned Tests</th>
+                                    <th class="actions-col">Actions</th>
                                 </tr>
                             </thead>
 
@@ -887,7 +1109,14 @@
                                 {
                                     foreach (var t in Model.Technicians)
                                     {
-                                        <tr>
+                                        <tr class="row-clickable"
+                                            data-id="@t.Id"
+                                           
+                                            data-fullname="@t.FullName"
+                                            data-email="@t.Email"
+                                            data-employeenumber="@t.EmployeeNumber"
+                                            data-testtypes="@string.Join(",", t.TestTypes)"
+                                            onclick="openTechView(this)">
 
                                             <td>
                                                 <div class="staff-name">@t.FullName</div>
@@ -904,13 +1133,20 @@
                                                 </span>
                                             </td>
 
+                                            <td class="actions-cell">
+                                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openTechEdit(this.closest('tr'))">
+                                                    <svg viewBox="0 0 24 24"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
+                                                    Edit
+                                                </button>
+                                            </td>
+
                                         </tr>
                                     }
                                 }
                                 else
                                 {
                                     <tr>
-                                        <td colspan="3" class="empty-cell">
+                                        <td colspan="4" class="empty-cell">
                                             No technicians found.
                                         </td>
                                     </tr>
@@ -930,7 +1166,97 @@
 
     </div>
 
-    <!-- DOCTOR MODAL -->
+    <!-- DOCTOR VIEW MODAL (row-click detail, styled like Abnormal Result Alert) -->
+
+    <div class="modal-bg" id="doctorViewModal" onclick="closeByBackground(event,this)">
+
+        <div class="modal view-modal">
+
+            <button class="modal-close" onclick="closeModal('doctorViewModal')">✕</button>
+
+            <div class="modal-header-row">
+                <div>
+                    <div class="view-tag">Doctor Profile</div>
+                    <h2 id="dvName">—</h2>
+                </div>
+            </div>
+
+            <div class="status-box" id="dvStatusBox">
+                <div class="status-box-icon">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
+                </div>
+                <div>
+                    <div class="status-box-value" id="dvStatusValue">Active</div>
+                    <div class="status-box-sub" id="dvStatusSub">HPCSA Number: —</div>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Email</div>
+                    <div class="info-value" id="dvEmail">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Contact Number</div>
+                    <div class="info-value" id="dvContact">—</div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-modal btn-cancel" onclick="closeModal('doctorViewModal')">Close</button>
+                <button type="button" class="btn-modal btn-save" id="dvEditBtn">Edit Doctor</button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- TECHNICIAN VIEW MODAL (row-click detail, styled like Abnormal Result Alert) -->
+
+    <div class="modal-bg" id="techViewModal" onclick="closeByBackground(event,this)">
+
+        <div class="modal view-modal">
+
+            <button class="modal-close" onclick="closeModal('techViewModal')">✕</button>
+
+            <div class="modal-header-row">
+                <div>
+                    <div class="view-tag">Technician Profile</div>
+                    <h2 id="tvName">—</h2>
+                </div>
+            </div>
+
+            <div class="status-box status-box-blue" id="tvStatusBox">
+                <div class="status-box-icon">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                </div>
+                <div>
+                    <div class="status-box-value" id="tvStatusValue">—</div>
+                    <div class="status-box-sub" id="tvStatusSub">Employee Number</div>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Email</div>
+                    <div class="info-value" id="tvEmail">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Assigned Test Categories</div>
+                    <div class="view-tags-row" id="tvTags"></div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-modal btn-cancel" onclick="closeModal('techViewModal')">Close</button>
+                <button type="button" class="btn-modal btn-save" id="tvEditBtn">Edit Technician</button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ADD / EDIT DOCTOR MODAL -->
 
     <div class="modal-bg" id="doctorModal" onclick="closeByBackground(event,this)">
 
@@ -941,43 +1267,46 @@
                 ✕
             </button>
 
-            <h2>Add Doctor</h2>
+            <h2 id="doctorModalTitle">Add Doctor</h2>
 
-            <p>
+            <p id="doctorModalSub">
                 A temporary password will automatically be generated.
             </p>
 
             <form asp-controller="ManagerDashboard"
                   asp-action="AddDoctor"
-                  method="post">
+                  method="post"
+                  id="doctorForm">
 
                 @Html.AntiForgeryToken()
+
+                <input type="hidden" name="id" id="doctorId" value="" />
 
                 <div class="form-grid">
 
                     <div class="form-group">
                         <label class="form-label">First Name</label>
-                        <input class="form-input" name="firstName" required />
+                        <input class="form-input" name="firstName" id="doctorFirstName" required />
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Last Name</label>
-                        <input class="form-input" name="lastName" required />
+                        <input class="form-input" name="lastName" id="doctorLastName" required />
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">HPCSA Number</label>
-                        <input class="form-input" name="hpcsaNumber" required />
+                        <input class="form-input" name="hpcsaNumber" id="doctorHpcsa" required />
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Contact Number</label>
-                        <input class="form-input" name="contactNumber" />
+                        <input class="form-input" name="contactNumber" id="doctorContact" />
                     </div>
 
                     <div class="form-group full">
                         <label class="form-label">Email Address</label>
-                        <input class="form-input" type="email" name="email" required />
+                        <input class="form-input" type="email" name="email" id="doctorEmail" required />
                     </div>
 
                 </div>
@@ -985,7 +1314,8 @@
                 <div class="modal-actions">
 
                     <button type="submit"
-                            class="btn-modal btn-save">
+                            class="btn-modal btn-save"
+                            id="doctorSubmitBtn">
                         Add Doctor
                     </button>
 
@@ -1003,7 +1333,7 @@
 
     </div>
 
-    <!-- TECHNICIAN MODAL -->
+    <!-- ADD / EDIT TECHNICIAN MODAL -->
 
     <div class="modal-bg" id="techModal" onclick="closeByBackground(event,this)">
 
@@ -1014,45 +1344,48 @@
                 ✕
             </button>
 
-            <h2>Add Technician</h2>
+            <h2 id="techModalTitle">Add Technician</h2>
 
-            <p>
+            <p id="techModalSub">
                 Assign laboratory test categories to the technician.
             </p>
 
             <form asp-controller="ManagerDashboard"
                   asp-action="AddTechnician"
-                  method="post">
+                  method="post"
+                  id="techForm">
 
                 @Html.AntiForgeryToken()
+
+                <input type="hidden" name="id" id="techId" value="" />
 
                 <div class="form-grid">
 
                     <div class="form-group">
                         <label class="form-label">First Name</label>
-                        <input class="form-input" name="firstName" required />
+                        <input class="form-input" name="firstName" id="techFirstName" required />
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Last Name</label>
-                        <input class="form-input" name="lastName" required />
+                        <input class="form-input" name="lastName" id="techLastName" required />
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Employee Number</label>
-                        <input class="form-input" name="employeeNumber" required />
+                        <input class="form-input" name="employeeNumber" id="techEmployeeNumber" required />
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Email Address</label>
-                        <input class="form-input" type="email" name="email" required />
+                        <input class="form-input" type="email" name="email" id="techEmail" required />
                     </div>
 
                     <div class="form-group full">
 
                         <label class="form-label">Test Categories</label>
 
-                        <div class="checkbox-group">
+                        <div class="checkbox-group" id="techCheckboxGroup">
 
                             <label class="checkbox-item">
                                 <input type="checkbox" name="testTypes" value="FBC" />
@@ -1083,7 +1416,8 @@
                 <div class="modal-actions">
 
                     <button type="submit"
-                            class="btn-modal btn-save">
+                            class="btn-modal btn-save"
+                            id="techSubmitBtn">
                         Add Technician
                     </button>
 
@@ -1160,49 +1494,173 @@
 
     <script>
 
-        function openModal(id) {
-            document.getElementById(id).classList.add('open');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('open');
-            document.body.style.overflow = '';
-        }
-
-        function closeByBackground(event, element) {
-            if (event.target === element) {
-                closeModal(element.id);
+            function openModal(id) {
+                document.getElementById(id).classList.add('open');
+                document.body.style.overflow = 'hidden';
             }
-        }
 
-        document.addEventListener('keydown', function (e) {
-
-            if (e.key === 'Escape') {
-
-                document.querySelectorAll('.modal-bg.open')
-                    .forEach(m => m.classList.remove('open'));
-
+            function closeModal(id) {
+                document.getElementById(id).classList.remove('open');
                 document.body.style.overflow = '';
             }
 
-        });
+            function closeByBackground(event, element) {
+                if (event.target === element) {
+                    closeModal(element.id);
+                }
+            }
 
-        var logoutBtn = document.getElementById('logout-btn');
-        var logoutConfirm = document.getElementById('logout-confirm');
+            document.addEventListener('keydown', function (e) {
 
-        if (logoutBtn) {
+                if (e.key === 'Escape') {
 
-            logoutConfirm.href = logoutBtn.href;
+                    document.querySelectorAll('.modal-bg.open')
+                        .forEach(m => m.classList.remove('open'));
 
-            logoutBtn.addEventListener('click', function (e) {
-
-                e.preventDefault();
-
-                openModal('logoutModal');
+                    document.body.style.overflow = '';
+                }
 
             });
-        }
+
+            var logoutBtn = document.getElementById('logout-btn');
+            var logoutConfirm = document.getElementById('logout-confirm');
+
+            if (logoutBtn) {
+
+                logoutConfirm.href = logoutBtn.href;
+
+                logoutBtn.addEventListener('click', function (e) {
+
+                    e.preventDefault();
+
+                    openModal('logoutModal');
+
+                });
+            }
+
+            /* ── DOCTOR: row click → view modal ── */
+
+            function openDoctorView(row) {
+
+                var d = row.dataset;
+
+                document.getElementById('dvName').textContent = d.fullname || (d.firstname + ' ' + d.lastname);
+                document.getElementById('dvEmail').textContent = d.email;
+                document.getElementById('dvContact').textContent = d.contact || '—';
+                document.getElementById('dvStatusSub').textContent = 'HPCSA Number: ' + d.hpcsa;
+
+                var box = document.getElementById('dvStatusBox');
+                var val = document.getElementById('dvStatusValue');
+                var isActive = d.active === 'true';
+
+                box.classList.remove('status-box-green', 'status-box-red');
+                box.classList.add(isActive ? 'status-box-green' : 'status-box-red');
+                val.textContent = isActive ? 'Active' : 'Inactive';
+
+                document.getElementById('dvEditBtn').onclick = function () {
+                    closeModal('doctorViewModal');
+                    openDoctorEdit(row);
+                };
+
+                openModal('doctorViewModal');
+            }
+
+            /* ── DOCTOR: edit button → prefill add/edit modal ── */
+
+            function openDoctorEdit(row) {
+
+                var d = row.dataset;
+
+                document.getElementById('doctorModalTitle').textContent = 'Edit Doctor';
+                document.getElementById('doctorModalSub').textContent = 'Update this doctor\'s details below.';
+                document.getElementById('doctorSubmitBtn').textContent = 'Save Changes';
+
+                document.getElementById('doctorForm').setAttribute('action', '/ManagerDashboard/EditDoctor');
+
+                document.getElementById('doctorId').value = d.id || '';
+                document.getElementById('doctorFirstName').value = d.firstname || '';
+                document.getElementById('doctorLastName').value = d.lastname || '';
+                document.getElementById('doctorHpcsa').value = d.hpcsa || '';
+                document.getElementById('doctorContact').value = d.contact || '';
+                document.getElementById('doctorEmail').value = d.email || '';
+
+                openModal('doctorModal');
+            }
+
+            /* Reset the Add Doctor modal back to "create" mode whenever it's opened via the header button */
+            document.querySelector('.btn-teal[onclick*="doctorModal"]')?.addEventListener('click', function () {
+                document.getElementById('doctorModalTitle').textContent = 'Add Doctor';
+                document.getElementById('doctorModalSub').textContent = 'A temporary password will automatically be generated.';
+                document.getElementById('doctorSubmitBtn').textContent = 'Add Doctor';
+                document.getElementById('doctorForm').setAttribute('action', '/ManagerDashboard/AddDoctor');
+                document.getElementById('doctorForm').reset();
+                document.getElementById('doctorId').value = '';
+            });
+
+            /* ── TECHNICIAN: row click → view modal ── */
+
+            function openTechView(row) {
+
+                var t = row.dataset;
+                var types = (t.testtypes || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+
+                document.getElementById('tvName').textContent = t.fullname || (t.firstname + ' ' + t.lastname);
+                document.getElementById('tvEmail').textContent = t.email;
+                document.getElementById('tvStatusValue').textContent = t.employeenumber;
+                document.getElementById('tvStatusSub').textContent = types.length + ' Test Categor' + (types.length === 1 ? 'y' : 'ies') + ' Assigned';
+
+                var tagsWrap = document.getElementById('tvTags');
+                tagsWrap.innerHTML = '';
+                types.forEach(function (type) {
+                    var span = document.createElement('span');
+                    span.className = 'tag';
+                    span.textContent = type;
+                    tagsWrap.appendChild(span);
+                });
+
+                document.getElementById('tvEditBtn').onclick = function () {
+                    closeModal('techViewModal');
+                    openTechEdit(row);
+                };
+
+                openModal('techViewModal');
+            }
+
+            /* ── TECHNICIAN: edit button → prefill add/edit modal ── */
+
+            function openTechEdit(row) {
+
+                var t = row.dataset;
+                var types = (t.testtypes || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+
+                document.getElementById('techModalTitle').textContent = 'Edit Technician';
+                document.getElementById('techModalSub').textContent = 'Update this technician\'s details and assigned categories.';
+                document.getElementById('techSubmitBtn').textContent = 'Save Changes';
+
+                document.getElementById('techForm').setAttribute('action', '/ManagerDashboard/EditTechnician');
+
+                document.getElementById('techId').value = t.id || '';
+                document.getElementById('techFirstName').value = t.firstname || '';
+                document.getElementById('techLastName').value = t.lastname || '';
+                document.getElementById('techEmployeeNumber').value = t.employeenumber || '';
+                document.getElementById('techEmail').value = t.email || '';
+
+                document.querySelectorAll('#techCheckboxGroup input[type="checkbox"]').forEach(function (cb) {
+                    cb.checked = types.indexOf(cb.value) !== -1;
+                });
+
+                openModal('techModal');
+            }
+
+            /* Reset the Add Technician modal back to "create" mode whenever it's opened via the header button */
+            document.querySelector('.btn-light[onclick*="techModal"]')?.addEventListener('click', function () {
+                document.getElementById('techModalTitle').textContent = 'Add Technician';
+                document.getElementById('techModalSub').textContent = 'Assign laboratory test categories to the technician.';
+                document.getElementById('techSubmitBtn').textContent = 'Add Technician';
+                document.getElementById('techForm').setAttribute('action', '/ManagerDashboard/AddTechnician');
+                document.getElementById('techForm').reset();
+                document.getElementById('techId').value = '';
+            });
 
     </script>
 
