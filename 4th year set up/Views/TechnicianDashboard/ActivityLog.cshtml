@@ -1,0 +1,501 @@
+﻿@{
+    ViewData["Title"] = "ActivityLog";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!DOCTYPE <html lang="en">
+    <head>
+	<title>Techinician Activity Log — NMB-HLabSys </title>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+		<style>
+		*, *::before, *::after {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
+		}
+
+		:root {
+			--navy: #0b1f3a;
+			--navy2: #122848;
+			--teal: #0d9488;
+			--teal-light: rgba(13,148,136,0.1);
+			--orange: #ea580c;
+			--orange-light: rgba(234,88,12,0.1);
+			--amber: #d97706;
+			--amber-light: rgba(217,119,6,0.1);
+			--red: #dc2626;
+			--red-light: rgba(220,38,38,0.1);
+			--green: #16a34a;
+			--green-light: rgba(22,163,74,0.1);
+			--blue: #2563eb;
+			--blue-light: rgba(37,99,235,0.1);
+			--white: #ffffff;
+			--offwhite: #f4f7fb;
+			--muted: #6b7a99;
+			--border: #dde4f0;
+		}
+        /* TOPBAR */
+        .topbar {
+            background: var(--navy);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .brand-logo {
+            width: 34px;
+            height: 34px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .brand-logo svg {
+                width: 18px;
+                height: 18px;
+                fill: white;
+            }
+
+        .brand-name {
+            font-family: 'DM Serif Display', serif;
+            color: white;
+            font-size: 1.1rem;
+            line-height: 1.1;
+        }
+
+            .brand-name span {
+                display: block;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.6rem;
+                font-weight: 300;
+                color: rgba(255,255,255,0.4);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 100px;
+            padding: 6px 14px 6px 8px;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            background: var(--orange);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .user-email {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.75);
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.8);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+            .logout-btn:hover {
+                background: rgba(255,255,255,0.15);
+                color: white;
+            }
+
+            .logout-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+
+        .page {
+            display: flex;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            flex-shrink: 0;
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+
+        .nav-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0 20px;
+            margin-bottom: 4px;
+            margin-top: 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-left: 3px solid transparent;
+            transition: all 0.15s;
+        }
+
+            .nav-item:hover {
+                background: var(--offwhite);
+                color: var(--navy);
+            }
+
+            .nav-item.active {
+                background: var(--orange-light);
+                color: var(--orange);
+                border-left-color: var(--orange);
+            }
+
+            .nav-item svg {
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+            }
+        /* WELCOME BANNER */
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+            border-radius: 20px;
+            padding: 32px 36px;
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .welcome-banner::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: radial-gradient(ellipse 60% 80% at 90% 50%, rgba(234,88,12,0.2) 0%, transparent 60%);
+            }
+
+            .welcome-banner::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+                background-size: 40px 40px;
+            }
+
+        .welcome-inner {
+            position: relative;
+            z-index: 2;
+        }
+
+        .welcome-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(234,88,12,0.2);
+            border: 1px solid rgba(234,88,12,0.3);
+            color: #fdba74;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 100px;
+            margin-bottom: 12px;
+        }
+
+            .welcome-tag::before {
+                content: '';
+                width: 5px;
+                height: 5px;
+                background: #fdba74;
+                border-radius: 50%;
+            }
+
+        .welcome-banner h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.8rem;
+            color: white;
+            margin-bottom: 6px;
+        }
+
+            .welcome-banner h1 em {
+                font-style: italic;
+                color: #fdba74;
+            }
+
+        .welcome-banner p {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.875rem;
+        }
+        /* SECTION GRID */
+        .section-grid {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* CARDS */
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.05rem;
+            color: var(--navy);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .card-title svg {
+                width: 17px;
+                height: 17px;
+                stroke: var(--orange);
+            }
+
+        .card-action {
+            font-size: 0.78rem;
+            color: var(--teal);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+            .card-action:hover {
+                text-decoration: underline;
+            }
+        /* BADGES */
+        .badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .badge-completed {
+            background: var(--green-light);
+            color: var(--green);
+        }
+
+        .badge-pending {
+            background: var(--amber-light);
+            color: var(--amber);
+        }
+
+        .badge-urgent {
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+        .badge-inprogress {
+            background: var(--blue-light);
+            color: var(--blue);
+        }
+
+        .btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            transition: all 0.15s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-primary {
+            background: var(--teal);
+            color: white;
+        }
+
+            .btn-primary:hover {
+                background: #0b7a70;
+            }
+
+        .btn-orange {
+            background: var(--orange);
+            color: white;
+        }
+
+            .btn-orange:hover {
+                background: #c2410c;
+            }
+
+        .btn-ghost {
+            background: var(--offwhite);
+            border: 1px solid var(--border);
+            color: var(--navy);
+        }
+
+            .btn-ghost:hover {
+                border-color: var(--teal);
+                color: var(--teal);
+            }
+
+        /* ACTIVITY */
+        .activity-item {
+            display: flex;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--offwhite);
+        }
+
+            .activity-item:last-child {
+                border-bottom: none;
+            }
+
+        .activity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 6px;
+            flex-shrink: 0;
+        }
+
+        .activity-text {
+            font-size: 0.82rem;
+            color: var(--navy);
+            line-height: 1.5;
+        }
+
+        .activity-time {
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+		</style>
+
+</head>
+    <body>
+	<div class="page-container">
+
+		<!-- Page Header -->
+		<div class="page-header">
+			<h1>Dashboard</h1>
+			<p>Laboratory Technician Dashboard</p>
+		</div>
+
+		<!-- Main Content -->
+		<div class="page-content">
+
+			<div style="display:flex;flex-direction:column;gap:20px;">
+				<div class="card">
+					<div class="card-header">
+						<div class="card-title">
+							<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+							My Activity
+						</div>
+					</div>
+					<div class="activity-item">
+						<div class="activity-dot" style="background:var(--green)"></div>
+						<div>
+							<div class="activity-text">Results entered for <strong>REQ-0140</strong> — ESR</div>
+							<div class="activity-time">30 minutes ago</div>
+						</div>
+					</div>
+					<div class="activity-item">
+						<div class="activity-dot" style="background:var(--orange)"></div>
+						<div>
+							<div class="activity-text">Started processing <strong>REQ-0147</strong> — Haemoglobin</div>
+							<div class="activity-time">1 hour ago</div>
+						</div>
+					</div>
+					<div class="activity-item">
+						<div class="activity-dot" style="background:var(--green)"></div>
+						<div>
+							<div class="activity-text">Results verified for <strong>REQ-0138</strong> — Full Blood Count</div>
+							<div class="activity-time">2 hours ago</div>
+						</div>
+					</div>
+					<div class="activity-item">
+						<div class="activity-dot" style="background:var(--green)"></div>
+						<div>
+							<div class="activity-text">Results entered for <strong>REQ-0135</strong> — Platelet Count</div>
+							<div class="activity-time">3 hours ago</div>
+						</div>
+					</div>
+					<div class="activity-item">
+						<div class="activity-dot" style="background:var(--blue)"></div>
+						<div>
+							<div class="activity-text">Signed in and took REQ-0147 from queue</div>
+							<div class="activity-time">This morning</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+
+		</div>
+
+	</div>
+    </body>
+</html>
