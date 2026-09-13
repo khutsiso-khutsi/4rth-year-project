@@ -8,1849 +8,1574 @@
 }
 
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Staff Management — NMB-HLabSys</title>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
 
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <title>
+        Staff Management — NMB-HLabSys
+    </title>
+
+    <link rel="preconnect"
+          href="https://fonts.googleapis.com" />
+
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin />
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap"
+          rel="stylesheet" />
 
     <style>
 
-            *, *::before, *::after {
+            * {
                 box-sizing: border-box;
-                margin: 0;
-                padding: 0;
-            }
-
-            :root {
-                --navy: #0b1f3a;
-                --teal: #0d9488;
-                --teal-light: rgba(13,148,136,0.1);
-                --offwhite: #f4f7fb;
-                --white: #ffffff;
-                --muted: #6b7a99;
-                --border: #dde4f0;
-                --red: #dc2626;
-                --red-light: rgba(220,38,38,0.1);
-                --green: #16a34a;
-                --green-light: rgba(22,163,74,0.1);
-                --amber: #d97706;
-                --amber-light: rgba(217,119,6,0.1);
-                --blue: #1d4ed8;
-                --blue-light: rgba(29,78,216,0.1);
             }
 
             body {
-                font-family: 'DM Sans', sans-serif;
-                background: var(--offwhite);
-                color: var(--navy);
-                min-height: 100vh;
+                margin: 0;
+                background: #f4f7fb;
+                color: #0b1f3a;
+                font-family: "DM Sans", sans-serif;
             }
-
-            a {
-                text-decoration: none;
-            }
-
-            /* ── TOPBAR ── */
 
             .topbar {
-                background: var(--navy);
-                padding: 0 40px;
+                height: 64px;
+                background: white;
+                border-bottom: 1px solid #dde4f0;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                height: 64px;
-                position: sticky;
+                padding: 0 28px;
+                position: fixed;
                 top: 0;
-                z-index: 100;
-                box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+                left: 0;
+                right: 0;
+                z-index: 1000;
             }
 
             .brand {
-                display: flex;
-                align-items: center;
-                gap: 10px;
+                font-family: "DM Serif Display", serif;
+                font-size: 23px;
             }
 
-            .brand-logo {
-                width: 34px;
-                height: 34px;
-                background: var(--teal);
-                border-radius: 8px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-                .brand-logo svg {
-                    width: 18px;
-                    height: 18px;
-                    fill: white;
+                .brand span {
+                    color: #0d9488;
                 }
 
-            .brand-name {
-                font-family: 'DM Serif Display', serif;
-                color: white;
-                font-size: 1.1rem;
-                line-height: 1.1;
-            }
-
-                .brand-name span {
-                    display: block;
-                    font-family: 'DM Sans', sans-serif;
-                    font-size: 0.6rem;
-                    font-weight: 300;
-                    color: rgba(255,255,255,0.4);
-                    letter-spacing: 0.1em;
-                    text-transform: uppercase;
-                }
-
-            .topbar-right {
+            .top-user {
                 display: flex;
                 align-items: center;
-                gap: 16px;
+                gap: 12px;
+                color: #6b7a99;
+                font-size: 14px;
             }
 
-            .user-chip {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                background: rgba(255,255,255,0.07);
-                border: 1px solid rgba(255,255,255,0.1);
-                border-radius: 100px;
-                padding: 6px 14px 6px 8px;
-            }
-
-            .user-avatar {
-                width: 28px;
-                height: 28px;
-                background: var(--teal);
+            .user-circle {
+                width: 36px;
+                height: 36px;
                 border-radius: 50%;
+                background: #0b1f3a;
+                color: white;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 0.75rem;
-                font-weight: 600;
-                color: white;
+                font-weight: 700;
             }
-
-            .user-email {
-                font-size: 0.8rem;
-                color: rgba(255,255,255,0.75);
-                max-width: 160px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-
-            .logout-btn {
-                background: rgba(255,255,255,0.08);
-                border: 1px solid rgba(255,255,255,0.12);
-                color: rgba(255,255,255,0.8);
-                padding: 8px 16px;
-                border-radius: 8px;
-                text-decoration: none;
-                font-size: 0.82rem;
-                font-weight: 500;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                transition: all 0.2s;
-            }
-
-                .logout-btn:hover {
-                    background: rgba(255,255,255,0.15);
-                    color: white;
-                }
-
-                .logout-btn svg {
-                    width: 14px;
-                    height: 14px;
-                }
-
-            /* ── LAYOUT ── */
-
-            .page {
-                display: flex;
-                min-height: calc(100vh - 64px);
-            }
-
-            /* ── SIDEBAR ── */
 
             .sidebar {
-                width: 220px;
-                background: white;
-                border-right: 1px solid var(--border);
-                padding: 24px 0;
-                flex-shrink: 0;
-                position: sticky;
+                position: fixed;
                 top: 64px;
-                height: calc(100vh - 64px);
-                overflow-y: auto;
+                left: 0;
+                bottom: 0;
+                width: 220px;
+                background: #0b1f3a;
+                padding: 25px 14px;
+                z-index: 900;
             }
 
-            .nav-section {
-                margin-bottom: 8px;
-            }
-
-            .nav-label {
-                font-size: 0.65rem;
-                font-weight: 600;
-                color: var(--muted);
-                letter-spacing: 0.1em;
+            .nav-title {
+                color: #8fa0bc;
+                font-size: 11px;
                 text-transform: uppercase;
-                padding: 0 20px;
-                margin-bottom: 4px;
+                letter-spacing: 1px;
+                padding: 0 14px 10px;
             }
 
             .nav-item {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 10px 20px;
-                color: var(--muted);
+                display: block;
+                color: #d8e0ed;
                 text-decoration: none;
-                font-size: 0.85rem;
-                font-weight: 500;
-                transition: all 0.15s;
-                border-left: 3px solid transparent;
+                padding: 12px 14px;
+                border-radius: 8px;
+                margin-bottom: 5px;
+                font-size: 14px;
             }
 
-                .nav-item:hover {
-                    background: var(--offwhite);
-                    color: var(--navy);
+                .nav-item:hover,
+                .nav-item.active {
+                    background: #123257;
+                    color: white;
                 }
 
                 .nav-item.active {
-                    background: var(--teal-light);
-                    color: var(--teal);
-                    border-left-color: var(--teal);
+                    border-left: 3px solid #0d9488;
                 }
-
-                .nav-item svg {
-                    width: 16px;
-                    height: 16px;
-                    flex-shrink: 0;
-                    fill: none;
-                    stroke: currentColor;
-                    stroke-width: 2;
-                    stroke-linecap: round;
-                }
-
-            /* ── MAIN ── */
 
             .main {
-                flex: 1;
-                padding: clamp(24px, 3vw, 40px);
-                overflow-y: auto;
+                margin-left: 220px;
+                padding: 94px 28px 40px;
             }
 
-            /* ── PAGE HEADER ── */
-
             .page-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
                 margin-bottom: 24px;
             }
 
                 .page-header h1 {
-                    font-family: 'DM Serif Display', serif;
-                    font-size: 1.8rem;
-                    color: var(--navy);
-                    margin-bottom: 4px;
+                    margin: 0;
+                    font-family: "DM Serif Display", serif;
+                    font-size: 32px;
                 }
 
                 .page-header p {
-                    font-size: 0.875rem;
-                    color: var(--muted);
+                    color: #6b7a99;
+                    margin: 6px 0 0;
                 }
 
-            /* ── GRID ── */
-
-            .content-grid {
+            .cards {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 24px;
+                gap: 22px;
             }
-
-            /* ── CARD ── */
 
             .card {
                 background: white;
-                border: 1px solid var(--border);
-                border-radius: 16px;
-                padding: 28px;
-                box-shadow: 0 2px 8px rgba(11,31,58,0.04);
+                border: 1px solid #dde4f0;
+                border-radius: 14px;
+                overflow: hidden;
+                box-shadow: 0 4px 15px rgba(11, 31, 58, 0.04);
             }
 
             .card-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                gap: 12px;
-                flex-wrap: wrap;
-                margin-bottom: 20px;
+                padding: 20px;
+                border-bottom: 1px solid #dde4f0;
             }
 
-            .header-actions {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-
-            .section-title {
-                font-size: 1rem;
+            .card-title {
+                font-size: 18px;
                 font-weight: 700;
-                color: var(--navy);
             }
 
-            /* ── BUTTONS ── */
+            .count {
+                background: #e8f7f5;
+                color: #0d9488;
+                padding: 4px 9px;
+                border-radius: 20px;
+                font-size: 12px;
+                font-weight: 700;
+            }
 
             .btn {
-                height: 44px;
-                padding: 0 18px;
                 border: none;
-                border-radius: 10px;
+                border-radius: 7px;
+                padding: 9px 15px;
                 cursor: pointer;
-                font-size: 0.82rem;
+                font-family: inherit;
                 font-weight: 600;
-                font-family: 'DM Sans', sans-serif;
-                transition: 0.2s;
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                text-decoration: none;
             }
 
-                .btn:hover {
-                    transform: translateY(-1px);
-                }
-
-            .btn-teal {
-                background: var(--teal);
+            .btn-primary {
+                background: #0d9488;
                 color: white;
-                box-shadow: 0 4px 14px rgba(13,148,136,0.25);
             }
 
-            .btn-light {
-                background: var(--teal-light);
-                color: var(--teal);
-            }
-
-            .btn-outline {
-                background: white;
-                color: var(--navy);
-                border: 1px solid var(--border);
-            }
-
-                .btn-outline:hover {
-                    border-color: var(--teal);
-                    color: var(--teal);
+                .btn-primary:hover {
+                    background: #087d73;
                 }
 
-            /* ── TABLE ── */
+            .btn-secondary {
+                background: #eef2f7;
+                color: #0b1f3a;
+            }
 
-            .table-wrap {
-                overflow-x: auto;
+            .btn-danger {
+                background: #fee2e2;
+                color: #b91c1c;
             }
 
             table {
                 width: 100%;
                 border-collapse: collapse;
-                min-width: 560px;
             }
 
-            thead th {
+            th {
                 text-align: left;
-                padding: 0 16px 12px;
-                font-size: 0.7rem;
-                font-weight: 600;
-                letter-spacing: 0.08em;
+                padding: 13px 18px;
+                background: #f8fafc;
+                color: #6b7a99;
+                font-size: 11px;
                 text-transform: uppercase;
-                color: var(--muted);
-                border-bottom: 1px solid var(--border);
+                letter-spacing: .5px;
             }
 
-                thead th.actions-col {
-                    text-align: right;
-                }
-
-            tbody td {
-                padding: 14px 16px;
-                border-bottom: 1px solid var(--offwhite);
-                font-size: 0.83rem;
-                color: var(--navy);
-                vertical-align: middle;
+            td {
+                padding: 15px 18px;
+                border-top: 1px solid #edf1f6;
+                font-size: 13px;
             }
 
-            tbody tr:last-child td {
-                border-bottom: none;
-            }
-
-            tbody tr.row-clickable {
+            .row-clickable {
                 cursor: pointer;
             }
 
-                tbody tr.row-clickable:hover {
-                    background: var(--offwhite);
+                .row-clickable:hover {
+                    background: #f8fbfc;
                 }
 
-            .staff-name {
-                font-weight: 600;
-                margin-bottom: 4px;
-            }
-
-            .staff-email {
-                font-size: 0.76rem;
-                color: var(--muted);
-            }
-
-            .mono {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                padding: 5px 10px;
-                border-radius: 100px;
-                background: var(--blue-light);
-                color: var(--blue);
-                font-size: 0.72rem;
+            .status-badge {
+                display: inline-block;
+                padding: 4px 9px;
+                border-radius: 20px;
+                font-size: 11px;
                 font-weight: 700;
-                font-family: monospace;
             }
 
-            .tag {
-                display: inline-flex;
-                align-items: center;
-                padding: 5px 10px;
-                border-radius: 100px;
-                background: var(--teal-light);
-                color: var(--teal);
-                font-size: 0.72rem;
+            .active {
+                background: #dcfce7;
+                color: #15803d;
+            }
+
+            .inactive {
+                background: #fee2e2;
+                color: #b91c1c;
+            }
+
+            .test-badge {
+                display: inline-block;
+                background: #e8f7f5;
+                color: #0d9488;
+                padding: 4px 8px;
+                border-radius: 5px;
+                font-size: 11px;
                 font-weight: 600;
             }
 
-            /* ── STATUS ── */
-
-            .status {
-                display: inline-flex;
-                align-items: center;
-                padding: 4px 10px;
-                border-radius: 100px;
-                font-size: 0.7rem;
-                font-weight: 600;
-            }
-
-            .status-good {
-                background: var(--green-light);
-                color: var(--green);
-            }
-
-            .status-low {
-                background: var(--red-light);
-                color: var(--red);
-            }
-
-            /* ── ACTIONS CELL ── */
-
-            .actions-cell {
-                text-align: right;
-                white-space: nowrap;
-            }
-
-            .btn-row-edit {
-                display: inline-flex;
-                align-items: center;
-                gap: 5px;
-                padding: 6px 12px;
-                border-radius: 8px;
-                border: 1px solid var(--border);
-                background: white;
-                color: var(--navy);
-                font-size: 0.72rem;
-                font-weight: 600;
-                font-family: 'DM Sans', sans-serif;
-                cursor: pointer;
-                transition: 0.15s;
-            }
-
-                .btn-row-edit:hover {
-                    background: var(--teal-light);
-                    border-color: var(--teal);
-                    color: var(--teal);
-                }
-
-                .btn-row-edit svg {
-                    width: 12px;
-                    height: 12px;
-                    fill: none;
-                    stroke: currentColor;
-                    stroke-width: 2;
-                    stroke-linecap: round;
-                }
-
-            /* ── EMPTY ── */
-
-            .empty-cell {
+            .empty {
                 text-align: center;
-                padding: 48px;
-                color: var(--muted);
-                font-size: 0.875rem;
+                padding: 35px;
+                color: #6b7a99;
             }
 
-            /* ── MODAL ── */
+            /* ============================================================
+                       MODAL
+                       ============================================================ */
 
-            .modal-bg {
+            .modal {
+                display: none;
                 position: fixed;
                 inset: 0;
-                background: rgba(11,31,58,0.45);
-                display: none;
+                background: rgba(11, 31, 58, .55);
                 align-items: center;
                 justify-content: center;
-                z-index: 999;
+                z-index: 2000;
                 padding: 20px;
             }
 
-                .modal-bg.open {
+                .modal.show {
                     display: flex;
                 }
 
-            .modal {
+            .modal-box {
                 width: 100%;
-                max-width: 620px;
+                max-width: 550px;
                 background: white;
-                border-radius: 20px;
-                padding: 32px 28px;
-                position: relative;
-                box-shadow: 0 20px 60px rgba(11,31,58,0.2);
-                animation: modalIn 0.18s ease;
+                border-radius: 14px;
+                box-shadow: 0 20px 50px rgba(0,0,0,.2);
+                max-height: 90vh;
+                overflow-y: auto;
             }
 
-            @@keyframes modalIn {
-                from {
-                    opacity: 0;
-                    transform: scale(0.96) translateY(8px);
-                }
-
-                to {
-                    opacity: 1;
-                    transform: scale(1) translateY(0);
-                }
+            .modal-header {
+                padding: 20px 22px;
+                border-bottom: 1px solid #dde4f0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
             }
 
-            .modal-close {
-                position: absolute;
-                top: 18px;
-                right: 18px;
-                width: 38px;
-                height: 38px;
+                .modal-header h2 {
+                    margin: 0;
+                    font-size: 20px;
+                }
+
+            .close {
                 border: none;
-                border-radius: 10px;
-                background: var(--offwhite);
-                color: var(--navy);
+                background: none;
+                font-size: 25px;
                 cursor: pointer;
-                font-size: 1rem;
-                font-weight: 700;
+                color: #6b7a99;
             }
 
-            .modal h2 {
-                font-family: 'DM Serif Display', serif;
-                font-size: 1.5rem;
-                color: var(--navy);
-                margin-bottom: 6px;
-            }
-
-            .modal p {
-                font-size: 0.85rem;
-                color: var(--muted);
-                margin-bottom: 24px;
-                line-height: 1.6;
-            }
-
-            .form-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 18px;
+            .modal-body {
+                padding: 22px;
             }
 
             .form-group {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-                margin-bottom: 18px;
+                margin-bottom: 17px;
             }
 
-                .form-group.full {
-                    grid-column: span 2;
-                }
-
-            .form-label {
-                font-size: 0.82rem;
-                font-weight: 600;
-                color: var(--navy);
-            }
-
-            .form-input {
-                height: 46px;
-                border-radius: 10px;
-                border: 1px solid var(--border);
-                background: var(--offwhite);
-                padding: 0 14px;
-                outline: none;
-                font-size: 0.85rem;
-                font-family: 'DM Sans', sans-serif;
-                transition: 0.2s;
-                color: var(--navy);
-            }
-
-                .form-input:focus {
-                    border-color: var(--teal);
-                    background: white;
-                }
-
-            /* ── TEST CATEGORY MULTI-SELECT DROPDOWN ── */
-
-            .test-category-dropdown {
-                position: relative;
-                width: 100%;
-            }
-
-            .test-category-toggle {
-                width: 100%;
-                min-height: 46px;
-                padding: 0 14px;
-                border: 1px solid var(--border);
-                border-radius: 10px;
-                background: var(--offwhite);
-                color: var(--navy);
-                font-family: 'DM Sans', sans-serif;
-                font-size: 0.85rem;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 12px;
-                text-align: left;
-                transition: 0.2s;
-            }
-
-                .test-category-toggle:hover,
-                .test-category-toggle.open {
-                    border-color: var(--teal);
-                    background: white;
-                }
-
-            .test-category-toggle-text {
-                color: var(--muted);
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-
-                .test-category-toggle-text.has-selection {
-                    color: var(--navy);
-                    font-weight: 500;
-                }
-
-            .test-category-arrow {
-                font-size: 0.72rem;
-                flex-shrink: 0;
-                transition: transform 0.2s;
-            }
-
-            .test-category-toggle.open .test-category-arrow {
-                transform: rotate(180deg);
-            }
-
-            .test-category-menu {
-                position: absolute;
-                top: calc(100% + 6px);
-                left: 0;
-                width: 100%;
-                max-height: 240px;
-                overflow-y: auto;
-                background: white;
-                border: 1px solid var(--border);
-                border-radius: 10px;
-                padding: 8px;
-                box-shadow: 0 12px 30px rgba(11,31,58,0.14);
-                z-index: 60;
-                display: none;
-            }
-
-                .test-category-menu.open {
+                .form-group label {
                     display: block;
-                }
-
-            .test-category-option {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 11px 12px;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 0.82rem;
-                color: var(--navy);
-                font-weight: 500;
-                transition: 0.15s;
-                user-select: none;
-            }
-
-                .test-category-option:hover {
-                    background: var(--offwhite);
-                }
-
-                .test-category-option:has(input:checked) {
-                    background: var(--teal-light);
-                    color: var(--teal);
+                    margin-bottom: 7px;
+                    font-size: 13px;
                     font-weight: 600;
                 }
 
-                .test-category-option input[type="checkbox"] {
-                    width: 17px;
-                    height: 17px;
-                    accent-color: var(--teal);
-                    cursor: pointer;
-                    flex-shrink: 0;
+            .form-control {
+                width: 100%;
+                padding: 11px 12px;
+                border: 1px solid #ccd6e5;
+                border-radius: 7px;
+                outline: none;
+                font-family: inherit;
+                font-size: 14px;
+                background: white;
+            }
+
+                .form-control:focus {
+                    border-color: #0d9488;
+                    box-shadow: 0 0 0 3px rgba(13,148,136,.1);
                 }
 
-            .modal-actions {
+            .modal-footer {
+                padding: 18px 22px;
+                border-top: 1px solid #dde4f0;
                 display: flex;
+                justify-content: flex-end;
                 gap: 10px;
-                margin-top: 24px;
             }
 
-            .btn-modal {
-                flex: 1;
-                height: 46px;
-                border-radius: 10px;
-                border: none;
-                font-family: 'DM Sans', sans-serif;
-                font-size: 0.85rem;
-                font-weight: 600;
-                cursor: pointer;
-                transition: 0.2s;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                text-decoration: none;
-            }
-
-            .btn-save {
-                background: var(--teal);
-                color: white;
-            }
-
-            .btn-cancel {
-                background: var(--offwhite);
-                color: var(--navy);
-                border: 1px solid var(--border);
-            }
-
-            .modal-icon {
-                width: 52px;
-                height: 52px;
-                background: #fee2e2;
-                border-radius: 14px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-bottom: 18px;
-            }
-
-            /* ── VIEW MODAL (row detail, matches Doctor Alerts style) ── */
-
-            .view-modal .modal-header-row {
+            .detail-row {
                 display: flex;
                 justify-content: space-between;
-                align-items: flex-start;
-                margin-bottom: 20px;
-                padding-bottom: 18px;
-                border-bottom: 1px solid var(--border);
+                gap: 20px;
+                padding: 12px 0;
+                border-bottom: 1px solid #edf1f6;
             }
 
-            .view-tag {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                font-size: 0.68rem;
-                font-weight: 700;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
-                color: var(--teal);
-                margin-bottom: 6px;
+            .detail-label {
+                color: #6b7a99;
+                font-size: 13px;
             }
 
-            .view-modal h2 {
-                margin-bottom: 0;
-            }
-
-            .status-box {
-                display: flex;
-                align-items: center;
-                gap: 14px;
-                border: 1px solid var(--amber-light);
-                background: var(--amber-light);
-                border-radius: 12px;
-                padding: 16px 18px;
-                margin-bottom: 22px;
-            }
-
-                .status-box.status-box-green {
-                    background: var(--green-light);
-                    border-color: rgba(22,163,74,0.25);
-                }
-
-                .status-box.status-box-red {
-                    background: var(--red-light);
-                    border-color: rgba(220,38,38,0.25);
-                }
-
-                .status-box.status-box-blue {
-                    background: var(--blue-light);
-                    border-color: rgba(29,78,216,0.2);
-                }
-
-            .status-box-icon {
-                width: 40px;
-                height: 40px;
-                border-radius: 10px;
-                background: var(--amber);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-shrink: 0;
-            }
-
-                .status-box-icon svg {
-                    width: 20px;
-                    height: 20px;
-                    fill: none;
-                    stroke: white;
-                    stroke-width: 2;
-                    stroke-linecap: round;
-                    stroke-linejoin: round;
-                }
-
-            .status-box.status-box-green .status-box-icon {
-                background: var(--green);
-            }
-
-            .status-box.status-box-red .status-box-icon {
-                background: var(--red);
-            }
-
-            .status-box.status-box-blue .status-box-icon {
-                background: var(--blue);
-            }
-
-            .status-box-value {
-                font-size: 1.15rem;
-                font-weight: 700;
-                color: var(--navy);
-            }
-
-            .status-box-sub {
-                font-size: 0.78rem;
-                color: var(--muted);
-                margin-top: 2px;
-            }
-
-            .info-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 18px 24px;
-                margin-bottom: 4px;
-            }
-
-            .info-item {
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
-            }
-
-            .info-label {
-                font-size: 0.68rem;
-                font-weight: 700;
-                letter-spacing: 0.06em;
-                text-transform: uppercase;
-                color: var(--muted);
-            }
-
-            .info-value {
-                font-size: 0.9rem;
+            .detail-value {
                 font-weight: 600;
-                color: var(--navy);
+                text-align: right;
             }
 
-            .view-divider {
-                border: none;
-                border-top: 1px solid var(--border);
-                margin: 20px 0;
+            .alert {
+                padding: 13px 16px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                font-size: 13px;
             }
 
-            .view-tags-row {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
-                margin-top: 6px;
+            .alert-success {
+                background: #dcfce7;
+                color: #166534;
             }
 
-            /* ── RESPONSIVE ── */
+            .alert-error {
+                background: #fee2e2;
+                color: #991b1b;
+            }
 
-            @@media (max-width: 1100px) {
+            @@media (max-width: 1000px) {
 
-                .content-grid {
+                .cards {
                     grid-template-columns: 1fr;
                 }
             }
 
-            @@media (max-width: 768px) {
-
-                .topbar {
-                    padding: 0 20px;
-                }
-
-                .user-email {
-                    display: none;
-                }
+            @@media (max-width: 700px) {
 
                 .sidebar {
-                    display: none;
+                    width: 70px;
                 }
+
+                    .sidebar .nav-item {
+                        font-size: 0;
+                        text-align: center;
+                    }
+
+                    .sidebar .nav-title {
+                        display: none;
+                    }
 
                 .main {
-                    padding: 20px 16px;
+                    margin-left: 70px;
                 }
 
-                .form-grid {
-                    grid-template-columns: 1fr;
-                }
-
-                .form-group.full {
-                    grid-column: span 1;
-                }
-
-                .modal-actions {
-                    flex-direction: column;
-                }
-
-                .info-grid {
-                    grid-template-columns: 1fr;
+                .top-user span {
+                    display: none;
                 }
             }
 
     </style>
 
 </head>
+
 <body>
 
-    <!-- TOPBAR -->
-    <div class="topbar">
+    <!-- ============================================================
+         TOP BAR
+         ============================================================ -->
 
-        <a class="brand" asp-controller="Home" asp-action="Index">
+    <header class="topbar">
 
-            <div class="brand-logo">
-                <svg viewBox="0 0 24 24">
-                    <path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" />
-                    <circle cx="12" cy="17" r="4" opacity="0.6" />
-                </svg>
+        <div class="brand">
+            NMB-<span>HLabSys</span>
+        </div>
+
+        <div class="top-user">
+
+            <span>
+                @ViewBag.Email
+            </span>
+
+            <div class="user-circle">
+                M
             </div>
 
-            <div class="brand-name">
-                NMB-HLabSys
-                <span>Haematology Lab System</span>
-            </div>
+        </div>
 
+    </header>
+
+
+    <!-- ============================================================
+         SIDEBAR
+         ============================================================ -->
+
+    <aside class="sidebar">
+
+        <div class="nav-title">
+            Management
+        </div>
+
+        <a href="/ManagerDashboard/Index"
+           class="nav-item">
+            Dashboard
         </a>
 
-        <div class="topbar-right">
+        <a href="/ManagerDashboard/Staff"
+           class="nav-item active">
+            Staff
+        </a>
 
-            <div class="user-chip">
-                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "M")</div>
-                <span class="user-email">@ViewBag.Email</span>
-            </div>
+        <a href="/ManagerDashboard/Consumables"
+           class="nav-item">
+            Consumables
+        </a>
 
-            <a asp-controller="Home"
-               asp-action="Logout"
-               class="logout-btn"
-               id="logout-btn">
+        <a href="/ManagerDashboard/Orders"
+           class="nav-item">
+            Orders
+        </a>
 
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
+        <a href="/ManagerDashboard/Reports"
+           class="nav-item">
+            Reports
+        </a>
 
-                Sign Out
-            </a>
+    </aside>
 
-        </div>
 
-    </div>
+    <!-- ============================================================
+         MAIN
+         ============================================================ -->
 
-    <div class="page">
+    <main class="main">
 
-        <!-- SIDEBAR -->
+        <div class="page-header">
 
-        <aside class="sidebar">
+            <div>
 
-            <div class="nav-section">
+                <h1>
+                    Staff Management
+                </h1>
 
-                <div class="nav-label">Main</div>
+                <p>
+                    Manage doctors and laboratory technicians.
+                </p>
 
-                <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item">
-                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
-                    Dashboard
-                </a>
-
-                <a asp-controller="ManagerDashboard" asp-action="TestCatalogue" class="nav-item">
-                    <svg viewBox="0 0 24 24"><path d="M9 3v11a3 3 0 006 0V3" /><line x1="6" y1="3" x2="18" y2="3" /></svg>
-                    Test Catalogue
-                </a>
-
-                <a asp-controller="ManagerDashboard" asp-action="Consumables" class="nav-item">
-                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                    Consumables
-                </a>
-
-                <a asp-controller="ManagerDashboard" asp-action="Staff" class="nav-item active">
-                    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                    Staff
-                </a>
-
-                <a asp-controller="ManagerDashboard" asp-action="Orders" class="nav-item">
-                    <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
-                    Orders
-                </a>
-
-                <a asp-controller="ManagerDashboard" asp-action="Report" class="nav-item">
-                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
-                    Reports
-                </a>
-
-            </div>
-
-            <div class="nav-section">
-
-                <div class="nav-label">System</div>
-
-                <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
-                    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                    Profile
-                </a>
-
-                <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
-                    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                    Audit Log
-                </a>
-
-            </div>
-
-        </aside>
-
-        <!-- MAIN -->
-
-        <main class="main">
-
-            <div class="page-header">
-                <h1>Staff Management</h1>
-                <p>Manage doctors, laboratory technicians and assigned laboratory roles.</p>
-            </div>
-
-            <div class="content-grid">
-
-                <!-- DOCTORS -->
-
-                <div class="card">
-
-                    <div class="card-header">
-                        <div class="section-title">Doctors</div>
-
-                        <button class="btn btn-teal"
-                                onclick="openModal('doctorModal')">
-                            + Add Doctor
-                        </button>
-                    </div>
-
-                    <div class="table-wrap">
-
-                        <table>
-
-                            <thead>
-                                <tr>
-                                    <th>Doctor</th>
-                                    <th>HPCSA</th>
-                                    <th>Status</th>
-                                    <th class="actions-col">Actions</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-
-                                @if (Model?.Doctors != null && Model.Doctors.Any())
-                                {
-                                    foreach (var d in Model.Doctors)
-                                    {
-                                        <tr class="row-clickable"
-                                            data-id="@d.Id"
-                                            data-fullname="@d.FullName"
-                                            data-email="@d.Email"
-                                            data-hpcsa="@d.HpcsaNumber"
-                                            data-active="@d.IsActive.ToString().ToLower()"
-                                            onclick="openDoctorView(this)">
-
-                                            <td>
-                                                <div class="staff-name">@d.FullName</div>
-                                                <div class="staff-email">@d.Email</div>
-                                            </td>
-
-                                            <td>
-                                                <span class="mono">@d.HpcsaNumber</span>
-                                            </td>
-
-                                            <td>
-
-                                                @if (d.IsActive)
-                                                {
-                                                    <span class="status status-good">
-                                                        Active
-                                                    </span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="status status-low">
-                                                        Inactive
-                                                    </span>
-                                                }
-
-                                            </td>
-
-                                            <td class="actions-cell">
-                                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openDoctorEdit(this.closest('tr'))">
-                                                    <svg viewBox="0 0 24 24"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
-                                                    Edit
-                                                </button>
-                                            </td>
-
-                                        </tr>
-                                    }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="4" class="empty-cell">
-                                            No doctors found.
-                                        </td>
-                                    </tr>
-                                }
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                </div>
-
-                <!-- TECHNICIANS -->
-
-                <div class="card">
-
-                    <div class="card-header">
-                        <div class="section-title">Laboratory Technicians</div>
-
-                        <button class="btn btn-light"
-                                onclick="openModal('techModal')">
-                            + Add Technician
-                        </button>
-                    </div>
-
-                    <div class="table-wrap">
-
-                        <table>
-
-                            <thead>
-                                <tr>
-                                    <th>Technician</th>
-                                    <th>Employee #</th>
-                                    <th>Assigned Tests</th>
-                                    <th class="actions-col">Actions</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-
-                                @if (Model?.Technicians != null && Model.Technicians.Any())
-                                {
-                                    foreach (var t in Model.Technicians)
-                                    {
-                                        <tr class="row-clickable"
-                                            data-id="@t.Id"
-                                            data-fullname="@t.FullName"
-                                            data-email="@t.Email"
-                                            data-employeenumber="@t.EmployeeNumber"
-                                            data-testtypes="@string.Join(",", t.TestTypes)"
-                                            onclick="openTechView(this)">
-
-                                            <td>
-                                                <div class="staff-name">@t.FullName</div>
-                                                <div class="staff-email">@t.Email</div>
-                                            </td>
-
-                                            <td>
-                                                <span class="mono">@t.EmployeeNumber</span>
-                                            </td>
-
-                                            <td>
-                                                <span class="tag">
-                                                    @string.Join(", ", t.TestTypes)
-                                                </span>
-                                            </td>
-
-                                            <td class="actions-cell">
-                                                <button type="button" class="btn-row-edit" onclick="event.stopPropagation(); openTechEdit(this.closest('tr'))">
-                                                    <svg viewBox="0 0 24 24"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
-                                                    Edit
-                                                </button>
-                                            </td>
-
-                                        </tr>
-                                    }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="4" class="empty-cell">
-                                            No technicians found.
-                                        </td>
-                                    </tr>
-                                }
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </main>
-
-    </div>
-
-    <!-- DOCTOR VIEW MODAL (row-click detail, styled like Abnormal Result Alert) -->
-
-    <div class="modal-bg" id="doctorViewModal" onclick="closeByBackground(event,this)">
-
-        <div class="modal view-modal">
-
-            <button class="modal-close" onclick="closeModal('doctorViewModal')">✕</button>
-
-            <div class="modal-header-row">
-                <div>
-                    <div class="view-tag">Doctor Profile</div>
-                    <h2 id="dvName">—</h2>
-                </div>
-            </div>
-
-            <div class="status-box" id="dvStatusBox">
-                <div class="status-box-icon">
-                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
-                </div>
-                <div>
-                    <div class="status-box-value" id="dvStatusValue">Active</div>
-                    <div class="status-box-sub" id="dvStatusSub">HPCSA Number: —</div>
-                </div>
-            </div>
-
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">Email</div>
-                    <div class="info-value" id="dvEmail">—</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Contact Number</div>
-                    <div class="info-value" id="dvContact">—</div>
-                </div>
-            </div>
-
-            <div class="modal-actions">
-                <button type="button" class="btn-modal btn-cancel" onclick="closeModal('doctorViewModal')">Close</button>
-                <button type="button" class="btn-modal btn-save" id="dvEditBtn">Edit Doctor</button>
             </div>
 
         </div>
 
-    </div>
 
-    <!-- TECHNICIAN VIEW MODAL (row-click detail, styled like Abnormal Result Alert) -->
-
-    <div class="modal-bg" id="techViewModal" onclick="closeByBackground(event,this)">
-
-        <div class="modal view-modal">
-
-            <button class="modal-close" onclick="closeModal('techViewModal')">✕</button>
-
-            <div class="modal-header-row">
-                <div>
-                    <div class="view-tag">Technician Profile</div>
-                    <h2 id="tvName">—</h2>
-                </div>
+        <!-- ========================================================
+             ALERTS
+             ======================================================== -->
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">
+                @TempData["Success"]
             </div>
+        }
 
-            <div class="status-box status-box-blue" id="tvStatusBox">
-                <div class="status-box-icon">
-                    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                </div>
-                <div>
-                    <div class="status-box-value" id="tvStatusValue">—</div>
-                    <div class="status-box-sub" id="tvStatusSub">Employee Number</div>
-                </div>
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-error">
+                @TempData["Error"]
             </div>
+        }
 
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">Email</div>
-                    <div class="info-value" id="tvEmail">—</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Assigned Test Categories</div>
-                    <div class="view-tags-row" id="tvTags"></div>
-                </div>
-            </div>
 
-            <div class="modal-actions">
-                <button type="button" class="btn-modal btn-cancel" onclick="closeModal('techViewModal')">Close</button>
-                <button type="button" class="btn-modal btn-save" id="tvEditBtn">Edit Technician</button>
-            </div>
+        <div class="cards">
 
-        </div>
+            <!-- ====================================================
+                 DOCTORS
+                 ==================================================== -->
 
-    </div>
+            <section class="card">
 
-    <!-- ADD / EDIT DOCTOR MODAL -->
+                <div class="card-header">
 
-    <div class="modal-bg" id="doctorModal" onclick="closeByBackground(event,this)">
+                    <div>
+                        <span class="card-title">
+                            Doctors
+                        </span>
 
-        <div class="modal">
-
-            <button class="modal-close"
-                    onclick="closeModal('doctorModal')">
-                ✕
-            </button>
-
-            <h2 id="doctorModalTitle">Add Doctor</h2>
-
-            <p id="doctorModalSub">
-                A temporary password will automatically be generated.
-            </p>
-
-            <form asp-controller="ManagerDashboard"
-                  asp-action="AddDoctor"
-                  method="post"
-                  id="doctorForm">
-
-                @Html.AntiForgeryToken()
-
-                <input type="hidden" name="id" id="doctorId" value="" />
-
-                <div class="form-grid">
-
-                    <div class="form-group">
-                        <label class="form-label">First Name</label>
-                        <input class="form-input" name="firstName" id="doctorFirstName" required />
+                        <span class="count">
+                            @Model.Doctors.Count()
+                        </span>
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Last Name</label>
-                        <input class="form-input" name="lastName" id="doctorLastName" required />
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">HPCSA Number</label>
-                        <input class="form-input" name="hpcsaNumber" id="doctorHpcsa" required />
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Contact Number</label>
-                        <input class="form-input" name="contactNumber" id="doctorContact" />
-                    </div>
-
-                    <div class="form-group full">
-                        <label class="form-label">Email Address</label>
-                        <input class="form-input" type="email" name="email" id="doctorEmail" required />
-                    </div>
-
-                </div>
-
-                <div class="modal-actions">
-
-                    <button type="submit"
-                            class="btn-modal btn-save"
-                            id="doctorSubmitBtn">
-                        Add Doctor
-                    </button>
 
                     <button type="button"
-                            class="btn-modal btn-cancel"
-                            onclick="closeModal('doctorModal')">
-                        Cancel
+                            class="btn btn-primary"
+                            onclick="openAddDoctor()">
+
+                        + Add Doctor
+
                     </button>
 
                 </div>
 
-            </form>
 
-        </div>
+                @if (Model.Doctors.Any())
+                {
 
-    </div>
+                    <table>
 
-    <!-- ADD / EDIT TECHNICIAN MODAL -->
+                        <thead>
 
-    <div class="modal-bg" id="techModal" onclick="closeByBackground(event,this)">
+                            <tr>
+                                <th>Name</th>
+                                <th>HPCSA</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                            </tr>
 
-        <div class="modal">
+                        </thead>
 
-            <button class="modal-close"
-                    onclick="closeModal('techModal')">
-                ✕
-            </button>
+                        <tbody>
 
-            <h2 id="techModalTitle">Add Technician</h2>
+                            @foreach (var d in Model.Doctors)
+                            {
 
-            <p id="techModalSub">
-                Assign laboratory test categories to the technician.
-            </p>
+                                <tr class="row-clickable"
+                                    data-id="@d.Id"
+                                    data-fullname="@d.FullName"
+                                    data-firstname="@d.FirstName"
+                                    data-lastname="@d.LastName"
+                                    data-email="@d.EmailAddress"
+                                    data-hpcsa="@d.HCPSANumber"
+                                    data-contact="@d.ContactNumber"
+                                    data-active="@d.IsActive.ToString().ToLower()"
+                                    onclick="openDoctorView(this)">
 
-            <form asp-controller="ManagerDashboard"
-                  asp-action="AddTechnician"
-                  method="post"
-                  id="techForm">
+                                    <td>
+                                        <strong>
+                                            @d.FullName
+                                        </strong>
+                                    </td>
 
-                @Html.AntiForgeryToken()
+                                    <td>
+                                        @d.HCPSANumber
+                                    </td>
 
-                <input type="hidden" name="id" id="techId" value="" />
+                                    <td>
+                                        @d.EmailAddress
+                                    </td>
 
-                <div class="form-grid">
+                                    <td>
 
-                    <div class="form-group">
-                        <label class="form-label">First Name</label>
-                        <input class="form-input" name="firstName" id="techFirstName" required />
+                                        @if (d.IsActive)
+                                        {
+                                            <span class="status-badge active">
+                                                Active
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-badge inactive">
+                                                Inactive
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                </tr>
+
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                }
+                else
+                {
+
+                    <div class="empty">
+                        No doctors found.
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Last Name</label>
-                        <input class="form-input" name="lastName" id="techLastName" required />
+                }
+
+            </section>
+
+
+            <!-- ====================================================
+                 TECHNICIANS
+                 ==================================================== -->
+
+            <section class="card">
+
+                <div class="card-header">
+
+                    <div>
+                        <span class="card-title">
+                            Laboratory Technicians
+                        </span>
+
+                        <span class="count">
+                            @Model.Technicians.Count()
+                        </span>
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Employee Number</label>
-                        <input class="form-input" name="employeeNumber" id="techEmployeeNumber" required />
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Email Address</label>
-                        <input class="form-input" type="email" name="email" id="techEmail" required />
-                    </div>
-
-                    <div class="form-group full">
-
-                        <label class="form-label">Test Categories</label>
-
-                        <div class="test-category-dropdown">
-
-                            <button type="button"
-                                    class="test-category-toggle"
-                                    id="testCategoryToggle"
-                                    aria-expanded="false"
-                                    aria-controls="techCheckboxGroup">
-
-                                <span class="test-category-toggle-text"
-                                      id="testCategoryText">
-                                    Select test categories
-                                </span>
-
-                                <span class="test-category-arrow">▼</span>
-
-                            </button>
-
-                            <div class="test-category-menu"
-                                 id="techCheckboxGroup">
-
-                                <label class="test-category-option">
-                                    <input type="checkbox"
-                                           name="testTypes"
-                                           value="FBC" />
-                                    <span>FBC</span>
-                                </label>
-
-                                <label class="test-category-option">
-                                    <input type="checkbox"
-                                           name="testTypes"
-                                           value="Diff Count" />
-                                    <span>Diff Count</span>
-                                </label>
-
-                                <label class="test-category-option">
-                                    <input type="checkbox"
-                                           name="testTypes"
-                                           value="Coagulation" />
-                                    <span>Coagulation</span>
-                                </label>
-
-                                <label class="test-category-option">
-                                    <input type="checkbox"
-                                           name="testTypes"
-                                           value="PBF" />
-                                    <span>PBF</span>
-                                </label>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div class="modal-actions">
-
-                    <button type="submit"
-                            class="btn-modal btn-save"
-                            id="techSubmitBtn">
-                        Add Technician
-                    </button>
 
                     <button type="button"
-                            class="btn-modal btn-cancel"
-                            onclick="closeModal('techModal')">
-                        Cancel
+                            class="btn btn-primary"
+                            onclick="openAddTechnician()">
+
+                        + Add Technician
+
                     </button>
 
                 </div>
 
-            </form>
+
+                @if (Model.Technicians.Any())
+                {
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>Name</th>
+                                <th>Employee No.</th>
+                                <th>Test Type</th>
+                                <th>Status</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var t in Model.Technicians)
+                            {
+
+                                <tr class="row-clickable"
+                                    data-id="@t.Id"
+                                    data-fullname="@t.FullName"
+                                    data-firstname="@t.FirstName"
+                                    data-lastname="@t.LastName"
+                                    data-email="@t.EmailAddress"
+                                    data-employee="@t.EmployeeNumber"
+                                    data-testtypeid="@t.TestTypeID"
+                                    data-testname="@t.TestName"
+                                    data-active="@t.IsActive.ToString().ToLower()"
+                                    onclick="openTechnicianView(this)">
+
+                                    <td>
+                                        <strong>
+                                            @t.FullName
+                                        </strong>
+                                    </td>
+
+                                    <td>
+                                        @t.EmployeeNumber
+                                    </td>
+
+                                    <td>
+
+                                        <span class="test-badge">
+                                            @t.TestName
+                                        </span>
+
+                                    </td>
+
+                                    <td>
+
+                                        @if (t.IsActive)
+                                        {
+                                            <span class="status-badge active">
+                                                Active
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-badge inactive">
+                                                Inactive
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                </tr>
+
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                }
+                else
+                {
+
+                    <div class="empty">
+                        No laboratory technicians found.
+                    </div>
+
+                }
+
+            </section>
 
         </div>
 
-    </div>
+    </main>
 
-    <!-- LOGOUT MODAL -->
 
-    <div id="logoutModal"
-         class="modal-bg"
-         onclick="closeByBackground(event,this)">
+    <!-- ============================================================
+         DOCTOR VIEW MODAL
+         ============================================================ -->
 
-        <div class="modal" style="max-width:400px;">
+    <div id="doctorViewModal"
+         class="modal">
 
-            <button class="modal-close"
-                    onclick="closeModal('logoutModal')">
-                ✕
-            </button>
+        <div class="modal-box">
 
-            <div class="modal-icon">
+            <div class="modal-header">
 
-                <svg width="22"
-                     height="22"
-                     viewBox="0 0 24 24"
-                     fill="none"
-                     stroke="#dc2626"
-                     stroke-width="2">
+                <h2>
+                    Doctor Details
+                </h2>
 
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" y1="12" x2="9" y2="12" />
-
-                </svg>
-
-            </div>
-
-            <h2>Sign out?</h2>
-
-            <p>
-                You'll be returned to the login screen.
-                Any unsaved changes will be lost.
-            </p>
-
-            <div class="modal-actions">
-
-                <button class="btn-modal btn-cancel"
-                        onclick="closeModal('logoutModal')">
-                    Cancel
+                <button class="close"
+                        onclick="closeModal('doctorViewModal')">
+                    &times;
                 </button>
 
-                <a id="logout-confirm"
-                   href="#"
-                   class="btn-modal btn-save"
-                   style="background:#dc2626;">
-                    Sign Out
-                </a>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="detail-row">
+                    <span class="detail-label">
+                        Name
+                    </span>
+
+                    <span id="viewDoctorName"
+                          class="detail-value">
+                    </span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">
+                        HPCSA Number
+                    </span>
+
+                    <span id="viewDoctorHpcsa"
+                          class="detail-value">
+                    </span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">
+                        Email
+                    </span>
+
+                    <span id="viewDoctorEmail"
+                          class="detail-value">
+                    </span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">
+                        Contact
+                    </span>
+
+                    <span id="viewDoctorContact"
+                          class="detail-value">
+                    </span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">
+                        Status
+                    </span>
+
+                    <span id="viewDoctorStatus"
+                          class="detail-value">
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        onclick="closeModal('doctorViewModal')">
+
+                    Close
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        onclick="editCurrentDoctor()">
+
+                    Edit
+
+                </button>
 
             </div>
 
         </div>
 
     </div>
+
+
+    <!-- ============================================================
+         ADD / EDIT DOCTOR
+         ============================================================ -->
+
+    <div id="doctorModal"
+         class="modal">
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+
+                <h2 id="doctorModalTitle">
+                    Add Doctor
+                </h2>
+
+                <button class="close"
+                        onclick="closeModal('doctorModal')">
+                    &times;
+                </button>
+
+            </div>
+
+
+            <form id="doctorForm"
+                  method="post"
+                  action="/ManagerDashboard/AddDoctor">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       id="doctorId"
+                       name="id"
+                       value="0" />
+
+
+                <div class="modal-body">
+
+                    <div class="form-group">
+
+                        <label>
+                            First Name
+                        </label>
+
+                        <input type="text"
+                               id="doctorFirstName"
+                               name="firstName"
+                               class="form-control"
+                               required />
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Last Name
+                        </label>
+
+                        <input type="text"
+                               id="doctorLastName"
+                               name="lastName"
+                               class="form-control"
+                               required />
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            HPCSA Number
+                        </label>
+
+                        <input type="text"
+                               id="doctorHpcsa"
+                               name="hpcsaNumber"
+                               class="form-control"
+                               required />
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Email Address
+                        </label>
+
+                        <input type="email"
+                               id="doctorEmail"
+                               name="email"
+                               class="form-control"
+                               required />
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Contact Number
+                        </label>
+
+                        <input type="text"
+                               id="doctorContact"
+                               name="contactNumber"
+                               class="form-control" />
+
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            onclick="closeModal('doctorModal')">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary">
+
+                        Save Doctor
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================================
+         TECHNICIAN VIEW MODAL
+         ============================================================ -->
+
+    <div id="technicianViewModal"
+         class="modal">
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+
+                <h2>
+                    Technician Details
+                </h2>
+
+                <button class="close"
+                        onclick="closeModal('technicianViewModal')">
+                    &times;
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Name
+                    </span>
+
+                    <span id="viewTechnicianName"
+                          class="detail-value">
+                    </span>
+
+                </div>
+
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Employee Number
+                    </span>
+
+                    <span id="viewTechnicianEmployee"
+                          class="detail-value">
+                    </span>
+
+                </div>
+
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Email
+                    </span>
+
+                    <span id="viewTechnicianEmail"
+                          class="detail-value">
+                    </span>
+
+                </div>
+
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Test Type
+                    </span>
+
+                    <span id="viewTechnicianTestType"
+                          class="detail-value">
+                    </span>
+
+                </div>
+
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Status
+                    </span>
+
+                    <span id="viewTechnicianStatus"
+                          class="detail-value">
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        onclick="closeModal('technicianViewModal')">
+
+                    Close
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        onclick="editCurrentTechnician()">
+
+                    Edit
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================================
+         ADD / EDIT TECHNICIAN
+         ============================================================ -->
+
+    <div id="technicianModal"
+         class="modal">
+
+        <div class="modal-box">
+
+            <div class="modal-header">
+
+                <h2 id="technicianModalTitle">
+                    Add Laboratory Technician
+                </h2>
+
+                <button class="close"
+                        onclick="closeModal('technicianModal')">
+                    &times;
+                </button>
+
+            </div>
+
+
+            <form id="technicianForm"
+                  method="post"
+                  action="/ManagerDashboard/AddTechnician">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       id="technicianId"
+                       name="id"
+                       value="0" />
+
+
+                <div class="modal-body">
+
+                    <div class="form-group">
+
+                        <label>
+                            First Name
+                        </label>
+
+                        <input type="text"
+                               id="technicianFirstName"
+                               name="firstName"
+                               class="form-control"
+                               required />
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Last Name
+                        </label>
+
+                        <input type="text"
+                               id="technicianLastName"
+                               name="lastName"
+                               class="form-control"
+                               required />
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Employee Number
+                        </label>
+
+                        <input type="text"
+                               id="technicianEmployeeNumber"
+                               name="employeeNumber"
+                               class="form-control"
+                               required />
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Email Address
+                        </label>
+
+                        <input type="email"
+                               id="technicianEmail"
+                               name="email"
+                               class="form-control"
+                               required />
+
+                    </div>
+
+
+                    <!-- =================================================
+                         TEST TYPE FOREIGN KEY DROPDOWN
+                         ================================================= -->
+
+                    <div class="form-group">
+
+                        <label for="technicianTestType">
+
+                            Test Type
+
+                        </label>
+
+                        <select id="technicianTestType"
+                                name="testTypeID"
+                                class="form-control"
+                                required>
+
+                            <option value="">
+                                -- Select Test Type --
+                            </option>
+
+                            @foreach (var testType in Model.TestTypes)
+                            {
+                                <option value="@testType.TestId">
+                                    @testType.TestName
+                                </option>
+                            }
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            onclick="closeModal('technicianModal')">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary">
+
+                        Save Technician
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================================
+         JAVASCRIPT
+         ============================================================ -->
 
     <script>
 
-            function openModal(id) {
-                document.getElementById(id).classList.add('open');
-                document.body.style.overflow = 'hidden';
-            }
+            let currentDoctorRow = null;
+            let currentTechnicianRow = null;
+
+
+            // ============================================================
+            // GENERAL MODAL
+            // ============================================================
 
             function closeModal(id) {
-                document.getElementById(id).classList.remove('open');
-                document.body.style.overflow = '';
+
+                document
+                    .getElementById(id)
+                    .classList.remove("show");
+
             }
 
-            function closeByBackground(event, element) {
-                if (event.target === element) {
-                    closeModal(element.id);
-                }
-            }
 
-            document.addEventListener('keydown', function (e) {
-
-                if (e.key === 'Escape') {
-
-                    document.querySelectorAll('.modal-bg.open')
-                        .forEach(m => m.classList.remove('open'));
-
-                    document.body.style.overflow = '';
-                }
-
-            });
-
-            var logoutBtn = document.getElementById('logout-btn');
-            var logoutConfirm = document.getElementById('logout-confirm');
-
-            if (logoutBtn) {
-
-                logoutConfirm.href = logoutBtn.href;
-
-                logoutBtn.addEventListener('click', function (e) {
-
-                    e.preventDefault();
-
-                    openModal('logoutModal');
-
-                });
-            }
-
-            /* ── DOCTOR: row click → view modal ── */
+            // ============================================================
+            // DOCTOR VIEW
+            // ============================================================
 
             function openDoctorView(row) {
 
-                var d = row.dataset;
+                currentDoctorRow = row;
 
-                document.getElementById('dvName').textContent = d.fullname || (d.firstname + ' ' + d.lastname);
-                document.getElementById('dvEmail').textContent = d.email;
-                document.getElementById('dvContact').textContent = d.contact || '—';
-                document.getElementById('dvStatusSub').textContent = 'HPCSA Number: ' + d.hpcsa;
+                document.getElementById("viewDoctorName").textContent =
+                    row.dataset.fullname || "";
 
-                var box = document.getElementById('dvStatusBox');
-                var val = document.getElementById('dvStatusValue');
-                var isActive = d.active === 'true';
+                document.getElementById("viewDoctorHpcsa").textContent =
+                    row.dataset.hpcsa || "";
 
-                box.classList.remove('status-box-green', 'status-box-red');
-                box.classList.add(isActive ? 'status-box-green' : 'status-box-red');
-                val.textContent = isActive ? 'Active' : 'Inactive';
+                document.getElementById("viewDoctorEmail").textContent =
+                    row.dataset.email || "";
 
-                document.getElementById('dvEditBtn').onclick = function () {
-                    closeModal('doctorViewModal');
-                    openDoctorEdit(row);
-                };
+                document.getElementById("viewDoctorContact").textContent =
+                    row.dataset.contact || "";
 
-                openModal('doctorViewModal');
+                const active =
+                    row.dataset.active === "true";
+
+                document.getElementById("viewDoctorStatus").innerHTML =
+                    active
+                        ? '<span class="status-badge active">Active</span>'
+                        : '<span class="status-badge inactive">Inactive</span>';
+
+                document
+                    .getElementById("doctorViewModal")
+                    .classList.add("show");
+
             }
 
-            /* ── DOCTOR: edit button → prefill add/edit modal ── */
 
-            function openDoctorEdit(row) {
+            // ============================================================
+            // ADD DOCTOR
+            // ============================================================
 
-                var d = row.dataset;
+            function openAddDoctor() {
 
-                document.getElementById('doctorModalTitle').textContent = 'Edit Doctor';
-                document.getElementById('doctorModalSub').textContent = 'Update this doctor\'s details below.';
-                document.getElementById('doctorSubmitBtn').textContent = 'Save Changes';
+                const form =
+                    document.getElementById("doctorForm");
 
-                document.getElementById('doctorForm').setAttribute('action', '/ManagerDashboard/EditDoctor');
+                form.action =
+                    "/ManagerDashboard/AddDoctor";
 
-                document.getElementById('doctorId').value = d.id || '';
-                document.getElementById('doctorFirstName').value = d.firstname || '';
-                document.getElementById('doctorLastName').value = d.lastname || '';
-                document.getElementById('doctorHpcsa').value = d.hpcsa || '';
-                document.getElementById('doctorContact').value = d.contact || '';
-                document.getElementById('doctorEmail').value = d.email || '';
+                document.getElementById("doctorModalTitle").textContent =
+                    "Add Doctor";
 
-                openModal('doctorModal');
+                document.getElementById("doctorId").value =
+                    "0";
+
+                document.getElementById("doctorFirstName").value =
+                    "";
+
+                document.getElementById("doctorLastName").value =
+                    "";
+
+                document.getElementById("doctorHpcsa").value =
+                    "";
+
+                document.getElementById("doctorEmail").value =
+                    "";
+
+                document.getElementById("doctorContact").value =
+                    "";
+
+                document
+                    .getElementById("doctorModal")
+                    .classList.add("show");
+
             }
 
-            /* Reset the Add Doctor modal back to "create" mode whenever it's opened via the header button */
-            document.querySelector('.btn-teal[onclick*="doctorModal"]')?.addEventListener('click', function () {
-                document.getElementById('doctorModalTitle').textContent = 'Add Doctor';
-                document.getElementById('doctorModalSub').textContent = 'A temporary password will automatically be generated.';
-                document.getElementById('doctorSubmitBtn').textContent = 'Add Doctor';
-                document.getElementById('doctorForm').setAttribute('action', '/ManagerDashboard/AddDoctor');
-                document.getElementById('doctorForm').reset();
-                document.getElementById('doctorId').value = '';
-            });
 
-            /* ── TEST CATEGORY MULTI-SELECT DROPDOWN ── */
+            // ============================================================
+            // EDIT DOCTOR
+            // ============================================================
 
-            var testCategoryToggle = document.getElementById('testCategoryToggle');
-            var testCategoryMenu = document.getElementById('techCheckboxGroup');
-            var testCategoryText = document.getElementById('testCategoryText');
+            function editCurrentDoctor() {
 
-            function updateTestCategoryDropdown() {
-
-                if (!testCategoryMenu || !testCategoryText) {
+                if (!currentDoctorRow)
                     return;
-                }
 
-                var checkboxes = testCategoryMenu.querySelectorAll('input[type="checkbox"]');
+                closeModal("doctorViewModal");
 
-                var selected = Array.from(checkboxes)
-                    .filter(function (cb) {
-                        return cb.checked;
-                    })
-                    .map(function (cb) {
-                        return cb.value;
+                const row =
+                    currentDoctorRow;
+
+                document.getElementById("doctorId").value =
+                    row.dataset.id;
+
+                document.getElementById("doctorFirstName").value =
+                    row.dataset.firstname || "";
+
+                document.getElementById("doctorLastName").value =
+                    row.dataset.lastname || "";
+
+                document.getElementById("doctorHpcsa").value =
+                    row.dataset.hpcsa || "";
+
+                document.getElementById("doctorEmail").value =
+                    row.dataset.email || "";
+
+                document.getElementById("doctorContact").value =
+                    row.dataset.contact || "";
+
+                document.getElementById("doctorModalTitle").textContent =
+                    "Edit Doctor";
+
+                document.getElementById("doctorForm").action =
+                    "/ManagerDashboard/EditDoctor";
+
+                document
+                    .getElementById("doctorModal")
+                    .classList.add("show");
+
+            }
+
+
+            // ============================================================
+            // TECHNICIAN VIEW
+            // ============================================================
+
+            function openTechnicianView(row) {
+
+                currentTechnicianRow = row;
+
+                document.getElementById("viewTechnicianName").textContent =
+                    row.dataset.fullname || "";
+
+                document.getElementById("viewTechnicianEmployee").textContent =
+                    row.dataset.employee || "";
+
+                document.getElementById("viewTechnicianEmail").textContent =
+                    row.dataset.email || "";
+
+                document.getElementById("viewTechnicianTestType").textContent =
+                    row.dataset.testname || "";
+
+                const active =
+                    row.dataset.active === "true";
+
+                document.getElementById("viewTechnicianStatus").innerHTML =
+                    active
+                        ? '<span class="status-badge active">Active</span>'
+                        : '<span class="status-badge inactive">Inactive</span>';
+
+                document
+                    .getElementById("technicianViewModal")
+                    .classList.add("show");
+
+            }
+
+
+            // ============================================================
+            // ADD TECHNICIAN
+            // ============================================================
+
+            function openAddTechnician() {
+
+                document.getElementById("technicianForm").action =
+                    "/ManagerDashboard/AddTechnician";
+
+                document.getElementById("technicianModalTitle").textContent =
+                    "Add Laboratory Technician";
+
+                document.getElementById("technicianId").value =
+                    "0";
+
+                document.getElementById("technicianFirstName").value =
+                    "";
+
+                document.getElementById("technicianLastName").value =
+                    "";
+
+                document.getElementById("technicianEmployeeNumber").value =
+                    "";
+
+                document.getElementById("technicianEmail").value =
+                    "";
+
+                document.getElementById("technicianTestType").value =
+                    "";
+
+                document
+                    .getElementById("technicianModal")
+                    .classList.add("show");
+
+            }
+
+
+            // ============================================================
+            // EDIT TECHNICIAN
+            // ============================================================
+
+            function editCurrentTechnician() {
+
+                if (!currentTechnicianRow)
+                    return;
+
+                closeModal("technicianViewModal");
+
+                const row =
+                    currentTechnicianRow;
+
+                document.getElementById("technicianId").value =
+                    row.dataset.id;
+
+                document.getElementById("technicianFirstName").value =
+                    row.dataset.firstname || "";
+
+                document.getElementById("technicianLastName").value =
+                    row.dataset.lastname || "";
+
+                document.getElementById("technicianEmployeeNumber").value =
+                    row.dataset.employee || "";
+
+                document.getElementById("technicianEmail").value =
+                    row.dataset.email || "";
+
+                document.getElementById("technicianTestType").value =
+                    row.dataset.testtypeid || "";
+
+                document.getElementById("technicianModalTitle").textContent =
+                    "Edit Laboratory Technician";
+
+                document.getElementById("technicianForm").action =
+                    "/ManagerDashboard/EditTechnician";
+
+                document
+                    .getElementById("technicianModal")
+                    .classList.add("show");
+
+            }
+
+
+            // ============================================================
+            // CLOSE MODAL WHEN CLICKING OUTSIDE
+            // ============================================================
+
+            window.addEventListener("click", function (event) {
+
+                document
+                    .querySelectorAll(".modal")
+                    .forEach(function (modal) {
+
+                        if (event.target === modal) {
+
+                            modal.classList.remove("show");
+
+                        }
+
                     });
 
-                if (selected.length === 0) {
-
-                    testCategoryText.textContent = 'Select test categories';
-                    testCategoryText.classList.remove('has-selection');
-
-                }
-                else {
-
-                    testCategoryText.textContent = selected.join(', ');
-                    testCategoryText.classList.add('has-selection');
-
-                }
-            }
-
-            function closeTestCategoryDropdown() {
-
-                if (!testCategoryMenu || !testCategoryToggle) {
-                    return;
-                }
-
-                testCategoryMenu.classList.remove('open');
-                testCategoryToggle.classList.remove('open');
-                testCategoryToggle.setAttribute('aria-expanded', 'false');
-            }
-
-            if (testCategoryToggle && testCategoryMenu) {
-
-                testCategoryToggle.addEventListener('click', function (e) {
-
-                    e.stopPropagation();
-
-                    var isOpen = testCategoryMenu.classList.toggle('open');
-
-                    testCategoryToggle.classList.toggle('open', isOpen);
-                    testCategoryToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-
-                });
-
-                testCategoryMenu
-                    .querySelectorAll('input[type="checkbox"]')
-                    .forEach(function (checkbox) {
-
-                        checkbox.addEventListener('change', function () {
-                            updateTestCategoryDropdown();
-                        });
-
-                    });
-
-                testCategoryMenu.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                });
-
-                document.addEventListener('click', function () {
-                    closeTestCategoryDropdown();
-                });
-            }
-
-            /* ── TECHNICIAN: row click → view modal ── */
-
-            function openTechView(row) {
-
-                var t = row.dataset;
-                var types = (t.testtypes || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
-
-                document.getElementById('tvName').textContent = t.fullname || (t.firstname + ' ' + t.lastname);
-                document.getElementById('tvEmail').textContent = t.email;
-                document.getElementById('tvStatusValue').textContent = t.employeenumber;
-                document.getElementById('tvStatusSub').textContent = types.length + ' Test Categor' + (types.length === 1 ? 'y' : 'ies') + ' Assigned';
-
-                var tagsWrap = document.getElementById('tvTags');
-                tagsWrap.innerHTML = '';
-                types.forEach(function (type) {
-                    var span = document.createElement('span');
-                    span.className = 'tag';
-                    span.textContent = type;
-                    tagsWrap.appendChild(span);
-                });
-
-                document.getElementById('tvEditBtn').onclick = function () {
-                    closeModal('techViewModal');
-                    openTechEdit(row);
-                };
-
-                openModal('techViewModal');
-            }
-
-            /* ── TECHNICIAN: edit button → prefill add/edit modal ── */
-
-            function openTechEdit(row) {
-
-                var t = row.dataset;
-                var types = (t.testtypes || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
-
-                document.getElementById('techModalTitle').textContent = 'Edit Technician';
-                document.getElementById('techModalSub').textContent = 'Update this technician\'s details and assigned categories.';
-                document.getElementById('techSubmitBtn').textContent = 'Save Changes';
-
-                document.getElementById('techForm').setAttribute('action', '/ManagerDashboard/EditTechnician');
-
-                document.getElementById('techId').value = t.id || '';
-                document.getElementById('techFirstName').value = t.firstname || '';
-                document.getElementById('techLastName').value = t.lastname || '';
-                document.getElementById('techEmployeeNumber').value = t.employeenumber || '';
-                document.getElementById('techEmail').value = t.email || '';
-
-                document.querySelectorAll('#techCheckboxGroup input[type="checkbox"]').forEach(function (cb) {
-                    cb.checked = types.indexOf(cb.value) !== -1;
-                });
-
-                updateTestCategoryDropdown();
-                closeTestCategoryDropdown();
-
-                openModal('techModal');
-            }
-
-            /* Reset the Add Technician modal back to "create" mode whenever it's opened via the header button */
-            document.querySelector('.btn-light[onclick*="techModal"]')?.addEventListener('click', function () {
-                document.getElementById('techModalTitle').textContent = 'Add Technician';
-                document.getElementById('techModalSub').textContent = 'Assign laboratory test categories to the technician.';
-                document.getElementById('techSubmitBtn').textContent = 'Add Technician';
-                document.getElementById('techForm').setAttribute('action', '/ManagerDashboard/AddTechnician');
-                document.getElementById('techForm').reset();
-                document.getElementById('techId').value = '';
-
-                updateTestCategoryDropdown();
-                closeTestCategoryDropdown();
             });
 
     </script>
 
 </body>
+
 </html>

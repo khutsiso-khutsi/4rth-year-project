@@ -10,12 +10,27 @@ namespace LabManager.Models
     {
         public int Id { get; set; }
 
-        public string FullName { get; set; }
+        public string FirstName { get; set; }
 
-        public string Email { get; set; }
+        public string LastName { get; set; }
 
-        public string HpcsaNumber { get; set; }
+        public string HCPSANumber { get; set; }
+
+        public string EmailAddress { get; set; }
+
+        public string ContactNumber { get; set; }
 
         public bool IsActive { get; set; }
+
+        public string Status { get; set; }
+
+        public string FullName
+        {
+            get
+            {
+                return $"{FirstName} {LastName}";
+            }
+        }
     }
 }
+

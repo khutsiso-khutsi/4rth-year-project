@@ -35,231 +35,231 @@ namespace _4th_year_set_up.Controllers
         // TEST CATALOGUE DATA
         // =========================================================
 
-        private static List<TestCatalogue> _tests = new()
-        {
-            new TestCatalogue
-            {
-                TestId = 1,
-                TestName = "Full Blood Count",
-                Category = "Haematology",
-                SampleType = "Whole Blood",
-                Units = "Various",
-                NormalRange = "See panel",
-                TAT = 60
-            },
+        //private static List<TestCatalogue> _tests = new()
+        ////{
+        //    new TestCatalogue
+        //    {
+        //        TestId = 1,
+        //        TestName = "Full Blood Count",
+        //        Category = "Haematology",
+        //        SampleType = "Whole Blood",
+        //        Units = "Various",
+        //        NormalRange = "See panel",
+        //        TAT = 60
+        //    },
 
-            new TestCatalogue
-            {
-                TestId = 2,
-                TestName = "Differential Count",
-                Category = "Haematology",
-                SampleType = "Whole Blood",
-                Units = "%",
-                NormalRange = "See panel",
-                TAT = 90
-            },
+        //    new TestCatalogue
+        //    {
+        //        TestId = 2,
+        //        TestName = "Differential Count",
+        //        CategoryId = "Haematology",
+        //        SampleType = "Whole Blood",
+        //        Units = "%",
+        //        NormalRange = "See panel",
+        //        TAT = 90
+        //    },
 
-            new TestCatalogue
-            {
-                TestId = 3,
-                TestName = "Prothrombin Time",
-                Category = "Coagulation",
-                SampleType = "Plasma",
-                Units = "seconds",
-                NormalRange = "11–14 s",
-                TAT = 45
-            },
+        //    new TestCatalogue
+        //    {
+        //        TestId = 3,
+        //        TestName = "Prothrombin Time",
+        //        Category = "Coagulation",
+        //        SampleType = "Plasma",
+        //        Units = "seconds",
+        //        NormalRange = "11–14 s",
+        //        TAT = 45
+        //    },
 
-            new TestCatalogue
-            {
-                TestId = 4,
-                TestName = "Peripheral Blood Film",
-                Category = "Haematology",
-                SampleType = "Whole Blood",
-                Units = "Descriptive",
-                NormalRange = "Normal morphology",
-                TAT = 120
-            }
-        };
+        //    new TestCatalogue
+        //    {
+        //        TestId = 4,
+        //        TestName = "Peripheral Blood Film",
+        //        Category = "Haematology",
+        //        SampleType = "Whole Blood",
+        //        Units = "Descriptive",
+        //        NormalRange = "Normal morphology",
+        //        TAT = 120
+        //    }
+        //};
 
-        private static List<TestCategory> _categories = new()
-        {
-            new TestCategory
-            {
-                Id = 1,
-                CategoryName = "Haematology",
-                Description = "Blood cell tests"
-            },
+        //private static List<TestCategory> _categories = new()
+        //{
+        //    new TestCategory
+        //    {
+        //        Id = 1,
+        //        CategoryName = "Haematology",
+        //        Description = "Blood cell tests"
+        //    },
 
-            new TestCategory
-            {
-                Id = 2,
-                CategoryName = "Coagulation",
-                Description = "Clotting tests"
-            },
+        //    new TestCategory
+        //    {
+        //        Id = 2,
+        //        CategoryName = "Coagulation",
+        //        Description = "Clotting tests"
+        //    },
 
-            new TestCategory
-            {
-                Id = 3,
-                CategoryName = "Immunology",
-                Description = "Immune tests"
-            }
-        };
+        //    new TestCategory
+        //    {
+        //        Id = 3,
+        //        CategoryName = "Immunology",
+        //        Description = "Immune tests"
+        //    }
+        //};
 
         // =========================================================
         // CONSUMABLES DATA
         // =========================================================
 
-        private static List<Consumable> _consumables = new()
-        {
-            new Consumable
-            {
-                Id = 1,
-                ConsumableName = "EDTA Tubes",
-                Supplier = "MediPath SA",
-                OnHand = 8,
-                ReorderLevel = 50,
-                StockStatus = "Low"
-            },
+        //private static List<Consumable> _consumables = new()
+        //{
+        //    new Consumable
+        //    {
+        //        Id = 1,
+        //        ConsumableName = "EDTA Tubes",
+        //        Supplier = "MediPath SA",
+        //        OnHand = 8,
+        //        ReorderLevel = 50,
+        //        StockStatus = "Low"
+        //    },
 
-            new Consumable
-            {
-                Id = 2,
-                ConsumableName = "Reagent Kit FBC",
-                Supplier = "LabSupply Co",
-                OnHand = 18,
-                ReorderLevel = 20,
-                StockStatus = "Medium"
-            },
+        //    new Consumable
+        //    {
+        //        Id = 2,
+        //        ConsumableName = "Reagent Kit FBC",
+        //        Supplier = "LabSupply Co",
+        //        OnHand = 18,
+        //        ReorderLevel = 20,
+        //        StockStatus = "Medium"
+        //    },
 
-            new Consumable
-            {
-                Id = 3,
-                ConsumableName = "Lancets (sterile)",
-                Supplier = "MediPath SA",
-                OnHand = 320,
-                ReorderLevel = 100,
-                StockStatus = "Good"
-            },
+        //    new Consumable
+        //    {
+        //        Id = 3,
+        //        ConsumableName = "Lancets (sterile)",
+        //        Supplier = "MediPath SA",
+        //        OnHand = 320,
+        //        ReorderLevel = 100,
+        //        StockStatus = "Good"
+        //    },
 
-            new Consumable
-            {
-                Id = 4,
-                ConsumableName = "Coagulation Reagent",
-                Supplier = "Haema Diagnostics",
-                OnHand = 65,
-                ReorderLevel = 30,
-                StockStatus = "Good"
-            }
-        };
+        //    new Consumable
+        //    {
+        //        Id = 4,
+        //        ConsumableName = "Coagulation Reagent",
+        //        Supplier = "Haema Diagnostics",
+        //        OnHand = 65,
+        //        ReorderLevel = 30,
+        //        StockStatus = "Good"
+        //    }
+        //};
 
-        private static List<Supplier> _suppliers = new()
-        {
-            new Supplier
-            {
-                Id = 1,
-                SupplierName = "MediPath SA",
-                Email = "orders@medipath.co.za"
-            },
+        //private static List<Supplier> _suppliers = new()
+        //{
+        //    new Supplier
+        //    {
+        //        Id = 1,
+        //        SupplierName = "MediPath SA",
+        //        Email = "orders@medipath.co.za"
+        //    },
 
-            new Supplier
-            {
-                Id = 2,
-                SupplierName = "LabSupply Co",
-                Email = "orders@labsupply.co.za"
-            },
+        //    new Supplier
+        //    {
+        //        Id = 2,
+        //        SupplierName = "LabSupply Co",
+        //        Email = "orders@labsupply.co.za"
+        //    },
 
-            new Supplier
-            {
-                Id = 3,
-                SupplierName = "Haema Diagnostics",
-                Email = "orders@haema.co.za"
-            }
-        };
+        //    new Supplier
+        //    {
+        //        Id = 3,
+        //        SupplierName = "Haema Diagnostics",
+        //        Email = "orders@haema.co.za"
+        //    }
+        //};
 
         // =========================================================
         // ORDERS DATA
         // =========================================================
 
-        private static List<ConsumableOrder> _orders = new()
-        {
-            new ConsumableOrder
-            {
-                Id = 1,
-                OrderNumber = "ORD-2026-0041",
-                Supplier = "MediPath SA",
-                Items = "EDTA Tubes (200), Lancets (500)",
-                OrderDate = new DateTime(2026, 5, 15),
-                Status = "Ordered"
-            },
+        //private static List<ConsumableOrder> _orders = new()
+        //{
+        //    new ConsumableOrder
+        //    {
+        //        Id = 1,
+        //        OrderNumber = "ORD-2026-0041",
+        //        Supplier = "MediPath SA",
+        //        Items = "EDTA Tubes (200), Lancets (500)",
+        //        OrderDate = new DateTime(2026, 5, 15),
+        //        Status = "Ordered"
+        //    },
 
-            new ConsumableOrder
-            {
-                Id = 2,
-                OrderNumber = "ORD-2026-0039",
-                Supplier = "LabSupply Co",
-                Items = "Reagent Kit FBC (50)",
-                OrderDate = new DateTime(2026, 5, 10),
-                Status = "Partially Complete"
-            },
+        //    new ConsumableOrder
+        //    {
+        //        Id = 2,
+        //        OrderNumber = "ORD-2026-0039",
+        //        Supplier = "LabSupply Co",
+        //        Items = "Reagent Kit FBC (50)",
+        //        OrderDate = new DateTime(2026, 5, 10),
+        //        Status = "Partially Complete"
+        //    },
 
-            new ConsumableOrder
-            {
-                Id = 3,
-                OrderNumber = "ORD-2026-0035",
-                Supplier = "Haema Diagnostics",
-                Items = "Coagulation Reagent (100)",
-                OrderDate = new DateTime(2026, 4, 28),
-                Status = "Complete",
-                CompletedDate = new DateTime(2026, 5, 2)
-            }
-        };
+        //    new ConsumableOrder
+        //    {
+        //        Id = 3,
+        //        OrderNumber = "ORD-2026-0035",
+        //        Supplier = "Haema Diagnostics",
+        //        Items = "Coagulation Reagent (100)",
+        //        OrderDate = new DateTime(2026, 4, 28),
+        //        Status = "Complete",
+        //        CompletedDate = new DateTime(2026, 5, 2)
+        //    }
+        //};
 
-        // =========================================================
-        // STAFF DATA
-        // =========================================================
+        //// =========================================================
+        //// STAFF DATA
+        //// =========================================================
 
-        private static List<Doctor> _doctors = new()
-        {
-            new Doctor
-            {
-                Id = 1,
-                FullName = "Dr. Aisha Khan",
-                Email = "aisha@nmbhdl.co.za",
-                HpcsaNumber = "HP-7834521",
-                IsActive = true
-            },
+        ////private static List<Doctor> _doctors = new()
+        //{
+        //    new Doctor
+        //    {
+        //        Id = 1,
+        //        FullName = "Dr. Aisha Khan",
+        //        Email = "aisha@nmbhdl.co.za",
+        //        HpcsaNumber = "HP-7834521",
+        //        IsActive = true
+        //    },
 
-            new Doctor
-            {
-                Id = 2,
-                FullName = "Dr. Pieter de Wet",
-                Email = "pieter@nmbhdl.co.za",
-                HpcsaNumber = "HP-4512309",
-                IsActive = true
-            }
-        };
+        //    new Doctor
+        //    {
+        //        Id = 2,
+        //        FullName = "Dr. Pieter de Wet",
+        //        Email = "pieter@nmbhdl.co.za",
+        //        HpcsaNumber = "HP-4512309",
+        //        IsActive = true
+        //    }
+        //};
 
-        private static List<Technician> _technicians = new()
-        {
-            new Technician
-            {
-                Id = 1,
-                FullName = "Khanya Nkosi",
-                Email = "knkosi@lab.net",
-                EmployeeNumber = "EMP-0042",
-                TestTypes = new List<string> { "FBC", "Diff" }
-            },
+        //private static List<Technician> _technicians = new()
+        //{
+        //    new Technician
+        //    {
+        //        Id = 1,
+        //        FullName = "Khanya Nkosi",
+        //        Email = "knkosi@lab.net",
+        //        EmployeeNumber = "EMP-0042",
+        //        TestTypes = new List<string> { "FBC", "Diff" }
+        //    },
 
-            new Technician
-            {
-                Id = 2,
-                FullName = "Sipho Nkabinde",
-                Email = "sipho@lab.net",
-                EmployeeNumber = "EMP-0031",
-                TestTypes = new List<string> { "Coag", "PBF" }
-            }
-        };
+        //    new Technician
+        //    {
+        //        Id = 2,
+        //        FullName = "Sipho Nkabinde",
+        //        Email = "sipho@lab.net",
+        //        EmployeeNumber = "EMP-0031",
+        //        TestTypes = new List<string> { "Coag", "PBF" }
+        //    }
+        //};
 
         // =========================================================
         // SESSION
@@ -286,161 +286,161 @@ namespace _4th_year_set_up.Controllers
         // TEST CATALOGUE
         // =========================================================
 
-        public IActionResult TestCatalogue()
-        {
-            SetSession();
+        //public IActionResult TestCatalogue()
+        //{
+        //    SetSession();
 
-            ViewBag.Categories = _categories;
+        //    ViewBag.Categories = _categories;
 
-            return View("~/Views/ManagerDashboard/Test.cshtml", _tests);
-        }
+        //    return View("~/Views/ManagerDashboard/Test.cshtml", _tests);
+        //}
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult AddCategory(
-            string categoryName,
-            string description)
-        {
-            if (!string.IsNullOrWhiteSpace(categoryName))
-            {
-                _categories.Add(new TestCategory
-                {
-                    Id = _categories.Count + 1,
-                    CategoryName = categoryName,
-                    Description = description ?? ""
-                });
-            }
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public IActionResult AddCategory(
+        //    string categoryName,
+        //    string description)
+        //{
+        //    if (!string.IsNullOrWhiteSpace(categoryName))
+        //    {
+        //        _categories.Add(new TestCategory
+        //        {
+        //            Id = _categories.Count + 1,
+        //            CategoryName = categoryName,
+        //            Description = description ?? ""
+        //        });
+        //    }
 
-            return RedirectToAction("TestCatalogue");
-        }
+        //    return RedirectToAction("TestCatalogue");
+        //}
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult AddTestType(
-            string testName,
-            string category,
-            string sampleType,
-            string units,
-            string normalRangeMin,
-            string normalRangeMax,
-            int turnaround,
-            string consumables)
-        {
-            if (!string.IsNullOrWhiteSpace(testName))
-            {
-                _tests.Add(new TestCatalogue
-                {
-                    TestId = _tests.Count + 1,
-                    TestName = testName,
-                    Category = category,
-                    SampleType = sampleType,
-                    Units = units,
-                    NormalRange =
-                        (!string.IsNullOrWhiteSpace(normalRangeMin) &&
-                         !string.IsNullOrWhiteSpace(normalRangeMax))
-                        ? $"{normalRangeMin}–{normalRangeMax}"
-                        : "See panel",
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public IActionResult AddTestType(
+        //    string testName,
+        //    string category,
+        //    string sampleType,
+        //    string units,
+        //    string normalRangeMin,
+        //    string normalRangeMax,
+        //    int turnaround,
+        //    string consumables)
+        //{
+        //    if (!string.IsNullOrWhiteSpace(testName))
+        //    {
+        //        _tests.Add(new TestCatalogue
+        //        {
+        //            TestId = _tests.Count + 1,
+        //            TestName = testName,
+        //            Category = category,
+        //            SampleType = sampleType,
+        //            Units = units,
+        //            NormalRange =
+        //                (!string.IsNullOrWhiteSpace(normalRangeMin) &&
+        //                 !string.IsNullOrWhiteSpace(normalRangeMax))
+        //                ? $"{normalRangeMin}–{normalRangeMax}"
+        //                : "See panel",
 
-                    TAT = turnaround,
-                    Consumables = consumables ?? ""
-                });
-            }
+        //            TAT = turnaround,
+        //            Consumables = consumables ?? ""
+        //        });
+        //    }
 
-            return RedirectToAction("TestCatalogue");
-        }
+        //    return RedirectToAction("TestCatalogue");
+        //}
 
-        public IActionResult DeleteTest(int id)
-        {
-            var test = _tests.FirstOrDefault(x => x.TestId == id);
+        //public IActionResult DeleteTest(int id)
+        //{
+        //    var test = _tests.FirstOrDefault(x => x.TestId == id);
 
-            if (test != null)
-            {
-                _tests.Remove(test);
-            }
+        //    if (test != null)
+        //    {
+        //        _tests.Remove(test);
+        //    }
 
-            return RedirectToAction("TestCatalogue");
-        }
+        //    return RedirectToAction("TestCatalogue");
+        //}
 
         // =========================================================
         // CONSUMABLES
         // =========================================================
 
-        public IActionResult Consumables()
-        {
-            SetSession();
+        //public IActionResult Consumables()
+        //{
+        //    SetSession();
 
-            ViewBag.Suppliers = _suppliers;
+        //    ViewBag.Suppliers = _suppliers;
 
-            return View(
-                "~/Views/ManagerDashboard/Consumables.cshtml",
-                _consumables);
-        }
+        //    return View(
+        //        "~/Views/ManagerDashboard/Consumables.cshtml",
+        //        _consumables);
+        //}
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult AddConsumable(
-            string consumableName,
-            int onHand,
-            int reorderLevel,
-            string supplier)
-        {
-            if (!string.IsNullOrWhiteSpace(consumableName))
-            {
-                _consumables.Add(new Consumable
-                {
-                    Id = _consumables.Count + 1,
-                    ConsumableName = consumableName,
-                    OnHand = onHand,
-                    ReorderLevel = reorderLevel,
-                    Supplier = supplier,
-                    StockStatus =
-                        onHand < 10 ? "Low"
-                        : onHand < 30 ? "Medium"
-                        : "Good"
-                });
-            }
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public IActionResult AddConsumable(
+        //    string consumableName,
+        //    int onHand,
+        //    int reorderLevel,
+        //    string supplier)
+        //{
+        //    if (!string.IsNullOrWhiteSpace(consumableName))
+        //    {
+        //        _consumables.Add(new Consumable
+        //        {
+        //            Id = _consumables.Count + 1,
+        //            ConsumableName = consumableName,
+        //            OnHand = onHand,
+        //            ReorderLevel = reorderLevel,
+        //            Supplier = supplier,
+        //            StockStatus =
+        //                onHand < 10 ? "Low"
+        //                : onHand < 30 ? "Medium"
+        //                : "Good"
+        //        });
+        //    }
 
-            return RedirectToAction("Consumables");
-        }
+        //    return RedirectToAction("Consumables");
+        //}
 
         // =========================================================
         // ORDERS
         // =========================================================
 
-        public IActionResult Orders(
-            string status = "All Statuses")
-        {
-            SetSession();
+        //public IActionResult Orders(
+        //    string status = "All Statuses")
+        //{
+        //    SetSession();
 
-            ViewBag.StatusFilter = status;
+        //    ViewBag.StatusFilter = status;
 
-            var list = status == "All Statuses"
-                ? _orders
-                : _orders.Where(x => x.Status == status).ToList();
+        //    var list = status == "All Statuses"
+        //        ? _orders
+        //        : _orders.Where(x => x.Status == status).ToList();
 
-            return View(
-                "~/Views/ManagerDashboard/Order.cshtml",
-                list);
-        }
+        //    return View(
+        //        "~/Views/ManagerDashboard/Order.cshtml",
+        //        list);
+        //}
 
         // =========================================================
         // STAFF
         // =========================================================
 
-        public IActionResult Staff()
-        {
-            SetSession();
+        //public IActionResult Staff()
+        //{
+        //    SetSession();
 
-            var model = new StaffViewModel
-            {
-                Doctors = _doctors,
-                Technicians = _technicians
-            };
+        //    var model = new StaffViewModel
+        //    {
+        //        Doctors = _doctors,
+        //        Technicians = _technicians
+        //    };
 
-            return View(
-                "~/Views/ManagerDashboard/StaffManagement.cshtml",
-                model);
-        }
+        //    return View(
+        //        "~/Views/ManagerDashboard/StaffManagement.cshtml",
+        //        model);
+        //}
 
         // =========================================================
         // PROFILE

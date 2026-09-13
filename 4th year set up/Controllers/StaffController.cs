@@ -1,199 +1,443 @@
-﻿using _4th_year_set_up.Models;
-using LabManager.Models;
+﻿using LabManager.Models;
+using LabManager.Repositories;
 using LabManager.Repository;
 using Microsoft.AspNetCore.Mvc;
-using System.Numerics;
 
-namespace _4th_year_set_up.Controllers
+namespace LabManager.Controllers
 {
     public class StaffController : Controller
     {
         private readonly IStaffRepository _staffRepository;
 
-        public StaffController(IStaffRepository staff)
+        public StaffController(
+            IStaffRepository staffRepository)
         {
-            _staffRepository = staff;   
+            _staffRepository = staffRepository;
         }
 
 
-        public async Task<IActionResult> Add(Doctor  staff)
+        // ============================================================
+        // STAFF PAGE
+        // ============================================================
+
+        [HttpGet]
+        public async Task<IActionResult> Staff()
         {
             try
             {
-                if (!ModelState.IsValid)
+                var doctors =
+                    await _staffRepository.GetAllDoctor();
+
+                var technicians =
+                    await _staffRepository.GetTechnician();
+
+                var testTypes =
+                    await _staffRepository.GetAllTestTypes();
+
+                var model = new StaffViewModel
                 {
-                    return View(staff);
+                    Doctors = doctors,
+                    Technicians = technicians,
+                    TestTypes = testTypes
+                };
 
-                }
+                ViewBag.Email =
+                    HttpContext.Session.GetString("Email")
+                    ?? User.Identity?.Name
+                    ?? "Manager";
 
-                bool addConsumables = await _staffRepository.AddDoctor(staff);
-
-
-                if (addConsumables)
-                {
-
-
-                }
-                else
-                {
-
-                }
-
-
-            }
-            catch (Exception ex)
-             {
-
-            }
-
-            return View(staff);
-        }
-
-
-        public async Task<IActionResult> Add(Technician tech)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return View(tech);
-
-                }
-
-                bool addConsumables = await _staffRepository.AddTechnician(tech);
-
-
-                if (addConsumables)
-                {
-
-
-                }
-                else
-                {
-
-                }
-
-
+                return View(model);
             }
             catch (Exception ex)
             {
+                TempData["Error"] =
+                    "Unable to load staff information: "
+                    + ex.Message;
 
+                return View(new StaffViewModel());
             }
-
-            return View(tech);
-
         }
 
 
-        public async Task<IActionResult> EditDoctor(int id)
-        {
-            var results = await _staffRepository.GetDoctorById(id);
-        
-            return View(results);
-           
-            
-        }
-
-            [HttpPost]
-
-        public async Task<IActionResult> Edit(Doctor doctor)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return View(doctor);
-                }
-
-                bool updateCondtion = await _staffRepository.UpdateDoctor(doctor);
-
-                if (updateCondtion)
-                {
-                    TempData["msg"] = "";
-                }
-                else
-                {
-
-                    TempData["msg"] = "";
-                }
-
-            }
-            catch
-            {
-                TempData["msg"] = "";
-            }
-
-            return View(doctor);
-
-
-        }
-
-
-
-        public async Task<IActionResult> EditTechnician(int id)
-        {
-
-            var results = await _staffRepository.GetTechnicianById(id);
-
-            return View(results);
-
-        }
+        // ============================================================
+        // ADD DOCTOR
+        // ============================================================
 
         [HttpPost]
-
-        public async Task<IActionResult> Edit(Technician technician)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddDoctor(
+            string firstName,
+            string lastName,
+            string hpcsaNumber,
+            string email,
+            string contactNumber)
         {
             try
             {
-                if (!ModelState.IsValid)
+                if (string.IsNullOrWhiteSpace(firstName))
                 {
-                    return View(technician);
+                    TempData["Error"] =
+                        "First name is required.";
+
+                    return RedirectToAction(nameof(Staff));
                 }
 
-                bool updateCondtion = await _staffRepository.UpdateTechnician(technician);
-
-                if (updateCondtion)
+                if (string.IsNullOrWhiteSpace(lastName))
                 {
-                    TempData["msg"] = "";
+                    TempData["Error"] =
+                        "Last name is required.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+                if (string.IsNullOrWhiteSpace(hpcsaNumber))
+                {
+                    TempData["Error"] =
+                        "HPCSA number is required.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    TempData["Error"] =
+                        "Email address is required.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+
+                var doctor = new Doctor
+                {
+                    FirstName = firstName.Trim(),
+                    LastName = lastName.Trim(),
+                    HCPSANumber = hpcsaNumber.Trim(),
+                    EmailAddress = email.Trim(),
+                    ContactNumber = contactNumber?.Trim(),
+                    IsActive = true,
+                    Status = "Active"
+                };
+
+
+                bool result =
+                    await _staffRepository.AddDoctor(doctor);
+
+
+                if (result)
+                {
+                    TempData["Success"] =
+                        "Doctor added successfully.";
                 }
                 else
                 {
-
-                    TempData["msg"] = "";
+                    TempData["Error"] =
+                        "Unable to add doctor.";
                 }
-            }
 
-            catch
+                return RedirectToAction(nameof(Staff));
+            }
+            catch (Exception ex)
             {
-                TempData["msg"] = "";
+                TempData["Error"] =
+                    "Unable to add doctor: " + ex.Message;
+
+                return RedirectToAction(nameof(Staff));
             }
-
-            return View(technician);
-
         }
 
 
-        public async Task<IActionResult> DisplayAllDoctor() {
+        // ============================================================
+        // EDIT DOCTOR
+        // ============================================================
 
-
-            var result = await _staffRepository.GetAllDoctor();
-
-            return View(result);
-
-        }
-
-
-        public async Task<IActionResult> DisplayAllTech()
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditDoctor(
+            int id,
+            string firstName,
+            string lastName,
+            string hpcsaNumber,
+            string email,
+            string contactNumber)
         {
+            try
+            {
+                if (id <= 0)
+                {
+                    TempData["Error"] =
+                        "Invalid doctor.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+                if (string.IsNullOrWhiteSpace(firstName))
+                {
+                    TempData["Error"] =
+                        "First name is required.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+                if (string.IsNullOrWhiteSpace(lastName))
+                {
+                    TempData["Error"] =
+                        "Last name is required.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+                if (string.IsNullOrWhiteSpace(hpcsaNumber))
+                {
+                    TempData["Error"] =
+                        "HPCSA number is required.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    TempData["Error"] =
+                        "Email address is required.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
 
 
-            var result = await _staffRepository.GetTechnician();
+                var doctor = new Doctor
+                {
+                    Id = id,
+                    FirstName = firstName.Trim(),
+                    LastName = lastName.Trim(),
+                    HCPSANumber = hpcsaNumber.Trim(),
+                    EmailAddress = email.Trim(),
+                    ContactNumber = contactNumber?.Trim()
+                };
 
-            return View(result);
 
+                bool result =
+                    await _staffRepository.UpdateDoctor(doctor);
+
+
+                if (result)
+                {
+                    TempData["Success"] =
+                        "Doctor updated successfully.";
+                }
+                else
+                {
+                    TempData["Error"] =
+                        "Unable to update doctor.";
+                }
+
+                return RedirectToAction(nameof(Staff));
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] =
+                    "Unable to update doctor: " + ex.Message;
+
+                return RedirectToAction(nameof(Staff));
+            }
         }
 
 
+        // ============================================================
+        // ADD TECHNICIAN
+        // ============================================================
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddTechnician(
+            string firstName,
+            string lastName,
+            string employeeNumber,
+            string email,
+            int testTypeID)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(firstName))
+                {
+                    TempData["Error"] =
+                        "First name is required.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+                if (string.IsNullOrWhiteSpace(lastName))
+                {
+                    TempData["Error"] =
+                        "Last name is required.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+                if (string.IsNullOrWhiteSpace(employeeNumber))
+                {
+                    TempData["Error"] =
+                        "Employee number is required.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    TempData["Error"] =
+                        "Email address is required.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+                if (testTypeID <= 0)
+                {
+                    TempData["Error"] =
+                        "Please select a test type.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+
+                var technician = new Technician
+                {
+                    FirstName = firstName.Trim(),
+                    LastName = lastName.Trim(),
+                    EmployeeNumber = employeeNumber.Trim(),
+                    EmailAddress = email.Trim(),
+                    TestTypeID = testTypeID,
+                    IsActive = true,
+                    Status = "Active"
+                };
+
+
+                bool result =
+                    await _staffRepository.AddTechnician(
+                        technician);
+
+
+                if (result)
+                {
+                    TempData["Success"] =
+                        "Laboratory technician added successfully.";
+                }
+                else
+                {
+                    TempData["Error"] =
+                        "Unable to add laboratory technician.";
+                }
+
+                return RedirectToAction(nameof(Staff));
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] =
+                    "Unable to add technician: " + ex.Message;
+
+                return RedirectToAction(nameof(Staff));
+            }
+        }
+
+
+        // ============================================================
+        // EDIT TECHNICIAN
+        // ============================================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditTechnician(
+            int id,
+            string firstName,
+            string lastName,
+            string employeeNumber,
+            string email,
+            int testTypeID)
+        {
+            try
+            {
+                if (id <= 0)
+                {
+                    TempData["Error"] =
+                        "Invalid technician.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+                if (string.IsNullOrWhiteSpace(firstName))
+                {
+                    TempData["Error"] =
+                        "First name is required.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+                if (string.IsNullOrWhiteSpace(lastName))
+                {
+                    TempData["Error"] =
+                        "Last name is required.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+                if (string.IsNullOrWhiteSpace(employeeNumber))
+                {
+                    TempData["Error"] =
+                        "Employee number is required.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    TempData["Error"] =
+                        "Email address is required.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+                if (testTypeID <= 0)
+                {
+                    TempData["Error"] =
+                        "Please select a test type.";
+
+                    return RedirectToAction(nameof(Staff));
+                }
+
+
+                var technician = new Technician
+                {
+                    Id = id,
+                    FirstName = firstName.Trim(),
+                    LastName = lastName.Trim(),
+                    EmployeeNumber = employeeNumber.Trim(),
+                    EmailAddress = email.Trim(),
+                    TestTypeID = testTypeID
+                };
+
+
+                bool result =
+                    await _staffRepository.UpdateTechnician(
+                        technician);
+
+
+                if (result)
+                {
+                    TempData["Success"] =
+                        "Laboratory technician updated successfully.";
+                }
+                else
+                {
+                    TempData["Error"] =
+                        "Unable to update laboratory technician.";
+                }
+
+                return RedirectToAction(nameof(Staff));
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] =
+                    "Unable to update technician: " + ex.Message;
+
+                return RedirectToAction(nameof(Staff));
+            }
+        }
     }
 }

@@ -1,1260 +1,1084 @@
-﻿```cshtml
-@using LabManager.Models
+﻿@using LabManager.Models
 @model IEnumerable<ConsumableOrder>
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
 @{
+    ViewData["Title"] = "Consumable Orders";
     Layout = null;
 
-    var current = ViewBag.StatusFilter as string ?? "All Statuses";
-    var statuses = new[]
-    {
-        "All Statuses",
-        "Ordered",
-        "Partially Complete",
-        "Complete",
-        "Cancelled"
-    };
+    var statusFilter = ViewBag.StatusFilter as string ?? "All Statuses";
+    var suppliers = ViewBag.Suppliers as IEnumerable<Supplier>
+                    ?? Enumerable.Empty<Supplier>();
 
-    var userEmail = ViewBag.Email?.ToString() ?? "";
-    var userInitial = !string.IsNullOrWhiteSpace(userEmail)
-        ? userEmail.Substring(0, 1).ToUpper()
-        : "M";
+    var email = ViewBag.Email as string ?? "";
+
+    var successMessage = TempData["Success"] as string;
+    var errorMessage = TempData["Error"] as string;
 }
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Consumable Orders — NMB-HLabSys</title>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
 
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet" />
+    <title>
+        Consumable Orders — NMB-HLabSys
+    </title>
 
     <style>
 
-            *,
-            *::before,
-            *::after {
-                box-sizing: border-box;
-                margin: 0;
-                padding: 0;
+            :root {
+                --primary: #17365d;
+                --primary-dark: #102844;
+                --blue: #2563eb;
+                --blue-light: #eff6ff;
+                --green: #16a34a;
+                --green-light: #dcfce7;
+                --orange: #ea580c;
+                --orange-light: #ffedd5;
+                --red: #dc2626;
+                --red-light: #fee2e2;
+                --gray-50: #f8fafc;
+                --gray-100: #f1f5f9;
+                --gray-200: #e2e8f0;
+                --gray-300: #cbd5e1;
+                --gray-500: #64748b;
+                --gray-600: #475569;
+                --gray-700: #334155;
+                --gray-800: #1e293b;
+                --white: #ffffff;
+                --shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+                --radius: 12px;
             }
 
-            :root {
-                --navy: #0b1f3a;
-                --teal: #0d9488;
-                --teal-light: rgba(13,148,136,0.1);
-                --offwhite: #f4f7fb;
-                --white: #ffffff;
-                --muted: #6b7a99;
-                --border: #dde4f0;
-                --green: #16a34a;
-                --green-light: rgba(22,163,74,0.1);
-                --amber: #d97706;
-                --amber-light: rgba(217,119,6,0.1);
-                --red: #dc2626;
-                --red-light: rgba(220,38,38,0.1);
-                --blue: #1d4ed8;
-                --blue-light: rgba(29,78,216,0.1);
+            * {
+                box-sizing: border-box;
             }
 
             body {
-                font-family: 'DM Sans', sans-serif;
-                background: var(--offwhite);
-                color: var(--navy);
-                min-height: 100vh;
+                margin: 0;
+                font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                background: var(--gray-50);
+                color: var(--gray-800);
             }
 
-            a {
-                text-decoration: none;
-            }
-
-            /* =========================================================
-                       TOPBAR
-                    ========================================================= */
-
-            .topbar {
-                background: var(--navy);
-                padding: 0 40px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                height: 64px;
-                position: sticky;
-                top: 0;
-                z-index: 100;
-                box-shadow: 0 2px 20px rgba(0,0,0,0.15);
-            }
-
-            .brand {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-
-            .brand-logo {
-                width: 34px;
-                height: 34px;
-                background: var(--teal);
-                border-radius: 8px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-                .brand-logo svg {
-                    width: 18px;
-                    height: 18px;
-                    fill: white;
-                }
-
-            .brand-name {
-                font-family: 'DM Serif Display', serif;
-                color: white;
-                font-size: 1.1rem;
-                line-height: 1.1;
-            }
-
-                .brand-name span {
-                    display: block;
-                    font-family: 'DM Sans', sans-serif;
-                    font-size: 0.6rem;
-                    font-weight: 300;
-                    color: rgba(255,255,255,0.4);
-                    letter-spacing: 0.1em;
-                    text-transform: uppercase;
-                }
-
-            .topbar-right {
-                display: flex;
-                align-items: center;
-                gap: 16px;
-            }
-
-            .user-chip {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                background: rgba(255,255,255,0.07);
-                border: 1px solid rgba(255,255,255,0.1);
-                border-radius: 100px;
-                padding: 6px 14px 6px 8px;
-            }
-
-            .user-avatar {
-                width: 28px;
-                height: 28px;
-                background: var(--teal);
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 0.75rem;
-                font-weight: 600;
-                color: white;
-            }
-
-            .user-email {
-                font-size: 0.8rem;
-                color: rgba(255,255,255,0.75);
-                max-width: 160px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-
-            .logout-btn {
-                background: rgba(255,255,255,0.08);
-                border: 1px solid rgba(255,255,255,0.12);
-                color: rgba(255,255,255,0.8);
-                padding: 8px 16px;
-                border-radius: 8px;
-                text-decoration: none;
-                font-size: 0.82rem;
-                font-weight: 500;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                transition: all 0.2s;
-            }
-
-                .logout-btn:hover {
-                    background: rgba(255,255,255,0.15);
-                    color: white;
-                }
-
-                .logout-btn svg {
-                    width: 14px;
-                    height: 14px;
-                }
-
-            /* =========================================================
-                       LAYOUT
-                    ========================================================= */
-
-            .page {
-                display: flex;
-                min-height: calc(100vh - 64px);
+            button,
+            input,
+            select,
+            textarea {
+                font-family: inherit;
             }
 
             /* =========================================================
                        SIDEBAR
-                    ========================================================= */
+                       ========================================================= */
 
             .sidebar {
-                width: 220px;
-                background: white;
-                border-right: 1px solid var(--border);
-                padding: 24px 0;
-                flex-shrink: 0;
-                position: sticky;
-                top: 64px;
-                height: calc(100vh - 64px);
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 250px;
+                background: var(--primary);
+                color: white;
+                z-index: 100;
                 overflow-y: auto;
+            }
+
+            .brand {
+                height: 75px;
+                display: flex;
+                align-items: center;
+                padding: 0 24px;
+                border-bottom: 1px solid rgba(255,255,255,.1);
+            }
+
+            .brand-icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 10px;
+                background: white;
+                color: var(--primary);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 800;
+                margin-right: 12px;
+            }
+
+            .brand-text {
+                font-size: 18px;
+                font-weight: 700;
+            }
+
+            .brand-subtitle {
+                font-size: 11px;
+                opacity: .7;
+                margin-top: 2px;
+            }
+
+            .nav {
+                padding: 20px 12px;
             }
 
             .nav-section {
-                margin-bottom: 8px;
-            }
-
-            .nav-label {
-                font-size: 0.65rem;
-                font-weight: 600;
-                color: var(--muted);
-                letter-spacing: 0.1em;
+                color: rgba(255,255,255,.5);
+                font-size: 11px;
                 text-transform: uppercase;
-                padding: 0 20px;
-                margin-bottom: 4px;
+                letter-spacing: .08em;
+                padding: 10px 14px;
+                margin-top: 10px;
             }
 
-            .nav-item {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 10px 20px;
-                color: var(--muted);
-                text-decoration: none;
-                font-size: 0.85rem;
-                font-weight: 500;
-                transition: all 0.15s;
-                border-left: 3px solid transparent;
-            }
-
-                .nav-item:hover {
-                    background: var(--offwhite);
-                    color: var(--navy);
-                }
-
-                .nav-item.active {
-                    background: var(--teal-light);
-                    color: var(--teal);
-                    border-left-color: var(--teal);
-                }
-
-                .nav-item svg {
-                    width: 16px;
-                    height: 16px;
-                    flex-shrink: 0;
-                    fill: none;
-                    stroke: currentColor;
-                    stroke-width: 2;
-                    stroke-linecap: round;
-                }
-
-            /* =========================================================
-                       MAIN
-                    ========================================================= */
-
-            .main {
-                flex: 1;
-                padding: clamp(24px, 3vw, 40px);
-                overflow-y: auto;
-            }
-
-            .page-header {
-                margin-bottom: 24px;
-            }
-
-                .page-header h1 {
-                    font-family: 'DM Serif Display', serif;
-                    font-size: 1.8rem;
-                    color: var(--navy);
-                    margin-bottom: 4px;
-                }
-
-                .page-header p {
-                    font-size: 0.875rem;
-                    color: var(--muted);
-                }
-
-            .card {
-                background: white;
-                border: 1px solid var(--border);
-                border-radius: 16px;
-                padding: 28px;
-                box-shadow: 0 2px 8px rgba(11,31,58,0.04);
-            }
-
-            /* =========================================================
-                       TOOLBAR
-                    ========================================================= */
-
-            .toolbar {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                gap: 16px;
-                flex-wrap: wrap;
-                margin-bottom: 24px;
-            }
-
-            .toolbar-left {
+            .nav-link {
                 display: flex;
                 align-items: center;
                 gap: 12px;
-                flex-wrap: wrap;
+                color: rgba(255,255,255,.75);
+                text-decoration: none;
+                padding: 12px 14px;
+                border-radius: 9px;
+                margin: 4px 0;
+                font-size: 14px;
+                transition: .2s;
             }
 
-            .filter-select {
-                height: 44px;
-                min-width: 220px;
-                border-radius: 10px;
-                border: 1px solid var(--border);
-                background: var(--offwhite);
-                padding: 0 14px;
-                outline: none;
-                font-size: 0.85rem;
-                font-family: 'DM Sans', sans-serif;
-                color: var(--navy);
-                transition: 0.2s;
-                cursor: pointer;
-            }
-
-                .filter-select:focus {
-                    border-color: var(--teal);
-                    background: white;
+                .nav-link:hover {
+                    background: rgba(255,255,255,.08);
+                    color: white;
                 }
 
-            .btn {
-                height: 44px;
-                padding: 0 18px;
-                border: none;
-                border-radius: 10px;
-                cursor: pointer;
-                font-size: 0.82rem;
-                font-weight: 600;
-                font-family: 'DM Sans', sans-serif;
-                transition: 0.2s;
-                display: inline-flex;
+                .nav-link.active {
+                    background: rgba(255,255,255,.14);
+                    color: white;
+                    font-weight: 600;
+                }
+
+            .nav-icon {
+                width: 20px;
+                text-align: center;
+            }
+
+            /* =========================================================
+                       MAIN
+                       ========================================================= */
+
+            .main {
+                margin-left: 250px;
+                min-height: 100vh;
+            }
+
+            /* =========================================================
+                       TOP BAR
+                       ========================================================= */
+
+            .topbar {
+                height: 75px;
+                background: white;
+                border-bottom: 1px solid var(--gray-200);
+                display: flex;
                 align-items: center;
-                gap: 6px;
-                text-decoration: none;
+                justify-content: space-between;
+                padding: 0 30px;
+                position: sticky;
+                top: 0;
+                z-index: 50;
+            }
+
+            .page-title {
+                font-size: 21px;
+                font-weight: 700;
+                color: var(--gray-800);
+            }
+
+            .page-subtitle {
+                color: var(--gray-500);
+                font-size: 13px;
+                margin-top: 3px;
+            }
+
+            .user-area {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .user-avatar {
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                background: var(--blue-light);
+                color: var(--blue);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+            }
+
+            .user-email {
+                font-size: 13px;
+                color: var(--gray-600);
+            }
+
+            /* =========================================================
+                       CONTENT
+                       ========================================================= */
+
+            .content {
+                padding: 30px;
+            }
+
+            .header-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 24px;
+                gap: 20px;
+            }
+
+            .heading h1 {
+                margin: 0;
+                font-size: 26px;
+            }
+
+            .heading p {
+                margin: 6px 0 0;
+                color: var(--gray-500);
+                font-size: 14px;
+            }
+
+            .btn {
+                border: none;
+                border-radius: 9px;
+                padding: 11px 17px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 600;
+                transition: .2s;
             }
 
                 .btn:hover {
                     transform: translateY(-1px);
                 }
 
-            .btn-teal {
-                background: var(--teal);
+            .btn-primary {
+                background: var(--blue);
                 color: white;
-                box-shadow: 0 4px 14px rgba(13,148,136,0.25);
+            }
+
+                .btn-primary:hover {
+                    background: #1d4ed8;
+                }
+
+            .btn-success {
+                background: var(--green);
+                color: white;
+            }
+
+            .btn-danger {
+                background: var(--red);
+                color: white;
+            }
+
+            .btn-outline {
+                background: white;
+                color: var(--gray-700);
+                border: 1px solid var(--gray-300);
+            }
+
+            .btn-small {
+                padding: 7px 11px;
+                font-size: 12px;
+            }
+
+            /* =========================================================
+                       ALERTS
+                       ========================================================= */
+
+            .alert {
+                border-radius: 10px;
+                padding: 13px 16px;
+                margin-bottom: 20px;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .alert-success {
+                background: var(--green-light);
+                color: #166534;
+                border: 1px solid #bbf7d0;
+            }
+
+            .alert-error {
+                background: var(--red-light);
+                color: #991b1b;
+                border: 1px solid #fecaca;
+            }
+
+            .alert-close {
+                background: none;
+                border: none;
+                cursor: pointer;
+                font-size: 18px;
+            }
+
+            /* =========================================================
+                       FILTER BAR
+                       ========================================================= */
+
+            .filter-card {
+                background: white;
+                border: 1px solid var(--gray-200);
+                border-radius: var(--radius);
+                padding: 18px;
+                margin-bottom: 20px;
+                box-shadow: var(--shadow);
+            }
+
+            .filter-form {
+                display: flex;
+                gap: 15px;
+                align-items: end;
+                flex-wrap: wrap;
+            }
+
+            .form-group {
+                display: flex;
+                flex-direction: column;
+                gap: 7px;
+            }
+
+            .form-label {
+                font-size: 12px;
+                font-weight: 600;
+                color: var(--gray-600);
+            }
+
+            .form-input,
+            .form-select,
+            .form-textarea {
+                border: 1px solid var(--gray-300);
+                border-radius: 8px;
+                padding: 10px 12px;
+                background: white;
+                color: var(--gray-800);
+                outline: none;
+                font-size: 14px;
+            }
+
+                .form-input:focus,
+                .form-select:focus,
+                .form-textarea:focus {
+                    border-color: var(--blue);
+                    box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+                }
+
+            .search-box {
+                min-width: 260px;
             }
 
             /* =========================================================
                        TABLE
-                    ========================================================= */
+                       ========================================================= */
 
-            .table-wrap {
+            .table-card {
+                background: white;
+                border: 1px solid var(--gray-200);
+                border-radius: var(--radius);
+                overflow: hidden;
+                box-shadow: var(--shadow);
+            }
+
+            .table-header {
+                padding: 18px 20px;
+                border-bottom: 1px solid var(--gray-200);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+                .table-header h2 {
+                    margin: 0;
+                    font-size: 16px;
+                }
+
+            .table-count {
+                font-size: 12px;
+                color: var(--gray-500);
+            }
+
+            .table-wrapper {
+                width: 100%;
                 overflow-x: auto;
             }
 
             table {
                 width: 100%;
                 border-collapse: collapse;
-                min-width: 900px;
+                min-width: 950px;
             }
 
-            thead th {
-                text-align: left;
-                padding: 0 16px 12px;
-                font-size: 0.7rem;
-                font-weight: 600;
-                letter-spacing: 0.08em;
+            th {
+                background: var(--gray-50);
+                color: var(--gray-600);
+                font-size: 12px;
                 text-transform: uppercase;
-                color: var(--muted);
-                border-bottom: 1px solid var(--border);
+                letter-spacing: .03em;
+                text-align: left;
+                padding: 14px 18px;
+                border-bottom: 1px solid var(--gray-200);
             }
 
-            tbody td {
-                padding: 14px 16px;
-                border-bottom: 1px solid var(--offwhite);
-                font-size: 0.83rem;
-                color: var(--navy);
+            td {
+                padding: 16px 18px;
+                border-bottom: 1px solid var(--gray-100);
+                font-size: 13px;
                 vertical-align: middle;
             }
 
-            tbody tr:last-child td {
-                border-bottom: none;
-            }
-
             tbody tr:hover {
-                background: var(--offwhite);
+                background: #fafcff;
             }
 
             .order-number {
                 font-weight: 700;
-                color: var(--blue);
+                color: var(--primary);
+            }
+
+            .supplier-name {
+                font-weight: 600;
+            }
+
+            .items {
+                color: var(--gray-600);
+                max-width: 320px;
+                line-height: 1.5;
+            }
+
+            .date {
+                color: var(--gray-600);
+                white-space: nowrap;
             }
 
             /* =========================================================
                        STATUS
-                    ========================================================= */
+                       ========================================================= */
 
             .status {
                 display: inline-flex;
                 align-items: center;
-                gap: 6px;
-                padding: 5px 10px;
-                border-radius: 100px;
-                font-size: 0.72rem;
-                font-weight: 600;
+                padding: 5px 9px;
+                border-radius: 999px;
+                font-size: 11px;
+                font-weight: 700;
+                white-space: nowrap;
             }
 
-            .status-dot {
-                width: 7px;
-                height: 7px;
-                border-radius: 50%;
-                background: currentColor;
+            .status-ordered {
+                color: #1d4ed8;
+                background: #dbeafe;
             }
 
-            .ordered {
-                background: var(--blue-light);
-                color: var(--blue);
+            .status-partial {
+                color: #9a3412;
+                background: var(--orange-light);
             }
 
-            .partial {
-                background: var(--amber-light);
-                color: var(--amber);
-            }
-
-            .complete {
+            .status-complete {
+                color: #166534;
                 background: var(--green-light);
-                color: var(--green);
             }
 
-            .cancelled {
+            .status-cancelled {
+                color: #991b1b;
                 background: var(--red-light);
-                color: var(--red);
             }
 
-            /* =========================================================
-                       ACTIONS
-                    ========================================================= */
-
-            .table-actions {
+            .actions {
                 display: flex;
-                align-items: center;
-                gap: 8px;
+                gap: 7px;
                 flex-wrap: wrap;
             }
 
-            .action-btn {
-                height: 34px;
-                padding: 0 12px;
-                border-radius: 8px;
-                border: none;
-                cursor: pointer;
-                font-size: 0.75rem;
-                font-weight: 600;
-                font-family: 'DM Sans', sans-serif;
-                display: inline-flex;
-                align-items: center;
-                text-decoration: none;
-                transition: 0.2s;
-            }
-
-                .action-btn:hover {
-                    transform: translateY(-1px);
-                }
-
-            .receive-btn {
-                background: var(--green-light);
-                color: var(--green);
-            }
-
-            .cancel-btn {
-                background: var(--red-light);
-                color: var(--red);
-            }
-
-            .completed-text {
-                font-size: 0.75rem;
-                color: var(--muted);
-                line-height: 1.6;
-            }
-
             /* =========================================================
-                       EMPTY
-                    ========================================================= */
+                       EMPTY STATE
+                       ========================================================= */
 
-            .empty {
+            .empty-state {
                 text-align: center;
                 padding: 60px 20px;
-                color: var(--muted);
+                color: var(--gray-500);
             }
 
-                .empty svg {
-                    width: 48px;
-                    height: 48px;
-                    stroke: #c0cadb;
-                    fill: none;
-                    stroke-width: 1.5;
-                    margin-bottom: 12px;
-                }
+            .empty-icon {
+                font-size: 38px;
+                margin-bottom: 12px;
+            }
 
-                .empty h3 {
-                    color: var(--navy);
-                    margin-bottom: 6px;
-                }
+            .empty-state h3 {
+                margin: 0 0 6px;
+                color: var(--gray-700);
+            }
+
+            .empty-state p {
+                margin: 0;
+                font-size: 13px;
+            }
 
             /* =========================================================
                        MODAL
-                    ========================================================= */
+                       ========================================================= */
 
-            .modal-bg {
+            .modal-overlay {
                 position: fixed;
                 inset: 0;
-                background: rgba(11,31,58,0.45);
-                z-index: 999;
+                background: rgba(15,23,42,.55);
                 display: none;
                 align-items: center;
                 justify-content: center;
+                z-index: 1000;
                 padding: 20px;
             }
 
-                .modal-bg.open {
+                .modal-overlay.show {
                     display: flex;
                 }
 
             .modal {
                 width: 100%;
-                max-width: 600px;
+                max-width: 560px;
+                background: white;
+                border-radius: 14px;
+                box-shadow: 0 25px 60px rgba(15,23,42,.25);
                 max-height: 90vh;
                 overflow-y: auto;
-                background: white;
-                border-radius: 22px;
-                padding: 32px;
-                position: relative;
-                animation: modalIn 0.18s ease;
             }
 
-            @@keyframes modalIn {
-                from {
-                    opacity: 0;
-                    transform: scale(0.96) translateY(8px);
-                }
-
-                to {
-                    opacity: 1;
-                    transform: scale(1) translateY(0);
-                }
-            }
-
-            .modal-close {
-                position: absolute;
-                top: 18px;
-                right: 18px;
-                width: 36px;
-                height: 36px;
-                border: none;
-                border-radius: 10px;
-                background: var(--offwhite);
-                cursor: pointer;
-                font-size: 1rem;
-                color: var(--muted);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: 0.15s;
-            }
-
-                .modal-close:hover {
-                    background: var(--border);
-                    color: var(--navy);
-                }
-
-            .modal h2 {
-                font-family: 'DM Serif Display', serif;
-                margin-bottom: 6px;
-                color: var(--navy);
-            }
-
-            .modal p {
-                color: var(--muted);
-                font-size: 0.875rem;
-                line-height: 1.6;
-                margin-bottom: 22px;
+            .modal-large {
+                max-width: 700px;
             }
 
             .modal-header {
+                padding: 20px 22px;
+                border-bottom: 1px solid var(--gray-200);
                 display: flex;
-                align-items: center;
                 justify-content: space-between;
-                margin-bottom: 4px;
-                padding-right: 40px;
+                align-items: center;
             }
 
-                .modal-header h3 {
-                    font-family: 'DM Serif Display', serif;
-                    font-size: 1.2rem;
-                    color: var(--navy);
-                }
-
-            .modal-sub {
-                font-size: 0.82rem;
-                color: var(--muted);
-                margin-bottom: 18px;
+            .modal-title {
+                margin: 0;
+                font-size: 18px;
+                font-weight: 700;
             }
 
-            /* =========================================================
-                       FORM
-                    ========================================================= */
-
-            .form-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 18px;
-            }
-
-            .form-group {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-            }
-
-                .form-group.full {
-                    grid-column: span 2;
-                }
-
-            .form-label {
-                font-size: 0.8rem;
-                font-weight: 600;
-                color: var(--navy);
-            }
-
-            .form-input {
-                height: 46px;
-                border-radius: 10px;
-                border: 1px solid var(--border);
-                background: var(--offwhite);
-                padding: 0 14px;
-                outline: none;
-                font-family: 'DM Sans', sans-serif;
-                font-size: 0.85rem;
-                color: var(--navy);
-            }
-
-                .form-input:focus {
-                    border-color: var(--teal);
-                    background: white;
-                }
-
-            .modal-actions {
-                display: flex;
-                gap: 10px;
-                margin-top: 22px;
-            }
-
-            .btn-modal {
-                flex: 1;
-                height: 46px;
+            .modal-close {
                 border: none;
-                border-radius: 10px;
-                font-size: 0.85rem;
-                font-weight: 600;
+                background: transparent;
+                font-size: 25px;
+                color: var(--gray-500);
                 cursor: pointer;
-                font-family: 'DM Sans', sans-serif;
+            }
+
+            .modal-body {
+                padding: 22px;
+            }
+
+            .modal-footer {
+                padding: 18px 22px;
+                border-top: 1px solid var(--gray-200);
                 display: flex;
-                align-items: center;
-                justify-content: center;
-                text-decoration: none;
+                justify-content: flex-end;
+                gap: 10px;
             }
 
-            .btn-save {
-                background: var(--teal);
-                color: white;
+            .modal-subtitle {
+                color: var(--gray-500);
+                font-size: 13px;
+                margin: 5px 0 20px;
             }
 
-            .btn-cancel-modal {
-                background: var(--offwhite);
-                color: var(--navy);
+            .modal-form-group {
+                margin-bottom: 17px;
             }
 
-            .modal-icon {
-                width: 52px;
-                height: 52px;
-                border-radius: 14px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-bottom: 18px;
+            .required {
+                color: var(--red);
             }
-
-            /* =========================================================
-                       CANCEL FORM
-                    ========================================================= */
-
-            .fgroup2 {
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
-                margin-bottom: 14px;
-            }
-
-            .app-label {
-                font-size: 0.75rem;
-                font-weight: 600;
-                color: var(--navy);
-                letter-spacing: 0.02em;
-            }
-
-            .app-textarea {
-                border: 1px solid var(--border);
-                border-radius: 8px;
-                padding: 10px 12px;
-                font-size: 0.83rem;
-                font-family: 'DM Sans', sans-serif;
-                color: var(--navy);
-                background: var(--offwhite);
-                outline: none;
-                resize: vertical;
-                min-height: 90px;
-                width: 100%;
-                transition: 0.15s;
-            }
-
-                .app-textarea:focus {
-                    border-color: var(--teal);
-                    background: white;
-                }
-
-            /* =========================================================
-                       RECEIVE ORDER ITEMS
-                    ========================================================= */
-
-            .recv-item {
-                background: var(--offwhite);
-                border-radius: 10px;
-                padding: 13px 14px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 16px;
-                margin-bottom: 10px;
-                border: 1px solid transparent;
-                transition: 0.15s;
-            }
-
-                .recv-item:last-child {
-                    margin-bottom: 0;
-                }
-
-                .recv-item:hover {
-                    border-color: var(--border);
-                    background: white;
-                }
-
-            .recv-item-info {
-                flex: 1;
-                min-width: 0;
-            }
-
-                .recv-item-info .recv-item-name {
-                    font-size: 0.82rem;
-                    font-weight: 600;
-                    color: var(--navy);
-                    word-break: break-word;
-                }
-
-                .recv-item-info .recv-item-qty {
-                    font-size: 0.75rem;
-                    color: var(--muted);
-                    margin-top: 2px;
-                }
-
-            .recv-item-check {
-                display: flex;
-                align-items: center;
-                min-width: 150px;
-            }
-
-            /* DROPDOWN */
-
-            .recv-status {
-                width: 150px;
-                height: 38px;
-                padding: 0 10px;
-                border: 1px solid var(--border);
-                border-radius: 8px;
-                background: white;
-                color: var(--navy);
-                font-size: 0.78rem;
-                font-family: 'DM Sans', sans-serif;
-                font-weight: 500;
-                cursor: pointer;
-                outline: none;
-                transition: 0.15s;
-            }
-
-                .recv-status:focus {
-                    border-color: var(--teal);
-                    box-shadow: 0 0 0 3px var(--teal-light);
-                }
-
-                .recv-status:hover {
-                    border-color: var(--teal);
-                }
-
-            /* =========================================================
-                       FULL WIDTH BUTTONS
-                    ========================================================= */
 
             .btn-full {
-                flex: 1;
-                height: 44px;
+                width: 100%;
+                padding: 12px;
                 border: none;
-                border-radius: 10px;
-                cursor: pointer;
-                font-size: 0.83rem;
+                border-radius: 9px;
                 font-weight: 600;
-                font-family: 'DM Sans', sans-serif;
-                transition: 0.15s;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                cursor: pointer;
+                font-size: 14px;
             }
 
-                .btn-full:hover {
-                    transform: translateY(-1px);
-                }
+            /* =========================================================
+                       RECEIVE ITEMS
+                       ========================================================= */
 
-                .btn-full.btn-outline {
-                    background: white;
-                    color: var(--navy);
-                    border: 1px solid var(--border);
-                }
+            .receive-info {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+                margin-bottom: 20px;
+            }
 
-                    .btn-full.btn-outline:hover {
-                        background: var(--offwhite);
-                    }
+            .info-box {
+                background: var(--gray-50);
+                border: 1px solid var(--gray-200);
+                padding: 12px;
+                border-radius: 9px;
+            }
+
+            .info-label {
+                font-size: 10px;
+                text-transform: uppercase;
+                color: var(--gray-500);
+                margin-bottom: 4px;
+            }
+
+            .info-value {
+                font-size: 13px;
+                font-weight: 600;
+                color: var(--gray-800);
+            }
+
+            .receive-item {
+                border: 1px solid var(--gray-200);
+                border-radius: 9px;
+                padding: 13px;
+                margin-bottom: 10px;
+                display: grid;
+                grid-template-columns: 1fr 100px 160px;
+                gap: 15px;
+                align-items: center;
+            }
+
+            .receive-item-name {
+                font-weight: 600;
+                font-size: 13px;
+            }
+
+            .receive-item-qty {
+                font-size: 12px;
+                color: var(--gray-500);
+            }
+
+            .receive-status {
+                width: 100%;
+            }
 
             /* =========================================================
                        RESPONSIVE
-                    ========================================================= */
+                       ========================================================= */
 
-            @@media (max-width: 768px) {
+            @@media(max - width: 900px)
 
-                .topbar {
-                    padding: 0 20px;
-                }
+            {
 
                 .sidebar {
-                    display: none;
+                    width: 210px;
                 }
 
                 .main {
-                    padding: 20px 16px;
+                    margin-left: 210px;
+                }
+
+                .content {
+                    padding: 20px;
+                }
+
+                .receive-item {
+                    grid-template-columns: 1fr;
+                }
+
+                .receive-info {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            @@media(max - width: 700px)
+
+            {
+
+                .sidebar {
+                    position: relative;
+                    width: 100%;
+                    height: auto;
+                }
+
+                .main {
+                    margin-left: 0;
+                }
+
+                .topbar {
+                    position: relative;
+                }
+
+                .header-row {
+                    flex-direction: column;
+                    align-items: flex-start;
                 }
 
                 .user-email {
                     display: none;
                 }
 
-                .form-grid {
-                    grid-template-columns: 1fr;
-                }
-
-                .form-group.full {
-                    grid-column: span 1;
-                }
-
-                .modal-actions {
-                    flex-direction: column;
-                }
-
-                .recv-item {
-                    align-items: flex-start;
-                    flex-direction: column;
-                }
-
-                .recv-item-check {
-                    width: 100%;
-                }
-
-                .recv-status {
-                    width: 100%;
+                .content {
+                    padding: 15px;
                 }
             }
 
     </style>
+
 </head>
 
 <body>
 
     <!-- =========================================================
-         TOPBAR
-    ========================================================= -->
+         SIDEBAR
+         ========================================================= -->
 
-    <div class="topbar">
+    <aside class="sidebar">
 
-        <a class="brand"
-           asp-controller="Home"
-           asp-action="Index">
+        <div class="brand">
 
-            <div class="brand-logo">
-
-                <svg viewBox="0 0 24 24">
-
-                    <path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" />
-
-                    <circle cx="12"
-                            cy="17"
-                            r="4"
-                            opacity="0.6" />
-
-                </svg>
-
+            <div class="brand-icon">
+                NH
             </div>
 
-            <div class="brand-name">
-
-                NMB-HLabSys
-
-                <span>
-                    Haematology Lab System
-                </span>
-
-            </div>
-
-        </a>
-
-        <div class="topbar-right">
-
-            <div class="user-chip">
-
-                <div class="user-avatar">
-                    @userInitial
+            <div>
+                <div class="brand-text">
+                    NMB-HLabSys
                 </div>
 
-                <span class="user-email">
-                    @ViewBag.Email
-                </span>
-
+                <div class="brand-subtitle">
+                    Laboratory Management
+                </div>
             </div>
-
-            <a asp-controller="Home"
-               asp-action="Logout"
-               class="logout-btn"
-               id="logout-btn">
-
-                <svg viewBox="0 0 24 24"
-                     fill="none"
-                     stroke="currentColor"
-                     stroke-width="2"
-                     stroke-linecap="round">
-
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-
-                    <polyline points="16 17 21 12 16 7" />
-
-                    <line x1="21"
-                          y1="12"
-                          x2="9"
-                          y2="12" />
-
-                </svg>
-
-                Sign Out
-
-            </a>
 
         </div>
 
-    </div>
-
-
-    <div class="page">
-
-        <!-- =====================================================
-             SIDEBAR
-        ====================================================== -->
-
-        <aside class="sidebar">
+        <nav class="nav">
 
             <div class="nav-section">
-
-                <div class="nav-label">
-                    Main
-                </div>
-
-                <a asp-controller="ManagerDashboard"
-                   asp-action="Index"
-                   class="nav-item">
-
-                    <svg viewBox="0 0 24 24">
-
-                        <rect x="3"
-                              y="3"
-                              width="7"
-                              height="7" />
-
-                        <rect x="14"
-                              y="3"
-                              width="7"
-                              height="7" />
-
-                        <rect x="3"
-                              y="14"
-                              width="7"
-                              height="7" />
-
-                        <rect x="14"
-                              y="14"
-                              width="7"
-                              height="7" />
-
-                    </svg>
-
-                    Dashboard
-
-                </a>
-
-
-                <a asp-controller="ManagerDashboard"
-                   asp-action="TestCatalogue"
-                   class="nav-item">
-
-                    <svg viewBox="0 0 24 24">
-
-                        <path d="M9 3v11a3 3 0 006 0V3" />
-
-                        <line x1="6"
-                              y1="3"
-                              x2="18"
-                              y2="3" />
-
-                    </svg>
-
-                    Test Catalogue
-
-                </a>
-
-
-                <a asp-controller="ManagerDashboard"
-                   asp-action="Consumables"
-                   class="nav-item">
-
-                    <svg viewBox="0 0 24 24">
-
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-
-                        <polyline points="14 2 14 8 20 8" />
-
-                    </svg>
-
-                    Consumables
-
-                </a>
-
-
-                <a asp-controller="ManagerDashboard"
-                   asp-action="Staff"
-                   class="nav-item">
-
-                    <svg viewBox="0 0 24 24">
-
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-
-                        <circle cx="12"
-                                cy="7"
-                                r="4" />
-
-                    </svg>
-
-                    Staff
-
-                </a>
-
-
-                <a asp-controller="ManagerDashboard"
-                   asp-action="Orders"
-                   class="nav-item active">
-
-                    <svg viewBox="0 0 24 24">
-
-                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-
-                        <line x1="3"
-                              y1="6"
-                              x2="21"
-                              y2="6"></line>
-
-                        <path d="M16 10a4 4 0 0 1-8 0"></path>
-
-                    </svg>
-
-                    Orders
-
-                </a>
-
-
-                <a asp-controller="ManagerDashboard"
-                   asp-action="Report"
-                   class="nav-item">
-
-                    <svg viewBox="0 0 24 24">
-
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-
-                        <polyline points="14 2 14 8 20 8" />
-
-                        <line x1="16"
-                              y1="13"
-                              x2="8"
-                              y2="13" />
-
-                        <line x1="16"
-                              y1="17"
-                              x2="8"
-                              y2="17" />
-
-                    </svg>
-
-                    Reports
-
-                </a>
-
+                Management
             </div>
 
+            <a href="@Url.Action("Index", "ManagerDashboard")"
+               class="nav-link">
+
+                <span class="nav-icon">▦</span>
+
+                Dashboard
+
+            </a>
+
+            <a href="@Url.Action("TestCatalogue", "ManagerDashboard")"
+               class="nav-link">
+
+                <span class="nav-icon">🧪</span>
+
+                Test Catalogue
+
+            </a>
+
+            <a href="@Url.Action("Consumables", "ManagerDashboard")"
+               class="nav-link">
+
+                <span class="nav-icon">📦</span>
+
+                Consumables
+
+            </a>
+
+            <a href="@Url.Action("Staff", "ManagerDashboard")"
+               class="nav-link">
+
+                <span class="nav-icon">👥</span>
+
+                Staff
+
+            </a>
+
+            <a href="@Url.Action("Orders", "ManagerDashboard")"
+               class="nav-link active">
+
+                <span class="nav-icon">🛒</span>
+
+                Orders
+
+            </a>
 
             <div class="nav-section">
-
-                <div class="nav-label">
-                    System
-                </div>
-
-                <a asp-controller="ManagerDashboard"
-                   asp-action="Profile"
-                   class="nav-item">
-
-                    <svg viewBox="0 0 24 24">
-
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-
-                        <circle cx="12"
-                                cy="7"
-                                r="4" />
-
-                    </svg>
-
-                    Profile
-
-                </a>
-
-
-                <a asp-controller="ManagerDashboard"
-                   asp-action="AuditLog"
-                   class="nav-item">
-
-                    <svg viewBox="0 0 24 24">
-
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-
-                    </svg>
-
-                    Audit Log
-
-                </a>
-
+                Reports
             </div>
 
-        </aside>
+            <a href="@Url.Action("ReportIndex", "ManagerDashboard")"
+               class="nav-link">
+
+                <span class="nav-icon">📊</span>
+
+                Reports
+
+            </a>
+
+            <a href="@Url.Action("AuditLog", "ManagerDashboard")"
+               class="nav-link">
+
+                <span class="nav-icon">📋</span>
+
+                Audit Log
+
+            </a>
+
+            <div class="nav-section">
+                Account
+            </div>
+
+            <a href="@Url.Action("Profile", "ManagerDashboard")"
+               class="nav-link">
+
+                <span class="nav-icon">👤</span>
+
+                Profile
+
+            </a>
+
+        </nav>
+
+    </aside>
 
 
-        <!-- =====================================================
-             MAIN
-        ====================================================== -->
+    <!-- =========================================================
+         MAIN
+         ========================================================= -->
 
-        <main class="main">
+    <main class="main">
 
-            <div class="page-header">
+        <!-- TOP BAR -->
 
-                <h1>
+        <header class="topbar">
+
+            <div>
+
+                <div class="page-title">
                     Consumable Orders
-                </h1>
+                </div>
 
-                <p>
-                    Manage supplier orders and monitor delivery progress.
-                </p>
+                <div class="page-subtitle">
+                    Manage laboratory consumable orders and stock receipt
+                </div>
+
+            </div>
+
+            <div class="user-area">
+
+                <div class="user-email">
+                    @email
+                </div>
+
+                <div class="user-avatar">
+                    @(string.IsNullOrWhiteSpace(email)
+                        ? "M"
+                        : email.Substring(0, 1).ToUpper())
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- CONTENT -->
+
+        <section class="content">
+
+            <!-- PAGE HEADER -->
+
+            <div class="header-row">
+
+                <div class="heading">
+
+                    <h1>
+                        Orders
+                    </h1>
+
+                    <p>
+                        Create, receive and manage consumable orders.
+                    </p>
+
+                </div>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        onclick="openModal('m-create-order')">
+
+                    + Create Order
+
+                </button>
 
             </div>
 
 
-            <div class="card">
+            <!-- =================================================
+                 ALERTS
+                 ================================================= -->
+            @if (!string.IsNullOrWhiteSpace(successMessage))
+            {
+                <div class="alert alert-success"
+                     id="success-alert">
 
-                <!-- =================================================
-                     TOOLBAR
-                ================================================== -->
+                    <span>
+                        ✓ @successMessage
+                    </span>
 
-                <div class="toolbar">
+                    <button type="button"
+                            class="alert-close"
+                            onclick="closeAlert('success-alert')">
 
-                    <div class="toolbar-left">
+                        ×
 
-                        <select class="filter-select"
-                                onchange="location.href='?status=' + encodeURIComponent(this.value)">
+                    </button>
 
-                            @foreach (var s in statuses)
-                            {
-                                if (s == current)
-                                {
-                                    <option value="@s"
-                                            selected>
-                                        @s
-                                    </option>
-                                }
-                                else
-                                {
-                                    <option value="@s">
-                                        @s
-                                    </option>
-                                }
-                            }
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <div class="alert alert-error"
+                     id="error-alert">
+
+                    <span>
+                        ⚠ @errorMessage
+                    </span>
+
+                    <button type="button"
+                            class="alert-close"
+                            onclick="closeAlert('error-alert')">
+
+                        ×
+
+                    </button>
+
+                </div>
+            }
+
+
+            <!-- =================================================
+                 FILTER
+                 ================================================= -->
+
+            <div class="filter-card">
+
+                <form method="get"
+                      action="@Url.Action("Orders", "ManagerDashboard")"
+                      class="filter-form">
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Order Status
+                        </label>
+
+                        <select class="form-select"
+                                name="status"
+                                onchange="this.form.submit()">
+
+                            <option value="All Statuses"
+                                    selected="@(statusFilter == "All Statuses")">
+
+                                All Statuses
+
+                            </option>
+
+                            <option value="Ordered"
+                                    selected="@(statusFilter == "Ordered")">
+
+                                Ordered
+
+                            </option>
+
+                            <option value="Partially Complete"
+                                    selected="@(statusFilter == "Partially Complete")">
+
+                                Partially Complete
+
+                            </option>
+
+                            <option value="Complete"
+                                    selected="@(statusFilter == "Complete")">
+
+                                Complete
+
+                            </option>
+
+                            <option value="Cancelled"
+                                    selected="@(statusFilter == "Cancelled")">
+
+                                Cancelled
+
+                            </option>
 
                         </select>
 
                     </div>
 
 
-                    <button class="btn btn-teal"
-                            onclick="openModal('createModal')">
+                    <div class="form-group">
 
-                        + Create Order
+                        <label class="form-label">
+                            Search
+                        </label>
 
-                    </button>
+                        <input type="text"
+                               id="order-search"
+                               class="form-input search-box"
+                               placeholder="Search order, supplier or item..."
+                               autocomplete="off" />
+
+                    </div>
+
+                </form>
+
+            </div>
+
+
+            <!-- =================================================
+                 ORDERS TABLE
+                 ================================================= -->
+
+            <div class="table-card">
+
+                <div class="table-header">
+
+                    <h2>
+                        Consumable Orders
+                    </h2>
+
+                    <span class="table-count"
+                          id="table-count">
+
+                        @Model.Count() order(s)
+
+                    </span>
 
                 </div>
 
 
-                <!-- =================================================
-                     TABLE
-                ================================================== -->
+                <div class="table-wrapper">
 
-                <div class="table-wrap">
-
-                    <table>
+                    <table id="orders-table">
 
                         <thead>
 
@@ -1288,117 +1112,116 @@
 
                         </thead>
 
-
                         <tbody>
 
                             @if (Model != null && Model.Any())
                             {
-                                foreach (var o in Model)
+                                foreach (var order in Model)
                                 {
-                                    var statusClass = o.Status switch
-                                    {
-                                        "Ordered" => "status ordered",
-                                        "Partially Complete" => "status partial",
-                                        "Complete" => "status complete",
-                                        "Cancelled" => "status cancelled",
-                                        _ => "status ordered"
-                                    };
+                                    var statusClass =
+                                        order.Status == "Ordered"
+                                            ? "status-ordered"
+                                            : order.Status == "Partially Complete"
+                                                ? "status-partial"
+                                                : order.Status == "Complete"
+                                                    ? "status-complete"
+                                                    : "status-cancelled";
 
-                                    <tr>
+                                    <tr class="order-row"
+                                        data-search="@($"{order.OrderNumber} {order.Supplier} {order.Items} {order.Status}")">
 
                                         <td>
 
-                                            <span class="order-number">
-                                                @o.OrderNumber
+                                            <div class="order-number">
+                                                @order.OrderNumber
+                                            </div>
+
+                                        </td>
+
+                                        <td>
+
+                                            <div class="supplier-name">
+                                                @order.Supplier
+                                            </div>
+
+                                        </td>
+
+                                        <td>
+
+                                            <div class="items">
+                                                @order.Items
+                                            </div>
+
+                                        </td>
+
+                                        <td>
+
+                                            <div class="date">
+                                                @order.OrderDate.ToString("dd MMM yyyy HH:mm")
+                                            </div>
+
+                                        </td>
+
+                                        <td>
+
+                                            <span class="status @statusClass">
+                                                @order.Status
                                             </span>
 
                                         </td>
 
-
-                                        <td>
-                                            @o.Supplier
-                                        </td>
-
-
-                                        <td>
-                                            @o.Items
-                                        </td>
-
-
-                                        <td>
-                                            @o.OrderDate.ToString("dd MMM yyyy")
-                                        </td>
-
-
                                         <td>
 
-                                            <span class="@statusClass">
+                                            <div class="actions">
 
-                                                <span class="status-dot"></span>
-
-                                                @o.Status
-
-                                            </span>
-
-                                        </td>
-
-
-                                        <td>
-
-                                            @if (o.Status == "Complete" ||
-                                                o.Status == "Cancelled")
-                                            {
-                                                <div class="completed-text">
-
-                                                    @(o.Status == "Complete"
-                                                        ? "Completed"
-                                                        : "Cancelled")
-
-                                                    <br />
-
-                                                    @o.CompletedDate?.ToString("dd MMM yyyy")
-
-                                                </div>
-                                            }
-                                            else
-                                            {
-                                                <div class="table-actions">
-
-                                                    <!-- RECEIVE -->
-
-                                                    <button class="action-btn receive-btn"
-                                                            type="button"
-                                                            onclick="openReceiveModal(
-                                                        '@o.Id',
-                                                        '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(o.OrderNumber ?? ""))',
-                                                        '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(o.Supplier ?? ""))',
-                                                        '@o.OrderDate.ToString("yyyy-MM-dd")',
-                                                        '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(o.Items ?? ""))'
-                                                        )">
+                                                @if (order.Status == "Ordered" ||
+                                                     order.Status == "Partially Complete")
+                                                {
+                                                    <button type="button"
+                                                            class="btn btn-success btn-small"
+                                                            onclick='openReceiveModal(
+                                                        @order.Id,
+                                                        @Json.Serialize(order.OrderNumber),
+                                                        @Json.Serialize(order.Supplier),
+                                                        @Json.Serialize(order.OrderDate.ToString("dd MMM yyyy HH:mm")),
+                                                        @Json.Serialize(order.Items)
+                                                        )'>
 
                                                         Receive
 
                                                     </button>
+                                                }
 
+                                                @if (order.Status == "Ordered")
+                                                {
+                                                    <button type="button"
+                                                            class="btn btn-danger btn-small"
+                                                            onclick='openCancelModal(
+                                                        @order.Id,
+                                                        @Json.Serialize(order.OrderNumber),
+                                                        @Json.Serialize(order.Supplier)
+                                                        )'>
 
-                                                    <!-- CANCEL -->
-                                                    @if (o.Status == "Ordered")
-                                                    {
-                                                        <button class="action-btn cancel-btn"
-                                                                type="button"
-                                                                onclick="openCancelModal(
-                                                            '@o.Id',
-                                                            '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(o.OrderNumber ?? ""))',
-                                                            '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(o.Supplier ?? ""))'
-                                                            )">
+                                                        Cancel
 
-                                                            Cancel
+                                                    </button>
+                                                }
 
-                                                        </button>
-                                                    }
+                                                @if (order.Status == "Complete")
+                                                {
+                                                    <span style="font-size:12px;color:var(--green);">
+                                                        ✓ Completed
+                                                    </span>
+                                                }
 
-                                                </div>
-                                            }
+                                                @if (order.Status == "Cancelled")
+                                                {
+                                                    <span style="font-size:12px;color:var(--red);">
+                                                        Cancelled
+                                                    </span>
+                                                }
+
+                                            </div>
 
                                         </td>
 
@@ -1411,27 +1234,18 @@
 
                                     <td colspan="6">
 
-                                        <div class="empty">
+                                        <div class="empty-state">
 
-                                            <svg viewBox="0 0 24 24">
-
-                                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-
-                                                <line x1="3"
-                                                      y1="6"
-                                                      x2="21"
-                                                      y2="6"></line>
-
-                                                <path d="M16 10a4 4 0 0 1-8 0"></path>
-
-                                            </svg>
+                                            <div class="empty-icon">
+                                                📦
+                                            </div>
 
                                             <h3>
-                                                No Orders Found
+                                                No orders found
                                             </h3>
 
                                             <p>
-                                                No consumable orders are available right now.
+                                                There are currently no consumable orders matching your filter.
                                             </p>
 
                                         </div>
@@ -1449,51 +1263,64 @@
 
             </div>
 
-        </main>
+        </section>
 
-    </div>
+    </main>
+
+
+    <!-- =========================================================
+         ANTIFORGERY TOKEN
+         ========================================================= -->
+
+    <form id="antiForgeryForm"
+          style="display:none;">
+
+        @Html.AntiForgeryToken()
+
+    </form>
 
 
     <!-- =========================================================
          CREATE ORDER MODAL
-    ========================================================== -->
+         ========================================================= -->
 
-    <div class="modal-bg"
-         id="createModal"
-         onclick="closeByBackground(event,this)">
+    <div class="modal-overlay"
+         id="m-create-order">
 
         <div class="modal">
 
-            <button class="modal-close"
-                    type="button"
-                    onclick="closeModal('createModal')">
+            <div class="modal-header">
 
-                ✕
+                <h2 class="modal-title">
+                    Create Consumable Order
+                </h2>
 
-            </button>
+                <button type="button"
+                        class="modal-close"
+                        onclick="closeModal('m-create-order')">
+
+                    ×
+
+                </button>
+
+            </div>
 
 
-            <h2>
-                Create New Order
-            </h2>
-
-            <p>
-                Add a new consumable supplier order to the system.
-            </p>
-
-
-            <form asp-controller="ManagerDashboard"
-                  asp-action="CreateOrder"
-                  method="post">
+            <form method="post"
+                  action="@Url.Action("CreateOrder", "ManagerDashboard")">
 
                 @Html.AntiForgeryToken()
 
+                <div class="modal-body">
 
-                <div class="form-grid">
+                    <p class="modal-subtitle">
+                        Create a new order for laboratory consumables.
+                    </p>
+
 
                     <!-- ORDER NUMBER -->
 
-                    <div class="form-group">
+                    <div class="modal-form-group">
 
                         <label class="form-label">
                             Order Number
@@ -1501,22 +1328,26 @@
 
                         <input type="text"
                                class="form-input"
-                               name="orderNumber"
-                               value="ORD-@DateTime.Now.Year-@(new Random().Next(1000, 9999))"
-                               required />
+                               value="Automatically generated"
+                               readonly />
+
+                        <small style="display:block;margin-top:5px;color:var(--gray-500);">
+                            The order number will be generated automatically.
+                        </small>
 
                     </div>
 
 
                     <!-- SUPPLIER -->
 
-                    <div class="form-group">
+                    <div class="modal-form-group">
 
                         <label class="form-label">
                             Supplier
+                            <span class="required">*</span>
                         </label>
 
-                        <select class="form-input"
+                        <select class="form-select"
                                 name="supplier"
                                 required>
 
@@ -1524,14 +1355,11 @@
                                 Select Supplier
                             </option>
 
-                            @if (ViewBag.Suppliers != null)
+                            @foreach (var supplier in suppliers)
                             {
-                                foreach (var s in ViewBag.Suppliers as IEnumerable<Supplier>)
-                                {
-                                    <option value="@s.SupplierName">
-                                        @s.SupplierName
-                                    </option>
-                                }
+                                <option value="@supplier.SupplierName">
+                                    @supplier.SupplierName
+                                </option>
                             }
 
                         </select>
@@ -1541,38 +1369,42 @@
 
                     <!-- ITEMS -->
 
-                    <div class="form-group full">
+                    <div class="modal-form-group">
 
                         <label class="form-label">
                             Order Items
+                            <span class="required">*</span>
                         </label>
 
-                        <input type="text"
-                               class="form-input"
-                               name="items"
-                               placeholder="EDTA Tubes (200), Lancets (500)"
-                               required />
+                        <textarea class="form-textarea"
+                                  name="items"
+                                  rows="5"
+                                  placeholder="Example: EDTA Tubes (200), Lancets (500), Gloves (100)"
+                                  required></textarea>
+
+                        <small style="display:block;margin-top:6px;color:var(--gray-500);">
+                            Enter each consumable with the quantity in brackets.
+                        </small>
 
                     </div>
 
                 </div>
 
 
-                <div class="modal-actions">
+                <div class="modal-footer">
 
-                    <button type="submit"
-                            class="btn-modal btn-save">
+                    <button type="button"
+                            class="btn btn-outline"
+                            onclick="closeModal('m-create-order')">
 
-                        Create Order
+                        Cancel
 
                     </button>
 
+                    <button type="submit"
+                            class="btn btn-primary">
 
-                    <button type="button"
-                            class="btn-modal btn-cancel-modal"
-                            onclick="closeModal('createModal')">
-
-                        Cancel
+                        Create Order
 
                     </button>
 
@@ -1587,60 +1419,112 @@
 
     <!-- =========================================================
          RECEIVE ORDER MODAL
-    ========================================================== -->
+         ========================================================= -->
 
-    <div class="modal-bg"
-         id="m-receive-order"
-         onclick="closeByBackground(event,this)">
+    <div class="modal-overlay"
+         id="m-receive-order">
 
-        <div class="modal">
-
-            <button class="modal-close"
-                    type="button"
-                    onclick="closeModal('m-receive-order')">
-
-                ✕
-
-            </button>
-
+        <div class="modal modal-large">
 
             <div class="modal-header">
 
-                <h3 id="recv-title">
-                    Receive Order
-                </h3>
+                <div>
 
-            </div>
+                    <h2 class="modal-title">
+                        Receive Order
+                    </h2>
 
+                    <div class="modal-subtitle"
+                         id="recv-sub"
+                         style="margin-bottom:0;">
+                    </div>
 
-            <div class="modal-sub"
-                 id="recv-sub">
-            </div>
-
-
-            <div id="recv-items-list"
-                 style="margin-bottom:16px;">
-            </div>
-
-
-            <div class="modal-actions">
+                </div>
 
                 <button type="button"
-                        class="btn-full"
-                        id="recv-confirm-btn"
-                        style="background:var(--green);color:white;"
-                        onclick="receiveOrder()">
+                        class="modal-close"
+                        onclick="closeModal('m-receive-order')">
 
-                    Confirm Receipt &amp; Update Stock
+                    ×
 
                 </button>
 
+            </div>
+
+
+            <div class="modal-body">
+
+                <div class="receive-info">
+
+                    <div class="info-box">
+
+                        <div class="info-label">
+                            Order
+                        </div>
+
+                        <div class="info-value"
+                             id="recv-order-number">
+                        </div>
+
+                    </div>
+
+                    <div class="info-box">
+
+                        <div class="info-label">
+                            Supplier
+                        </div>
+
+                        <div class="info-value"
+                             id="recv-supplier">
+                        </div>
+
+                    </div>
+
+                    <div class="info-box">
+
+                        <div class="info-label">
+                            Order Date
+                        </div>
+
+                        <div class="info-value"
+                             id="recv-date">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <p style="font-size:13px;color:var(--gray-600);margin-bottom:15px;">
+
+                    Select <strong>Received</strong> for each item that was delivered.
+                    Only received items will be added to stock.
+
+                </p>
+
+
+                <div id="recv-items-list">
+                </div>
+
+            </div>
+
+
+            <div class="modal-footer">
 
                 <button type="button"
-                        class="btn-full btn-outline"
+                        class="btn btn-outline"
                         onclick="closeModal('m-receive-order')">
 
                     Cancel
+
+                </button>
+
+                <button type="button"
+                        id="recv-confirm-btn"
+                        class="btn btn-success"
+                        onclick="receiveOrder()">
+
+                    Confirm Receipt &amp; Update Stock
 
                 </button>
 
@@ -1653,161 +1537,103 @@
 
     <!-- =========================================================
          CANCEL ORDER MODAL
-    ========================================================== -->
+         ========================================================= -->
 
-    <div class="modal-bg"
-         id="m-cancel-order"
-         onclick="closeByBackground(event,this)">
+    <div class="modal-overlay"
+         id="m-cancel-order">
 
-        <div class="modal"
-             style="max-width:480px;">
-
-            <button class="modal-close"
-                    type="button"
-                    onclick="closeModal('m-cancel-order')">
-
-                ✕
-
-            </button>
-
+        <div class="modal">
 
             <div class="modal-header">
 
-                <h3>
+                <h2 class="modal-title">
                     Cancel Order
-                </h3>
-
-            </div>
-
-
-            <div class="modal-sub"
-                 id="cancel-sub">
-            </div>
-
-
-            <div class="fgroup2">
-
-                <label class="app-label">
-                    Reason for Cancellation *
-                </label>
-
-                <textarea class="app-textarea"
-                          id="cancel-reason"
-                          placeholder="Enter reason for cancelling this order..."></textarea>
-
-            </div>
-
-
-            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:4px;">
-
-                The supplier will be notified by email of this cancellation.
-
-            </div>
-
-
-            <div class="modal-actions">
-
-                <a id="cancel-confirm-link"
-                   href="#"
-                   class="btn-full"
-                   style="background:var(--red);color:white;text-decoration:none;">
-
-                    Cancel Order &amp; Notify Supplier
-
-                </a>
-
+                </h2>
 
                 <button type="button"
-                        class="btn-full btn-outline"
+                        class="modal-close"
                         onclick="closeModal('m-cancel-order')">
 
-                    Go Back
+                    ×
 
                 </button>
 
             </div>
 
-        </div>
 
-    </div>
+            <form id="cancel-order-form"
+                  method="post"
+                  action="@Url.Action("CancelOrder", "ManagerDashboard")">
 
+                @Html.AntiForgeryToken()
 
-    <!-- =========================================================
-         LOGOUT MODAL
-    ========================================================== -->
+                <div class="modal-body">
 
-    <div class="modal-bg"
-         id="logoutModal"
-         onclick="closeByBackground(event,this)">
+                    <div style="background:var(--red-light);
+                        color:#991b1b;
+                        border:1px solid #fecaca;
+                        padding:13px;
+                        border-radius:9px;
+                        margin-bottom:18px;
+                        font-size:13px;">
 
-        <div class="modal"
-             style="max-width:400px;">
+                        You are about to cancel the following order:
 
-            <button class="modal-close"
-                    type="button"
-                    onclick="closeModal('logoutModal')">
+                        <strong id="cancel-sub"
+                                style="display:block;margin-top:5px;">
+                        </strong>
 
-                ✕
-
-            </button>
-
-
-            <div class="modal-icon"
-                 style="background:var(--red-light);">
-
-                <svg width="22"
-                     height="22"
-                     viewBox="0 0 24 24"
-                     fill="none"
-                     stroke="#dc2626"
-                     stroke-width="2"
-                     stroke-linecap="round">
-
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-
-                    <polyline points="16 17 21 12 16 7" />
-
-                    <line x1="21"
-                          y1="12"
-                          x2="9"
-                          y2="12" />
-
-                </svg>
-
-            </div>
+                    </div>
 
 
-            <h2>
-                Sign out?
-            </h2>
+                    <input type="hidden"
+                           id="cancel-order-id"
+                           name="orderId" />
 
 
-            <p>
-                You'll be returned to the login screen.
-            </p>
+                    <div class="modal-form-group">
+
+                        <label class="form-label">
+                            Cancellation Reason
+                            <span class="required">*</span>
+                        </label>
+
+                        <textarea id="cancel-reason"
+                                  class="form-textarea"
+                                  rows="5"
+                                  placeholder="Enter the reason for cancelling this order..."
+                                  required></textarea>
+
+                        <input type="hidden"
+                               id="cancel-reason-hidden"
+                               name="cancellationReason" />
+
+                    </div>
+
+                </div>
 
 
-            <div class="modal-actions">
+                <div class="modal-footer">
 
-                <button type="button"
-                        class="btn-modal btn-cancel-modal"
-                        onclick="closeModal('logoutModal')">
+                    <button type="button"
+                            class="btn btn-outline"
+                            onclick="closeModal('m-cancel-order')">
 
-                    Cancel
+                        Go Back
 
-                </button>
+                    </button>
 
+                    <button type="submit"
+                            class="btn btn-danger"
+                            onclick="return submitCancelOrder();">
 
-                <a id="logout-confirm"
-                   href="#"
-                   class="btn-modal btn-save"
-                   style="background:var(--red);">
+                        Cancel Order &amp; Notify Supplier
 
-                    Sign Out
+                    </button>
 
-                </a>
+                </div>
 
-            </div>
+            </form>
 
         </div>
 
@@ -1816,99 +1642,160 @@
 
     <!-- =========================================================
          JAVASCRIPT
-    ========================================================== -->
+         ========================================================= -->
 
     <script>
 
-            /* =====================================================
-               MODAL HELPERS
-            ====================================================== */
+            // =========================================================
+            // MODALS
+            // =========================================================
 
             function openModal(id) {
 
-                var modal = document.getElementById(id);
+                var modal =
+                    document.getElementById(id);
 
-                if (!modal) {
-                    return;
+                if (modal) {
+                    modal.classList.add('show');
                 }
-
-                modal.classList.add('open');
-
-                document.body.style.overflow = 'hidden';
             }
 
 
             function closeModal(id) {
 
-                var modal = document.getElementById(id);
+                var modal =
+                    document.getElementById(id);
 
-                if (!modal) {
-                    return;
+                if (modal) {
+                    modal.classList.remove('show');
                 }
-
-                modal.classList.remove('open');
-
-                document.body.style.overflow = '';
             }
 
 
-            function closeByBackground(event, element) {
+            // Close modal when clicking outside
 
-                if (event.target === element) {
+            document
+                .querySelectorAll('.modal-overlay')
+                .forEach(function (overlay) {
 
-                    closeModal(element.id);
+                    overlay.addEventListener(
+                        'click',
+                        function (event) {
 
-                }
+                            if (event.target === overlay) {
 
-            }
+                                overlay.classList.remove('show');
 
-
-            /* =====================================================
-               ESCAPE KEY
-            ====================================================== */
-
-            document.addEventListener('keydown', function (e) {
-
-                if (e.key === 'Escape') {
-
-                    document
-                        .querySelectorAll('.modal-bg.open')
-                        .forEach(function (modal) {
-
-                            modal.classList.remove('open');
+                            }
 
                         });
 
-                    document.body.style.overflow = '';
+                });
 
+
+            // Close modal using ESC
+
+            document.addEventListener(
+                'keydown',
+                function (event) {
+
+                    if (event.key === 'Escape') {
+
+                        document
+                            .querySelectorAll('.modal-overlay.show')
+                            .forEach(function (modal) {
+
+                                modal.classList.remove('show');
+
+                            });
+
+                    }
+
+                });
+
+
+            // =========================================================
+            // ALERT
+            // =========================================================
+
+            function closeAlert(id) {
+
+                var alert =
+                    document.getElementById(id);
+
+                if (alert) {
+                    alert.remove();
                 }
+            }
 
-            });
 
+            // =========================================================
+            // SEARCH
+            // =========================================================
 
-            /* =====================================================
-               HTML ESCAPE
-            ====================================================== */
+            var searchInput =
+                document.getElementById('order-search');
 
-            function escHtml(str) {
+            if (searchInput) {
 
-                if (str === null || str === undefined) {
-                    return '';
-                }
+                searchInput.addEventListener(
+                    'input',
+                    function () {
 
-                return String(str)
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
+                        var search =
+                            this.value
+                                .toLowerCase()
+                                .trim();
+
+                        var rows =
+                            document.querySelectorAll(
+                                '#orders-table tbody .order-row'
+                            );
+
+                        var visible = 0;
+
+                        rows.forEach(function (row) {
+
+                            var text =
+                                row
+                                    .getAttribute('data-search')
+                                    .toLowerCase();
+
+                            if (text.includes(search)) {
+
+                                row.style.display = '';
+
+                                visible++;
+
+                            }
+                            else {
+
+                                row.style.display = 'none';
+
+                            }
+
+                        });
+
+                        var count =
+                            document.getElementById(
+                                'table-count'
+                            );
+
+                        if (count) {
+
+                            count.textContent =
+                                visible + ' order(s)';
+
+                        }
+
+                    });
 
             }
 
 
-            /* =====================================================
-               RECEIVE ORDER MODAL
-            ====================================================== */
+            // =========================================================
+            // RECEIVE ORDER
+            // =========================================================
 
             function openReceiveModal(
                 orderId,
@@ -1918,43 +1805,70 @@
                 items
             ) {
 
-                var title = document.getElementById('recv-title');
-                var sub = document.getElementById('recv-sub');
-                var list = document.getElementById('recv-items-list');
-                var confirmButton = document.getElementById('recv-confirm-btn');
+                var button =
+                    document.getElementById(
+                        'recv-confirm-btn'
+                    );
+
+                button.setAttribute(
+                    'data-order-id',
+                    orderId
+                );
+
+                document.getElementById(
+                    'recv-order-number'
+                ).textContent =
+                    orderNumber;
+
+                document.getElementById(
+                    'recv-supplier'
+                ).textContent =
+                    supplier;
+
+                document.getElementById(
+                    'recv-date'
+                ).textContent =
+                    orderDate;
+
+                document.getElementById(
+                    'recv-sub'
+                ).textContent =
+                    orderNumber + ' — ' + supplier;
+
+
+                var container =
+                    document.getElementById(
+                        'recv-items-list'
+                    );
+
+                container.innerHTML = '';
+
+
+                if (!items || items.trim() === '') {
+
+                    container.innerHTML =
+                        '<div style="padding:20px;text-align:center;color:var(--gray-500);">' +
+                        'No order items were found.' +
+                        '</div>';
+
+                    openModal('m-receive-order');
+
+                    return;
+                }
 
 
                 /*
-                 * Set order information
-                 */
+                    Expected format:
 
-                title.textContent =
-                    'Receive Order ' + orderNumber;
+                    EDTA Tubes (200), Lancets (500)
 
-                sub.textContent =
-                    supplier + ' — ' + orderDate;
+                    We split by comma and then look for:
 
+                    Item Name (Quantity)
+                */
 
-                /*
-                 * Clear old items
-                 */
-
-                list.innerHTML = '';
-
-
-                /*
-                 * Convert item string into array
-                 *
-                 * Example:
-                 *
-                 * EDTA Tubes (200), Lancets (500)
-                 */
-
-                var itemArr = [];
-
-                if (items) {
-
-                    itemArr = items
+                var itemArr =
+                    items
                         .split(',')
                         .map(function (item) {
                             return item.trim();
@@ -1963,161 +1877,175 @@
                             return item.length > 0;
                         });
 
-                }
 
-
-                /*
-                 * No items
-                 */
-
-                if (itemArr.length === 0) {
-
-                    list.innerHTML =
-                        '<div class="empty" style="padding:30px 10px;">' +
-                            '<h3>No Items Found</h3>' +
-                            '<p>This order does not contain any items.</p>' +
-                        '</div>';
-
-                }
-
-
-                /*
-                 * Create item rows
-                 */
-
-                itemArr.forEach(function (item, idx) {
-
-                    /*
-                     * Expected format:
-                     *
-                     * EDTA Tubes (200)
-                     *
-                     * Lancets (500)
-                     */
+                itemArr.forEach(function (item, index) {
 
                     var match =
-                        item.match(/^(.+?)\s*\((\d+)\s*\)$/);
+                        item.match(
+                            /^(.+?)\s*\((\d+)\s*\)$/
+                        );
+
+                    var itemName;
+                    var quantity;
+
+                    if (match) {
+
+                        itemName =
+                            match[1].trim();
+
+                        quantity =
+                            parseInt(match[2]) || 0;
+
+                    }
+                    else {
+
+                        itemName =
+                            item.trim();
+
+                        quantity = 0;
+
+                    }
 
 
-                    var name =
-                        match
-                            ? match[1].trim()
-                            : item;
-
-
-                    var qty =
-                        match
-                            ? match[2]
-                            : '';
-
-
-                    /*
-                     * Create row
-                     */
-
-                    var row =
+                    var wrapper =
                         document.createElement('div');
 
-
-                    row.className =
-                        'recv-item';
-
-
-                    /*
-                     * Create row HTML
-                     */
-
-                    row.innerHTML =
-
-                        '<div class="recv-item-info">' +
-
-                            '<div class="recv-item-name">' +
-                                escHtml(name) +
-                            '</div>' +
-
-                            (
-                                qty
-                                    ? '<div class="recv-item-qty">' +
-                                        'Ordered: ' +
-                                        escHtml(qty) +
-                                        ' units' +
-                                      '</div>'
-                                    : ''
-                            ) +
-
-                        '</div>' +
+                    wrapper.className =
+                        'receive-item';
 
 
-                        '<div class="recv-item-check">' +
+                    var nameDiv =
+                        document.createElement('div');
 
-                            '<select ' +
+                    var name =
+                        document.createElement('div');
 
-                                'id="recv-status-' +
-                                idx +
-                                '" ' +
+                    name.className =
+                        'receive-item-name';
 
-                                'class="recv-status" ' +
+                    name.textContent =
+                        itemName;
 
-                                'data-item-name="' +
-                                escHtml(name) +
-                                '" ' +
-
-                                'data-quantity="' +
-                                escHtml(qty) +
-                                '">' +
-
-                                '<option value="">' +
-                                    'Select Status' +
-                                '</option>' +
-
-                                '<option value="Received">' +
-                                    'Received' +
-                                '</option>' +
-
-                                '<option value="Not Received">' +
-                                    'Not Received' +
-                                '</option>' +
-
-                            '</select>' +
-
-                        '</div>';
+                    nameDiv.appendChild(name);
 
 
-                    list.appendChild(row);
+                    var quantityDiv =
+                        document.createElement('div');
+
+                    quantityDiv.className =
+                        'receive-item-qty';
+
+                    quantityDiv.textContent =
+                        'Ordered quantity: ' +
+                        quantity;
+
+                    nameDiv.appendChild(quantityDiv);
+
+
+                    var quantityBox =
+                        document.createElement('div');
+
+                    quantityBox.style.fontSize =
+                        '12px';
+
+                    quantityBox.style.color =
+                        'var(--gray-500)';
+
+                    quantityBox.textContent =
+                        quantity > 0
+                            ? quantity + ' units'
+                            : 'Quantity not specified';
+
+
+                    var select =
+                        document.createElement('select');
+
+                    select.className =
+                        'form-select recv-status';
+
+                    select.dataset.itemName =
+                        itemName;
+
+                    select.dataset.quantity =
+                        quantity;
+
+
+                    var defaultOption =
+                        document.createElement('option');
+
+                    defaultOption.value = '';
+
+                    defaultOption.textContent =
+                        'Select Status';
+
+                    select.appendChild(
+                        defaultOption
+                    );
+
+
+                    var receivedOption =
+                        document.createElement('option');
+
+                    receivedOption.value =
+                        'Received';
+
+                    receivedOption.textContent =
+                        'Received';
+
+                    select.appendChild(
+                        receivedOption
+                    );
+
+
+                    var notReceivedOption =
+                        document.createElement('option');
+
+                    notReceivedOption.value =
+                        'Not Received';
+
+                    notReceivedOption.textContent =
+                        'Not Received';
+
+                    select.appendChild(
+                        notReceivedOption
+                    );
+
+
+                    wrapper.appendChild(
+                        nameDiv
+                    );
+
+                    wrapper.appendChild(
+                        quantityBox
+                    );
+
+                    wrapper.appendChild(
+                        select
+                    );
+
+                    container.appendChild(
+                        wrapper
+                    );
 
                 });
 
 
-                /*
-                 * Store order ID on confirm button
-                 */
-
-                confirmButton.setAttribute(
-                    'data-order-id',
-                    orderId
+                openModal(
+                    'm-receive-order'
                 );
-
-
-                /*
-                 * Open modal
-                 */
-
-                openModal('m-receive-order');
-
             }
 
 
-            /* =====================================================
-               RECEIVE ORDER
-            ====================================================== */
+            // =========================================================
+            // SEND RECEIVED ITEMS
+            // =========================================================
 
-            function receiveOrder() {
+            async function receiveOrder() {
 
                 var confirmButton =
                     document.getElementById(
                         'recv-confirm-btn'
                     );
-
 
                 var orderId =
                     confirmButton.getAttribute(
@@ -2132,20 +2060,11 @@
                     );
 
                     return;
-
                 }
 
 
-                /*
-                 * Array containing only received items
-                 */
-
                 var receivedItems = [];
 
-
-                /*
-                 * Read every dropdown
-                 */
 
                 document
                     .querySelectorAll('.recv-status')
@@ -2155,12 +2074,20 @@
                             select.value;
 
 
-                        /*
-                         * Only add items marked
-                         * as Received.
-                         */
-
                         if (status === 'Received') {
+
+                            var quantity =
+                                parseInt(
+                                    select.dataset.quantity
+                                ) || 0;
+
+
+                            if (quantity <= 0) {
+
+                                return;
+
+                            }
+
 
                             receivedItems.push({
 
@@ -2168,9 +2095,7 @@
                                     select.dataset.itemName,
 
                                 quantity:
-                                    parseInt(
-                                        select.dataset.quantity
-                                    ) || 0
+                                    quantity
 
                             });
 
@@ -2179,10 +2104,6 @@
                     });
 
 
-                /*
-                 * Require at least one item
-                 */
-
                 if (receivedItems.length === 0) {
 
                     alert(
@@ -2190,43 +2111,114 @@
                     );
 
                     return;
-
                 }
 
 
-                /*
-                 * Build controller URL
-                 */
-
-                var url =
-                    '@Url.Action("ReceiveOrder", "ManagerDashboard")';
-
-
-                url +=
-                    '?id=' +
-                    encodeURIComponent(orderId);
-
-
-                url +=
-                    '&receivedItems=' +
-                    encodeURIComponent(
-                        JSON.stringify(receivedItems)
+                var tokenElement =
+                    document.querySelector(
+                        '#antiForgeryForm input[name="__RequestVerificationToken"]'
                     );
 
 
-                /*
-                 * Send to controller
-                 */
+                if (!tokenElement) {
 
-                window.location.href =
-                    url;
+                    alert(
+                        'Security token could not be found.'
+                    );
+
+                    return;
+                }
+
+
+                var token =
+                    tokenElement.value;
+
+
+                confirmButton.disabled =
+                    true;
+
+                confirmButton.textContent =
+                    'Updating Stock...';
+
+
+                try {
+
+                    var response =
+                        await fetch(
+                            '@Url.Action("ReceiveOrder", "ManagerDashboard")',
+                            {
+                                method: 'POST',
+
+                                headers: {
+
+                                    'Content-Type':
+                                        'application/json',
+
+                                    'RequestVerificationToken':
+                                        token
+
+                                },
+
+                                body:
+                                    JSON.stringify({
+
+                                        orderId:
+                                            parseInt(orderId),
+
+                                        receivedItems:
+                                            receivedItems
+
+                                    })
+
+                            }
+                        );
+
+
+                    var result =
+                        await response.json();
+
+
+                    if (!response.ok ||
+                        !result.success) {
+
+                        throw new Error(
+                            result.message ||
+                            'Unable to receive order.'
+                        );
+
+                    }
+
+
+                    closeModal(
+                        'm-receive-order'
+                    );
+
+
+                    window.location.reload();
+
+                }
+                catch (error) {
+
+                    alert(
+                        error.message ||
+                        'An error occurred while receiving the order.'
+                    );
+
+
+                    confirmButton.disabled =
+                        false;
+
+                    confirmButton.textContent =
+                        'Confirm Receipt & Update Stock';
+
+                }
 
             }
 
 
-            /* =====================================================
-               CANCEL ORDER MODAL
-            ====================================================== */
+            // =========================================================
+            // CANCEL ORDER
+            // =========================================================
 
             function openCancelModal(
                 orderId,
@@ -2243,15 +2235,21 @@
 
 
                 document.getElementById(
-                    'cancel-reason'
-                ).value = '';
+                    'cancel-order-id'
+                ).value =
+                    orderId;
 
 
                 document.getElementById(
-                    'cancel-confirm-link'
-                ).href =
-                    '@Url.Action("CancelOrder", "ManagerDashboard")/' +
-                    orderId;
+                    'cancel-reason'
+                ).value =
+                    '';
+
+
+                document.getElementById(
+                    'cancel-reason-hidden'
+                ).value =
+                    '';
 
 
                 openModal(
@@ -2261,45 +2259,66 @@
             }
 
 
-            /* =====================================================
-               LOGOUT MODAL
-            ====================================================== */
+            function submitCancelOrder() {
 
-            var logoutBtn =
+                var reason =
+                    document.getElementById(
+                        'cancel-reason'
+                    ).value
+                    .trim();
+
+
+                if (!reason) {
+
+                    alert(
+                        'Please enter a reason for cancelling the order.'
+                    );
+
+                    return false;
+
+                }
+
+
                 document.getElementById(
-                    'logout-btn'
-                );
+                    'cancel-reason-hidden'
+                ).value =
+                    reason;
 
 
-            var logoutConfirm =
-                document.getElementById(
-                    'logout-confirm'
-                );
-
-
-            if (logoutBtn && logoutConfirm) {
-
-                logoutConfirm.href =
-                    logoutBtn.href;
-
-
-                logoutBtn.addEventListener(
-                    'click',
-                    function (e) {
-
-                        e.preventDefault();
-
-                        openModal(
-                            'logoutModal'
-                        );
-
-                    }
-                );
+                return true;
 
             }
+
+
+            // =========================================================
+            // AUTO HIDE ALERTS
+            // =========================================================
+
+            setTimeout(function () {
+
+                var success =
+                    document.getElementById(
+                        'success-alert'
+                    );
+
+                var error =
+                    document.getElementById(
+                        'error-alert'
+                    );
+
+
+                if (success) {
+                    success.remove();
+                }
+
+                if (error) {
+                    error.remove();
+                }
+
+            }, 6000);
 
     </script>
 
 </body>
+
 </html>
-```

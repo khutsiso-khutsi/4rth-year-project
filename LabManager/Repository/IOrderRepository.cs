@@ -11,15 +11,24 @@ namespace LabManager.Repository
     public interface IOrderRepository
     {
 
-        Task<bool> AddOrder(ConsumableOrder order) ;
+        Task<IEnumerable<ConsumableOrder>> GetOrders(
+            string status = "All Statuses");
 
+        Task<IEnumerable<ConsumableOrder>> GetOrderById(
+            int id);
 
-        Task<bool> UpdateOrder(ConsumableOrder order) ; 
+        Task CreateOrder(
+            ConsumableOrder order);
 
-        Task<bool> DeleteOrder(int id ) ;
+        Task ReceiveOrder(
+            int orderId,
+            string receivedItemsJson);
 
-        Task<IEnumerable<ConsumableOrder>> GetAllOrders() ;
+        Task CancelOrder(
+            int orderId,
+            string cancellationReason);
 
-        Task<ConsumableOrder> GetOrderById(int id);
+        Task<IEnumerable<Supplier>> GetSuppliers();
     }
 }
+

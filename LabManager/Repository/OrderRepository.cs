@@ -1,77 +1,114 @@
 ﻿using LabManager.DataAccess;
 using LabManager.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using LabManager.Repository;
 
-namespace LabManager.Repository
+namespace LabManager.Repositories
 {
-    public  class OrderRepository : IOrderRepository
+    public class ConsumableOrderRepository: IOrderRepository
     {
+        private readonly ISqlDataAcess _db;
 
-        private readonly ISqlDataAcess _dataAcess;
-
-        public OrderRepository(ISqlDataAcess dataAcess)
+        public ConsumableOrderRepository(ISqlDataAcess db)
         {
-            _dataAcess = dataAcess; 
+            _db = db;
+        }
+
+        // =========================================================
+        // GET ALL ORDERS
+        // =========================================================
+
+        public async Task<IEnumerable<ConsumableOrder>> GetOrders(
+            string status = "All Statuses")
+        {
+            return await _db.GetData<ConsumableOrder, object>(
+                "sp_GetConsumableOrders",
+                new
+                {
+                    Status = status
+                });
         }
 
 
-       public async   Task<bool> AddOrder(ConsumableOrder order)
+        // =========================================================
+        // GET ORDER BY ID
+        // =========================================================
+
+        public async Task<IEnumerable<ConsumableOrder>> GetOrderById(
+            int id)
         {
-            try
-            {
-                await _dataAcess.SaveData("",new {order.OrderDate,order.OrderNumber,order.CompletedDate,order.Status});
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return await _db.GetData<ConsumableOrder, object>(
+                "sp_GetConsumableOrderById",
+                new
+                {
+                    Id = id
+                });
         }
 
 
-       public async  Task<bool> UpdateOrder(ConsumableOrder order)
+        // =========================================================
+        // CREATE ORDER
+        // =========================================================
+
+        public async Task CreateOrder(
+            ConsumableOrder order)
         {
-            try
-            {
-                await _dataAcess.SaveData("", order);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-             
+            await _db.SaveData(
+                "sp_CreateConsumableOrder",
+                new
+                {
+                    OrderNumber = order.OrderNumber,
+                    Supplier = order.Supplier,
+                    Items = order.Items
+                });
         }
 
-       public async  Task<bool> DeleteOrder(int id )
+
+        // =========================================================
+        // RECEIVE ORDER
+        // =========================================================
+
+        public async Task ReceiveOrder(
+            int orderId,
+            string receivedItemsJson)
         {
-            try
-            {
-                await _dataAcess.SaveData("", new { Id = id });
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-             
+            await _db.SaveData(
+                "sp_ReceiveConsumableOrder",
+                new
+                {
+                    OrderId = orderId,
+                    ReceivedItemsJson = receivedItemsJson
+                });
         }
 
-       public async Task<IEnumerable<ConsumableOrder>> GetAllOrders()
+
+        // =========================================================
+        // CANCEL ORDER
+        // =========================================================
+
+        public async Task CancelOrder(
+            int orderId,
+            string cancellationReason)
         {
-            string query = "";
-            return await _dataAcess.GetData<ConsumableOrder, dynamic>(query, new { });
+            await _db.SaveData(
+                "sp_CancelConsumableOrder",
+                new
+                {
+                    OrderId = orderId,
+                    CancellationReason =
+                        cancellationReason
+                });
         }
 
-        public async Task<ConsumableOrder> GetOrderById(int id)
+
+        // =========================================================
+        // GET SUPPLIERS
+        // =========================================================
+
+        public async Task<IEnumerable<Supplier>> GetSuppliers()
         {
-            string query = "";
-            IEnumerable<ConsumableOrder> result = await _dataAcess.GetData<ConsumableOrder, dynamic>(query, new { Id = id });
-            return result.FirstOrDefault();
+            return await _db.GetData<Supplier, object>(
+                "sp_GetSuppliers",
+                new { });
         }
     }
 }

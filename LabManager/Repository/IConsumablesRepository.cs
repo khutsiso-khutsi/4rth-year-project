@@ -8,22 +8,25 @@ using System.Threading.Tasks;
 
 namespace LabManager.Repository
 {
-   public interface IConsumablesRepository
+    public interface IConsumablesRepository
     {
 
         Task<bool> AddConsumables(Consumable consumables);
 
         Task<bool> AddSupplier(Supplier supplier);
 
-        Task<bool> UpdateConsomables(Consumable consumables);
+        Task<bool> UpdateConsumables(Consumable consumables);
 
-        Task<bool> DeleteConsomubles(int Id);
+        Task<bool> DeleteConsumables(int id);
+
+        Task<bool> AdjustStock(int id, string adjustmentType, int quantity);
 
         Task<IEnumerable<Consumable>> GetAllConsumables();
 
-        Task<Consumable> GetById (int id);  
+        Task<Consumable> GetById(int id);
+
+        Task<IEnumerable<Supplier>> GetAllSuppliers();
 
 
-
-    }
+    } 
 }

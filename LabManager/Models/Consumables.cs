@@ -2,16 +2,51 @@
 {
     public class Consumable
     {
-        public int Id { get; set; }
+        public int ConsumableID { get; set; }
 
         public string ConsumableName { get; set; }
 
-        public string Supplier { get; set; }
+        public int SupplierID { get; set; }
 
-        public int OnHand { get; set; }
+        public string Supplier { get; set; }
 
         public int ReorderLevel { get; set; }
 
-        public string StockStatus { get; set; }
+        public int OnHand { get; set; }
+
+        public DateTime LastUpdated { get; set; }
+
+        public string StockStatus
+        {
+            get
+            {
+                if (OnHand <= ReorderLevel)
+                    return "Low";
+
+                if (OnHand <= ReorderLevel + 20)
+                    return "Medium";
+
+                return "Good";
+            }
+
+
+        }
+
+
+        public class ReceivedOrderItem
+        {
+            public string Name { get; set; }
+
+            public int Quantity { get; set; }
+        }
+
+        public class ReceiveOrderRequest
+        {
+            public int OrderId { get; set; }
+
+            public List<ReceivedOrderItem> ReceivedItems { get; set; }
+        }
+
+
     }
 }

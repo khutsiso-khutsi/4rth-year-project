@@ -1,109 +1,224 @@
 ﻿using LabManager.Models;
 using LabManager.Repository;
+using LabManager.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
+using static _4th_year_set_up.Models.Consumable;
 
-namespace _4th_year_set_up.Controllers
+namespace LabManager.Controllers
 {
-    public class ConsumablesOrderController : Controller
+    public class ConsumableOrderController : Controller
     {
-        private readonly IOrderRepository _order;
+        private readonly IOrderRepository _orderRepository;
 
-
-        public ConsumablesOrderController(IOrderRepository order)
+        public ConsumableOrderController(
+            IOrderRepository orderRepository)
         {
-            _order = order;
+            _orderRepository = orderRepository;
         }
 
-        public async Task<IActionResult> Add(ConsumableOrder order)
+        // =========================================================
+        // ORDERS PAGE
+        // =========================================================
+
+        [HttpGet]
+        public async Task<IActionResult> Orders(
+            string status = "All Statuses")
         {
-            try
+            if (string.IsNullOrWhiteSpace(status))
             {
-                if (!ModelState.IsValid)
-                {
-                    return View(order);
-                }
-
-                bool addOrder = await _order.AddOrder(order);
-
-                if (addOrder) {
-
-
-                }
-                else
-                {
-
-                }
-
-
-            }
-            catch
-            {
-
+                status = "All Statuses";
             }
 
-            return View(order);
+            var orders =
+                await _orderRepository.GetOrders(status);
+
+            var suppliers =
+                await _orderRepository.GetSuppliers();
+
+            ViewBag.StatusFilter = status;
+            ViewBag.Suppliers = suppliers;
+
+            ViewBag.Email =
+                HttpContext.Session.GetString("Email")
+                ?? User.Identity?.Name
+                ?? "";
+
+            return View(orders);
         }
 
 
-
-    
-
-         public async Task<IActionResult> Edit(int id)
-        {
-            var result = await _order.GetOrderById(id); 
-            return View(result);    
-        }
+        // =========================================================
+        // CREATE ORDER
+        // =========================================================
 
         [HttpPost]
-        public async  Task<IActionResult> Edit(ConsumableOrder order)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateOrder(
+            string supplier,
+            string items)
         {
+            if (string.IsNullOrWhiteSpace(supplier))
+            {
+                TempData["Error"] =
+                    "Please select a supplier.";
+
+                return RedirectToAction(nameof(Orders));
+            }
+
+            if (string.IsNullOrWhiteSpace(items))
+            {
+                TempData["Error"] =
+                    "Please enter the order items.";
+
+                return RedirectToAction(nameof(Orders));
+            }
+
+            string orderNumber =
+                GenerateOrderNumber();
+
+            var order = new ConsumableOrder
+            {
+                OrderNumber = orderNumber,
+                Supplier = supplier.Trim(),
+                Items = items.Trim(),
+                OrderDate = DateTime.Now,
+                Status = "Ordered"
+            };
+
+            await _orderRepository.CreateOrder(order);
+
+            TempData["Success"] =
+                $"Order {orderNumber} created successfully.";
+
+            return RedirectToAction(nameof(Orders));
+        }
+
+
+        // =========================================================
+        // RECEIVE ORDER
+        // =========================================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReceiveOrder(
+            [FromBody] ReceiveOrderRequest request)
+        {
+            if (request == null)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Invalid request."
+                });
+            }
+
+            if (request.OrderId <= 0)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Invalid order."
+                });
+            }
+
+            if (request.ReceivedItems == null ||
+                request.ReceivedItems.Count == 0)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message =
+                        "Please select at least one item as received."
+                });
+            }
+
             try
             {
-                if (!ModelState.IsValid)
+                string json =
+                    JsonSerializer.Serialize(
+                        request.ReceivedItems);
+
+                await _orderRepository.ReceiveOrder(
+                    request.OrderId,
+                    json);
+
+                return Ok(new
                 {
-                    return View(order);
-                }
-
-                bool updateOrder = await _order.UpdateOrder(order);
-
-                if (updateOrder)
-                {
-
-
-                }
-                else
-                {
-
-                }
-
-
+                    success = true,
+                    message =
+                        "Order received and stock updated."
+                });
             }
-            catch
+            catch (Exception ex)
             {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+        }
 
+
+        // =========================================================
+        // CANCEL ORDER
+        // =========================================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelOrder(
+            int orderId,
+            string cancellationReason)
+        {
+            if (orderId <= 0)
+            {
+                TempData["Error"] =
+                    "Invalid order.";
+
+                return RedirectToAction(nameof(Orders));
             }
 
-            return View(order);
+            if (string.IsNullOrWhiteSpace(
+                cancellationReason))
+            {
+                TempData["Error"] =
+                    "Cancellation reason is required.";
+
+                return RedirectToAction(nameof(Orders));
+            }
+
+            try
+            {
+                await _orderRepository.CancelOrder(
+                    orderId,
+                    cancellationReason.Trim());
+
+                TempData["Success"] =
+                    "Order cancelled successfully.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] =
+                    ex.Message;
+            }
+
+            return RedirectToAction(nameof(Orders));
         }
 
 
-        public async Task<IActionResult> Delete(int id) { 
-        
+        // =========================================================
+        // ORDER NUMBER
+        // =========================================================
 
-            var result= await _order.DeleteOrder(id);
-
-            return RedirectToAction(nameof(DisplayAll));
-            
-
-
-
-        }
-
-        public async Task<IActionResult> DisplayAll()
+        private string GenerateOrderNumber()
         {
-            var result = await _order.GetAllOrders();   
-            return View(result);    
-        }
+            Random random = new Random();
 
+            int number =
+                random.Next(100000, 999999);
+
+            return $"ORD-{DateTime.Now.Year}-{number}";
+        }
     }
 }

@@ -10,12 +10,31 @@ namespace LabManager.Models
     {
         public int Id { get; set; }
 
-        public string FullName { get; set; }
+        public string FirstName { get; set; }
 
-        public string Email { get; set; }
+        public string LastName { get; set; }
 
         public string EmployeeNumber { get; set; }
 
-        public List<string> TestTypes { get; set; } = new();
+        public string EmailAddress { get; set; }
+
+        // Foreign key
+        public int TestTypeID { get; set; }
+
+        // Comes from TestType table
+        public string TestName { get; set; }
+
+        public bool IsActive { get; set; }
+
+        public string Status { get; set; }
+
+        public string FullName
+        {
+            get
+            {
+                return $"{FirstName} {LastName}";
+            }
+        }
     }
 }
+

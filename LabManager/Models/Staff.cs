@@ -28,4 +28,7 @@ namespace LabManager.Models
         [Display(Name = "Test Types")]
         public string TestTypes { get; set; }
     }
+
+
+   
 }

@@ -6,11 +6,18 @@ using System.Threading.Tasks;
 
 namespace LabManager.Models
 {
-   public class StaffViewModel
+    public class StaffViewModel
     {
+       
+        
+            public IEnumerable<Doctor> Doctors { get; set; }
+                = new List<Doctor>();
 
-        public List<Doctor> Doctors { get; set; } = new();
+            public IEnumerable<Technician> Technicians { get; set; }
+                = new List<Technician>();
 
-        public List<Technician> Technicians { get; set; } = new();
+            public IEnumerable<TestType> TestTypes { get; set; }
+                = new List<TestType>();
+        
     }
 }

@@ -1,4 +1,4 @@
-@using LabManager.Models
+﻿@using LabManager.Models
 @model IEnumerable<TestType>
 
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
@@ -10,10 +10,12 @@
 }
 
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
 
+    ```
     <meta charset="UTF-8" />
 
     <meta name="viewport"
@@ -33,29 +35,53 @@
 
     <style>
 
+            /* =========================================================
+                   ROOT
+                ========================================================= */
+
             :root {
                 --navy: #0b1f3a;
                 --navy-dark: #071629;
+                --navy-light: #16365f;
                 --teal: #0f766e;
+                --teal-dark: #0b625c;
                 --teal-light: #14b8a6;
-                --teal-soft: #e6fffb;
+                --teal-soft: #e8f7f5;
                 --white: #ffffff;
-                --bg: #f5f7fa;
-                --border: #dfe5eb;
+                --bg: #f4f7fb;
+                --border: #e2e8f0;
+                --border-dark: #cbd5e1;
                 --text: #172033;
-                --muted: #6b7280;
+                --text-dark: #0f172a;
+                --muted: #64748b;
                 --danger: #dc2626;
+                --danger-dark: #b91c1c;
                 --danger-soft: #fee2e2;
                 --success: #15803d;
                 --success-soft: #dcfce7;
                 --warning: #d97706;
                 --warning-soft: #fef3c7;
-                --shadow: 0 8px 24px rgba(11, 31, 58, 0.08);
+                --blue-soft: #e0f2fe;
+                --blue: #0369a1;
+                --shadow-sm: 0 2px 8px rgba(11, 31, 58, .05);
+                --shadow: 0 8px 28px rgba(11, 31, 58, .07);
+                --shadow-lg: 0 20px 60px rgba(7, 22, 41, .20);
+                --radius-sm: 8px;
                 --radius: 12px;
+                --radius-lg: 16px;
             }
+
+
+            /* =========================================================
+                   RESET
+                ========================================================= */
 
             * {
                 box-sizing: border-box;
+            }
+
+            html {
+                scroll-behavior: smooth;
             }
 
             body {
@@ -63,38 +89,58 @@
                 font-family: "DM Sans", sans-serif;
                 background: var(--bg);
                 color: var(--text);
+                line-height: 1.5;
             }
+
+            button,
+            input,
+            select,
+            textarea {
+                font-family: inherit;
+            }
+
+
+            /* =========================================================
+                   TOPBAR
+                ========================================================= */
 
             .topbar {
                 height: 70px;
-                background: var(--navy);
-                color: white;
+                background: linear-gradient( 135deg, var(--navy-dark), var(--navy) );
+                color: var(--white);
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                padding: 0 28px;
+                padding: 0 30px;
                 position: fixed;
                 top: 0;
                 left: 0;
                 right: 0;
                 z-index: 1000;
+                box-shadow: 0 2px 12px rgba(0, 0, 0, .12);
             }
+
+
+            /* =========================================================
+                   BRAND
+                ========================================================= */
 
             .brand {
                 display: flex;
                 align-items: center;
-                gap: 12px;
+                gap: 13px;
             }
 
             .brand-icon {
                 width: 40px;
                 height: 40px;
                 border-radius: 10px;
-                background: var(--teal);
+                background: linear-gradient( 135deg, var(--teal), var(--teal-light) );
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 20px;
+                font-size: 19px;
+                box-shadow: 0 5px 14px rgba(20, 184, 166, .20);
             }
 
             .brand-text {
@@ -104,20 +150,27 @@
 
             .brand-name {
                 font-family: "DM Serif Display", serif;
-                font-size: 20px;
+                font-size: 21px;
                 line-height: 1;
+                letter-spacing: .1px;
             }
 
             .brand-subtitle {
-                font-size: 11px;
-                opacity: .7;
-                margin-top: 4px;
+                font-size: 10px;
+                opacity: .65;
+                margin-top: 5px;
+                letter-spacing: .2px;
             }
+
+
+            /* =========================================================
+                   TOPBAR USER
+                ========================================================= */
 
             .topbar-right {
                 display: flex;
                 align-items: center;
-                gap: 18px;
+                gap: 14px;
             }
 
             .user-info {
@@ -126,24 +179,32 @@
 
             .user-name {
                 font-size: 13px;
-                font-weight: 600;
+                font-weight: 700;
             }
 
             .user-role {
-                font-size: 11px;
-                opacity: .65;
+                font-size: 10px;
+                opacity: .62;
+                margin-top: 2px;
             }
 
             .avatar {
-                width: 38px;
-                height: 38px;
+                width: 40px;
+                height: 40px;
                 border-radius: 50%;
-                background: var(--teal);
+                background: linear-gradient( 135deg, var(--teal), var(--teal-light) );
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-weight: 700;
+                font-size: 12px;
+                font-weight: 800;
+                border: 2px solid rgba(255, 255, 255, .15);
             }
+
+
+            /* =========================================================
+                   SIDEBAR
+                ========================================================= */
 
             .sidebar {
                 position: fixed;
@@ -153,97 +214,140 @@
                 width: 245px;
                 background: var(--white);
                 border-right: 1px solid var(--border);
-                padding: 25px 15px;
+                padding: 26px 14px;
                 z-index: 900;
+                box-shadow: 2px 0 12px rgba(11, 31, 58, .025);
+                overflow-y: auto;
             }
 
             .nav-section-title {
                 font-size: 10px;
-                font-weight: 700;
+                font-weight: 800;
                 text-transform: uppercase;
-                letter-spacing: 1px;
-                color: var(--muted);
-                padding: 0 12px 10px;
+                letter-spacing: 1.2px;
+                color: #94a3b8;
+                padding: 0 13px 11px;
             }
 
             .nav-item {
                 display: flex;
                 align-items: center;
                 gap: 12px;
-                padding: 12px 13px;
+                padding: 11px 13px;
                 border-radius: 9px;
                 margin-bottom: 5px;
-                color: #465268;
+                color: #475569;
                 text-decoration: none;
-                font-size: 14px;
-                font-weight: 500;
-                transition: .2s;
+                font-size: 13px;
+                font-weight: 600;
+                transition: background .2s ease, color .2s ease, transform .2s ease;
             }
 
                 .nav-item:hover {
                     background: #f0fdfa;
                     color: var(--teal);
+                    transform: translateX(2px);
                 }
 
                 .nav-item.active {
                     background: var(--teal-soft);
                     color: var(--teal);
-                    font-weight: 700;
+                    font-weight: 800;
+                    box-shadow: inset 3px 0 0 var(--teal);
                 }
 
             .nav-icon {
-                width: 20px;
+                width: 21px;
                 text-align: center;
                 font-size: 16px;
+                flex-shrink: 0;
             }
+
+
+            /* =========================================================
+                   MAIN
+                ========================================================= */
 
             .main {
                 margin-left: 245px;
-                padding: 100px 30px 40px;
+                padding: 104px 32px 40px;
+                min-height: 100vh;
             }
+
+
+            /* =========================================================
+                   PAGE HEADER
+                ========================================================= */
 
             .page-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: flex-start;
+                gap: 25px;
                 margin-bottom: 25px;
             }
 
             .page-title {
                 margin: 0;
                 font-family: "DM Serif Display", serif;
-                font-size: 32px;
+                font-size: 34px;
+                font-weight: 400;
+                line-height: 1.15;
                 color: var(--navy);
+                letter-spacing: -.4px;
             }
 
             .page-description {
-                margin: 6px 0 0;
-                font-size: 14px;
+                margin: 7px 0 0;
+                font-size: 13px;
                 color: var(--muted);
+                max-width: 650px;
             }
+
+            .header-actions {
+                display: flex;
+                gap: 9px;
+                flex-wrap: wrap;
+            }
+
+
+            /* =========================================================
+                   BUTTONS
+                ========================================================= */
 
             .btn {
                 border: none;
                 border-radius: 8px;
-                padding: 10px 17px;
+                padding: 10px 16px;
                 font-family: inherit;
-                font-size: 13px;
-                font-weight: 700;
+                font-size: 12px;
+                font-weight: 800;
                 cursor: pointer;
                 display: inline-flex;
                 align-items: center;
+                justify-content: center;
                 gap: 7px;
                 text-decoration: none;
-                transition: .2s;
+                transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
             }
+
+                .btn:hover {
+                    transform: translateY(-1px);
+                }
+
+                .btn:active {
+                    transform: translateY(0);
+                }
 
             .btn-primary {
                 background: var(--teal);
-                color: white;
+                color: var(--white);
+                box-shadow: 0 4px 12px rgba(15, 118, 110, .18);
             }
 
                 .btn-primary:hover {
-                    background: #0b625c;
+                    background: var(--teal-dark);
+                    box-shadow: 0 6px 16px rgba(15, 118, 110, .23);
                 }
 
             .btn-secondary {
@@ -257,19 +361,28 @@
 
             .btn-danger {
                 background: var(--danger);
-                color: white;
+                color: var(--white);
+                box-shadow: 0 4px 12px rgba(220, 38, 38, .14);
             }
 
                 .btn-danger:hover {
-                    background: #b91c1c;
+                    background: var(--danger-dark);
                 }
+
+
+            /* =========================================================
+                   ALERTS
+                ========================================================= */
 
             .alert {
                 padding: 13px 16px;
                 border-radius: 9px;
                 margin-bottom: 20px;
-                font-size: 13px;
-                font-weight: 600;
+                font-size: 12px;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                box-shadow: var(--shadow-sm);
             }
 
             .alert-success {
@@ -284,6 +397,11 @@
                 border: 1px solid #fecaca;
             }
 
+
+            /* =========================================================
+                   CARD
+                ========================================================= */
+
             .card {
                 background: var(--white);
                 border: 1px solid var(--border);
@@ -293,22 +411,35 @@
             }
 
             .card-header {
-                padding: 18px 22px;
+                min-height: 66px;
+                padding: 17px 22px;
                 border-bottom: 1px solid var(--border);
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                background: #ffffff;
             }
 
             .card-title {
-                font-size: 15px;
-                font-weight: 700;
+                font-size: 14px;
+                font-weight: 800;
+                color: var(--navy);
             }
 
             .record-count {
-                font-size: 12px;
+                font-size: 11px;
+                font-weight: 600;
                 color: var(--muted);
+                background: #f8fafc;
+                border: 1px solid var(--border);
+                padding: 5px 9px;
+                border-radius: 20px;
             }
+
+
+            /* =========================================================
+                   TABLE
+                ========================================================= */
 
             .table-container {
                 overflow-x: auto;
@@ -323,29 +454,49 @@
             th {
                 background: #f8fafc;
                 color: #64748b;
-                font-size: 11px;
+                font-size: 10px;
                 text-transform: uppercase;
-                letter-spacing: .5px;
-                font-weight: 700;
+                letter-spacing: .65px;
+                font-weight: 800;
                 padding: 13px 15px;
                 text-align: left;
                 border-bottom: 1px solid var(--border);
+                white-space: nowrap;
             }
 
             td {
                 padding: 15px;
                 border-bottom: 1px solid #edf0f3;
-                font-size: 13px;
+                font-size: 12px;
                 vertical-align: middle;
+                color: #475569;
             }
+
+            tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            tbody tr {
+                transition: background .18s ease;
+            }
+
+                tbody tr:hover {
+                    background: #fbfefd;
+                }
 
             tr:hover td {
-                background: #fbfdfd;
+                background: transparent;
             }
 
+
+            /* =========================================================
+                   TABLE CONTENT
+                ========================================================= */
+
             .test-name {
-                font-weight: 700;
+                font-weight: 800;
                 color: var(--navy);
+                font-size: 13px;
             }
 
             .category-badge {
@@ -354,8 +505,9 @@
                 border-radius: 20px;
                 background: var(--teal-soft);
                 color: var(--teal);
-                font-size: 11px;
-                font-weight: 700;
+                font-size: 10px;
+                font-weight: 800;
+                white-space: nowrap;
             }
 
             .sample-badge {
@@ -364,19 +516,27 @@
                 border-radius: 20px;
                 background: #f1f5f9;
                 color: #475569;
-                font-size: 11px;
-                font-weight: 600;
+                font-size: 10px;
+                font-weight: 700;
+                white-space: nowrap;
             }
 
             .range {
-                font-weight: 600;
+                font-weight: 700;
                 color: #334155;
+                white-space: nowrap;
             }
 
             .tat {
-                font-weight: 700;
+                font-weight: 800;
                 color: var(--navy);
+                white-space: nowrap;
             }
+
+
+            /* =========================================================
+                   ACTION BUTTONS
+                ========================================================= */
 
             .actions {
                 display: flex;
@@ -392,16 +552,22 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 14px;
+                font-size: 13px;
+                transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
             }
 
+                .action-btn:hover {
+                    transform: translateY(-1px);
+                }
+
             .edit-btn {
-                background: #e0f2fe;
-                color: #0369a1;
+                background: var(--blue-soft);
+                color: var(--blue);
             }
 
                 .edit-btn:hover {
                     background: #bae6fd;
+                    box-shadow: 0 3px 8px rgba(3, 105, 161, .12);
                 }
 
             .delete-btn {
@@ -411,29 +577,53 @@
 
                 .delete-btn:hover {
                     background: #fecaca;
+                    box-shadow: 0 3px 8px rgba(220, 38, 38, .12);
                 }
+
+
+            /* =========================================================
+                   EMPTY STATE
+                ========================================================= */
 
             .empty-state {
                 text-align: center;
-                padding: 55px 20px;
+                padding: 65px 20px;
                 color: var(--muted);
             }
 
             .empty-icon {
-                font-size: 40px;
-                margin-bottom: 10px;
+                width: 70px;
+                height: 70px;
+                margin: 0 auto 17px;
+                border-radius: 50%;
+                background: var(--teal-soft);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 32px;
             }
 
             .empty-title {
-                font-weight: 700;
+                font-size: 15px;
+                font-weight: 800;
                 color: var(--navy);
                 margin-bottom: 5px;
             }
 
+            .empty-state > div:not(.empty-icon):not(.empty-title) {
+                font-size: 12px;
+            }
+
+
+            /* =========================================================
+                   MODAL OVERLAY
+                ========================================================= */
+
             .modal-overlay {
                 position: fixed;
                 inset: 0;
-                background: rgba(7, 22, 41, .62);
+                background: rgba(7, 22, 41, .68);
+                backdrop-filter: blur(3px);
                 display: none;
                 align-items: center;
                 justify-content: center;
@@ -445,15 +635,21 @@
                     display: flex;
                 }
 
+
+            /* =========================================================
+                   MODAL
+                ========================================================= */
+
             .modal {
                 width: 100%;
                 max-width: 650px;
                 max-height: 90vh;
                 overflow-y: auto;
-                background: white;
-                border-radius: 14px;
-                box-shadow: 0 25px 70px rgba(0,0,0,.25);
-                animation: modalIn .2s ease;
+                background: var(--white);
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow-lg);
+                animation: modalIn .22s ease;
+                border: 1px solid rgba(255,255,255,.7);
             }
 
             @@keyframes modalIn {
@@ -469,17 +665,24 @@
                 }
             }
 
+
+            /* =========================================================
+                   MODAL HEADER
+                ========================================================= */
+
             .modal-header {
-                padding: 20px 22px;
+                padding: 19px 22px;
                 border-bottom: 1px solid var(--border);
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                background: #ffffff;
             }
 
             .modal-title {
                 font-family: "DM Serif Display", serif;
                 font-size: 22px;
+                font-weight: 400;
                 color: var(--navy);
                 margin: 0;
             }
@@ -493,14 +696,21 @@
                 color: #475569;
                 cursor: pointer;
                 font-size: 18px;
+                transition: background .18s ease, transform .18s ease;
             }
 
                 .close-btn:hover {
                     background: #e2e8f0;
+                    transform: rotate(3deg);
                 }
 
+
+            /* =========================================================
+                   MODAL BODY
+                ========================================================= */
+
             .modal-body {
-                padding: 22px;
+                padding: 23px;
             }
 
             .modal-footer {
@@ -509,7 +719,13 @@
                 display: flex;
                 justify-content: flex-end;
                 gap: 10px;
+                background: #fbfcfe;
             }
+
+
+            /* =========================================================
+                   FORM
+                ========================================================= */
 
             .form-grid {
                 display: grid;
@@ -528,41 +744,58 @@
                 }
 
             .form-label {
-                font-size: 12px;
-                font-weight: 700;
+                font-size: 11px;
+                font-weight: 800;
                 color: #374151;
             }
 
             .required {
                 color: var(--danger);
+                margin-left: 2px;
             }
 
             .form-control {
                 width: 100%;
                 border: 1px solid #cfd7e2;
                 border-radius: 8px;
-                padding: 11px 12px;
+                padding: 10px 12px;
                 font-family: inherit;
-                font-size: 13px;
+                font-size: 12px;
                 color: var(--text);
                 outline: none;
-                background: white;
+                background: var(--white);
+                transition: border-color .18s ease, box-shadow .18s ease;
             }
+
+                .form-control:hover {
+                    border-color: #b9c5d3;
+                }
 
                 .form-control:focus {
                     border-color: var(--teal);
-                    box-shadow: 0 0 0 3px rgba(15,118,110,.1);
+                    box-shadow: 0 0 0 3px rgba(15,118,110,.10);
                 }
 
             textarea.form-control {
-                min-height: 80px;
+                min-height: 82px;
                 resize: vertical;
+                line-height: 1.5;
+            }
+
+            select.form-control {
+                cursor: pointer;
             }
 
             .form-help {
-                font-size: 11px;
+                font-size: 10px;
                 color: var(--muted);
+                margin-top: -2px;
             }
+
+
+            /* =========================================================
+                   DELETE MODAL
+                ========================================================= */
 
             .delete-content {
                 text-align: center;
@@ -580,28 +813,69 @@
                 align-items: center;
                 justify-content: center;
                 font-size: 25px;
+                font-weight: 800;
             }
 
             .delete-title {
                 font-size: 18px;
-                font-weight: 700;
+                font-weight: 800;
                 color: var(--navy);
             }
 
             .delete-message {
                 margin: 8px 0 0;
                 color: var(--muted);
-                font-size: 13px;
+                font-size: 12px;
                 line-height: 1.6;
             }
 
+                .delete-message strong {
+                    color: var(--text);
+                }
+
+
+            /* =========================================================
+                   FOOTER
+                ========================================================= */
+
             .footer {
-                margin-top: 30px;
+                margin-top: 28px;
+                padding: 0 2px;
                 display: flex;
                 justify-content: space-between;
-                color: var(--muted);
-                font-size: 11px;
+                color: #94a3b8;
+                font-size: 10px;
             }
+
+
+            /* =========================================================
+                   SCROLLBAR
+                ========================================================= */
+
+            .modal::-webkit-scrollbar,
+            .sidebar::-webkit-scrollbar,
+            .table-container::-webkit-scrollbar {
+                width: 7px;
+                height: 7px;
+            }
+
+            .modal::-webkit-scrollbar-track,
+            .sidebar::-webkit-scrollbar-track,
+            .table-container::-webkit-scrollbar-track {
+                background: #f1f5f9;
+            }
+
+            .modal::-webkit-scrollbar-thumb,
+            .sidebar::-webkit-scrollbar-thumb,
+            .table-container::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 20px;
+            }
+
+
+            /* =========================================================
+                   RESPONSIVE — TABLET
+                ========================================================= */
 
             @@media (max-width: 850px) {
 
@@ -617,27 +891,81 @@
 
                 .nav-item {
                     justify-content: center;
+                    padding: 12px 8px;
                 }
+
+                    .nav-item.active {
+                        box-shadow: none;
+                    }
 
                 .main {
                     margin-left: 70px;
+                    padding-left: 22px;
+                    padding-right: 22px;
                 }
 
                 .user-info {
                     display: none;
                 }
+
+                .page-title {
+                    font-size: 30px;
+                }
             }
+
+
+            /* =========================================================
+                   RESPONSIVE — MOBILE
+                ========================================================= */
 
             @@media (max-width: 650px) {
 
+                .topbar {
+                    padding: 0 16px;
+                }
+
+                .brand-subtitle {
+                    display: none;
+                }
+
+                .brand-name {
+                    font-size: 18px;
+                }
+
+                .brand-icon {
+                    width: 36px;
+                    height: 36px;
+                }
+
+                .sidebar {
+                    width: 60px;
+                }
+
                 .main {
-                    padding: 90px 15px 30px;
+                    margin-left: 60px;
+                    padding: 92px 15px 30px;
                 }
 
                 .page-header {
                     flex-direction: column;
-                    gap: 15px;
+                    gap: 16px;
                 }
+
+                .page-title {
+                    font-size: 28px;
+                }
+
+                .page-description {
+                    font-size: 12px;
+                }
+
+                .header-actions {
+                    width: 100%;
+                }
+
+                    .header-actions .btn {
+                        flex: 1;
+                    }
 
                 .form-grid {
                     grid-template-columns: 1fr;
@@ -647,20 +975,97 @@
                     grid-column: auto;
                 }
 
+                .modal-overlay {
+                    padding: 12px;
+                }
+
+                .modal {
+                    max-height: 94vh;
+                }
+
+                .modal-body {
+                    padding: 18px;
+                }
+
+                .modal-header {
+                    padding: 17px 18px;
+                }
+
+                .modal-footer {
+                    padding: 14px 18px;
+                }
+
+                    .modal-footer .btn {
+                        flex: 1;
+                    }
+
                 .footer {
                     flex-direction: column;
-                    gap: 5px;
+                    gap: 6px;
+                    line-height: 1.5;
                 }
             }
+
+
+            /* =========================================================
+                   VERY SMALL SCREENS
+                ========================================================= */
+
+            @@media (max-width: 420px) {
+
+                .topbar {
+                    height: 64px;
+                }
+
+                .sidebar {
+                    top: 64px;
+                }
+
+                .main {
+                    padding-top: 84px;
+                }
+
+                .brand-name {
+                    font-size: 17px;
+                }
+
+                .avatar {
+                    width: 36px;
+                    height: 36px;
+                }
+
+                .page-title {
+                    font-size: 25px;
+                }
+
+                .header-actions {
+                    flex-direction: column;
+                }
+
+                    .header-actions .btn {
+                        width: 100%;
+                    }
+
+                .card-header {
+                    padding: 15px 17px;
+                }
+
+                .record-count {
+                    font-size: 10px;
+                }
+            }
+
     </style>
+    ```
 
 </head>
 
 <body>
 
+    ```
     <!-- =========================
-         TOPBAR
-    ========================= -->
+     TOPBAR
+========================= -->
 
     <header class="topbar">
 
@@ -683,6 +1088,7 @@
             </div>
 
         </div>
+
 
         <div class="topbar-right">
 
@@ -708,8 +1114,8 @@
 
 
     <!-- =========================
-         SIDEBAR
-    ========================= -->
+     SIDEBAR
+========================= -->
 
     <aside class="sidebar">
 
@@ -717,7 +1123,9 @@
             Management
         </div>
 
-        <a asp-controller="ManagerDashboard" asp-action="Index"
+
+        <a asp-controller="ManagerDashboard"
+           asp-action="Index"
            class="nav-item">
 
             <span class="nav-icon">▦</span>
@@ -728,7 +1136,9 @@
 
         </a>
 
-        <a asp-controller="TestCatalogue" asp-action="Index"
+
+        <a asp-controller="TestCatalogue"
+           asp-action="Index"
            class="nav-item active">
 
             <span class="nav-icon">🧪</span>
@@ -739,7 +1149,9 @@
 
         </a>
 
-        <a asp-controller="Consumable" asp-action="Index"
+
+        <a asp-controller="Consumable"
+           asp-action="Index"
            class="nav-item">
 
             <span class="nav-icon">📦</span>
@@ -750,7 +1162,9 @@
 
         </a>
 
-        <a asp-controller="Doctor" asp-action="Index"
+
+        <a asp-controller="Doctor"
+           asp-action="Index"
            class="nav-item">
 
             <span class="nav-icon">👨‍⚕️</span>
@@ -761,7 +1175,9 @@
 
         </a>
 
-        <a asp-controller="Technician" asp-action="Index"
+
+        <a asp-controller="Technician"
+           asp-action="Index"
            class="nav-item">
 
             <span class="nav-icon">👤</span>
@@ -772,7 +1188,9 @@
 
         </a>
 
-        <a asp-controller="Report" asp-action="Index"
+
+        <a asp-controller="Report"
+           asp-action="Index"
            class="nav-item">
 
             <span class="nav-icon">📊</span>
@@ -787,10 +1205,11 @@
 
 
     <!-- =========================
-         MAIN CONTENT
-    ========================= -->
+     MAIN CONTENT
+========================= -->
 
     <main class="main">
+
 
         <!-- PAGE HEADER -->
 
@@ -809,15 +1228,31 @@
 
             </div>
 
-            <button type="button"
-                    class="btn btn-primary"
-                    onclick="openAddModal()">
 
-                <span>＋</span>
+            <div class="header-actions">
 
-                Add Test Type
+                <button type="button"
+                        class="btn btn-secondary"
+                        onclick="openAddCategoryModal()">
 
-            </button>
+                    <span>＋</span>
+
+                    Add Category
+
+                </button>
+
+
+                <button type="button"
+                        class="btn btn-primary"
+                        onclick="openAddModal()">
+
+                    <span>＋</span>
+
+                    Add Test Type
+
+                </button>
+
+            </div>
 
         </div>
 
@@ -829,6 +1264,7 @@
             </div>
         }
 
+
         @if (TempData["Error"] != null)
         {
             <div class="alert alert-error">
@@ -838,8 +1274,8 @@
 
 
         <!-- =========================
-             TEST TABLE
-        ========================= -->
+         TEST TABLE
+    ========================= -->
 
         <div class="card">
 
@@ -882,6 +1318,7 @@
 
                         </thead>
 
+
                         <tbody>
 
                             @foreach (var test in Model)
@@ -889,61 +1326,83 @@
 
                                 <tr>
 
+
                                     <!-- TEST -->
 
                                     <td>
+
                                         <div class="test-name">
                                             @test.TestName
                                         </div>
+
                                     </td>
 
 
                                     <!-- CATEGORY -->
 
                                     <td>
+
                                         <span class="category-badge">
+
                                             @(test.CategoryName ?? "Uncategorised")
+
                                         </span>
+
                                     </td>
 
 
                                     <!-- SAMPLE TYPE -->
 
                                     <td>
+
                                         <span class="sample-badge">
+
                                             @test.SampleTypeId
+
                                         </span>
+
                                     </td>
 
 
                                     <!-- UNIT -->
 
                                     <td>
+
                                         @(test.UnitMeasurement ?? "—")
+
                                     </td>
 
 
                                     <!-- NORMAL RANGE -->
 
                                     <td>
+
                                         <span class="range">
+
                                             @test.NormalRangeDisplay
+
                                         </span>
+
                                     </td>
 
 
                                     <!-- TAT -->
 
                                     <td>
+
                                         <span class="tat">
+
                                             @test.TurnaroundTime hrs
+
                                         </span>
+
                                     </td>
 
 
                                     <!-- CONSUMABLES -->
 
                                     <td>
+
                                         @if (!string.IsNullOrWhiteSpace(test.ConsumablesUsed))
                                         {
                                             @test.ConsumablesUsed
@@ -954,6 +1413,7 @@
                                                 None
                                             </span>
                                         }
+
                                     </td>
 
 
@@ -962,6 +1422,7 @@
                                     <td>
 
                                         <div class="actions">
+
 
                                             <!-- EDIT -->
 
@@ -1048,7 +1509,9 @@
         </div>
 
 
-        <!-- FOOTER -->
+        <!-- =========================
+         FOOTER
+    ========================= -->
 
         <div class="footer">
 
@@ -1066,8 +1529,8 @@
 
 
     <!-- =====================================================
-         ADD TEST TYPE MODAL
-    ====================================================== -->
+     ADD TEST TYPE MODAL
+====================================================== -->
 
     <div id="addModal"
          class="modal-overlay">
@@ -1079,6 +1542,7 @@
                   method="post">
 
                 @Html.AntiForgeryToken()
+
 
                 <div class="modal-header">
 
@@ -1107,8 +1571,11 @@
                         <div class="form-group full">
 
                             <label class="form-label">
+
                                 Test Name
+
                                 <span class="required">*</span>
+
                             </label>
 
                             <input type="text"
@@ -1125,11 +1592,14 @@
                         <div class="form-group">
 
                             <label class="form-label">
-                                Category
-                                <span class="required">*</span>
-                            </label>
 
-                            <select name="CategoryId"
+                                Category
+
+                                <span class="required">*</span>
+
+                            </label>
+                            <select id="edit-CategoryId"
+                                    name="CategoryId"
                                     class="form-control"
                                     required>
 
@@ -1137,9 +1607,14 @@
                                     Select category
                                 </option>
 
-                                @foreach (var cat in categories)
+                                @if (ViewBag.Category != null)
                                 {
-                                    <option value="@cat.Id">@cat.CategoryName</option>
+                                    @foreach (var category in ViewBag.Category)
+                                    {
+                                        <option value="@category.Value">
+                                            @category.Text
+                                        </option>
+                                    }
                                 }
 
                             </select>
@@ -1152,11 +1627,15 @@
                         <div class="form-group">
 
                             <label class="form-label">
+
                                 Sample Type
+
                                 <span class="required">*</span>
+
                             </label>
 
-                            <select name="SampleTypeId"
+                            <select id="edit-SampleTypeId"
+                                    name="SampleTypeId"
                                     class="form-control"
                                     required>
 
@@ -1164,10 +1643,15 @@
                                     Select sample type
                                 </option>
 
-                                <option value="Whole Blood">Whole Blood</option>
-                                <option value="Plasma">Plasma</option>
-                                <option value="Serum">Serum</option>
-                                <option value="Bone Marrow">Bone Marrow</option>
+                                @if (ViewBag.SampleType != null)
+                                {
+                                    @foreach (var sampleType in ViewBag.SampleType)
+                                    {
+                                        <option value="@sampleType.Value">
+                                            @sampleType.Text
+                                        </option>
+                                    }
+                                }
 
                             </select>
 
@@ -1182,10 +1666,43 @@
                                 Unit Measurement
                             </label>
 
-                            <input type="text"
-                                   name="UnitMeasurement"
-                                   class="form-control"
-                                   placeholder="e.g. g/dL" />
+                            <select id="edit-UnitMeasurement"
+                                    name="UnitMeasurement"
+                                    class="form-control">
+
+                                <option value="">
+                                    Select unit
+                                </option>
+
+                                <option value="µL">
+                                    µL
+                                </option>
+
+                                <option value="mcL">
+                                    mcL
+                                </option>
+
+                                <option value="g/dL">
+                                    g/dL
+                                </option>
+
+                                <option value="g/L">
+                                    g/L
+                                </option>
+
+                                <option value="g/mL">
+                                    g/mL
+                                </option>
+
+                                <option value="k/µL">
+                                    k/µL
+                                </option>
+
+                                <option value="x10³/µL">
+                                    x10³/µL
+                                </option>
+
+                            </select>
 
                         </div>
 
@@ -1291,8 +1808,113 @@
 
 
     <!-- =====================================================
-         EDIT TEST TYPE MODAL
-    ====================================================== -->
+     ADD CATEGORY MODAL
+====================================================== -->
+
+    <div id="addCategoryModal"
+         class="modal-overlay">
+
+        <div class="modal"
+             style="max-width:480px;">
+
+            <form asp-controller="TestCatalogue"
+                  asp-action="AddCategory"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+
+                <div class="modal-header">
+
+                    <h2 class="modal-title">
+                        Add Category
+                    </h2>
+
+                    <button type="button"
+                            class="close-btn"
+                            onclick="closeModal('addCategoryModal')">
+
+                        ×
+
+                    </button>
+
+                </div>
+
+
+                <div class="modal-body">
+
+                    <div class="form-grid">
+
+
+                        <!-- CATEGORY NAME -->
+
+                        <div class="form-group full">
+
+                            <label class="form-label">
+
+                                Category Name
+
+                                <span class="required">*</span>
+
+                            </label>
+
+                            <input type="text"
+                                   name="CategoryName"
+                                   class="form-control"
+                                   placeholder="e.g. Haematology"
+                                   required />
+
+                        </div>
+
+
+                        <!-- DESCRIPTION -->
+
+                        <div class="form-group full">
+
+                            <label class="form-label">
+                                Description
+                            </label>
+
+                            <textarea name="Description"
+                                      class="form-control"
+                                      placeholder="Optional short description"></textarea>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            onclick="closeModal('addCategoryModal')">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary">
+
+                        ✓ Save Category
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+     EDIT TEST TYPE MODAL
+====================================================== -->
 
     <div id="editModal"
          class="modal-overlay">
@@ -1338,8 +1960,11 @@
                         <div class="form-group full">
 
                             <label class="form-label">
+
                                 Test Name
+
                                 <span class="required">*</span>
+
                             </label>
 
                             <input type="text"
@@ -1356,8 +1981,11 @@
                         <div class="form-group">
 
                             <label class="form-label">
+
                                 Category
+
                                 <span class="required">*</span>
+
                             </label>
 
                             <select id="edit-CategoryId"
@@ -1369,9 +1997,14 @@
                                     Select category
                                 </option>
 
-                                @foreach (var cat in categories)
+                                @if (ViewBag.Category != null)
                                 {
-                                    <option value="@cat.Id">@cat.CategoryName</option>
+                                    @foreach (var category in ViewBag.Category)
+                                    {
+                                        <option value="@category.Value">
+                                            @category.Text
+                                        </option>
+                                    }
                                 }
 
                             </select>
@@ -1384,8 +2017,11 @@
                         <div class="form-group">
 
                             <label class="form-label">
+
                                 Sample Type
+
                                 <span class="required">*</span>
+
                             </label>
 
                             <select id="edit-SampleTypeId"
@@ -1397,10 +2033,15 @@
                                     Select sample type
                                 </option>
 
-                                <option value="Whole Blood">Whole Blood</option>
-                                <option value="Plasma">Plasma</option>
-                                <option value="Serum">Serum</option>
-                                <option value="Bone Marrow">Bone Marrow</option>
+                                @if (ViewBag.SampleType != null)
+                                {
+                                    @foreach (var sampleType in ViewBag.SampleType)
+                                    {
+                                        <option value="@sampleType.Value">
+                                            @sampleType.Text
+                                        </option>
+                                    }
+                                }
 
                             </select>
 
@@ -1520,8 +2161,8 @@
 
 
     <!-- =====================================================
-         DELETE CONFIRMATION MODAL
-    ====================================================== -->
+     DELETE CONFIRMATION MODAL
+====================================================== -->
 
     <div id="deleteModal"
          class="modal-overlay">
@@ -1534,6 +2175,7 @@
                   method="post">
 
                 @Html.AntiForgeryToken()
+
 
                 <input type="hidden"
                        id="delete-TestId"
@@ -1613,14 +2255,23 @@
 
 
     <!-- =====================================================
-         JAVASCRIPT
-    ====================================================== -->
+     JAVASCRIPT
+====================================================== -->
 
     <script>
 
             function openAddModal() {
 
                 document.getElementById("addModal")
+                    .classList.add("show");
+
+                document.body.style.overflow = "hidden";
+            }
+
+
+            function openAddCategoryModal() {
+
+                document.getElementById("addCategoryModal")
                     .classList.add("show");
 
                 document.body.style.overflow = "hidden";
@@ -1640,14 +2291,23 @@
             ) {
 
                 document.getElementById("edit-TestId").value = id;
+
                 document.getElementById("edit-TestName").value = testName;
+
                 document.getElementById("edit-CategoryId").value = categoryId;
+
                 document.getElementById("edit-SampleTypeId").value = sampleType;
+
                 document.getElementById("edit-UnitMeasurement").value = unit;
+
                 document.getElementById("edit-NormalRangeMin").value = normalMin;
+
                 document.getElementById("edit-NormalRangeMax").value = normalMax;
+
                 document.getElementById("edit-TurnaroundTime").value = tat;
+
                 document.getElementById("edit-ConsumablesUsed").value = consumables;
+
 
                 document.getElementById("editModal")
                     .classList.add("show");
@@ -1659,7 +2319,9 @@
             function openDeleteModal(id, testName) {
 
                 document.getElementById("delete-TestId").value = id;
+
                 document.getElementById("delete-TestName").textContent = testName;
+
 
                 document.getElementById("deleteModal")
                     .classList.add("show");
@@ -1719,10 +2381,13 @@
                     .forEach(function (alert) {
 
                         alert.style.transition = "opacity .4s ease";
+
                         alert.style.opacity = "0";
 
                         setTimeout(function () {
+
                             alert.remove();
+
                         }, 400);
 
                     });
@@ -1730,6 +2395,7 @@
             }, 5000);
 
     </script>
+    
 
 </body>
 

@@ -1,6 +1,7 @@
 ﻿using _4th_year_set_up.Services;
 using admin.Repository;
 using LabManager.DataAccess;
+using LabManager.Repositories;
 using LabManager.Repository;
 using Microsoft.Data.SqlClient;
 using Patient.Repository;
@@ -35,8 +36,8 @@ builder.Services.AddScoped<AdminRepository>(provider =>
 //Lab Manager
 builder.Services.AddTransient<ISqlDataAcess ,SqlDataAccess>(); 
 builder.Services.AddTransient<IConsumablesRepository, ConsumablesRepository>();
-builder.Services.AddTransient<IOrderRepository, OrderRepository>();
-builder.Services.AddTransient<ITestCategoryrepository,TestCategoryRepository>();
+builder.Services.AddTransient<IOrderRepository, ConsumableOrderRepository>();
+builder.Services.AddTransient<ITestCategoryrepository, TestCategoryRepository>();
 builder.Services.AddTransient<IStaffRepository, StaffRepository>();
 
 
