@@ -1,0 +1,419 @@
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model LabManager.Models.UserProfileViewModel;
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Profile";
+
+    var email = ViewBag.Email?.ToString() ?? "";
+   // var initial = !string.IsNullOrEmpty(email) ? email.Substring(0, 1).ToUpper() : "P";
+    string initial = email[0].ToString().ToUpper();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile — NMB-HLabSys</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --navy: #0b1f3a;
+            --navy2: #122848;
+            --teal: #0d9488;
+            --teal-light: rgba(13,148,136,0.1);
+            --offwhite: #f4f7fb;
+            --white: #ffffff;
+            --muted: #6b7a99;
+            --border: #dde4f0;
+            --red: #dc2626;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--offwhite);
+            color: var(--navy);
+        }
+
+        /* ================= TOPBAR (MATCH DASHBOARD) ================= */
+        .topbar {
+            background: var(--navy);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .brand-logo {
+            width: 34px;
+            height: 34px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .brand-name {
+            font-family: 'DM Serif Display', serif;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 100px;
+            padding: 6px 12px;
+            color: white;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            color: white;
+            padding: 8px 14px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            text-decoration: none;
+        }
+
+        /* ================= LAYOUT ================= */
+        .page {
+            display: flex;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ================= SIDEBAR (MATCH DASHBOARD EXACTLY) ================= */
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            flex-shrink: 0;
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+
+        .nav-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0 20px;
+            margin-bottom: 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.15s;
+            border-left: 3px solid transparent;
+        }
+
+            .nav-item:hover {
+                background: var(--offwhite);
+                color: var(--navy);
+            }
+
+            .nav-item.active {
+                background: var(--teal-light);
+                color: var(--teal);
+                border-left-color: var(--teal);
+            }
+
+            .nav-item svg {
+                width: 16px;
+                height: 16px;
+            }
+
+        /* ================= MAIN (UNCHANGED CONTENT) ================= */
+        .main {
+            flex: 1;
+            padding: 30px;
+        }
+
+        .page-header h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.8rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px;
+        }
+
+        .section-title {
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+            .form-group label {
+                font-size: 12px;
+                color: var(--muted);
+            }
+
+            .form-group input {
+                padding: 10px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--offwhite);
+            }
+
+        .readonly {
+            background: #eee;
+            color: var(--muted);
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-teal {
+            background: var(--teal);
+            color: white;
+        }
+
+        .btn-red {
+            background: var(--red);
+            color: white;
+        }
+
+        .divider {
+            margin: 14px 0;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <div class="brand-logo"></div>
+            <div class="brand-name">NMB-HLabSys</div>
+        </a>
+
+        <div class="topbar-right">
+            <div class="user-chip">
+                <div class="user-avatar">@initial</div>
+                <span>@email</span>
+            </div>
+
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn">Logout</a>
+        </div>
+    </div>
+
+    <div class="page">
+
+        <aside class="sidebar">
+            <div class="nav-label">Main</div>
+
+            <a asp-controller="TechnicianDashboard" asp-action="Index" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                </svg>
+                Dashboard
+            </a>
+
+            <a asp-controller="TechnicianDashboard" asp-action="ReceiveSamples" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 2v6l-5 10a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-10V2" />
+                    <line x1="9" y1="2" x2="15" y2="2" />
+                </svg>
+                Receive Samples
+            </a>
+
+            <a asp-controller="TechnicianDashboard" asp-action="EnterResults" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Enter Results
+            </a>
+
+            <a asp-controller="TechnicianDashboard" asp-action="ViewResults" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                </svg>
+                View Results
+            </a>
+
+            <div class="nav-label">System</div>
+
+            <a asp-controller="TechnicianDashboard" asp-action="Profile" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                </svg>
+                Profile
+            </a>
+
+            <a asp-controller="TechnicianDashboard" asp-action="ActivityLog" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                Activity Log
+            </a>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main">
+
+            <div class="page-header">
+                <h1>My Profile</h1>
+                <p>Manage personal details and security settings</p>
+            </div>
+
+            <div class="grid">
+
+                <div class="card">
+                    <div class="section-title">Account Information (Read Only)</div>
+
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input class="readonly" value="@Model.Email" readonly />
+                    </div>
+
+                    <div class="form-group">
+                        <label>ID Number</label>
+                        <input class="readonly" value="@Model.IDNumber" readonly />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Registration Date</label>
+                        <input class="readonly" value="@Model.RegistrationDate.ToString("dd MMM yyyy")" readonly />
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="section-title">Update Profile</div>
+
+                    <form asp-action="UpdateProfile" method="post">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input name="FirstName" value="@Model.FirstName" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input name="LastName" value="@Model.LastName" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input name="CellphoneNumber" value="@Model.CellphoneNumber" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input name="HomeAddress" value="@Model.HomeAddress" />
+                        </div>
+
+                        <button class="btn btn-teal">Save Changes</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="section-title">Change Password</div>
+
+                    <form asp-action="ChangePassword" method="post">
+
+                        <div class="form-group">
+                            <label>Current Password</label>
+                            <input type="password" name="CurrentPassword" />
+                        </div>
+
+                        <hr class="divider" />
+
+                        <div class="form-group">
+                            <label>New Password</label>
+                            <input type="password" name="NewPassword" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Confirm Password</label>
+                            <input type="password" name="ConfirmPassword" />
+                        </div>
+
+                        <button class="btn btn-red">Change Password</button>
+                    </form>
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+
+</body>
+</html>

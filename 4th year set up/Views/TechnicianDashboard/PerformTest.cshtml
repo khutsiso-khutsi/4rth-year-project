@@ -1,0 +1,596 @@
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    ViewData["Title"] = "Perform Test";
+    Layout = null;
+    var isReturn = Context.Request.Query["review"] == "1";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Perform Test — NMB-HLabSys</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --navy: #0b1f3a;
+            --navy2: #122848;
+            --teal: #0d9488;
+            --teal-light: rgba(13,148,136,0.1);
+            --orange: #ea580c;
+            --orange-light: rgba(234,88,12,0.1);
+            --amber: #d97706;
+            --amber-light: rgba(217,119,6,0.1);
+            --red: #dc2626;
+            --red-light: rgba(220,38,38,0.1);
+            --green: #16a34a;
+            --green-light: rgba(22,163,74,0.1);
+            --blue: #2563eb;
+            --blue-light: rgba(37,99,235,0.1);
+            --purple: #7c3aed;
+            --purple-light: rgba(124,58,237,0.1);
+            --slate: #475569;
+            --slate-light: rgba(71,85,105,0.1);
+            --white: #ffffff;
+            --offwhite: #f4f7fb;
+            --muted: #6b7a99;
+            --muted-light: rgba(107,122,153,0.12);
+            --border: #dde4f0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--offwhite);
+            color: var(--navy);
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: var(--navy);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .brand-logo {
+            width: 34px;
+            height: 34px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .brand-logo svg {
+                width: 18px;
+                height: 18px;
+                fill: white;
+            }
+
+        .brand-name {
+            font-family: 'DM Serif Display', serif;
+            color: white;
+            font-size: 1.1rem;
+            line-height: 1.1;
+        }
+
+            .brand-name span {
+                display: block;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.6rem;
+                font-weight: 300;
+                color: rgba(255,255,255,0.4);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 100px;
+            padding: 6px 14px 6px 8px;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            background: var(--orange);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .user-email {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.75);
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.8);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+            .logout-btn:hover {
+                background: rgba(255,255,255,0.15);
+                color: white;
+            }
+
+            .logout-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+
+        .page {
+            display: flex;
+            min-height: calc(100vh - 64px);
+        }
+
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            flex-shrink: 0;
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+
+        .nav-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0 20px;
+            margin-bottom: 4px;
+            margin-top: 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-left: 3px solid transparent;
+            transition: all 0.15s;
+        }
+
+            .nav-item:hover {
+                background: var(--offwhite);
+                color: var(--navy);
+            }
+
+            .nav-item.active {
+                background: var(--orange-light);
+                color: var(--orange);
+                border-left-color: var(--orange);
+            }
+
+            .nav-item svg {
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+            }
+
+        .main {
+            flex: 1;
+            padding: 32px 40px;
+            max-width: 1000px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 0.83rem;
+            cursor: pointer;
+            text-decoration: none;
+            margin-bottom: 18px;
+        }
+
+            .back-link:hover {
+                color: var(--navy);
+            }
+
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+            .test-header h1 {
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.6rem;
+                color: var(--navy);
+                margin-bottom: 4px;
+            }
+
+            .test-header .meta {
+                font-size: 0.83rem;
+                color: var(--muted);
+            }
+
+        .header-badges {
+            display: flex;
+            gap: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .badge-urgent {
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+        .badge-routine {
+            background: var(--offwhite);
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        .badge-inprogress {
+            background: var(--blue-light);
+            color: var(--blue);
+        }
+
+        .badge-review {
+            background: var(--orange-light);
+            color: var(--orange);
+        }
+
+        .review-banner {
+            display: flex;
+            gap: 12px;
+            background: var(--orange-light);
+            border: 1px solid rgba(234,88,12,0.3);
+            border-radius: 14px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+        }
+
+        .review-banner-title {
+            font-size: 0.83rem;
+            font-weight: 700;
+            color: var(--orange);
+            margin-bottom: 3px;
+        }
+
+        .review-banner-text {
+            font-size: 0.82rem;
+            color: var(--navy);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
+        }
+
+        .section-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 6px;
+            margin-top: 16px;
+        }
+
+            .section-label:first-child {
+                margin-top: 0;
+            }
+
+        .section-body {
+            font-size: 0.85rem;
+            color: var(--navy);
+            line-height: 1.5;
+        }
+
+        .result-field {
+            margin-top: 14px;
+        }
+
+            .result-field:first-child {
+                margin-top: 0;
+            }
+
+            .result-field label {
+                display: block;
+                font-size: 0.7rem;
+                font-weight: 600;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+                margin-bottom: 6px;
+            }
+
+            .result-field textarea {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                font-size: 0.85rem;
+                font-family: 'DM Sans', sans-serif;
+                color: var(--navy);
+                resize: vertical;
+            }
+
+                .result-field textarea:focus {
+                    outline: none;
+                    border-color: var(--teal);
+                }
+
+        .btn {
+            padding: 9px 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.83rem;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            transition: all 0.15s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: var(--teal);
+            color: white;
+        }
+
+            .btn-primary:hover {
+                background: #0b7a70;
+            }
+
+        @@media (max-width: 900px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .topbar {
+                padding: 0 20px;
+            }
+
+            .user-email {
+                display: none;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                padding: 20px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="topbar">
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <div class="brand-logo"><svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg></div>
+            <div class="brand-name">NMB-HLabSys<span>Haematology Lab System</span></div>
+        </a>
+        <div class="topbar-right">
+            <div class="user-chip">
+                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "T")</div>
+                <span class="user-email">@ViewBag.Email</span>
+            </div>
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                Sign Out
+            </a>
+        </div>
+    </div>
+
+    <div class="page">
+        <aside class="sidebar">
+            <div class="nav-label">Main</div>
+            <a asp-controller="Lab" asp-action="Index" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+                Dashboard
+            </a>
+            <a asp-controller="Lab" asp-action="DoctorOrders" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><polyline points="9 14 11 16 15 12" /></svg>
+                Doctor Orders
+            </a>
+            <a asp-controller="Lab" asp-action="ReceiveSamples" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6" />
+                    <polyline points="16 6 12 10 8 6" />
+                    <line x1="12" y1="10" x2="12" y2="2" />
+                </svg>
+                Receive Samples
+            </a>
+            <a asp-controller="Lab" asp-action="TestingQueue" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" />
+                    <line x1="9" y1="2" x2="15" y2="2" />
+                </svg>                Testing Queue
+            </a>
+            <a asp-controller="Lab" asp-action="Verification" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="9 12 11 14 15 10" />
+                </svg>
+                Verification
+            </a>
+            <div class="nav-label">System</div>
+            <a asp-controller="Lab" asp-action="Profile" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                Profile
+            </a>
+            <a asp-controller="Lab" asp-action="ActivityLog" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                </svg>
+                Activity Log
+            </a>
+        </aside>
+
+        <main class="main">
+            <a asp-controller="Lab" asp-action="TestingQueue" class="back-link">← Back to testing queue</a>
+
+            @if (isReturn)
+            {
+                <div class="test-header">
+                    <div>
+                        <h1>Platelet Count</h1>
+                        <div class="meta">REQ-0149 · Lindiwe Ngcobo, 39</div>
+                    </div>
+                    <div class="header-badges">
+                        <span class="badge badge-routine">Routine</span>
+                        <span class="badge badge-review">To Be Reviewed</span>
+                    </div>
+                </div>
+
+                <div class="review-banner">
+                    <div>
+                        <div class="review-banner-title">Returned for review</div>
+                        <div class="review-banner-text">Please re-verify platelet count. Result appears inconsistent with sample notes — consider a fresh recount before resubmitting.</div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="section-label">Clinical notes</div>
+                        <div class="section-body">Easy bruising reported over past two weeks, investigate platelet function.</div>
+                        <div class="section-label">Allergies</div>
+                        <div class="section-body">None known</div>
+                        <div class="section-label">Medications</div>
+                        <div class="section-body">None</div>
+                    </div>
+                    <div class="card">
+                        <div class="result-field">
+                            <label>Result Values</label>
+                            <textarea rows="4">Platelets = 512 x10^9/L</textarea>
+                        </div>
+                        <div class="result-field">
+                            <label>Technician Notes</label>
+                            <textarea rows="3">Sample slightly clotted, recount performed once.</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary">Resubmit for Verification</button>
+            }
+            else
+            {
+                <div class="test-header">
+                    <div>
+                        <h1>Serum Potassium</h1>
+                        <div class="meta">REQ-0152 · Karabo Sithole, 67</div>
+                    </div>
+                    <div class="header-badges">
+                        <span class="badge badge-urgent">STAT</span>
+                        <span class="badge badge-inprogress">In Progress</span>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="section-label">Clinical notes</div>
+                        <div class="section-body">History of hypertension. On diuretic therapy, check renal function and platelets.</div>
+                        <div class="section-label">Allergies</div>
+                        <div class="section-body">Sulfa drugs</div>
+                        <div class="section-label">Medications</div>
+                        <div class="section-body">Hydrochlorothiazide, Amlodipine</div>
+                    </div>
+                    <div class="card">
+                        <div class="result-field">
+                            <label>Result Values</label>
+                            <textarea rows="4" placeholder="e.g. Potassium = 4.2 mmol/L"></textarea>
+                        </div>
+                        <div class="result-field">
+                            <label>Technician Notes</label>
+                            <textarea rows="3" placeholder="Any observations about the sample or result"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary">Complete Test</button>
+            }
+        </main>
+    </div>
+
+</body>
+</html>
