@@ -35,14 +35,14 @@ namespace LabManager.Models
         public decimal? NormalRangeMin { get; set; }
 
         public decimal? NormalRangeMax { get; set; }
-        
+
         [Range(0, int.MaxValue, ErrorMessage = "Turnaround time cannot be negative.")]
         public int? TurnaroundTime { get; set; }
 
         [StringLength(500)]
         public string? ConsumablesUsed { get; set; }
 
-        // Convenience for display; not persisted directly.
+        //Convenience for display; not persisted directly.
         public string NormalRangeDisplay =>
             (NormalRangeMin.HasValue && NormalRangeMax.HasValue)
                 ? $"{NormalRangeMin:0.##} - {NormalRangeMax:0.##}"

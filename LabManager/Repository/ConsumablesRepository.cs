@@ -20,6 +20,8 @@ namespace LabManager.Repository
         // =====================================================
         // ADD CONSUMABLE
         // =====================================================
+
+
         public async Task<bool> AddConsumables(Consumable consumables)
         {
             try
@@ -31,7 +33,7 @@ namespace LabManager.Repository
                         consumables.ConsumableName,
                         consumables.SupplierID,
                         consumables.ReorderLevel,
-                        QuantityOnHand = consumables.OnHand
+                        QuantityOnHand = consumables.QuantityOnHand
                     });
 
                 return true;
@@ -45,6 +47,8 @@ namespace LabManager.Repository
         // =====================================================
         // ADD SUPPLIER
         // =====================================================
+
+
         public async Task<bool> AddSupplier(Supplier supplier)
         {
             try
@@ -54,8 +58,9 @@ namespace LabManager.Repository
                     new
                     {
                         supplier.SupplierName,
-                        supplier.EmailAddress,
-                        supplier.ContactPerson
+                        supplier.ContactPerson,
+                        supplier.EmailAddress
+                  
                     });
 
                 return true;
@@ -202,5 +207,8 @@ namespace LabManager.Repository
                 return Enumerable.Empty<Supplier>();
             }
         }
+
+
+       
     }
 }

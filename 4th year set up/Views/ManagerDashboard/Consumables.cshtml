@@ -1273,13 +1273,13 @@
             var totalConsumables = consumableList.Count;
 
             var lowStock = consumableList.Count(x =>
-                x.OnHand <= x.ReorderLevel);
+                x.QuantityOnHand <= x.ReorderLevel);
 
             var mediumStock = consumableList.Count(x =>
-                x.OnHand > x.ReorderLevel &&
-                x.OnHand <= x.ReorderLevel + 20);
+                x.QuantityOnHand > x.ReorderLevel &&
+                x.QuantityOnHand <= x.ReorderLevel + 20);
 
-            var totalUnits = consumableList.Sum(x => x.OnHand);
+            var totalUnits = consumableList.Sum(x => x.QuantityOnHand);
         }
 
         <div class="stats-grid">
@@ -1440,9 +1440,9 @@
                         {
                             foreach (var c in consumableList)
                             {
-                                var status = c.OnHand <= c.ReorderLevel
+                                var status = c.QuantityOnHand <= c.ReorderLevel
                                     ? "Low"
-                                    : c.OnHand <= c.ReorderLevel + 20
+                                    : c.QuantityOnHand <= c.ReorderLevel + 20
                                         ? "Medium"
                                         : "Good";
 
@@ -1456,7 +1456,7 @@
                                     data-id="@c.ConsumableID"
                                     data-name="@c.ConsumableName"
                                     data-supplier="@c.Supplier"
-                                    data-onhand="@c.OnHand"
+                                    data-onhand="@c.QuantityOnHand"
                                     data-reorder="@c.ReorderLevel"
                                     data-status="@status"
                                     onclick="openConsumableView(this)">
@@ -1482,7 +1482,7 @@
                                     <td>
 
                                         <span class="quantity">
-                                            @c.OnHand
+                                            @c.QuantityOnHand
                                         </span>
 
                                     </td>
@@ -1523,7 +1523,7 @@
                                                                     System.Text.Encodings.Web
                                                                     .HtmlEncoder.Default.Encode(c.ConsumableName)
                                                                 )',
-                                                                @c.OnHand,
+                                                                @c.QuantityOnHand,
                                                                 @c.ReorderLevel
                                                              )">
 
