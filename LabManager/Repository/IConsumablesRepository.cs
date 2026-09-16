@@ -28,5 +28,8 @@ namespace LabManager.Repository
         Task<IEnumerable<Supplier>> GetAllSuppliers();
 
 
+        Task<IEnumerable<Supplier>> GetSuppliers();
+
+
     } 
 }

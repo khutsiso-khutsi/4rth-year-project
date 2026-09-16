@@ -1,0 +1,2457 @@
+﻿@using System.Text.Json
+@using LabManager.Models
+@model IEnumerable<Consumable>
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Consumables Management";
+
+    var suppliers = ViewBag.Suppliers as IEnumerable<Supplier>
+                    ?? Enumerable.Empty<Supplier>();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Consumables Management — NMB-HLabSys</title>
+
+    <style>
+
+            :root {
+                --navy: #0b1f3a;
+                --navy-2: #102a4c;
+                --teal: #0f766e;
+                --teal-light: #ccfbf1;
+                --blue: #2563eb;
+                --blue-light: #dbeafe;
+                --green: #16a34a;
+                --green-light: #dcfce7;
+                --orange: #d97706;
+                --orange-light: #fef3c7;
+                --red: #dc2626;
+                --red-light: #fee2e2;
+                --purple: #7c3aed;
+                --purple-light: #ede9fe;
+                --gray-50: #f8fafc;
+                --gray-100: #f1f5f9;
+                --gray-200: #e2e8f0;
+                --gray-300: #cbd5e1;
+                --gray-400: #94a3b8;
+                --gray-500: #64748b;
+                --gray-600: #475569;
+                --gray-700: #334155;
+                --gray-800: #1e293b;
+                --white: #ffffff;
+                --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+                --shadow-md: 0 8px 25px rgba(15, 23, 42, 0.10);
+                --shadow-lg: 0 20px 50px rgba(15, 23, 42, 0.18);
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                background: #f4f7fb;
+                color: var(--gray-800);
+            }
+
+            button,
+            input,
+            select {
+                font-family: inherit;
+            }
+
+            /* =========================
+                       TOP BAR
+                    ========================= */
+
+            .topbar {
+                height: 72px;
+                background: var(--white);
+                border-bottom: 1px solid var(--gray-200);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 30px;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+            }
+
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .brand-icon {
+                width: 42px;
+                height: 42px;
+                border-radius: 11px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--navy);
+                color: white;
+                font-size: 20px;
+                font-weight: 800;
+            }
+
+            .brand-text {
+                line-height: 1.1;
+            }
+
+            .brand-title {
+                font-size: 15px;
+                font-weight: 800;
+                color: var(--navy);
+            }
+
+            .brand-subtitle {
+                font-size: 11px;
+                color: var(--gray-500);
+                margin-top: 4px;
+            }
+
+            .top-right {
+                display: flex;
+                align-items: center;
+                gap: 18px;
+            }
+
+            .top-user {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .user-avatar {
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                background: var(--teal-light);
+                color: var(--teal);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                font-weight: 800;
+            }
+
+            .user-info {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .user-name {
+                font-size: 13px;
+                font-weight: 700;
+                color: var(--gray-800);
+            }
+
+            .user-role {
+                font-size: 11px;
+                color: var(--gray-500);
+            }
+
+            /* =========================
+                       SIDEBAR
+                    ========================= */
+
+            .sidebar {
+                width: 245px;
+                position: fixed;
+                top: 72px;
+                left: 0;
+                bottom: 0;
+                background: var(--navy);
+                padding: 25px 14px;
+                overflow-y: auto;
+                z-index: 900;
+            }
+
+            .nav-section {
+                margin-bottom: 28px;
+            }
+
+            .nav-label {
+                padding: 0 12px;
+                margin-bottom: 9px;
+                font-size: 10px;
+                font-weight: 800;
+                color: #8da2bb;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+            .nav-item {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                gap: 11px;
+                padding: 11px 13px;
+                margin-bottom: 4px;
+                border-radius: 8px;
+                color: #c8d4e2;
+                text-decoration: none;
+                font-size: 13px;
+                font-weight: 600;
+                transition: 0.2s;
+            }
+
+                .nav-item:hover {
+                    background: rgba(255,255,255,0.08);
+                    color: white;
+                }
+
+                .nav-item.active {
+                    background: rgba(15,118,110,0.35);
+                    color: white;
+                }
+
+            .nav-icon {
+                width: 20px;
+                text-align: center;
+                font-size: 15px;
+            }
+
+            /* =========================
+                       MAIN CONTENT
+                    ========================= */
+
+            .main {
+                margin-left: 245px;
+                padding: 105px 35px 40px;
+                min-height: 100vh;
+            }
+
+            .page-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 26px;
+            }
+
+            .page-title {
+                margin: 0;
+                color: var(--navy);
+                font-size: 27px;
+                font-weight: 800;
+            }
+
+            .page-description {
+                margin-top: 7px;
+                color: var(--gray-500);
+                font-size: 13px;
+            }
+
+            .header-actions {
+                display: flex;
+                gap: 10px;
+            }
+
+            .btn {
+                border: none;
+                border-radius: 8px;
+                padding: 10px 15px;
+                font-size: 12px;
+                font-weight: 700;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 7px;
+                transition: 0.2s;
+            }
+
+                .btn:hover {
+                    transform: translateY(-1px);
+                }
+
+            .btn-blue {
+                background: var(--blue);
+                color: white;
+            }
+
+            .btn-teal {
+                background: var(--teal);
+                color: white;
+            }
+
+            .btn-red {
+                background: var(--red);
+                color: white;
+            }
+
+            .btn-outline {
+                background: white;
+                border: 1px solid var(--gray-300);
+                color: var(--gray-700);
+            }
+
+            /* =========================
+                       ALERTS
+                    ========================= */
+
+            .alert {
+                padding: 13px 16px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                font-size: 13px;
+                font-weight: 600;
+            }
+
+            .alert-success {
+                background: var(--green-light);
+                color: var(--green);
+                border: 1px solid rgba(22,163,74,0.2);
+            }
+
+            .alert-error {
+                background: var(--red-light);
+                color: var(--red);
+                border: 1px solid rgba(220,38,38,0.2);
+            }
+
+            /* =========================
+                       STAT CARDS
+                    ========================= */
+
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px;
+                margin-bottom: 24px;
+            }
+
+            .stat-card {
+                background: white;
+                border: 1px solid var(--gray-200);
+                border-radius: 12px;
+                padding: 19px;
+                box-shadow: var(--shadow-sm);
+            }
+
+            .stat-label {
+                color: var(--gray-500);
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .5px;
+            }
+
+            .stat-value {
+                margin-top: 8px;
+                font-size: 26px;
+                font-weight: 800;
+                color: var(--navy);
+            }
+
+            .stat-description {
+                margin-top: 4px;
+                font-size: 11px;
+                color: var(--gray-500);
+            }
+
+            /* =========================
+                       TABLE CARD
+                    ========================= */
+
+            .card {
+                background: white;
+                border: 1px solid var(--gray-200);
+                border-radius: 13px;
+                box-shadow: var(--shadow-sm);
+                overflow: hidden;
+            }
+
+            .card-header {
+                padding: 20px 22px;
+                border-bottom: 1px solid var(--gray-200);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 20px;
+            }
+
+            .card-title {
+                font-size: 15px;
+                font-weight: 800;
+                color: var(--navy);
+            }
+
+            .card-subtitle {
+                margin-top: 4px;
+                font-size: 11px;
+                color: var(--gray-500);
+            }
+
+            .search-box {
+                width: 270px;
+                position: relative;
+            }
+
+                .search-box input {
+                    width: 100%;
+                    padding: 10px 12px 10px 35px;
+                    border: 1px solid var(--gray-300);
+                    border-radius: 8px;
+                    outline: none;
+                    font-size: 12px;
+                }
+
+                    .search-box input:focus {
+                        border-color: var(--teal);
+                    }
+
+            .search-icon {
+                position: absolute;
+                left: 12px;
+                top: 10px;
+                color: var(--gray-400);
+                font-size: 13px;
+            }
+
+            .table-wrapper {
+                width: 100%;
+                overflow-x: auto;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 850px;
+            }
+
+            thead {
+                background: var(--gray-50);
+            }
+
+            th {
+                padding: 12px 20px;
+                text-align: left;
+                font-size: 10px;
+                font-weight: 800;
+                color: var(--gray-500);
+                text-transform: uppercase;
+                letter-spacing: .6px;
+                border-bottom: 1px solid var(--gray-200);
+            }
+
+            td {
+                padding: 14px 20px;
+                border-bottom: 1px solid var(--gray-100);
+                font-size: 12px;
+                color: var(--gray-700);
+            }
+
+            tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .row-clickable {
+                cursor: pointer;
+                transition: background .15s;
+            }
+
+                .row-clickable:hover {
+                    background: #f8fafc;
+                }
+
+            .consumable-name {
+                color: var(--navy);
+                font-weight: 750;
+            }
+
+            .supplier-name {
+                color: var(--gray-600);
+            }
+
+            .quantity {
+                font-weight: 800;
+                color: var(--gray-800);
+            }
+
+            .status {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 5px 9px;
+                border-radius: 999px;
+                font-size: 10px;
+                font-weight: 800;
+            }
+
+            .status-good {
+                background: var(--green-light);
+                color: var(--green);
+            }
+
+            .status-medium {
+                background: var(--orange-light);
+                color: var(--orange);
+            }
+
+            .status-low {
+                background: var(--red-light);
+                color: var(--red);
+            }
+
+            .status-dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: currentColor;
+            }
+
+            .actions {
+                display: flex;
+                gap: 6px;
+            }
+
+            .action-btn {
+                border: 1px solid var(--gray-200);
+                background: white;
+                border-radius: 6px;
+                padding: 6px 9px;
+                font-size: 10px;
+                font-weight: 700;
+                cursor: pointer;
+            }
+
+                .action-btn:hover {
+                    background: var(--gray-50);
+                }
+
+            .adjust-btn {
+                color: var(--blue);
+            }
+
+            .edit-btn {
+                color: var(--teal);
+            }
+
+            .delete-btn {
+                color: var(--red);
+            }
+
+            .empty-state {
+                padding: 60px 20px;
+                text-align: center;
+                color: var(--gray-500);
+                font-size: 13px;
+            }
+
+            .empty-icon {
+                font-size: 35px;
+                margin-bottom: 12px;
+            }
+
+            /* =========================
+                       MODAL
+                    ========================= */
+
+            .modal-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(11,31,58,0.55);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 3000;
+                padding: 20px;
+            }
+
+                .modal-overlay.show {
+                    display: flex;
+                }
+
+            .modal {
+                width: 100%;
+                max-width: 520px;
+                background: white;
+                border-radius: 14px;
+                box-shadow: var(--shadow-lg);
+                animation: modalIn .18s ease;
+            }
+
+            @@keyframes modalIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(8px) scale(.98);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+
+            .modal-header {
+                padding: 19px 22px;
+                border-bottom: 1px solid var(--gray-200);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .modal-title {
+                font-size: 15px;
+                font-weight: 800;
+                color: var(--navy);
+            }
+
+            .modal-close {
+                width: 30px;
+                height: 30px;
+                border: none;
+                background: var(--gray-100);
+                color: var(--gray-600);
+                border-radius: 7px;
+                cursor: pointer;
+                font-size: 16px;
+            }
+
+            .modal-body {
+                padding: 22px;
+            }
+
+            .modal-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 22px;
+            }
+
+            .btn-full {
+                flex: 1;
+                border: none;
+                padding: 11px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 12px;
+                font-weight: 800;
+            }
+
+                .btn-full.blue {
+                    background: var(--blue);
+                    color: white;
+                }
+
+                .btn-full.teal {
+                    background: var(--teal);
+                    color: white;
+                }
+
+                .btn-full.red {
+                    background: var(--red);
+                    color: white;
+                }
+
+                .btn-full.btn-outline {
+                    background: white;
+                    border: 1px solid var(--gray-300);
+                    color: var(--gray-700);
+                }
+
+            .fgroup2 {
+                margin-bottom: 17px;
+            }
+
+            .app-label {
+                display: block;
+                margin-bottom: 7px;
+                font-size: 11px;
+                font-weight: 800;
+                color: var(--gray-700);
+            }
+
+            .app-finput {
+                width: 100%;
+                padding: 10px 12px;
+                border: 1px solid var(--gray-300);
+                border-radius: 8px;
+                background: white;
+                outline: none;
+                font-size: 12px;
+                color: var(--gray-800);
+            }
+
+                .app-finput:focus {
+                    border-color: var(--teal);
+                    box-shadow: 0 0 0 3px rgba(15,118,110,.08);
+                }
+
+            .app-select {
+                cursor: pointer;
+            }
+
+            .fgrid2 {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 14px;
+            }
+
+            /* =========================
+                       DETAIL VIEW
+                    ========================= */
+
+            .detail-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 14px;
+            }
+
+            .detail-item {
+                padding: 14px;
+                background: var(--gray-50);
+                border: 1px solid var(--gray-200);
+                border-radius: 9px;
+            }
+
+            .detail-label {
+                font-size: 10px;
+                text-transform: uppercase;
+                color: var(--gray-500);
+                font-weight: 800;
+                letter-spacing: .5px;
+            }
+
+            .detail-value {
+                margin-top: 5px;
+                color: var(--navy);
+                font-size: 14px;
+                font-weight: 800;
+            }
+
+            .stock-display {
+                margin: 18px 0;
+                padding: 17px;
+                background: var(--blue-light);
+                border-radius: 10px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .stock-number {
+                font-size: 27px;
+                font-weight: 900;
+                color: var(--blue);
+            }
+
+            .stock-label {
+                font-size: 10px;
+                color: var(--gray-600);
+                font-weight: 700;
+            }
+
+            /* =========================
+                       DELETE MODAL
+                    ========================= */
+
+            .delete-warning {
+                text-align: center;
+                padding: 10px 5px;
+            }
+
+            .delete-icon {
+                width: 58px;
+                height: 58px;
+                margin: 0 auto 15px;
+                border-radius: 50%;
+                background: var(--red-light);
+                color: var(--red);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 24px;
+            }
+
+            .delete-warning h3 {
+                margin: 0;
+                color: var(--navy);
+                font-size: 16px;
+            }
+
+            .delete-warning p {
+                color: var(--gray-500);
+                font-size: 12px;
+                line-height: 1.6;
+                margin: 8px 0 0;
+            }
+
+            /* =========================
+                       RESPONSIVE
+                    ========================= */
+
+            @@media (max-width: 1100px) {
+
+                .stats-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+
+            @@media (max-width: 800px) {
+
+                .sidebar {
+                    width: 70px;
+                }
+
+                .nav-label,
+                .nav-item span:not(.nav-icon) {
+                    display: none;
+                }
+
+                .nav-item {
+                    justify-content: center;
+                }
+
+                .main {
+                    margin-left: 70px;
+                }
+
+                .page-header {
+                    flex-direction: column;
+                    gap: 15px;
+                }
+
+                .card-header {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+
+                .search-box {
+                    width: 100%;
+                }
+            }
+
+            @@media (max-width: 600px) {
+
+                .topbar {
+                    padding: 0 15px;
+                }
+
+                .brand-subtitle,
+                .user-info {
+                    display: none;
+                }
+
+                .main {
+                    padding: 95px 15px 30px;
+                }
+
+                .stats-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .fgrid2,
+                .detail-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .header-actions {
+                    width: 100%;
+                }
+
+                    .header-actions .btn {
+                        flex: 1;
+                    }
+            }
+
+    </style>
+</head>
+
+<body>
+
+    <!-- =========================
+         TOP BAR
+    ========================== -->
+
+    <header class="topbar">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                🧪
+            </div>
+
+            <div class="brand-text">
+                <div class="brand-title">
+                    NMB-HLabSys
+                </div>
+
+                <div class="brand-subtitle">
+                    Laboratory Management System
+                </div>
+            </div>
+
+        </div>
+
+        <div class="top-right">
+
+            <div class="top-user">
+
+                <div class="user-avatar">
+                    M
+                </div>
+
+                <div class="user-info">
+
+                    <div class="user-name">
+                        Manager
+                    </div>
+
+                    <div class="user-role">
+                        Laboratory Manager
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <!-- =========================
+         SIDEBAR
+    ========================== -->
+
+    <aside class="sidebar">
+
+        <div class="nav-section">
+
+            <div class="nav-label">
+                Main
+            </div>
+
+            <a href="@Url.Action("Index", "ManagerDashboard")"
+               class="nav-item">
+
+                <span class="nav-icon">▦</span>
+                <span>Dashboard</span>
+
+            </a>
+
+            <a href="@Url.Action("TestCatalogue", "ManagerDashboard")"
+               class="nav-item">
+
+                <span class="nav-icon">🧪</span>
+                <span>Test Catalogue</span>
+
+            </a>
+
+            <a href="@Url.Action("Consumables", "ManagerDashboard")"
+               class="nav-item active">
+
+                <span class="nav-icon">📦</span>
+                <span>Consumables</span>
+
+            </a>
+
+            <a href="@Url.Action("Staff", "ManagerDashboard")"
+               class="nav-item">
+
+                <span class="nav-icon">👥</span>
+                <span>Staff</span>
+
+            </a>
+
+            <a href="@Url.Action("Orders", "ManagerDashboard")"
+               class="nav-item">
+
+                <span class="nav-icon">📋</span>
+                <span>Orders</span>
+
+            </a>
+
+        </div>
+
+
+        <div class="nav-section">
+
+            <div class="nav-label">
+                Reports
+            </div>
+
+            <a href="@Url.Action("Report", "ManagerDashboard")"
+               class="nav-item">
+
+                <span class="nav-icon">📊</span>
+                <span>Reports</span>
+
+            </a>
+
+            <a href="@Url.Action("AuditLog", "ManagerDashboard")"
+               class="nav-item">
+
+                <span class="nav-icon">🕘</span>
+                <span>Audit Log</span>
+
+            </a>
+
+        </div>
+
+
+        <div class="nav-section">
+
+            <div class="nav-label">
+                Account
+            </div>
+
+            <a href="@Url.Action("Profile", "ManagerDashboard")"
+               class="nav-item">
+
+                <span class="nav-icon">⚙</span>
+                <span>Profile</span>
+
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =========================
+         MAIN
+    ========================== -->
+
+    <main class="main">
+
+        <!-- PAGE HEADER -->
+
+        <div class="page-header">
+
+            <div>
+
+                <h1 class="page-title">
+                    Consumables
+                </h1>
+
+                <div class="page-description">
+                    Manage laboratory consumables, suppliers and stock levels.
+                </div>
+
+            </div>
+
+            <div class="header-actions">
+
+                <button type="button"
+                        class="btn btn-teal"
+                        onclick="openModal('m-add-supplier')">
+
+                    + Supplier
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-blue"
+                        onclick="openModal('m-add-consumable')">
+
+                    + Add Consumable
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             ALERTS
+        ========================== -->
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">
+                ✓ @TempData["Success"]
+            </div>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-error">
+                ⚠ @TempData["Error"]
+            </div>
+        }
+
+
+        <!-- =========================
+             STATISTICS
+        ========================== -->
+        @{
+            var consumableList = Model?.ToList()
+                                 ?? new List<Consumable>();
+
+            var totalConsumables = consumableList.Count;
+
+            var lowStock = consumableList.Count(x =>
+                x.OnHand <= x.ReorderLevel);
+
+            var mediumStock = consumableList.Count(x =>
+                x.OnHand > x.ReorderLevel &&
+                x.OnHand <= x.ReorderLevel + 20);
+
+            var totalUnits = consumableList.Sum(x => x.OnHand);
+        }
+
+        <div class="stats-grid">
+
+            <div class="stat-card">
+
+                <div class="stat-label">
+                    Total Consumables
+                </div>
+
+                <div class="stat-value">
+                    @totalConsumables
+                </div>
+
+                <div class="stat-description">
+                    Active inventory items
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-label">
+                    Total Units
+                </div>
+
+                <div class="stat-value">
+                    @totalUnits
+                </div>
+
+                <div class="stat-description">
+                    Units currently available
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-label">
+                    Low Stock
+                </div>
+
+                <div class="stat-value"
+                     style="color:var(--red);">
+
+                    @lowStock
+
+                </div>
+
+                <div class="stat-description">
+                    Items requiring attention
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-label">
+                    Medium Stock
+                </div>
+
+                <div class="stat-value"
+                     style="color:var(--orange);">
+
+                    @mediumStock
+
+                </div>
+
+                <div class="stat-description">
+                    Items approaching reorder level
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             TABLE CARD
+        ========================== -->
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <div>
+
+                    <div class="card-title">
+                        Consumable Inventory
+                    </div>
+
+                    <div class="card-subtitle">
+                        Click a row to view complete consumable information.
+                    </div>
+
+                </div>
+
+
+                <div class="search-box">
+
+                    <span class="search-icon">
+                        🔍
+                    </span>
+
+                    <input type="text"
+                           id="searchInput"
+                           placeholder="Search consumables..."
+                           onkeyup="searchConsumables()" />
+
+                </div>
+
+            </div>
+
+
+            <div class="table-wrapper">
+
+                <table id="consumablesTable">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Consumable
+                            </th>
+
+                            <th>
+                                Supplier
+                            </th>
+
+                            <th>
+                                On Hand
+                            </th>
+
+                            <th>
+                                Reorder Level
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        @if (consumableList.Any())
+                        {
+                            foreach (var c in consumableList)
+                            {
+                                var status = c.OnHand <= c.ReorderLevel
+                                    ? "Low"
+                                    : c.OnHand <= c.ReorderLevel + 20
+                                        ? "Medium"
+                                        : "Good";
+
+                                var statusClass = status == "Low"
+                                    ? "status-low"
+                                    : status == "Medium"
+                                        ? "status-medium"
+                                        : "status-good";
+
+                                <tr class="row-clickable"
+                                    data-id="@c.ConsumableID"
+                                    data-name="@c.ConsumableName"
+                                    data-supplier="@c.Supplier"
+                                    data-onhand="@c.OnHand"
+                                    data-reorder="@c.ReorderLevel"
+                                    data-status="@status"
+                                    onclick="openConsumableView(this)">
+
+                                    <td>
+
+                                        <div class="consumable-name">
+                                            @c.ConsumableName
+                                        </div>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <div class="supplier-name">
+                                            @c.Supplier
+                                        </div>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span class="quantity">
+                                            @c.OnHand
+                                        </span>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        @c.ReorderLevel
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span class="status @statusClass">
+
+                                            <span class="status-dot"></span>
+
+                                            @status
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <div class="actions">
+
+                                            <!-- ADJUST -->
+
+                                            <button type="button"
+                                                    class="action-btn adjust-btn"
+                                                    onclick="event.stopPropagation();
+                                                openAdjustModal(
+                                                @c.ConsumableID,
+                                                '@Html.Raw(
+                                                                                                                        System.Text.Encodings.Web
+                                                                                                                        .HtmlEncoder.Default.Encode(c.ConsumableName)
+                                                                                                                    )',
+                                                @c.OnHand,
+                                                @c.ReorderLevel
+                                                )">
+
+                                                Adjust
+
+                                            </button>
+
+
+                                            <!-- EDIT -->
+
+                                            <button type="button"
+                                                    class="action-btn edit-btn"
+                                                    onclick="event.stopPropagation();
+                                                openEditModal(
+                                                @c.ConsumableID,
+                                                '@Html.Raw(
+                                                                                                                        System.Text.Encodings.Web
+                                                                                                                        .HtmlEncoder.Default.Encode(c.ConsumableName)
+                                                                                                                    )',
+                                                @c.SupplierID,
+                                                @c.ReorderLevel
+                                                )">
+
+                                                Edit
+
+                                            </button>
+
+
+                                            <!-- DELETE -->
+                                            <button type="button"
+                                                    class="action-btn delete-btn"
+                                                    onclick="event.stopPropagation();
+                                                openDeleteModal(
+                                                @c.ConsumableID,
+                                                @Html.Raw(JsonSerializer.Serialize(c.ConsumableName))
+                                                )">
+
+                                                Delete
+
+                                            </button>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+
+                                <td colspan="6">
+
+                                    <div class="empty-state">
+
+                                        <div class="empty-icon">
+                                            📦
+                                        </div>
+
+                                        No consumables found.
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- ==========================================================
+         ADD CONSUMABLE MODAL
+    =========================================================== -->
+
+    <div class="modal-overlay"
+         id="m-add-consumable">
+
+        <div class="modal">
+
+            <div class="modal-header">
+
+                <div class="modal-title">
+                    Add Consumable
+                </div>
+
+                <button type="button"
+                        class="modal-close"
+                        onclick="closeModal('m-add-consumable')">
+
+                    ×
+
+                </button>
+
+            </div>
+
+
+            <form asp-controller="Consumbles"
+                  asp-action="AddConsumable"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div class="modal-body">
+
+                    <div class="fgroup2">
+
+                        <label class="app-label">
+                            Consumable Name *
+                        </label>
+
+                        <input class="app-finput"
+                               name="ConsumableName"
+                               placeholder="e.g. EDTA Tubes"
+                               required />
+
+                    </div>
+
+
+                    <div class="fgrid2">
+
+                        <div class="fgroup2">
+
+                            <label class="app-label">
+                                Quantity on Hand *
+                            </label>
+
+                            <input class="app-finput"
+                                   name="QuantityOnHand"
+                                   type="number"
+                                   min="0"
+                                   placeholder="e.g. 100"
+                                   required />
+
+                        </div>
+
+
+                        <div class="fgroup2">
+
+                            <label class="app-label">
+                                Reorder Level *
+                            </label>
+
+                            <input class="app-finput"
+                                   name="ReorderLevel"
+                                   type="number"
+                                   min="0"
+                                   placeholder="e.g. 50"
+                                   required />
+
+                        </div>
+
+                    </div>
+
+
+                   
+                    <div class="form-group">
+
+                        <label class="form-label">
+
+                            SupplierName
+
+                            <span class="required">*</span>
+
+                        </label>
+                        <select id="edit-Category"
+                                name="SupplierID"
+                                class="form-control"
+                                required>
+
+                            <option value="">
+                                Select supplier
+                            </option>
+
+                            @if (ViewBag.Supplier != null)
+                            {
+                                @foreach (var category in ViewBag.Supplier)
+                                {
+                                    <option value="@category.Value">
+                                        @category.Text
+                                    </option>
+                                }
+                            }
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="modal-actions">
+
+                        <button type="submit"
+                                class="btn-full blue">
+
+                            Add Consumable
+
+                        </button>
+
+                        <button type="button"
+                                class="btn-full btn-outline"
+                                onclick="closeModal('m-add-consumable')">
+
+                            Cancel
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==========================================================
+         ADD SUPPLIER MODAL
+    =========================================================== -->
+
+    <div class="modal-overlay"
+         id="m-add-supplier">
+
+        <div class="modal">
+
+            <div class="modal-header">
+
+                <div class="modal-title">
+                    Add Supplier
+                </div>
+
+                <button type="button"
+                        class="modal-close"
+                        onclick="closeModal('m-add-supplier')">
+
+                    ×
+
+                </button>
+
+            </div>
+
+
+            <form asp-controller="Consumables"
+                  asp-action="AddSupplier"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div class="modal-body">
+
+                    <div class="fgroup2">
+
+                        <label class="app-label">
+                            Supplier Name *
+                        </label>
+
+                        <input class="app-finput"
+                               name="SupplierName"
+                               placeholder="e.g. MediPath SA"
+                               required />
+
+                    </div>
+
+
+                    <div class="fgrid2">
+
+                        <div class="fgroup2">
+
+                            <label class="app-label">
+                                Contact Person
+                            </label>
+
+                            <input class="app-finput"
+                                   name="ContactPerson"
+                                   placeholder="Contact person name" />
+
+                        </div>
+
+
+                        <div class="fgroup2">
+
+                            <label class="app-label">
+                                Email Address *
+                            </label>
+
+                            <input class="app-finput"
+                                   type="email"
+                                   name="Email"
+                                   placeholder="supplier@company.co.za"
+                                   required />
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="modal-actions">
+
+                        <button type="submit"
+                                class="btn-full teal">
+
+                            Add Supplier
+
+                        </button>
+
+                        <button type="button"
+                                class="btn-full btn-outline"
+                                onclick="closeModal('m-add-supplier')">
+
+                            Cancel
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==========================================================
+         ADJUST STOCK MODAL
+    =========================================================== -->
+
+    <div class="modal-overlay"
+         id="m-adjust-stock">
+
+        <div class="modal">
+
+            <div class="modal-header">
+
+                <div>
+
+                    <div class="modal-title">
+                        Adjust Stock
+                    </div>
+
+                    <div style="
+                        margin-top:4px;
+                        color:var(--gray-500);
+                        font-size:11px;"
+                         id="adj-name">
+                    </div>
+
+                </div>
+
+                <button type="button"
+                        class="modal-close"
+                        onclick="closeModal('m-adjust-stock')">
+
+                    ×
+
+                </button>
+
+            </div>
+
+
+            <form asp-controller="Consumables"
+                  asp-action="AdjustStock"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div class="modal-body">
+
+                    <input type="hidden"
+                           id="adj-id"
+                           name="ConsumableID" />
+
+
+                    <div style="
+                        padding:12px 14px;
+                        margin-bottom:18px;
+                        background:var(--gray-50);
+                        border-radius:8px;
+                        color:var(--gray-600);
+                        font-size:11px;"
+                         id="adj-meta">
+                    </div>
+
+
+                    <div class="fgroup2">
+
+                        <label class="app-label">
+                            Adjustment Type
+                        </label>
+
+                        <select class="app-finput app-select"
+                                id="stock-adj-type"
+                                name="AdjustmentType"
+                                required>
+
+                            <option value="increase">
+                                Increase by amount
+                            </option>
+
+                            <option value="decrease">
+                                Decrease by amount
+                            </option>
+
+                            <option value="set">
+                                Set to specific value
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="fgroup2">
+
+                        <label class="app-label">
+                            Quantity
+                        </label>
+
+                        <input class="app-finput"
+                               id="stock-adj-val"
+                               name="Quantity"
+                               type="number"
+                               min="0"
+                               placeholder="Enter quantity"
+                               required />
+
+                    </div>
+
+
+                    <div class="modal-actions">
+
+                        <button type="submit"
+                                class="btn-full blue">
+
+                            Apply Adjustment
+
+                        </button>
+
+                        <button type="button"
+                                class="btn-full btn-outline"
+                                onclick="closeModal('m-adjust-stock')">
+
+                            Cancel
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==========================================================
+         VIEW CONSUMABLE MODAL
+    =========================================================== -->
+
+    <div class="modal-overlay"
+         id="m-view-consumable">
+
+        <div class="modal">
+
+            <div class="modal-header">
+
+                <div class="modal-title">
+                    Consumable Details
+                </div>
+
+                <button type="button"
+                        class="modal-close"
+                        onclick="closeModal('m-view-consumable')">
+
+                    ×
+
+                </button>
+
+            </div>
+
+
+            <div class="modal-body">
+
+                <div class="detail-grid">
+
+                    <div class="detail-item">
+
+                        <div class="detail-label">
+                            Consumable
+                        </div>
+
+                        <div class="detail-value"
+                             id="cv-name">
+                        </div>
+
+                    </div>
+
+
+                    <div class="detail-item">
+
+                        <div class="detail-label">
+                            Supplier
+                        </div>
+
+                        <div class="detail-value"
+                             id="cv-supplier">
+                        </div>
+
+                    </div>
+
+
+                    <div class="detail-item">
+
+                        <div class="detail-label">
+                            Reorder Level
+                        </div>
+
+                        <div class="detail-value"
+                             id="cv-reorder">
+                        </div>
+
+                    </div>
+
+
+                    <div class="detail-item">
+
+                        <div class="detail-label">
+                            Status
+                        </div>
+
+                        <div class="detail-value"
+                             id="cv-status">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="stock-display">
+
+                    <div>
+
+                        <div class="stock-label">
+                            CURRENT STOCK
+                        </div>
+
+                        <div class="stock-number"
+                             id="cv-onhand">
+                        </div>
+
+                    </div>
+
+                    <div>
+                        Units
+                    </div>
+
+                </div>
+
+
+                <div class="modal-actions">
+
+                    <button type="button"
+                            class="btn-full blue"
+                            id="cv-adjust-btn">
+
+                        Adjust Stock
+
+                    </button>
+
+                    <button type="button"
+                            class="btn-full teal"
+                            id="cv-edit-btn">
+
+                        Edit
+
+                    </button>
+
+                    <button type="button"
+                            class="btn-full btn-outline"
+                            onclick="closeModal('m-view-consumable')">
+
+                        Close
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==========================================================
+         EDIT CONSUMABLE MODAL
+    =========================================================== -->
+
+    <div class="modal-overlay"
+         id="m-edit-consumable">
+
+        <div class="modal">
+
+            <div class="modal-header">
+
+                <div class="modal-title">
+                    Edit Consumable
+                </div>
+
+                <button type="button"
+                        class="modal-close"
+                        onclick="closeModal('m-edit-consumable')">
+
+                    ×
+
+                </button>
+
+            </div>
+
+
+            <form asp-controller="ManagerDashboard"
+                  asp-action="UpdateConsumable"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div class="modal-body">
+
+                    <input type="hidden"
+                           id="edit-id"
+                           name="ConsumableID" />
+
+
+                    <div class="fgroup2">
+
+                        <label class="app-label">
+                            Consumable Name *
+                        </label>
+
+                        <input class="app-finput"
+                               id="edit-name"
+                               name="ConsumableName"
+                               required />
+
+                    </div>
+
+
+                    <div class="fgroup2">
+
+                        <label class="app-label">
+                            Supplier *
+                        </label>
+
+                        <select class="app-finput app-select"
+                                id="edit-supplier"
+                                name="SupplierID"
+                                required>
+
+                            <option value="">
+                                Select supplier
+                            </option>
+
+                            @foreach (var supplier in suppliers)
+                            {
+                                <option value="@supplier.SupplierID">
+                                    @supplier.SupplierName
+                                </option>
+                            }
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="fgroup2">
+
+                        <label class="app-label">
+                            Reorder Level *
+                        </label>
+
+                        <input class="app-finput"
+                               id="edit-reorder"
+                               name="ReorderLevel"
+                               type="number"
+                               min="0"
+                               required />
+
+                    </div>
+
+
+                    <div class="modal-actions">
+
+                        <button type="submit"
+                                class="btn-full teal">
+
+                            Save Changes
+
+                        </button>
+
+                        <button type="button"
+                                class="btn-full btn-outline"
+                                onclick="closeModal('m-edit-consumable')">
+
+                            Cancel
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==========================================================
+         DELETE CONSUMABLE MODAL
+    =========================================================== -->
+
+    <div class="modal-overlay"
+         id="m-delete-consumable">
+
+        <div class="modal">
+
+            <div class="modal-header">
+
+                <div class="modal-title">
+                    Delete Consumable
+                </div>
+
+                <button type="button"
+                        class="modal-close"
+                        onclick="closeModal('m-delete-consumable')">
+
+                    ×
+
+                </button>
+
+            </div>
+
+
+            <form asp-controller="ManagerDashboard"
+                  asp-action="DeleteConsumable"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div class="modal-body">
+
+                    <input type="hidden"
+                           id="delete-id"
+                           name="ConsumableID" />
+
+
+                    <div class="delete-warning">
+
+                        <div class="delete-icon">
+                            !
+                        </div>
+
+                        <h3>
+                            Delete <span id="delete-name"></span>?
+                        </h3>
+
+                        <p>
+                            This consumable will be removed from the active
+                            inventory list. This action cannot be undone
+                            from this page.
+                        </p>
+
+                    </div>
+
+
+                    <div class="modal-actions">
+
+                        <button type="submit"
+                                class="btn-full red">
+
+                            Delete Consumable
+
+                        </button>
+
+                        <button type="button"
+                                class="btn-full btn-outline"
+                                onclick="closeModal('m-delete-consumable')">
+
+                            Cancel
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==========================================================
+         JAVASCRIPT
+    =========================================================== -->
+
+    <script>
+
+            /* =========================
+               MODAL FUNCTIONS
+            ========================= */
+
+            function openModal(id) {
+
+                var modal = document.getElementById(id);
+
+                if (modal) {
+                    modal.classList.add("show");
+                }
+            }
+
+
+            function closeModal(id) {
+
+                var modal = document.getElementById(id);
+
+                if (modal) {
+                    modal.classList.remove("show");
+                }
+            }
+
+
+            /* =========================
+               CLOSE MODAL WHEN CLICKING
+               OUTSIDE
+            ========================= */
+
+            document.querySelectorAll(".modal-overlay").forEach(function (modal) {
+
+                modal.addEventListener("click", function (event) {
+
+                    if (event.target === modal) {
+                        modal.classList.remove("show");
+                    }
+
+                });
+
+            });
+
+
+            /* =========================
+               ESC KEY
+            ========================= */
+
+            document.addEventListener("keydown", function (event) {
+
+                if (event.key === "Escape") {
+
+                    document.querySelectorAll(".modal-overlay.show")
+                        .forEach(function (modal) {
+
+                            modal.classList.remove("show");
+
+                        });
+
+                }
+
+            });
+
+
+            /* =========================
+               SEARCH
+            ========================= */
+
+            function searchConsumables() {
+
+                var input =
+                    document.getElementById("searchInput");
+
+                var filter =
+                    input.value.toLowerCase();
+
+                var table =
+                    document.getElementById("consumablesTable");
+
+                var rows =
+                    table.querySelectorAll("tbody tr.row-clickable");
+
+                rows.forEach(function (row) {
+
+                    var name =
+                        row.dataset.name || "";
+
+                    var supplier =
+                        row.dataset.supplier || "";
+
+                    var status =
+                        row.dataset.status || "";
+
+                    var combined =
+                        (name + " " + supplier + " " + status)
+                        .toLowerCase();
+
+                    row.style.display =
+                        combined.includes(filter)
+                            ? ""
+                            : "none";
+
+                });
+
+            }
+
+
+            /* =========================
+               VIEW CONSUMABLE
+            ========================= */
+
+            function openConsumableView(row) {
+
+                var id =
+                    row.dataset.id;
+
+                var name =
+                    row.dataset.name;
+
+                var supplier =
+                    row.dataset.supplier;
+
+                var onHand =
+                    parseInt(row.dataset.onhand || "0");
+
+                var reorder =
+                    parseInt(row.dataset.reorder || "0");
+
+                var status =
+                    row.dataset.status;
+
+
+                document.getElementById("cv-name")
+                    .textContent = name;
+
+                document.getElementById("cv-supplier")
+                    .textContent = supplier;
+
+                document.getElementById("cv-reorder")
+                    .textContent = reorder;
+
+                document.getElementById("cv-onhand")
+                    .textContent = onHand;
+
+                document.getElementById("cv-status")
+                    .textContent = status;
+
+
+                document.getElementById("cv-adjust-btn")
+                    .onclick = function () {
+
+                        closeModal("m-view-consumable");
+
+                        openAdjustModal(
+                            id,
+                            name,
+                            onHand,
+                            reorder
+                        );
+
+                    };
+
+
+                document.getElementById("cv-edit-btn")
+                    .onclick = function () {
+
+                        closeModal("m-view-consumable");
+
+                        var supplierId =
+                            row.dataset.supplierId || "";
+
+                        openEditModal(
+                            id,
+                            name,
+                            supplierId,
+                            reorder
+                        );
+
+                    };
+
+
+                openModal("m-view-consumable");
+
+            }
+
+
+            /* =========================
+               ADJUST STOCK
+            ========================= */
+
+            function openAdjustModal(
+                id,
+                name,
+                onHand,
+                reorderLevel) {
+
+                document.getElementById("adj-id")
+                    .value = id;
+
+                document.getElementById("adj-name")
+                    .textContent = name;
+
+                document.getElementById("adj-meta")
+                    .textContent =
+                    "Current: " +
+                    onHand +
+                    " units · Reorder level: " +
+                    reorderLevel;
+
+                document.getElementById("stock-adj-val")
+                    .value = "";
+
+                document.getElementById("stock-adj-type")
+                    .selectedIndex = 0;
+
+                openModal("m-adjust-stock");
+            }
+
+
+            /* =========================
+               EDIT
+            ========================= */
+
+            function openEditModal(
+                id,
+                name,
+                supplierId,
+                reorderLevel) {
+
+                document.getElementById("edit-id")
+                    .value = id;
+
+                document.getElementById("edit-name")
+                    .value = name;
+
+                document.getElementById("edit-supplier")
+                    .value = supplierId;
+
+                document.getElementById("edit-reorder")
+                    .value = reorderLevel;
+
+                openModal("m-edit-consumable");
+            }
+
+
+            /* =========================
+               DELETE
+            ========================= */
+
+            function openDeleteModal(
+                id,
+                name) {
+
+                document.getElementById("delete-id")
+                    .value = id;
+
+                document.getElementById("delete-name")
+                    .textContent = name;
+
+                openModal("m-delete-consumable");
+            }
+
+
+            /* =========================
+               PREVENT NEGATIVE VALUES
+            ========================= */
+
+            document
+                .querySelectorAll('input[type="number"]')
+                .forEach(function (input) {
+
+                    input.addEventListener("input", function () {
+
+                        if (this.value < 0) {
+                            this.value = 0;
+                        }
+
+                    });
+
+                });
+
+    </script>
+
+</body>
+</html>
+

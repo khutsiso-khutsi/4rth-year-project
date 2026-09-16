@@ -16,7 +16,7 @@ namespace LabManager.Models
 
             public string ContactPerson { get; set; }
 
-            public string EmailAddress { get; set; }
+            public string? EmailAddress { get; set; }
 
             public bool IsActive { get; set; }
         

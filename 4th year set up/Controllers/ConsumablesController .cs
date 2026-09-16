@@ -2,14 +2,15 @@
 using LabManager.Models;
 using LabManager.Repository;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace LabManager.Controllers
 {
-    public class ManagerDashboardController : Controller
+    public class ConsumablesController : Controller
     {
         private readonly IConsumablesRepository _consumablesRepository;
 
-        public ManagerDashboardController(
+        public ConsumablesController(
             IConsumablesRepository consumablesRepository)
         {
             _consumablesRepository = consumablesRepository;
@@ -19,13 +20,16 @@ namespace LabManager.Controllers
         // CONSUMABLES PAGE
         // =====================================================
         [HttpGet]
-        public async Task<IActionResult> Consumables()
+        public async Task<IActionResult> Index()
         {
             var consumables =
                 await _consumablesRepository.GetAllConsumables();
 
             var suppliers =
                 await _consumablesRepository.GetAllSuppliers();
+
+            IEnumerable<Supplier> category = await _consumablesRepository.GetSuppliers();
+            ViewBag.Supplier = category.Select(c => new SelectListItem { Value = c.SupplierID.ToString(), Text = c.SupplierName });
 
             ViewBag.Suppliers = suppliers;
 
@@ -51,7 +55,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Consumable name is required.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (QuantityOnHand < 0)
@@ -59,7 +63,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Quantity on hand cannot be negative.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (ReorderLevel < 0)
@@ -67,7 +71,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Reorder level cannot be negative.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (SupplierID <= 0)
@@ -75,7 +79,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Please select a supplier.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             var consumable = new Consumable
@@ -101,7 +105,7 @@ namespace LabManager.Controllers
                     "Unable to add consumable.";
             }
 
-            return RedirectToAction(nameof(Consumables));
+            return RedirectToAction(nameof(Index));
         }
 
         // =====================================================
@@ -109,25 +113,13 @@ namespace LabManager.Controllers
         // =====================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddSupplier(
-            string SupplierName,
-            string ContactPerson,
-            string Email)
+        public async Task<IActionResult> AddSupplier(string SupplierName,string ContactPerson,string Email )
         {
-            if (string.IsNullOrWhiteSpace(SupplierName))
-            {
-                TempData["Error"] =
-                    "Supplier name is required.";
+            if (!ModelState.IsValid) {
 
-                return RedirectToAction(nameof(Consumables));
-            }
+                TempData["Error"] = "Please provide valid supplier information.";
+                return RedirectToAction(nameof(Index));
 
-            if (string.IsNullOrWhiteSpace(Email))
-            {
-                TempData["Error"] =
-                    "Supplier email is required.";
-
-                return RedirectToAction(nameof(Consumables));
             }
 
             var supplier = new Supplier
@@ -152,7 +144,12 @@ namespace LabManager.Controllers
                     "Unable to add supplier.";
             }
 
-            return RedirectToAction(nameof(Consumables));
+
+            TempData[result ? "Success" : "Error"] = result
+               ? "Supplier  added successfully."
+               : "Unable to add supplier.";
+
+            return RedirectToAction(nameof(Index));
         }
 
         // =====================================================
@@ -170,7 +167,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Invalid consumable.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (Quantity < 0)
@@ -178,7 +175,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Quantity cannot be negative.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (string.IsNullOrWhiteSpace(AdjustmentType))
@@ -186,7 +183,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Please select an adjustment type.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (AdjustmentType != "increase" &&
@@ -196,7 +193,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Invalid adjustment type.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             bool result =
@@ -218,7 +215,7 @@ namespace LabManager.Controllers
                     "Check that the quantity is valid.";
             }
 
-            return RedirectToAction(nameof(Consumables));
+            return RedirectToAction(nameof(Index));
         }
 
         // =====================================================
@@ -237,7 +234,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Invalid consumable.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (string.IsNullOrWhiteSpace(ConsumableName))
@@ -245,7 +242,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Consumable name is required.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (SupplierID <= 0)
@@ -253,7 +250,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Please select a supplier.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (ReorderLevel < 0)
@@ -261,7 +258,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Reorder level cannot be negative.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             var consumable = new Consumable
@@ -287,7 +284,7 @@ namespace LabManager.Controllers
                     "Unable to update consumable.";
             }
 
-            return RedirectToAction(nameof(Consumables));
+            return RedirectToAction(nameof(Index));
         }
 
         // =====================================================
@@ -303,7 +300,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Invalid consumable.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             bool result =
@@ -321,7 +318,7 @@ namespace LabManager.Controllers
                     "Unable to delete consumable.";
             }
 
-            return RedirectToAction(nameof(Consumables));
+            return RedirectToAction(nameof(Index));
         }
 
         // =====================================================

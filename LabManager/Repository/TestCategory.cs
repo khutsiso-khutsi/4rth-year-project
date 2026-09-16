@@ -52,12 +52,12 @@ namespace LabManager.Repositories
                         test.TestName,
                         test.CategoryId,
                         test.SampleTypeId,
-                        test.TurnaroundTime,
-                        test.ConsumablesUsed,
                         test.UnitMeasurement,
+                        test.TurnaroundTime,
                         test.NormalRangeMax,
-                        test.NormalRangeMin
-                      
+                        test.NormalRangeMin,
+                         test.ConsumablesUsed
+
                     });
 
                 return true;

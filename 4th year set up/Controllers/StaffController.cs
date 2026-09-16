@@ -21,7 +21,7 @@ namespace LabManager.Controllers
         // ============================================================
 
         [HttpGet]
-        public async Task<IActionResult> Staff()
+        public async Task<IActionResult> Index()
         {
             try
             {
@@ -79,7 +79,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "First name is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (string.IsNullOrWhiteSpace(lastName))
@@ -87,7 +87,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "Last name is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (string.IsNullOrWhiteSpace(hpcsaNumber))
@@ -95,7 +95,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "HPCSA number is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (string.IsNullOrWhiteSpace(email))
@@ -103,7 +103,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "Email address is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
 
@@ -134,14 +134,14 @@ namespace LabManager.Controllers
                         "Unable to add doctor.";
                 }
 
-                return RedirectToAction(nameof(Staff));
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
                 TempData["Error"] =
                     "Unable to add doctor: " + ex.Message;
 
-                return RedirectToAction(nameof(Staff));
+                return RedirectToAction(nameof(Index));
             }
         }
 
@@ -167,7 +167,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "Invalid doctor.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (string.IsNullOrWhiteSpace(firstName))
@@ -175,7 +175,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "First name is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (string.IsNullOrWhiteSpace(lastName))
@@ -183,7 +183,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "Last name is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (string.IsNullOrWhiteSpace(hpcsaNumber))
@@ -191,7 +191,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "HPCSA number is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (string.IsNullOrWhiteSpace(email))
@@ -199,7 +199,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "Email address is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
 
@@ -229,14 +229,14 @@ namespace LabManager.Controllers
                         "Unable to update doctor.";
                 }
 
-                return RedirectToAction(nameof(Staff));
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
                 TempData["Error"] =
                     "Unable to update doctor: " + ex.Message;
 
-                return RedirectToAction(nameof(Staff));
+                return RedirectToAction(nameof(Index));
             }
         }
 
@@ -261,7 +261,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "First name is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (string.IsNullOrWhiteSpace(lastName))
@@ -269,7 +269,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "Last name is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (string.IsNullOrWhiteSpace(employeeNumber))
@@ -277,7 +277,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "Employee number is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (string.IsNullOrWhiteSpace(email))
@@ -285,7 +285,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "Email address is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (testTypeID <= 0)
@@ -293,7 +293,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "Please select a test type.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
 
@@ -325,14 +325,14 @@ namespace LabManager.Controllers
                         "Unable to add laboratory technician.";
                 }
 
-                return RedirectToAction(nameof(Staff));
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
                 TempData["Error"] =
                     "Unable to add technician: " + ex.Message;
 
-                return RedirectToAction(nameof(Staff));
+                return RedirectToAction(nameof(Index));
             }
         }
 
@@ -358,7 +358,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "Invalid technician.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (string.IsNullOrWhiteSpace(firstName))
@@ -366,7 +366,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "First name is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (string.IsNullOrWhiteSpace(lastName))
@@ -374,7 +374,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "Last name is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (string.IsNullOrWhiteSpace(employeeNumber))
@@ -382,7 +382,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "Employee number is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (string.IsNullOrWhiteSpace(email))
@@ -390,7 +390,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "Email address is required.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 if (testTypeID <= 0)
@@ -398,7 +398,7 @@ namespace LabManager.Controllers
                     TempData["Error"] =
                         "Please select a test type.";
 
-                    return RedirectToAction(nameof(Staff));
+                    return RedirectToAction(nameof(Index));
                 }
 
 
@@ -426,17 +426,17 @@ namespace LabManager.Controllers
                 else
                 {
                     TempData["Error"] =
-                        "Unable to update laboratory technician.";
+                        "Unable to update technician.";
                 }
 
-                return RedirectToAction(nameof(Staff));
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
                 TempData["Error"] =
                     "Unable to update technician: " + ex.Message;
 
-                return RedirectToAction(nameof(Staff));
+                return RedirectToAction(nameof(Index));
             }
         }
     }

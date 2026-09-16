@@ -42,7 +42,7 @@ namespace LabManager.Models
         [StringLength(500)]
         public string? ConsumablesUsed { get; set; }
 
-        // Convenience for display; not persisted directly.
+        //Convenience for display; not persisted directly.
         public string NormalRangeDisplay =>
             (NormalRangeMin.HasValue && NormalRangeMax.HasValue)
                 ? $"{NormalRangeMin:0.##} - {NormalRangeMax:0.##}"

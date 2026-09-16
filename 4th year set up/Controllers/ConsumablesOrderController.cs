@@ -22,7 +22,7 @@ namespace LabManager.Controllers
         // =========================================================
 
         [HttpGet]
-        public async Task<IActionResult> Orders(
+        public async Task<IActionResult> Index(
             string status = "All Statuses")
         {
             if (string.IsNullOrWhiteSpace(status))
@@ -63,7 +63,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Please select a supplier.";
 
-                return RedirectToAction(nameof(Orders));
+                return RedirectToAction(nameof(Index));
             }
 
             if (string.IsNullOrWhiteSpace(items))
@@ -71,7 +71,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Please enter the order items.";
 
-                return RedirectToAction(nameof(Orders));
+                return RedirectToAction(nameof(Index));
             }
 
             string orderNumber =
@@ -91,7 +91,7 @@ namespace LabManager.Controllers
             TempData["Success"] =
                 $"Order {orderNumber} created successfully.";
 
-            return RedirectToAction(nameof(Orders));
+            return RedirectToAction(nameof(Index));
         }
 
 
@@ -176,7 +176,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Invalid order.";
 
-                return RedirectToAction(nameof(Orders));
+                return RedirectToAction(nameof(Index));
             }
 
             if (string.IsNullOrWhiteSpace(
@@ -185,7 +185,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Cancellation reason is required.";
 
-                return RedirectToAction(nameof(Orders));
+                return RedirectToAction(nameof(Index));
             }
 
             try
@@ -203,7 +203,7 @@ namespace LabManager.Controllers
                     ex.Message;
             }
 
-            return RedirectToAction(nameof(Orders));
+            return RedirectToAction(nameof(Index ));
         }
 
 
