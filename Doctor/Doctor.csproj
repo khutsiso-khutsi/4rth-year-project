@@ -7,8 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="DataAccess\" />
-    <Folder Include="Repository\" />
+    <Compile Remove="DataAccess\**" />
+    <Compile Remove="Repository\**" />
+    <EmbeddedResource Remove="DataAccess\**" />
+    <EmbeddedResource Remove="Repository\**" />
+    <None Remove="DataAccess\**" />
+    <None Remove="Repository\**" />
   </ItemGroup>
 
   <ItemGroup>
