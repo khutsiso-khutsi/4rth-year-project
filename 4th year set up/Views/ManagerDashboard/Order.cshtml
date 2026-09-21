@@ -1128,7 +1128,7 @@
                                                     : "status-cancelled";
 
                                     <tr class="order-row"
-                                        data-search="@($"{order.OrderNumber} {order.Supplier} {order.Items} {order.Status}")">
+                                        data-search="@($"{order.OrderNumber} {order.SupplierID} {order.Items} {order.Status}")">
 
                                         <td>
 
@@ -1141,7 +1141,7 @@
                                         <td>
 
                                             <div class="supplier-name">
-                                                @order.Supplier
+                                                @order.SupplierID
                                             </div>
 
                                         </td>
@@ -1182,7 +1182,7 @@
                                                             onclick='openReceiveModal(
                                                         @order.Id,
                                                         @Json.Serialize(order.OrderNumber),
-                                                        @Json.Serialize(order.Supplier),
+                                                        @Json.Serialize(order.SupplierID),
                                                         @Json.Serialize(order.OrderDate.ToString("dd MMM yyyy HH:mm")),
                                                         @Json.Serialize(order.Items)
                                                         )'>
@@ -1199,7 +1199,7 @@
                                                             onclick='openCancelModal(
                                                         @order.Id,
                                                         @Json.Serialize(order.OrderNumber),
-                                                        @Json.Serialize(order.Supplier)
+                                                        @Json.Serialize(order.SupplierID)
                                                         )'>
 
                                                         Cancel

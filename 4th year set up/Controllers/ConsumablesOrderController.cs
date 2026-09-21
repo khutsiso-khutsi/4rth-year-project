@@ -1,7 +1,8 @@
 ﻿using LabManager.Models;
-using LabManager.Repository;
 using LabManager.Repositories;
+using LabManager.Repository;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Text.Json;
 using static _4th_year_set_up.Models.Consumable;
 
@@ -33,11 +34,12 @@ namespace LabManager.Controllers
             var orders =
                 await _orderRepository.GetOrders(status);
 
-            var suppliers =
-                await _orderRepository.GetSuppliers();
+            IEnumerable<Supplier> category = await _orderRepository.GetSuppliers();
+            ViewBag.Supplier = category.Select(c => new SelectListItem { Value = c.SupplierID.ToString(), Text = c.SupplierName });
+
 
             ViewBag.StatusFilter = status;
-            ViewBag.Suppliers = suppliers;
+          
 
             ViewBag.Email =
                 HttpContext.Session.GetString("Email")
@@ -55,10 +57,10 @@ namespace LabManager.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateOrder(
-            string supplier,
-            string items)
+     int supplier,
+     string items)
         {
-            if (string.IsNullOrWhiteSpace(supplier))
+            if (supplier <= 0)
             {
                 TempData["Error"] =
                     "Please select a supplier.";
@@ -74,16 +76,38 @@ namespace LabManager.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            // Get suppliers
+            var suppliers =
+                await _orderRepository.GetSuppliers();
+
+            // Find selected supplier
+            var selectedSupplier =
+                suppliers.FirstOrDefault(
+                    s => s.SupplierID == supplier);
+
+            if (selectedSupplier == null)
+            {
+                TempData["Error"] =
+                    "Selected supplier could not be found.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
             string orderNumber =
                 GenerateOrderNumber();
 
             var order = new ConsumableOrder
             {
                 OrderNumber = orderNumber,
-                Supplier = supplier.Trim(),
-                Items = items.Trim(),
+
+                // Store supplier NAME in ConsumableOrder
+                SupplierID = supplier,
+
                 OrderDate = DateTime.Now,
-                Status = "Ordered"
+
+                Status = "Ordered",
+
+                Items = items.Trim()
             };
 
             await _orderRepository.CreateOrder(order);
@@ -93,7 +117,6 @@ namespace LabManager.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-
 
         // =========================================================
         // RECEIVE ORDER

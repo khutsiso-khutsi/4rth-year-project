@@ -57,7 +57,7 @@ namespace LabManager.Repositories
                 new
                 {
                     OrderNumber = order.OrderNumber,
-                    Supplier = order.Supplier,
+                    Supplier = order.SupplierID,
                     Items = order.Items
                 });
         }

@@ -978,7 +978,7 @@
             <div class="filter-card">
 
                 <form method="get"
-                      action="@Url.Action("Orders", "ManagerDashboard")"
+                      action="@Url.Action("Index", "ConsumableOrder")"
                       class="filter-form">
 
                     <div class="form-group">
@@ -1124,7 +1124,7 @@
                                                     : "status-cancelled";
 
                                     <tr class="order-row"
-                                        data-search="@($"{order.OrderNumber} {order.Supplier} {order.Items} {order.Status}")">
+                                        data-search="@($"{order.OrderNumber} {order.SupplierID} {order.Items} {order.Status}")">
 
                                         <td>
 
@@ -1137,7 +1137,7 @@
                                         <td>
 
                                             <div class="supplier-name">
-                                                @order.Supplier
+                                                @order.SupplierID
                                             </div>
 
                                         </td>
@@ -1178,7 +1178,7 @@
                                                             onclick='openReceiveModal(
                                                         @order.Id,
                                                         @Json.Serialize(order.OrderNumber),
-                                                        @Json.Serialize(order.Supplier),
+                                                        @Json.Serialize(order.SupplierID),
                                                         @Json.Serialize(order.OrderDate.ToString("dd MMM yyyy HH:mm")),
                                                         @Json.Serialize(order.Items)
                                                         )'>
@@ -1195,7 +1195,7 @@
                                                             onclick='openCancelModal(
                                                         @order.Id,
                                                         @Json.Serialize(order.OrderNumber),
-                                                        @Json.Serialize(order.Supplier)
+                                                        @Json.Serialize(order.SupplierID)
                                                         )'>
 
                                                         Cancel
@@ -1303,7 +1303,7 @@
 
 
             <form method="post"
-                  action="@Url.Action("CreateOrder", "ManagerDashboard")">
+                  action="@Url.Action("CreateOrder", "ConsumableOrder")">
 
                 @Html.AntiForgeryToken()
 
@@ -1351,10 +1351,10 @@
                                 Select Supplier
                             </option>
 
-                            @foreach (var supplier in suppliers)
+                            @foreach (var supplier in ViewBag.Supplier)
                             {
-                                <option value="@supplier.SupplierName">
-                                    @supplier.SupplierName
+                                <option value="@supplier.Value">
+                                    @supplier.Text
                                 </option>
                             }
 
@@ -1559,7 +1559,7 @@
 
             <form id="cancel-order-form"
                   method="post"
-                  action="@Url.Action("CancelOrder", "ManagerDashboard")">
+                  action="@Url.Action("CancelOrder", "ConsumableOrders")">
 
                 @Html.AntiForgeryToken()
 
@@ -2141,7 +2141,7 @@
 
                     var response =
                         await fetch(
-                            '@Url.Action("ReceiveOrder", "ManagerDashboard")',
+                            '@Url.Action("ReceiveOrder", "ConsumablesOrder")',
                             {
                                 method: 'POST',
 

@@ -104,11 +104,11 @@ namespace LabManager.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddTestType(TestType test)
         {
-            IEnumerable<TestCategory> category = await _repository.GetCategory();
-            ViewBag.Category = category.Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.CategoryName });
+            //IEnumerable<TestCategory> category = await _repository.GetCategory();
+            //ViewBag.Category = category.Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.CategoryName });
 
-            IEnumerable<TestType> sample = await _repository.GetSampleType();
-            ViewBag.SampleType = sample.Select(c => new SelectListItem { Value = c.SampleTypeId.ToString(), Text = c.SampleName });
+            //IEnumerable<TestType> sample = await _repository.GetSampleType();
+            //ViewBag.SampleType = sample.Select(c => new SelectListItem { Value = c.SampleTypeId.ToString(), Text = c.SampleName });
 
 
             if (!ModelState.IsValid)
