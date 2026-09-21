@@ -25,12 +25,12 @@ builder.Services.AddSession(options =>
 // Patient class library
 builder.Services.AddScoped<UserRepository>(provider =>
     new UserRepository(
-        builder.Configuration.GetConnectionString("DefaultConnection")!));
+        builder.Configuration.GetConnectionString("conn")!));
 
 // Admin class library
 builder.Services.AddScoped<AdminRepository>(provider =>
     new AdminRepository(
-        builder.Configuration.GetConnectionString("DefaultConnection")!));
+        builder.Configuration.GetConnectionString("conn")!));
 
 
 //Lab Manager
