@@ -49,15 +49,14 @@ namespace LabManager.Repositories
         // CREATE ORDER
         // =========================================================
 
-        public async Task CreateOrder(
-            ConsumableOrder order)
+        public async Task CreateOrder(ConsumableOrder order)
         {
             await _db.SaveData(
                 "sp_CreateConsumableOrder",
                 new
                 {
                     OrderNumber = order.OrderNumber,
-                    Supplier = order.SupplierID,
+                    SupplierID = order.SupplierID,
                     Items = order.Items
                 });
         }

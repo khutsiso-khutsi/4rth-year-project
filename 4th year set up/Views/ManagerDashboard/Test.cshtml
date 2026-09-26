@@ -972,7 +972,7 @@
                                                 @test.TestId,
                                                 '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.TestName ?? ""))',
                                                 @test.CategoryId,
-                                                '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.SampleTypeId ?? ""))',
+                                                @test.SampleTypeId,
                                                 '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.UnitMeasurement ?? ""))',
                                                 '@(test.NormalRangeMin?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")',
                                                 '@(test.NormalRangeMax?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")',

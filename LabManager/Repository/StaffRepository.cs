@@ -192,9 +192,116 @@ namespace LabManager.Repositories
 
         public async Task<IEnumerable<TestType>> GetAllTestTypes()
         {
-            return await _db.GetData<TestType, object>(
+            return await _db.GetData<TestType, dynamic>(
                 "sp_GetTestTypes",
                 new { });
+        }
+
+
+    }
+
+
+    public class UserProfileRepository : IUserProfileRepository
+    {
+        private readonly ISqlDataAcess _dataAccess;
+
+        public UserProfileRepository(ISqlDataAcess dataAccess)
+        {
+            _dataAccess = dataAccess;
+        }
+
+        // =========================================================
+        // GET USER PROFILE
+        // =========================================================
+
+        public async Task<UserProfileViewModel?> GetProfileByEmail(string email)
+        {
+            var result = await _dataAccess.GetData<UserProfileViewModel, dynamic>(
+                "sp_GetUserProfileByEmail",
+                new
+                {
+                    Email = email
+                });
+
+            return result.FirstOrDefault();
+        }
+
+        // =========================================================
+        // UPDATE PROFILE
+        // =========================================================
+
+        public async Task<bool> UpdateProfile(UserProfileViewModel model)
+        {
+            try
+            {
+                await _dataAccess.SaveData(
+                    "sp_UpdateUserProfile",
+                    new
+                    {
+                        UserID = model.UserID,
+                        FirstName = model.FirstName,
+                        LastName = model.LastName,
+                        CellphoneNumber = model.CellphoneNumber,
+                        HomeAddress = model.HomeAddress
+                    });
+
+                return true;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+
+        // =========================================================
+        // GET CURRENT PASSWORD HASH
+        // =========================================================
+
+        public async Task<string?> GetPasswordHash(string email)
+        {
+            try
+            {
+                var result = await _dataAccess.GetData<string, dynamic>(
+                    "sp_GetUserPasswordHash",
+                    new
+                    {
+                        Email = email
+                    });
+
+                return result.FirstOrDefault();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+
+        // =========================================================
+        // UPDATE PASSWORD
+        // =========================================================
+
+        public async Task<bool> UpdatePassword(
+            string email,
+            string passwordHash)
+        {
+            try
+            {
+                await _dataAccess.SaveData(
+                    "sp_UpdateUserPassword",
+                    new
+                    {
+                        Email = email,
+                        PasswordHash = passwordHash
+                    });
+
+                return true;
+            }
+            catch
+            {
+                throw;
+            }
         }
     }
 }

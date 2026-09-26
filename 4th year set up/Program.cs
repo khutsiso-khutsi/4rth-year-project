@@ -37,8 +37,11 @@ builder.Services.AddScoped<AdminRepository>(provider =>
 builder.Services.AddTransient<ISqlDataAcess ,SqlDataAccess>(); 
 builder.Services.AddTransient<IConsumablesRepository, ConsumablesRepository>();
 builder.Services.AddTransient<IOrderRepository, ConsumableOrderRepository>();
-builder.Services.AddTransient<ITestCategoryrepository, TestCategoryRepository>();
+builder.Services.AddTransient<ITestCatalogueRepository, TestCatalogueRepository>();
 builder.Services.AddTransient<IStaffRepository, StaffRepository>();
+builder.Services.AddTransient <IUserProfileRepository, UserProfileRepository>();
+
+
 
 
 var app = builder.Build();

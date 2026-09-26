@@ -35,5 +35,19 @@ namespace LabManager.Repositories
         // ============================================================
 
         Task<IEnumerable<TestType>> GetAllTestTypes();
+
+
     }
+
+   public interface IUserProfileRepository
+    {
+            Task<UserProfileViewModel?> GetProfileByEmail(string email);
+
+            Task<bool> UpdateProfile(UserProfileViewModel model);
+
+            Task<string?> GetPasswordHash(string email);
+
+            Task<bool> UpdatePassword(string email, string passwordHash);
+   }
+    
 }

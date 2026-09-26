@@ -1,33 +1,45 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace LabManager.Models
 {
-    public   class UserProfileViewModel
-    {
-        public string Id { get; set; }
+   
+    
 
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
 
-        public string Email { get; set; }
-        public string IDNumber { get; set; }
+        public class UserProfileViewModel
+        {
+        public int UserID { get; set; }
 
-        public DateTime RegistrationDate { get; set; }
+        [Required(ErrorMessage = "First name is required.")]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Last name is required.")]
+        public string LastName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email address is required.")]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "ID number is required.")]
+        public string IDNumber { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Date of birth is required.")]
         public DateTime DateOfBirth { get; set; }
 
-        public string CellphoneNumber { get; set; }
-        public string HomeAddress { get; set; }
+        [Required(ErrorMessage = "Cellphone number is required.")]
+        public string CellphoneNumber { get; set; } = string.Empty;
 
-        // Password fields (prototype only)
-        public string CurrentPassword { get; set; }
-        public string NewPassword { get; set; }
-        public string ConfirmPassword { get; set; }
+        [Required(ErrorMessage = "Home address is required.")]
+        public string HomeAddress { get; set; } = string.Empty;
 
-        public string Role { get; set; }
+        public DateTime RegistrationDate { get; set; }
 
+        public string? PasswordHash { get; set; }
     }
 }
+    

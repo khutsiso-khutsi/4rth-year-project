@@ -1,4 +1,5 @@
 ﻿@using LabManager.Models
+@using System.Text.Json
 @model IEnumerable<ConsumableOrder>
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
@@ -7,13 +8,19 @@
     Layout = null;
 
     var statusFilter = ViewBag.StatusFilter as string ?? "All Statuses";
+
     var suppliers = ViewBag.Suppliers as IEnumerable<Supplier>
                     ?? Enumerable.Empty<Supplier>();
+
+    var consumables = ViewBag.Consumables as IEnumerable<Consumable>
+                      ?? Enumerable.Empty<Consumable>();
 
     var email = ViewBag.Email as string ?? "";
 
     var successMessage = TempData["Success"] as string;
     var errorMessage = TempData["Error"] as string;
+
+    var orders = Model ?? Enumerable.Empty<ConsumableOrder>();
 }
 
 <!DOCTYPE html>
@@ -26,45 +33,54 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0" />
 
-    <title>
-        Consumable Orders — NMB-HLabSys
-    </title>
+    <title>Consumable Orders — NMB-HLabSys</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet" />
 
     <style>
 
-            :root {
-                --primary: #17365d;
-                --primary-dark: #102844;
-                --blue: #2563eb;
-                --blue-light: #eff6ff;
-                --green: #16a34a;
-                --green-light: #dcfce7;
-                --orange: #ea580c;
-                --orange-light: #ffedd5;
-                --red: #dc2626;
-                --red-light: #fee2e2;
-                --gray-50: #f8fafc;
-                --gray-100: #f1f5f9;
-                --gray-200: #e2e8f0;
-                --gray-300: #cbd5e1;
-                --gray-500: #64748b;
-                --gray-600: #475569;
-                --gray-700: #334155;
-                --gray-800: #1e293b;
-                --white: #ffffff;
-                --shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
-                --radius: 12px;
+            /* ============================================================
+                       EXISTING STYLE
+                       ============================================================ */
+
+            *, *::before, *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
             }
 
-            * {
-                box-sizing: border-box;
+            :root {
+                --navy: #0b1f3a;
+                --navy2: #122848;
+                --teal: #0d9488;
+                --teal-dark: #0b7c72;
+                --teal-light: rgba(13,148,136,0.1);
+                --white: #ffffff;
+                --offwhite: #f4f7fb;
+                --muted: #6b7a99;
+                --border: #dde4f0;
+                --red: #dc2626;
+                --red-dark: #b91c1c;
+                --red-light: rgba(220,38,38,0.1);
+                --green: #16a34a;
+                --green-dark: #128a3e;
+                --green-light: rgba(22,163,74,0.1);
+                --amber: #d97706;
+                --amber-light: rgba(217,119,6,0.1);
+                --purple: #4f46e5;
+                --purple-light: rgba(79,70,229,0.1);
+                --radius: 16px;
+                --shadow: 0 2px 8px rgba(11,31,58,.04);
+                --shadow-lg: 0 20px 60px rgba(11,31,58,.20);
             }
 
             body {
-                margin: 0;
-                font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-                background: var(--gray-50);
-                color: var(--gray-800);
+                font-family: 'DM Sans', sans-serif;
+                background: var(--offwhite);
+                color: var(--navy);
+                min-height: 100vh;
+                line-height: 1.5;
             }
 
             button,
@@ -74,192 +90,227 @@
                 font-family: inherit;
             }
 
-            /* =========================================================
-                                   SIDEBAR
-                                   ========================================================= */
-
-            .sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                bottom: 0;
-                width: 250px;
-                background: var(--primary);
-                color: white;
-                z-index: 100;
-                overflow-y: auto;
-            }
-
-            .brand {
-                height: 75px;
-                display: flex;
-                align-items: center;
-                padding: 0 24px;
-                border-bottom: 1px solid rgba(255,255,255,.1);
-            }
-
-            .brand-icon {
-                width: 40px;
-                height: 40px;
-                border-radius: 10px;
-                background: white;
-                color: var(--primary);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-weight: 800;
-                margin-right: 12px;
-            }
-
-            .brand-text {
-                font-size: 18px;
-                font-weight: 700;
-            }
-
-            .brand-subtitle {
-                font-size: 11px;
-                opacity: .7;
-                margin-top: 2px;
-            }
-
-            .nav {
-                padding: 20px 12px;
-            }
-
-            .nav-section {
-                color: rgba(255,255,255,.5);
-                font-size: 11px;
-                text-transform: uppercase;
-                letter-spacing: .08em;
-                padding: 10px 14px;
-                margin-top: 10px;
-            }
-
-            .nav-link {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                color: rgba(255,255,255,.75);
-                text-decoration: none;
-                padding: 12px 14px;
-                border-radius: 9px;
-                margin: 4px 0;
-                font-size: 14px;
-                transition: .2s;
-            }
-
-                .nav-link:hover {
-                    background: rgba(255,255,255,.08);
-                    color: white;
-                }
-
-                .nav-link.active {
-                    background: rgba(255,255,255,.14);
-                    color: white;
-                    font-weight: 600;
-                }
-
-            .nav-icon {
-                width: 20px;
-                text-align: center;
-            }
-
-            /* =========================================================
-                                   MAIN
-                                   ========================================================= */
-
-            .main {
-                margin-left: 250px;
-                min-height: 100vh;
-            }
-
-            /* =========================================================
-                                   TOP BAR
-                                   ========================================================= */
-
             .topbar {
-                height: 75px;
-                background: white;
-                border-bottom: 1px solid var(--gray-200);
+                background: var(--navy);
+                padding: 0 40px;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                padding: 0 30px;
+                height: 64px;
                 position: sticky;
                 top: 0;
-                z-index: 50;
+                z-index: 100;
+                box-shadow: 0 2px 20px rgba(0,0,0,0.15);
             }
 
-            .page-title {
-                font-size: 21px;
-                font-weight: 700;
-                color: var(--gray-800);
-            }
-
-            .page-subtitle {
-                color: var(--gray-500);
-                font-size: 13px;
-                margin-top: 3px;
-            }
-
-            .user-area {
+            .brand {
                 display: flex;
                 align-items: center;
-                gap: 12px;
+                gap: 10px;
+                text-decoration: none;
             }
 
-            .user-avatar {
-                width: 38px;
-                height: 38px;
-                border-radius: 50%;
-                background: var(--blue-light);
-                color: var(--blue);
+            .brand-icon {
+                width: 34px;
+                height: 34px;
+                background: var(--teal);
+                border-radius: 8px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-weight: 700;
+            }
+
+                .brand-icon svg {
+                    width: 18px;
+                    height: 18px;
+                    fill: white;
+                }
+
+            .brand-name {
+                font-family: 'DM Serif Display', serif;
+                color: white;
+                font-size: 1.1rem;
+                line-height: 1.1;
+            }
+
+                .brand-name span {
+                    display: block;
+                    font-family: 'DM Sans', sans-serif;
+                    font-size: 0.6rem;
+                    font-weight: 300;
+                    color: rgba(255,255,255,0.4);
+                    letter-spacing: 0.1em;
+                    text-transform: uppercase;
+                }
+
+            .topbar-right {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
+
+            .user-chip {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                background: rgba(255,255,255,0.07);
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 100px;
+                padding: 6px 14px 6px 8px;
+            }
+
+            .user-avatar {
+                width: 28px;
+                height: 28px;
+                background: var(--teal);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: white;
             }
 
             .user-email {
-                font-size: 13px;
-                color: var(--gray-600);
+                font-size: 0.8rem;
+                color: rgba(255,255,255,0.75);
+                max-width: 160px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
 
-            /* =========================================================
-                                   CONTENT
-                                   ========================================================= */
+            .logout-btn {
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.12);
+                color: rgba(255,255,255,0.8);
+                padding: 8px 16px;
+                border-radius: 8px;
+                text-decoration: none;
+                font-size: 0.82rem;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s;
+                cursor: pointer;
+            }
 
-            .content {
-                padding: 30px;
+                .logout-btn:hover {
+                    background: rgba(255,255,255,0.15);
+                    color: white;
+                }
+
+                .logout-btn svg {
+                    width: 14px;
+                    height: 14px;
+                }
+
+            .page {
+                display: flex;
+                min-height: calc(100vh - 64px);
+            }
+
+            .sidebar {
+                width: 220px;
+                background: white;
+                border-right: 1px solid var(--border);
+                padding: 24px 0;
+                flex-shrink: 0;
+                position: sticky;
+                top: 64px;
+                height: calc(100vh - 64px);
+                overflow-y: auto;
+            }
+
+            .nav-section {
+                margin-bottom: 8px;
+            }
+
+            .nav-label {
+                font-size: 0.65rem;
+                font-weight: 600;
+                color: var(--muted);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                padding: 0 20px;
+                margin-bottom: 4px;
+            }
+
+            .nav-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 20px;
+                color: var(--muted);
+                text-decoration: none;
+                font-size: 0.85rem;
+                font-weight: 500;
+                transition: all 0.15s;
+                border-left: 3px solid transparent;
+            }
+
+                .nav-item:hover {
+                    background: var(--offwhite);
+                    color: var(--navy);
+                }
+
+                .nav-item.active {
+                    background: var(--teal-light);
+                    color: var(--teal);
+                    border-left-color: var(--teal);
+                    font-weight: 600;
+                }
+
+                .nav-item svg {
+                    width: 16px;
+                    height: 16px;
+                    flex-shrink: 0;
+                }
+
+                .nav-item:focus-visible {
+                    outline: 2px solid var(--teal);
+                    outline-offset: -2px;
+                }
+
+            .main {
+                flex: 1;
+                padding: clamp(24px, 3vw, 40px);
+                overflow-y: auto;
             }
 
             .header-row {
                 display: flex;
                 justify-content: space-between;
-                align-items: center;
+                align-items: flex-start;
                 margin-bottom: 24px;
                 gap: 20px;
+                flex-wrap: wrap;
             }
 
             .heading h1 {
-                margin: 0;
-                font-size: 26px;
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.8rem;
+                font-weight: 400;
+                color: var(--navy);
             }
 
             .heading p {
                 margin: 6px 0 0;
-                color: var(--gray-500);
-                font-size: 14px;
+                color: var(--muted);
+                font-size: 0.85rem;
+                font-weight: 300;
             }
 
             .btn {
                 border: none;
-                border-radius: 9px;
-                padding: 11px 17px;
+                border-radius: 10px;
+                padding: 10px 16px;
                 cursor: pointer;
-                font-size: 14px;
+                font-size: 0.82rem;
                 font-weight: 600;
-                transition: .2s;
+                transition: all .18s ease;
             }
 
                 .btn:hover {
@@ -267,44 +318,57 @@
                 }
 
             .btn-primary {
-                background: var(--blue);
+                background: var(--teal);
                 color: white;
+                box-shadow: 0 2px 8px rgba(13,148,136,0.25);
             }
 
                 .btn-primary:hover {
-                    background: #1d4ed8;
+                    background: var(--teal-dark);
                 }
 
             .btn-success {
                 background: var(--green);
                 color: white;
+                box-shadow: 0 2px 8px rgba(22,163,74,0.2);
             }
+
+                .btn-success:hover {
+                    background: var(--green-dark);
+                }
 
             .btn-danger {
                 background: var(--red);
                 color: white;
+                box-shadow: 0 2px 8px rgba(220,38,38,0.2);
             }
+
+                .btn-danger:hover {
+                    background: var(--red-dark);
+                }
 
             .btn-outline {
                 background: white;
-                color: var(--gray-700);
-                border: 1px solid var(--gray-300);
+                color: var(--navy);
+                border: 1px solid var(--border);
             }
+
+                .btn-outline:hover {
+                    border-color: var(--teal);
+                    color: var(--teal);
+                }
 
             .btn-small {
                 padding: 7px 11px;
-                font-size: 12px;
+                font-size: 0.72rem;
             }
-
-            /* =========================================================
-                                   ALERTS
-                                   ========================================================= */
 
             .alert {
                 border-radius: 10px;
                 padding: 13px 16px;
                 margin-bottom: 20px;
-                font-size: 14px;
+                font-size: 0.82rem;
+                font-weight: 600;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
@@ -312,14 +376,14 @@
 
             .alert-success {
                 background: var(--green-light);
-                color: #166534;
-                border: 1px solid #bbf7d0;
+                color: var(--green);
+                border: 1px solid rgba(22,163,74,0.25);
             }
 
             .alert-error {
                 background: var(--red-light);
-                color: #991b1b;
-                border: 1px solid #fecaca;
+                color: var(--red);
+                border: 1px solid rgba(220,38,38,0.25);
             }
 
             .alert-close {
@@ -327,15 +391,12 @@
                 border: none;
                 cursor: pointer;
                 font-size: 18px;
+                color: inherit;
             }
-
-            /* =========================================================
-                                   FILTER BAR
-                                   ========================================================= */
 
             .filter-card {
                 background: white;
-                border: 1px solid var(--gray-200);
+                border: 1px solid var(--border);
                 border-radius: var(--radius);
                 padding: 18px;
                 margin-bottom: 20px;
@@ -356,62 +417,65 @@
             }
 
             .form-label {
-                font-size: 12px;
-                font-weight: 600;
-                color: var(--gray-600);
+                font-size: 0.72rem;
+                font-weight: 700;
+                color: var(--navy);
             }
 
             .form-input,
             .form-select,
             .form-textarea {
-                border: 1px solid var(--gray-300);
+                border: 1px solid var(--border);
                 border-radius: 8px;
                 padding: 10px 12px;
                 background: white;
-                color: var(--gray-800);
+                color: var(--navy);
                 outline: none;
-                font-size: 14px;
+                font-size: 0.82rem;
             }
 
                 .form-input:focus,
                 .form-select:focus,
                 .form-textarea:focus {
-                    border-color: var(--blue);
-                    box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+                    border-color: var(--teal);
+                    box-shadow: 0 0 0 3px var(--teal-light);
                 }
 
             .search-box {
                 min-width: 260px;
             }
 
-            /* =========================================================
-                                   TABLE
-                                   ========================================================= */
-
             .table-card {
                 background: white;
-                border: 1px solid var(--gray-200);
+                border: 1px solid var(--border);
                 border-radius: var(--radius);
                 overflow: hidden;
                 box-shadow: var(--shadow);
             }
 
             .table-header {
-                padding: 18px 20px;
-                border-bottom: 1px solid var(--gray-200);
+                padding: 17px 22px;
+                border-bottom: 1px solid var(--border);
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
             }
 
                 .table-header h2 {
-                    margin: 0;
-                    font-size: 16px;
+                    font-family: 'DM Serif Display', serif;
+                    font-size: 1.05rem;
+                    font-weight: 400;
+                    color: var(--navy);
                 }
 
             .table-count {
-                font-size: 12px;
-                color: var(--gray-500);
+                font-size: 0.72rem;
+                font-weight: 600;
+                color: var(--muted);
+                background: var(--offwhite);
+                border: 1px solid var(--border);
+                padding: 5px 10px;
+                border-radius: 100px;
             }
 
             .table-wrapper {
@@ -426,30 +490,35 @@
             }
 
             th {
-                background: var(--gray-50);
-                color: var(--gray-600);
-                font-size: 12px;
+                background: var(--offwhite);
+                color: var(--muted);
+                font-size: 0.7rem;
                 text-transform: uppercase;
-                letter-spacing: .03em;
+                letter-spacing: .08em;
                 text-align: left;
-                padding: 14px 18px;
-                border-bottom: 1px solid var(--gray-200);
+                padding: 12px 18px;
+                border-bottom: 1px solid var(--border);
             }
 
             td {
-                padding: 16px 18px;
-                border-bottom: 1px solid var(--gray-100);
-                font-size: 13px;
+                padding: 15px 18px;
+                border-bottom: 1px solid var(--offwhite);
+                font-size: 0.83rem;
                 vertical-align: middle;
+                color: var(--navy);
+            }
+
+            tbody tr:last-child td {
+                border-bottom: none;
             }
 
             tbody tr:hover {
-                background: #fafcff;
+                background: var(--offwhite);
             }
 
             .order-number {
                 font-weight: 700;
-                color: var(--primary);
+                color: var(--navy);
             }
 
             .supplier-name {
@@ -457,47 +526,43 @@
             }
 
             .items {
-                color: var(--gray-600);
+                color: var(--muted);
                 max-width: 320px;
                 line-height: 1.5;
             }
 
             .date {
-                color: var(--gray-600);
+                color: var(--muted);
                 white-space: nowrap;
             }
-
-            /* =========================================================
-                                   STATUS
-                                   ========================================================= */
 
             .status {
                 display: inline-flex;
                 align-items: center;
-                padding: 5px 9px;
-                border-radius: 999px;
-                font-size: 11px;
+                padding: 4px 10px;
+                border-radius: 100px;
+                font-size: 0.7rem;
                 font-weight: 700;
                 white-space: nowrap;
             }
 
             .status-ordered {
-                color: #1d4ed8;
-                background: #dbeafe;
+                color: var(--purple);
+                background: var(--purple-light);
             }
 
             .status-partial {
-                color: #9a3412;
-                background: var(--orange-light);
+                color: var(--amber);
+                background: var(--amber-light);
             }
 
             .status-complete {
-                color: #166534;
+                color: var(--green);
                 background: var(--green-light);
             }
 
             .status-cancelled {
-                color: #991b1b;
+                color: var(--red);
                 background: var(--red-light);
             }
 
@@ -507,39 +572,40 @@
                 flex-wrap: wrap;
             }
 
-            /* =========================================================
-                                   EMPTY STATE
-                                   ========================================================= */
-
             .empty-state {
                 text-align: center;
                 padding: 60px 20px;
-                color: var(--gray-500);
+                color: var(--muted);
             }
 
             .empty-icon {
-                font-size: 38px;
-                margin-bottom: 12px;
+                width: 70px;
+                height: 70px;
+                margin: 0 auto 17px;
+                border-radius: 50%;
+                background: var(--teal-light);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 32px;
             }
 
             .empty-state h3 {
-                margin: 0 0 6px;
-                color: var(--gray-700);
+                font-size: 1rem;
+                font-weight: 700;
+                color: var(--navy);
+                margin-bottom: 5px;
             }
 
             .empty-state p {
-                margin: 0;
-                font-size: 13px;
+                font-size: 0.8rem;
             }
-
-            /* =========================================================
-                                   MODAL
-                                   ========================================================= */
 
             .modal-overlay {
                 position: fixed;
                 inset: 0;
-                background: rgba(15,23,42,.55);
+                background: rgba(11,31,58,.45);
+                backdrop-filter: blur(3px);
                 display: none;
                 align-items: center;
                 justify-content: center;
@@ -555,10 +621,24 @@
                 width: 100%;
                 max-width: 560px;
                 background: white;
-                border-radius: 14px;
-                box-shadow: 0 25px 60px rgba(15,23,42,.25);
+                border-radius: var(--radius);
+                box-shadow: var(--shadow-lg);
                 max-height: 90vh;
                 overflow-y: auto;
+                animation: modalIn .18s ease;
+            }
+
+            @@keyframes modalIn {
+
+                from {
+                    opacity: 0;
+                    transform: scale(0.96) translateY(8px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
+                }
             }
 
             .modal-large {
@@ -566,42 +646,53 @@
             }
 
             .modal-header {
-                padding: 20px 22px;
-                border-bottom: 1px solid var(--gray-200);
+                padding: 19px 22px;
+                border-bottom: 1px solid var(--border);
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
             }
 
             .modal-title {
-                margin: 0;
-                font-size: 18px;
-                font-weight: 700;
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.2rem;
+                font-weight: 400;
+                color: var(--navy);
             }
 
             .modal-close {
+                width: 32px;
+                height: 32px;
                 border: none;
-                background: transparent;
-                font-size: 25px;
-                color: var(--gray-500);
+                background: var(--offwhite);
+                border-radius: 8px;
+                font-size: 20px;
+                color: var(--muted);
                 cursor: pointer;
+                transition: background .18s ease, color .18s ease;
             }
+
+                .modal-close:hover {
+                    background: var(--border);
+                    color: var(--navy);
+                }
 
             .modal-body {
                 padding: 22px;
             }
 
             .modal-footer {
-                padding: 18px 22px;
-                border-top: 1px solid var(--gray-200);
+                padding: 16px 22px;
+                border-top: 1px solid var(--border);
                 display: flex;
                 justify-content: flex-end;
                 gap: 10px;
+                background: var(--offwhite);
             }
 
             .modal-subtitle {
-                color: var(--gray-500);
-                font-size: 13px;
+                color: var(--muted);
+                font-size: 0.82rem;
                 margin: 5px 0 20px;
             }
 
@@ -613,20 +704,6 @@
                 color: var(--red);
             }
 
-            .btn-full {
-                width: 100%;
-                padding: 12px;
-                border: none;
-                border-radius: 9px;
-                font-weight: 600;
-                cursor: pointer;
-                font-size: 14px;
-            }
-
-            /* =========================================================
-                                   RECEIVE ITEMS
-                                   ========================================================= */
-
             .receive-info {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
@@ -635,28 +712,28 @@
             }
 
             .info-box {
-                background: var(--gray-50);
-                border: 1px solid var(--gray-200);
+                background: var(--offwhite);
+                border: 1px solid var(--border);
                 padding: 12px;
-                border-radius: 9px;
+                border-radius: 10px;
             }
 
             .info-label {
-                font-size: 10px;
+                font-size: 0.65rem;
                 text-transform: uppercase;
-                color: var(--gray-500);
+                color: var(--muted);
                 margin-bottom: 4px;
             }
 
             .info-value {
-                font-size: 13px;
-                font-weight: 600;
-                color: var(--gray-800);
+                font-size: 0.83rem;
+                font-weight: 700;
+                color: var(--navy);
             }
 
             .receive-item {
-                border: 1px solid var(--gray-200);
-                border-radius: 9px;
+                border: 1px solid var(--border);
+                border-radius: 10px;
                 padding: 13px;
                 margin-bottom: 10px;
                 display: grid;
@@ -666,35 +743,37 @@
             }
 
             .receive-item-name {
-                font-weight: 600;
-                font-size: 13px;
+                font-weight: 700;
+                font-size: 0.83rem;
+                color: var(--navy);
             }
 
             .receive-item-qty {
-                font-size: 12px;
-                color: var(--gray-500);
+                font-size: 0.75rem;
+                color: var(--muted);
             }
 
-            .receive-status {
-                width: 100%;
-            }
+            @@media (max-width: 768px) {
 
-            /* =========================================================
-                                   RESPONSIVE
-                                   ========================================================= */
+                .topbar {
+                    padding: 0 20px;
+                }
 
-            @@media(max - width: 900px) {
+                .user-email {
+                    display: none;
+                }
 
                 .sidebar {
-                    width: 210px;
+                    display: none;
                 }
 
                 .main {
-                    margin-left: 210px;
+                    padding: 20px 16px;
                 }
 
-                .content {
-                    padding: 20px;
+                .header-row {
+                    flex-direction: column;
+                    align-items: flex-start;
                 }
 
                 .receive-item {
@@ -706,201 +785,334 @@
                 }
             }
 
-            @@media(max - width: 700px) {
-
-                .sidebar {
-                    position: relative;
-                    width: 100%;
-                    height: auto;
-                }
-
-                .main {
-                    margin-left: 0;
-                }
-
-                .topbar {
-                    position: relative;
-                }
-
-                .header-row {
-                    flex-direction: column;
-                    align-items: flex-start;
-                }
-
-                .user-email {
-                    display: none;
-                }
-
-                .content {
-                    padding: 15px;
-                }
-            }
-
     </style>
 
 </head>
 
+
 <body>
 
-    <!-- =========================================================
-         SIDEBAR
-         ========================================================= -->
 
-    <aside class="sidebar">
+    <!-- ============================================================
+         TOPBAR
+         ============================================================ -->
 
-        <div class="brand">
+    <div class="topbar">
+
+        <a class="brand"
+           asp-controller="Home"
+           asp-action="Index">
 
             <div class="brand-icon">
-                NH
-            </div>
 
-            <div>
-                <div class="brand-text">
-                    NMB-HLabSys
-                </div>
+                <svg viewBox="0 0 24 24">
 
-                <div class="brand-subtitle">
-                    Laboratory Management
-                </div>
-            </div>
+                    <path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" />
 
-        </div>
+                    <circle cx="12"
+                            cy="17"
+                            r="4"
+                            opacity="0.6" />
 
-        <nav class="nav">
-
-            <div class="nav-section">
-                Management
-            </div>
-
-            <a href="@Url.Action("Index", "ManagerDashboard")"
-               class="nav-link">
-
-                <span class="nav-icon">▦</span>
-
-                Dashboard
-
-            </a>
-
-            <a href="@Url.Action("TestCatalogue", "ManagerDashboard")"
-               class="nav-link">
-
-                <span class="nav-icon">🧪</span>
-
-                Test Catalogue
-
-            </a>
-
-            <a href="@Url.Action("Consumables", "ManagerDashboard")"
-               class="nav-link">
-
-                <span class="nav-icon">📦</span>
-
-                Consumables
-
-            </a>
-
-            <a href="@Url.Action("Staff", "ManagerDashboard")"
-               class="nav-link">
-
-                <span class="nav-icon">👥</span>
-
-                Staff
-
-            </a>
-
-            <a href="@Url.Action("Orders", "ManagerDashboard")"
-               class="nav-link active">
-
-                <span class="nav-icon">🛒</span>
-
-                Orders
-
-            </a>
-
-            <div class="nav-section">
-                Reports
-            </div>
-
-            <a href="@Url.Action("ReportIndex", "ManagerDashboard")"
-               class="nav-link">
-
-                <span class="nav-icon">📊</span>
-
-                Reports
-
-            </a>
-
-            <a href="@Url.Action("AuditLog", "ManagerDashboard")"
-               class="nav-link">
-
-                <span class="nav-icon">📋</span>
-
-                Audit Log
-
-            </a>
-
-            <div class="nav-section">
-                Account
-            </div>
-
-            <a href="@Url.Action("Profile", "ManagerDashboard")"
-               class="nav-link">
-
-                <span class="nav-icon">👤</span>
-
-                Profile
-
-            </a>
-
-        </nav>
-
-    </aside>
-
-
-    <!-- =========================================================
-         MAIN
-         ========================================================= -->
-
-    <main class="main">
-
-        <!-- TOP BAR -->
-
-        <header class="topbar">
-
-            <div>
-
-                <div class="page-title">
-                    Consumable Orders
-                </div>
-
-                <div class="page-subtitle">
-                    Manage laboratory consumable orders and stock receipt
-                </div>
+                </svg>
 
             </div>
 
-            <div class="user-area">
 
-                <div class="user-email">
-                    @email
-                </div>
+            <div class="brand-name">
+
+                NMB-HLabSys
+
+                <span>
+                    Haematology Lab System
+                </span>
+
+            </div>
+
+        </a>
+
+
+        <div class="topbar-right">
+
+            <div class="user-chip">
 
                 <div class="user-avatar">
+
                     @(string.IsNullOrWhiteSpace(email)
                         ? "M"
                         : email.Substring(0, 1).ToUpper())
+
                 </div>
+
+                <span class="user-email">
+                    @email
+                </span>
 
             </div>
 
-        </header>
+
+            <a asp-controller="Home"
+               asp-action="Logout"
+               class="logout-btn"
+               id="logout-btn">
+
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2"
+                     stroke-linecap="round">
+
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+
+                    <polyline points="16 17 21 12 16 7" />
+
+                    <line x1="21"
+                          y1="12"
+                          x2="9"
+                          y2="12" />
+
+                </svg>
+
+                Sign Out
+
+            </a>
+
+        </div>
+
+    </div>
 
 
-        <!-- CONTENT -->
+    <div class="page">
 
-        <section class="content">
 
-            <!-- PAGE HEADER -->
+        <!-- ============================================================
+             SIDEBAR
+             ============================================================ -->
+
+        <aside class="sidebar">
+
+            <div class="nav-section">
+
+                <div class="nav-label">
+                    Main
+                </div>
+
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Index"
+                   class="nav-item">
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round">
+
+                        <rect x="3"
+                              y="3"
+                              width="7"
+                              height="7" />
+
+                        <rect x="14"
+                              y="3"
+                              width="7"
+                              height="7" />
+
+                        <rect x="3"
+                              y="14"
+                              width="7"
+                              height="7" />
+
+                        <rect x="14"
+                              y="14"
+                              width="7"
+                              height="7" />
+
+                    </svg>
+
+                    Dashboard
+
+                </a>
+
+
+                <a asp-controller="TestCatalogue"
+                   asp-action="Index"
+                   class="nav-item">
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round">
+
+                        <path d="M9 3v11a3 3 0 006 0V3" />
+
+                        <line x1="6"
+                              y1="3"
+                              x2="18"
+                              y2="3" />
+
+                    </svg>
+
+                    Test Catalogue
+
+                </a>
+
+
+                <a asp-controller="Consumable"
+                   asp-action="Index"
+                   class="nav-item">
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round">
+
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+
+                        <polyline points="14 2 14 8 20 8" />
+
+                    </svg>
+
+                    Consumables
+
+                </a>
+
+
+                <a asp-controller="Staff"
+                   asp-action="Index"
+                   class="nav-item">
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round">
+
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+
+                        <circle cx="12"
+                                cy="7"
+                                r="4" />
+
+                    </svg>
+
+                    Staff
+
+                </a>
+
+
+                <a asp-controller="ConsumableOrder"
+                   asp-action="Index"
+                   class="nav-item active">
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round">
+
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+
+                    </svg>
+
+                    Orders
+
+                </a>
+
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="TestsByCategory"
+                   class="nav-item">
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round">
+
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+
+                        <polyline points="14 2 14 8 20 8" />
+
+                        <line x1="16"
+                              y1="13"
+                              x2="8"
+                              y2="13" />
+
+                        <line x1="16"
+                              y1="17"
+                              x2="8"
+                              y2="17" />
+
+                    </svg>
+
+                    Reports
+
+                </a>
+
+            </div>
+
+
+            <div class="nav-section">
+
+                <div class="nav-label">
+                    System
+                </div>
+
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="Profile"
+                   class="nav-item">
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round">
+
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+
+                        <circle cx="12"
+                                cy="7"
+                                r="4" />
+
+                    </svg>
+
+                    Profile
+
+                </a>
+
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="AuditLog"
+                   class="nav-item">
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round">
+
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+
+                    </svg>
+
+                    Audit Log
+
+                </a>
+
+            </div>
+
+        </aside>
+
+
+        <!-- ============================================================
+             MAIN
+             ============================================================ -->
+
+        <main class="main">
 
             <div class="header-row">
 
@@ -916,6 +1128,7 @@
 
                 </div>
 
+
                 <button type="button"
                         class="btn btn-primary"
                         onclick="openModal('m-create-order')">
@@ -927,9 +1140,9 @@
             </div>
 
 
-            <!-- =================================================
+            <!-- ========================================================
                  ALERTS
-                 ================================================= -->
+                 ======================================================== -->
             @if (!string.IsNullOrWhiteSpace(successMessage))
             {
                 <div class="alert alert-success"
@@ -949,6 +1162,7 @@
 
                 </div>
             }
+
 
             @if (!string.IsNullOrWhiteSpace(errorMessage))
             {
@@ -971,9 +1185,9 @@
             }
 
 
-            <!-- =================================================
+            <!-- ========================================================
                  FILTER
-                 ================================================= -->
+                 ======================================================== -->
 
             <div class="filter-card">
 
@@ -1050,9 +1264,9 @@
             </div>
 
 
-            <!-- =================================================
+            <!-- ========================================================
                  ORDERS TABLE
-                 ================================================= -->
+                 ======================================================== -->
 
             <div class="table-card">
 
@@ -1065,7 +1279,7 @@
                     <span class="table-count"
                           id="table-count">
 
-                        @Model.Count() order(s)
+                        @orders.Count() order(s)
 
                     </span>
 
@@ -1108,11 +1322,12 @@
 
                         </thead>
 
+
                         <tbody>
 
-                            @if (Model != null && Model.Any())
+                            @if (orders.Any())
                             {
-                                foreach (var order in Model)
+                                foreach (var order in orders)
                                 {
                                     var statusClass =
                                         order.Status == "Ordered"
@@ -1123,8 +1338,23 @@
                                                     ? "status-complete"
                                                     : "status-cancelled";
 
+
+                                    var supplierName =
+                                        suppliers
+                                            .FirstOrDefault(
+                                                s => s.SupplierID == order.SupplierID
+                                            )
+                                            ?.SupplierName
+                                        ?? $"Supplier #{order.SupplierID}";
+
+
                                     <tr class="order-row"
-                                        data-search="@($"{order.OrderNumber} {order.SupplierID} {order.Items} {order.Status}")">
+                                        data-search="@($"{order.OrderNumber} {supplierName} {order.Items} {order.Status}")"
+                                        data-order-id="@order.Id"
+                                        data-order-number="@order.OrderNumber"
+                                        data-supplier="@supplierName"
+                                        data-order-date="@order.OrderDate.ToString("dd MMM yyyy HH:mm")"
+                                        data-items="@order.Items">
 
                                         <td>
 
@@ -1134,13 +1364,15 @@
 
                                         </td>
 
+
                                         <td>
 
                                             <div class="supplier-name">
-                                                @order.SupplierID
+                                                @supplierName
                                             </div>
 
                                         </td>
+
 
                                         <td>
 
@@ -1150,6 +1382,7 @@
 
                                         </td>
 
+
                                         <td>
 
                                             <div class="date">
@@ -1157,6 +1390,7 @@
                                             </div>
 
                                         </td>
+
 
                                         <td>
 
@@ -1166,42 +1400,41 @@
 
                                         </td>
 
+
                                         <td>
 
                                             <div class="actions">
 
                                                 @if (order.Status == "Ordered" ||
-                                                     order.Status == "Partially Complete")
+                                               order.Status == "Partially Complete")
                                                 {
                                                     <button type="button"
-                                                            class="btn btn-success btn-small"
-                                                            onclick='openReceiveModal(
-                                                        @order.Id,
-                                                        @Json.Serialize(order.OrderNumber),
-                                                        @Json.Serialize(order.SupplierID),
-                                                        @Json.Serialize(order.OrderDate.ToString("dd MMM yyyy HH:mm")),
-                                                        @Json.Serialize(order.Items)
-                                                        )'>
+                                                            class="btn btn-success btn-small receive-order-btn"
+                                                            data-order-id="@order.Id"
+                                                            data-order-number="@order.OrderNumber"
+                                                            data-supplier="@supplierName"
+                                                            data-order-date="@order.OrderDate.ToString("dd MMM yyyy HH:mm")"
+                                                            data-items="@order.Items">
 
                                                         Receive
 
                                                     </button>
                                                 }
 
+
                                                 @if (order.Status == "Ordered")
                                                 {
                                                     <button type="button"
-                                                            class="btn btn-danger btn-small"
-                                                            onclick='openCancelModal(
-                                                        @order.Id,
-                                                        @Json.Serialize(order.OrderNumber),
-                                                        @Json.Serialize(order.SupplierID)
-                                                        )'>
+                                                            class="btn btn-danger btn-small cancel-order-btn"
+                                                            data-order-id="@order.Id"
+                                                            data-order-number="@order.OrderNumber"
+                                                            data-supplier="@supplierName">
 
                                                         Cancel
 
                                                     </button>
                                                 }
+
 
                                                 @if (order.Status == "Complete")
                                                 {
@@ -1209,6 +1442,7 @@
                                                         ✓ Completed
                                                     </span>
                                                 }
+
 
                                                 @if (order.Status == "Cancelled")
                                                 {
@@ -1259,14 +1493,14 @@
 
             </div>
 
-        </section>
+        </main>
 
-    </main>
+    </div>
 
 
-    <!-- =========================================================
+    <!-- ============================================================
          ANTIFORGERY TOKEN
-         ========================================================= -->
+         ============================================================ -->
 
     <form id="antiForgeryForm"
           style="display:none;">
@@ -1276,9 +1510,9 @@
     </form>
 
 
-    <!-- =========================================================
+    <!-- ============================================================
          CREATE ORDER MODAL
-         ========================================================= -->
+         ============================================================ -->
 
     <div class="modal-overlay"
          id="m-create-order">
@@ -1303,9 +1537,11 @@
 
 
             <form method="post"
-                  action="@Url.Action("CreateOrder", "ConsumableOrder")">
+                  action="@Url.Action("CreateOrder", "ConsumableOrder")"
+                  id="create-order-form">
 
                 @Html.AntiForgeryToken()
+
 
                 <div class="modal-body">
 
@@ -1327,8 +1563,12 @@
                                value="Automatically generated"
                                readonly />
 
-                        <small style="display:block;margin-top:5px;color:var(--gray-500);">
+                        <small style="display:block;
+                            margin-top:5px;
+                            color:var(--muted);">
+
                             The order number will be generated automatically.
+
                         </small>
 
                     </div>
@@ -1339,17 +1579,25 @@
                     <div class="modal-form-group">
 
                         <label class="form-label">
+
                             Supplier
-                            <span class="required">*</span>
+
+                            <span class="required">
+                                *
+                            </span>
+
                         </label>
 
+
                         <select class="form-select"
-                                name="supplier"
+                                name="supplierId"
+                                id="order-supplier"
                                 required>
 
                             <option value="">
                                 Select Supplier
                             </option>
+
 
                             @foreach (var supplier in ViewBag.Supplier)
                             {
@@ -1363,23 +1611,88 @@
                     </div>
 
 
-                    <!-- ITEMS -->
+                    <!-- ORDER ITEMS -->
 
                     <div class="modal-form-group">
 
                         <label class="form-label">
+
                             Order Items
-                            <span class="required">*</span>
+
+                            <span class="required">
+                                *
+                            </span>
+
                         </label>
 
-                        <textarea class="form-textarea"
-                                  name="items"
-                                  rows="5"
-                                  placeholder="Example: EDTA Tubes (200), Lancets (500), Gloves (100)"
-                                  required></textarea>
 
-                        <small style="display:block;margin-top:6px;color:var(--gray-500);">
-                            Enter each consumable with the quantity in brackets.
+                        <div id="order-items-container">
+
+                            <div class="order-item-row"
+                                 style="display:flex;
+                                gap:10px;
+                                margin-bottom:10px;
+                                align-items:center;">
+
+                                <div style="flex:2; position:relative;">
+
+                                    <input type="text"
+                                           class="form-input consumable-input"
+                                           placeholder="Type consumable name"
+                                           autocomplete="off"
+                                           required />
+
+                                    <input type="hidden"
+                                           class="consumable-id" />
+
+                                    <div class="consumable-results"></div>
+
+                                </div>
+
+
+                                <input type="number"
+                                       class="form-input quantity-input"
+                                       min="1"
+                                       step="1"
+                                       placeholder="Quantity"
+                                       required
+                                       style="flex:1;" />
+
+
+                                <button type="button"
+                                        class="btn btn-outline remove-item-btn">
+
+                                    Remove
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        <button type="button"
+                                class="btn btn-outline"
+                                id="add-item-btn"
+                                style="margin-top:5px;">
+
+                            + Add Consumable
+
+                        </button>
+
+
+                        <input type="hidden"
+                               name="items"
+                               id="order-items-json" />
+
+
+                        <small style="display:block;
+                            margin-top:6px;
+                            color:var(--muted);">
+
+                            Type a consumable name and select it from the suggestions.
+                            Enter the quantity required.
+
                         </small>
 
                     </div>
@@ -1397,6 +1710,7 @@
 
                     </button>
 
+
                     <button type="submit"
                             class="btn btn-primary">
 
@@ -1413,9 +1727,9 @@
     </div>
 
 
-    <!-- =========================================================
+    <!-- ============================================================
          RECEIVE ORDER MODAL
-         ========================================================= -->
+         ============================================================ -->
 
     <div class="modal-overlay"
          id="m-receive-order">
@@ -1436,6 +1750,7 @@
                     </div>
 
                 </div>
+
 
                 <button type="button"
                         class="modal-close"
@@ -1464,6 +1779,7 @@
 
                     </div>
 
+
                     <div class="info-box">
 
                         <div class="info-label">
@@ -1475,6 +1791,7 @@
                         </div>
 
                     </div>
+
 
                     <div class="info-box">
 
@@ -1491,16 +1808,17 @@
                 </div>
 
 
-                <p style="font-size:13px;color:var(--gray-600);margin-bottom:15px;">
+                <p style="font-size:13px;
+                    color:var(--muted);
+                    margin-bottom:15px;">
 
-                    Select <strong>Received</strong> for each item that was delivered.
-                    Only received items will be added to stock.
+                    Enter the quantity received for each item.
+                    Only received quantities will be added to stock.
 
                 </p>
 
 
-                <div id="recv-items-list">
-                </div>
+                <div id="recv-items-list"></div>
 
             </div>
 
@@ -1515,10 +1833,10 @@
 
                 </button>
 
+
                 <button type="button"
                         id="recv-confirm-btn"
-                        class="btn btn-success"
-                        onclick="receiveOrder()">
+                        class="btn btn-success">
 
                     Confirm Receipt &amp; Update Stock
 
@@ -1531,9 +1849,9 @@
     </div>
 
 
-    <!-- =========================================================
+    <!-- ============================================================
          CANCEL ORDER MODAL
-         ========================================================= -->
+         ============================================================ -->
 
     <div class="modal-overlay"
          id="m-cancel-order">
@@ -1559,17 +1877,18 @@
 
             <form id="cancel-order-form"
                   method="post"
-                  action="@Url.Action("CancelOrder", "ConsumableOrders")">
+                  action="@Url.Action("CancelOrder", "ConsumableOrder")">
 
                 @Html.AntiForgeryToken()
+
 
                 <div class="modal-body">
 
                     <div style="background:var(--red-light);
-                        color:#991b1b;
-                        border:1px solid #fecaca;
+                        color:var(--red);
+                        border:1px solid rgba(220,38,38,.25);
                         padding:13px;
-                        border-radius:9px;
+                        border-radius:10px;
                         margin-bottom:18px;
                         font-size:13px;">
 
@@ -1590,19 +1909,22 @@
                     <div class="modal-form-group">
 
                         <label class="form-label">
+
                             Cancellation Reason
-                            <span class="required">*</span>
+
+                            <span class="required">
+                                *
+                            </span>
+
                         </label>
+
 
                         <textarea id="cancel-reason"
                                   class="form-textarea"
+                                  name="cancellationReason"
                                   rows="5"
                                   placeholder="Enter the reason for cancelling this order..."
                                   required></textarea>
-
-                        <input type="hidden"
-                               id="cancel-reason-hidden"
-                               name="cancellationReason" />
 
                     </div>
 
@@ -1619,9 +1941,9 @@
 
                     </button>
 
+
                     <button type="submit"
-                            class="btn btn-danger"
-                            onclick="return submitCancelOrder();">
+                            class="btn btn-danger">
 
                         Cancel Order &amp; Notify Supplier
 
@@ -1636,683 +1958,1847 @@
     </div>
 
 
-    <!-- =========================================================
+    <!-- ============================================================
+         LOGOUT MODAL
+         ============================================================ -->
+
+    <div id="logout-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="logout-modal-title"
+         style="display:none;
+        position:fixed;
+        inset:0;
+        z-index:1100;
+        background:rgba(11,31,58,0.45);
+        align-items:center;
+        justify-content:center;">
+
+        <div style="background:white;
+            border-radius:20px;
+            padding:32px 28px;
+            max-width:380px;
+            width:90%;
+            box-shadow:0 20px 60px rgba(11,31,58,0.2);
+            animation:modalIn 0.18s ease;">
+
+            <div style="width:52px;
+                height:52px;
+                background:#fee2e2;
+                border-radius:14px;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                margin-bottom:18px;">
+
+                <svg width="22"
+                     height="22"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="#dc2626"
+                     stroke-width="2"
+                     stroke-linecap="round">
+
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+
+                    <polyline points="16 17 21 12 16 7" />
+
+                    <line x1="21"
+                          y1="12"
+                          x2="9"
+                          y2="12" />
+
+                </svg>
+
+            </div>
+
+
+            <h3 id="logout-modal-title"
+                style="font-family:'DM Serif Display',serif;
+                font-size:1.2rem;
+                color:var(--navy);
+                margin-bottom:8px;">
+
+                Sign out?
+
+            </h3>
+
+
+            <p style="font-size:0.85rem;
+                color:var(--muted);
+                margin-bottom:24px;
+                line-height:1.6;">
+
+                You'll be returned to the login screen.
+                Any unsaved changes will be lost.
+
+            </p>
+
+
+            <div style="display:flex;gap:10px;">
+
+                <button id="logout-cancel"
+                        style="flex:1;
+                    padding:10px;
+                    border:1px solid var(--border);
+                    border-radius:10px;
+                    background:white;
+                    color:var(--navy);
+                    font-size:0.85rem;
+                    font-weight:600;
+                    cursor:pointer;
+                    font-family:'DM Sans',sans-serif;">
+
+                    Cancel
+
+                </button>
+
+
+                <a id="logout-confirm"
+                   href="@Url.Action("Logout", "Home")"
+                   style="flex:1;
+                    padding:10px;
+                    border:none;
+                    border-radius:10px;
+                    background:#dc2626;
+                    color:white;
+                    font-size:0.85rem;
+                    font-weight:600;
+                    cursor:pointer;
+                    text-align:center;
+                    text-decoration:none;
+                    font-family:'DM Sans',sans-serif;">
+
+                    Sign Out
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================================
          JAVASCRIPT
-         ========================================================= -->
+         ============================================================ -->
 
     <script>
+            document.addEventListener("DOMContentLoaded", function () {
 
-            // =========================================================
-            // MODALS
-            // =========================================================
+                /* =========================================================
+                   DATA FROM RAZOR
+                ========================================================= */
 
-            function openModal(id) {
+                const consumableOptions = @Html.Raw(
+                                    JsonSerializer.Serialize(
+                                            consumables.Select(c => new
+                                            {
+                                                    id = c.ConsumableID,
+                                                    name = c.ConsumableName
+                                            })
+                                    )
+                            );
 
-                var modal =
-                    document.getElementById(id);
+                const supplierOptions = @Html.Raw(
+                                    JsonSerializer.Serialize(
+                                            suppliers.Select(s => new
+                                            {
+                                                    id = s.SupplierID,
+                                                    name = s.SupplierName
+                                            })
+                                    )
+                            );
 
-                if (modal) {
-                    modal.classList.add('show');
+
+                /* =========================================================
+                   HELPER FUNCTIONS
+                ========================================================= */
+
+                function normalizeName(value) {
+
+                    return (value || "")
+                        .toString()
+                        .trim()
+                        .toLowerCase()
+                        .replace(/\s+/g, " ");
                 }
-            }
 
 
-            function closeModal(id) {
+                function findConsumables(searchText) {
 
-                var modal =
-                    document.getElementById(id);
+                    const search = normalizeName(searchText);
 
-                if (modal) {
-                    modal.classList.remove('show');
-                }
-            }
-
-
-            // Close modal when clicking outside
-
-            document
-                .querySelectorAll('.modal-overlay')
-                .forEach(function (overlay) {
-
-                    overlay.addEventListener(
-                        'click',
-                        function (event) {
-
-                            if (event.target === overlay) {
-
-                                overlay.classList.remove('show');
-
-                            }
-
-                        });
-
-                });
-
-
-            // Close modal using ESC
-
-            document.addEventListener(
-                'keydown',
-                function (event) {
-
-                    if (event.key === 'Escape') {
-
-                        document
-                            .querySelectorAll('.modal-overlay.show')
-                            .forEach(function (modal) {
-
-                                modal.classList.remove('show');
-
-                            });
-
+                    if (!search) {
+                        return [];
                     }
 
-                });
+                    return consumableOptions.filter(function (item) {
 
+                        const itemName = normalizeName(item.name);
 
-            // =========================================================
-            // ALERT
-            // =========================================================
-
-            function closeAlert(id) {
-
-                var alert =
-                    document.getElementById(id);
-
-                if (alert) {
-                    alert.remove();
-                }
-            }
-
-
-            // =========================================================
-            // SEARCH
-            // =========================================================
-
-            var searchInput =
-                document.getElementById('order-search');
-
-            if (searchInput) {
-
-                searchInput.addEventListener(
-                    'input',
-                    function () {
-
-                        var search =
-                            this.value
-                                .toLowerCase()
-                                .trim();
-
-                        var rows =
-                            document.querySelectorAll(
-                                '#orders-table tbody .order-row'
-                            );
-
-                        var visible = 0;
-
-                        rows.forEach(function (row) {
-
-                            var text =
-                                row
-                                    .getAttribute('data-search')
-                                    .toLowerCase();
-
-                            if (text.includes(search)) {
-
-                                row.style.display = '';
-
-                                visible++;
-
-                            }
-                            else {
-
-                                row.style.display = 'none';
-
-                            }
-
-                        });
-
-                        var count =
-                            document.getElementById(
-                                'table-count'
-                            );
-
-                        if (count) {
-
-                            count.textContent =
-                                visible + ' order(s)';
-
-                        }
-
+                        return itemName.includes(search);
                     });
-
-            }
-
-
-            // =========================================================
-            // RECEIVE ORDER
-            // =========================================================
-
-            function openReceiveModal(
-                orderId,
-                orderNumber,
-                supplier,
-                orderDate,
-                items
-            ) {
-
-                var button =
-                    document.getElementById(
-                        'recv-confirm-btn'
-                    );
-
-                button.setAttribute(
-                    'data-order-id',
-                    orderId
-                );
-
-                document.getElementById(
-                    'recv-order-number'
-                ).textContent =
-                    orderNumber;
-
-                document.getElementById(
-                    'recv-supplier'
-                ).textContent =
-                    supplier;
-
-                document.getElementById(
-                    'recv-date'
-                ).textContent =
-                    orderDate;
-
-                document.getElementById(
-                    'recv-sub'
-                ).textContent =
-                    orderNumber + ' — ' + supplier;
-
-
-                var container =
-                    document.getElementById(
-                        'recv-items-list'
-                    );
-
-                container.innerHTML = '';
-
-
-                if (!items || items.trim() === '') {
-
-                    container.innerHTML =
-                        '<div style="padding:20px;text-align:center;color:var(--gray-500);">' +
-                        'No order items were found.' +
-                        '</div>';
-
-                    openModal('m-receive-order');
-
-                    return;
                 }
 
 
-                /*
-                    Expected format:
+                function findConsumable(searchText) {
 
-                    EDTA Tubes (200), Lancets (500)
+                    const search = normalizeName(searchText);
 
-                    We split by comma and then look for:
+                    if (!search) {
+                        return null;
+                    }
 
-                    Item Name (Quantity)
-                */
+                    /*
+                     * First look for an exact match.
+                     */
+                    let match = consumableOptions.find(function (item) {
 
-                var itemArr =
-                    items
-                        .split(',')
-                        .map(function (item) {
-                            return item.trim();
-                        })
-                        .filter(function (item) {
-                            return item.length > 0;
-                        });
-
-
-                itemArr.forEach(function (item, index) {
-
-                    var match =
-                        item.match(
-                            /^(.+?)\s*\((\d+)\s*\)$/
-                        );
-
-                    var itemName;
-                    var quantity;
+                        return normalizeName(item.name) === search;
+                    });
 
                     if (match) {
-
-                        itemName =
-                            match[1].trim();
-
-                        quantity =
-                            parseInt(match[2]) || 0;
-
-                    }
-                    else {
-
-                        itemName =
-                            item.trim();
-
-                        quantity = 0;
-
+                        return match;
                     }
 
+                    /*
+                     * If there is no exact match, allow partial matching.
+                     *
+                     * Example:
+                     * "Tubes" -> "EDTA Tubes"
+                     * "EDTA"  -> "EDTA Tubes"
+                     */
+                    const matches = findConsumables(search);
 
-                    var wrapper =
-                        document.createElement('div');
+                    /*
+                     * Only automatically select a partial match
+                     * when there is exactly ONE possible match.
+                     */
+                    if (matches.length === 1) {
+                        return matches[0];
+                    }
 
-                    wrapper.className =
-                        'receive-item';
-
-
-                    var nameDiv =
-                        document.createElement('div');
-
-                    var name =
-                        document.createElement('div');
-
-                    name.className =
-                        'receive-item-name';
-
-                    name.textContent =
-                        itemName;
-
-                    nameDiv.appendChild(name);
-
-
-                    var quantityDiv =
-                        document.createElement('div');
-
-                    quantityDiv.className =
-                        'receive-item-qty';
-
-                    quantityDiv.textContent =
-                        'Ordered quantity: ' +
-                        quantity;
-
-                    nameDiv.appendChild(quantityDiv);
-
-
-                    var quantityBox =
-                        document.createElement('div');
-
-                    quantityBox.style.fontSize =
-                        '12px';
-
-                    quantityBox.style.color =
-                        'var(--gray-500)';
-
-                    quantityBox.textContent =
-                        quantity > 0
-                            ? quantity + ' units'
-                            : 'Quantity not specified';
-
-
-                    var select =
-                        document.createElement('select');
-
-                    select.className =
-                        'form-select recv-status';
-
-                    select.dataset.itemName =
-                        itemName;
-
-                    select.dataset.quantity =
-                        quantity;
-
-
-                    var defaultOption =
-                        document.createElement('option');
-
-                    defaultOption.value = '';
-
-                    defaultOption.textContent =
-                        'Select Status';
-
-                    select.appendChild(
-                        defaultOption
-                    );
-
-
-                    var receivedOption =
-                        document.createElement('option');
-
-                    receivedOption.value =
-                        'Received';
-
-                    receivedOption.textContent =
-                        'Received';
-
-                    select.appendChild(
-                        receivedOption
-                    );
-
-
-                    var notReceivedOption =
-                        document.createElement('option');
-
-                    notReceivedOption.value =
-                        'Not Received';
-
-                    notReceivedOption.textContent =
-                        'Not Received';
-
-                    select.appendChild(
-                        notReceivedOption
-                    );
-
-
-                    wrapper.appendChild(
-                        nameDiv
-                    );
-
-                    wrapper.appendChild(
-                        quantityBox
-                    );
-
-                    wrapper.appendChild(
-                        select
-                    );
-
-                    container.appendChild(
-                        wrapper
-                    );
-
-                });
-
-
-                openModal(
-                    'm-receive-order'
-                );
-            }
-
-
-            // =========================================================
-            // SEND RECEIVED ITEMS
-            // =========================================================
-
-            async function receiveOrder() {
-
-                var confirmButton =
-                    document.getElementById(
-                        'recv-confirm-btn'
-                    );
-
-                var orderId =
-                    confirmButton.getAttribute(
-                        'data-order-id'
-                    );
-
-
-                if (!orderId) {
-
-                    alert(
-                        'Order ID could not be found.'
-                    );
-
-                    return;
+                    return null;
                 }
 
 
-                var receivedItems = [];
+                function getAntiForgeryToken() {
 
-
-                document
-                    .querySelectorAll('.recv-status')
-                    .forEach(function (select) {
-
-                        var status =
-                            select.value;
-
-
-                        if (status === 'Received') {
-
-                            var quantity =
-                                parseInt(
-                                    select.dataset.quantity
-                                ) || 0;
-
-
-                            if (quantity <= 0) {
-
-                                return;
-
-                            }
-
-
-                            receivedItems.push({
-
-                                name:
-                                    select.dataset.itemName,
-
-                                quantity:
-                                    quantity
-
-                            });
-
-                        }
-
-                    });
-
-
-                if (receivedItems.length === 0) {
-
-                    alert(
-                        'Please select at least one item as Received.'
-                    );
-
-                    return;
-                }
-
-
-                var tokenElement =
-                    document.querySelector(
+                    const token = document.querySelector(
                         '#antiForgeryForm input[name="__RequestVerificationToken"]'
                     );
 
-
-                if (!tokenElement) {
-
-                    alert(
-                        'Security token could not be found.'
-                    );
-
-                    return;
+                    return token ? token.value : "";
                 }
 
 
-                var token =
-                    tokenElement.value;
+                /* =========================================================
+                   GLOBAL MODAL FUNCTIONS
+                ========================================================= */
+
+                window.openModal = function (id) {
+
+                    const modal = document.getElementById(id);
+
+                    if (!modal) {
+                        return;
+                    }
+
+                    modal.classList.add("show");
+                    modal.style.display = "flex";
+                };
 
 
-                confirmButton.disabled =
-                    true;
+                window.closeModal = function (id) {
 
-                confirmButton.textContent =
-                    'Updating Stock...';
+                    const modal = document.getElementById(id);
 
+                    if (!modal) {
+                        return;
+                    }
 
-                try {
-
-                    var response =
-                        await fetch(
-                            '@Url.Action("ReceiveOrder", "ConsumablesOrder")',
-                            {
-                                method: 'POST',
-
-                                headers: {
-
-                                    'Content-Type':
-                                        'application/json',
-
-                                    'RequestVerificationToken':
-                                        token
-
-                                },
-
-                                body:
-                                    JSON.stringify({
-
-                                        orderId:
-                                            parseInt(orderId),
-
-                                        receivedItems:
-                                            receivedItems
-
-                                    })
-
-                            }
-                        );
+                    modal.classList.remove("show");
+                    modal.style.display = "none";
+                };
 
 
-                    var result =
-                        await response.json();
+                window.closeAlert = function (id) {
+
+                    const alertElement = document.getElementById(id);
+
+                    if (alertElement) {
+                        alertElement.remove();
+                    }
+                };
 
 
-                    if (!response.ok ||
-                        !result.success) {
+                /* =========================================================
+                   ALERT CLOSE BUTTONS
+                ========================================================= */
 
-                        throw new Error(
-                            result.message ||
-                            'Unable to receive order.'
-                        );
+                document.querySelectorAll(".alert-close").forEach(function (button) {
 
+                    button.addEventListener("click", function () {
+
+                        const alertElement = this.closest(".alert");
+
+                        if (alertElement) {
+                            alertElement.remove();
+                        }
+                    });
+                });
+
+
+                /* =========================================================
+                   CONSUMABLE AUTOCOMPLETE
+                ========================================================= */
+
+                function bindConsumableAutocomplete(row) {
+
+                    if (!row) {
+                        return;
+                    }
+
+                    const input = row.querySelector(".consumable-input");
+                    const hiddenId = row.querySelector(".consumable-id");
+                    const results = row.querySelector(".consumable-results");
+
+                    if (!input || !hiddenId || !results) {
+                        return;
                     }
 
 
-                    closeModal(
-                        'm-receive-order'
-                    );
+                    /*
+                     * INPUT
+                     */
+                    input.addEventListener("input", function () {
+
+                        const search = normalizeName(this.value);
+
+                        /*
+                         * The user changed the name,
+                         * therefore the previous ID may no longer be valid.
+                         */
+                        hiddenId.value = "";
+
+                        results.innerHTML = "";
+                        results.style.display = "none";
+
+                        if (!search) {
+                            return;
+                        }
 
 
-                    window.location.reload();
+                        const matches = findConsumables(search);
 
+                        if (matches.length === 0) {
+                            return;
+                        }
+
+
+                        matches.forEach(function (consumable) {
+
+                            const result = document.createElement("div");
+
+                            result.className = "consumable-result";
+
+                            result.textContent = consumable.name;
+
+                            result.dataset.id = consumable.id;
+
+
+                            /*
+                             * Use mousedown instead of click.
+                             *
+                             * This prevents the input blur event from
+                             * happening before the suggestion is selected.
+                             */
+                            result.addEventListener("mousedown", function (event) {
+
+                                event.preventDefault();
+
+                                input.value = consumable.name;
+
+                                hiddenId.value = consumable.id;
+
+                                results.innerHTML = "";
+                                results.style.display = "none";
+                            });
+
+
+                            results.appendChild(result);
+                        });
+
+
+                        results.style.display = "block";
+                    });
+
+
+                    /*
+                     * BLUR
+                     */
+                    input.addEventListener("blur", function () {
+
+                        setTimeout(function () {
+
+                            const typedName = input.value.trim();
+
+                            if (!typedName) {
+
+                                hiddenId.value = "";
+
+                                results.innerHTML = "";
+                                results.style.display = "none";
+
+                                return;
+                            }
+
+
+                            /*
+                             * Try to automatically resolve the name.
+                             */
+                            const match = findConsumable(typedName);
+
+
+                            if (match) {
+
+                                input.value = match.name;
+
+                                hiddenId.value = match.id;
+                            }
+
+
+                            results.innerHTML = "";
+                            results.style.display = "none";
+
+                        }, 200);
+                    });
+
+
+                    /*
+                     * ENTER
+                     */
+                    input.addEventListener("keydown", function (event) {
+
+                        if (event.key !== "Enter") {
+                            return;
+                        }
+
+                        event.preventDefault();
+
+
+                        const typedName = input.value.trim();
+
+                        if (!typedName) {
+                            return;
+                        }
+
+
+                        /*
+                         * Exact or unique partial match.
+                         */
+                        const match = findConsumable(typedName);
+
+                        if (match) {
+
+                            input.value = match.name;
+
+                            hiddenId.value = match.id;
+
+                            results.innerHTML = "";
+                            results.style.display = "none";
+
+                            return;
+                        }
+
+
+                        /*
+                         * If there are multiple matches,
+                         * select the first suggestion.
+                         *
+                         * Example:
+                         *
+                         * Tubes
+                         *   -> EDTA Tubes
+                         *   -> Citrate Tubes
+                         *
+                         * The suggestions remain available,
+                         * and the first result can be selected.
+                         */
+                        const matches = findConsumables(typedName);
+
+                        if (matches.length > 0) {
+
+                            const firstMatch = matches[0];
+
+                            input.value = firstMatch.name;
+
+                            hiddenId.value = firstMatch.id;
+
+                            results.innerHTML = "";
+                            results.style.display = "none";
+                        }
+                    });
                 }
-                catch (error) {
-
-                    alert(
-                        error.message ||
-                        'An error occurred while receiving the order.'
-                    );
 
 
-                    confirmButton.disabled =
-                        false;
+                /* =========================================================
+                   INITIALISE FIRST ORDER ITEM
+                ========================================================= */
 
-                    confirmButton.textContent =
-                        'Confirm Receipt & Update Stock';
-
-                }
-
-            }
-
-
-            // =========================================================
-            // CANCEL ORDER
-            // =========================================================
-
-            function openCancelModal(
-                orderId,
-                orderNumber,
-                supplier
-            ) {
-
-                document.getElementById(
-                    'cancel-sub'
-                ).textContent =
-                    orderNumber +
-                    ' — ' +
-                    supplier;
-
-
-                document.getElementById(
-                    'cancel-order-id'
-                ).value =
-                    orderId;
-
-
-                document.getElementById(
-                    'cancel-reason'
-                ).value =
-                    '';
-
-
-                document.getElementById(
-                    'cancel-reason-hidden'
-                ).value =
-                    '';
-
-
-                openModal(
-                    'm-cancel-order'
+                const firstOrderRow = document.querySelector(
+                    "#order-items-container .order-item-row"
                 );
 
-            }
+                if (firstOrderRow) {
 
-
-            function submitCancelOrder() {
-
-                var reason =
-                    document.getElementById(
-                        'cancel-reason'
-                    ).value
-                    .trim();
-
-
-                if (!reason) {
-
-                    alert(
-                        'Please enter a reason for cancelling the order.'
-                    );
-
-                    return false;
-
+                    bindConsumableAutocomplete(firstOrderRow);
                 }
 
 
-                document.getElementById(
-                    'cancel-reason-hidden'
-                ).value =
-                    reason;
+                /* =========================================================
+                   ADD CONSUMABLE BUTTON
+                ========================================================= */
+
+                const addItemButton = document.getElementById("add-item-btn");
+
+                if (addItemButton) {
+
+                    addItemButton.addEventListener("click", function () {
+
+                        const container = document.getElementById(
+                            "order-items-container"
+                        );
+
+                        if (!container) {
+                            return;
+                        }
 
 
-                return true;
-
-            }
-
-
-            // =========================================================
-            // AUTO HIDE ALERTS
-            // =========================================================
-
-            setTimeout(function () {
-
-                var success =
-                    document.getElementById(
-                        'success-alert'
-                    );
-
-                var error =
-                    document.getElementById(
-                        'error-alert'
-                    );
+                        const existingRows = container.querySelectorAll(
+                            ".order-item-row"
+                        );
 
 
-                if (success) {
-                    success.remove();
+                        if (existingRows.length === 0) {
+                            return;
+                        }
+
+
+                        const firstRow = existingRows[0];
+
+                        const newRow = firstRow.cloneNode(true);
+
+
+                        /*
+                         * Clear the cloned values.
+                         */
+                        const input = newRow.querySelector(
+                            ".consumable-input"
+                        );
+
+                        const hiddenId = newRow.querySelector(
+                            ".consumable-id"
+                        );
+
+                        const quantity = newRow.querySelector(
+                            ".quantity-input"
+                        );
+
+                        const results = newRow.querySelector(
+                            ".consumable-results"
+                        );
+
+
+                        if (input) {
+                            input.value = "";
+                        }
+
+                        if (hiddenId) {
+                            hiddenId.value = "";
+                        }
+
+                        if (quantity) {
+                            quantity.value = "";
+                        }
+
+                        if (results) {
+                            results.innerHTML = "";
+                            results.style.display = "none";
+                        }
+
+
+                        /*
+                         * Add the new row.
+                         */
+                        container.appendChild(newRow);
+
+
+                        /*
+                         * Bind autocomplete to the new row.
+                         */
+                        bindConsumableAutocomplete(newRow);
+                    });
                 }
 
-                if (error) {
-                    error.remove();
+
+                /* =========================================================
+                   REMOVE CONSUMABLE ITEM
+                ========================================================= */
+
+                document.addEventListener("click", function (event) {
+
+                    const removeButton = event.target.closest(
+                        ".remove-item-btn"
+                    );
+
+                    if (!removeButton) {
+                        return;
+                    }
+
+
+                    const container = document.getElementById(
+                        "order-items-container"
+                    );
+
+                    if (!container) {
+                        return;
+                    }
+
+
+                    const rows = container.querySelectorAll(
+                        ".order-item-row"
+                    );
+
+
+                    /*
+                     * Always keep at least one row.
+                     */
+                    if (rows.length <= 1) {
+
+                        const row = rows[0];
+
+                        if (row) {
+
+                            const input = row.querySelector(
+                                ".consumable-input"
+                            );
+
+                            const hiddenId = row.querySelector(
+                                ".consumable-id"
+                            );
+
+                            const quantity = row.querySelector(
+                                ".quantity-input"
+                            );
+
+                            const results = row.querySelector(
+                                ".consumable-results"
+                            );
+
+
+                            if (input) {
+                                input.value = "";
+                            }
+
+                            if (hiddenId) {
+                                hiddenId.value = "";
+                            }
+
+                            if (quantity) {
+                                quantity.value = "";
+                            }
+
+                            if (results) {
+                                results.innerHTML = "";
+                                results.style.display = "none";
+                            }
+                        }
+
+                        return;
+                    }
+
+
+                    const row = removeButton.closest(".order-item-row");
+
+                    if (row) {
+                        row.remove();
+                    }
+                });
+
+
+                /* =========================================================
+                   CREATE ORDER FORM
+                ========================================================= */
+
+                const createOrderForm = document.getElementById(
+                    "create-order-form"
+                );
+
+
+                if (createOrderForm) {
+
+                    createOrderForm.addEventListener("submit", function (event) {
+
+                        event.preventDefault();
+
+
+                        const supplierElement = document.getElementById(
+                            "order-supplier"
+                        );
+
+
+                        if (!supplierElement || !supplierElement.value) {
+
+                            alert("Please select a supplier.");
+
+                            if (supplierElement) {
+                                supplierElement.focus();
+                            }
+
+                            return;
+                        }
+
+
+                        const container = document.getElementById(
+                            "order-items-container"
+                        );
+
+
+                        if (!container) {
+
+                            alert(
+                                "Unable to find the consumable items section."
+                            );
+
+                            return;
+                        }
+
+
+                        const rows = container.querySelectorAll(
+                            ".order-item-row"
+                        );
+
+
+                        const orderItems = [];
+
+                        const usedConsumables = new Set();
+
+
+                        for (const row of rows) {
+
+                            const input = row.querySelector(
+                                ".consumable-input"
+                            );
+
+                            const hiddenId = row.querySelector(
+                                ".consumable-id"
+                            );
+
+                            const quantityInput = row.querySelector(
+                                ".quantity-input"
+                            );
+
+
+                            const typedName = input
+                                ? input.value.trim()
+                                : "";
+
+
+                            const quantity = quantityInput
+                                ? parseInt(quantityInput.value, 10)
+                                : 0;
+
+
+                            /*
+                             * Ignore completely empty rows.
+                             */
+                            if (!typedName && !quantity) {
+                                continue;
+                            }
+
+
+                            /*
+                             * If the user entered a name but
+                             * the hidden ID is empty, resolve it now.
+                             */
+                            let consumableId = hiddenId
+                                ? parseInt(hiddenId.value, 10)
+                                : 0;
+
+
+                            if (!consumableId && typedName) {
+
+                                const match = findConsumable(typedName);
+
+
+                                if (match) {
+
+                                    consumableId = parseInt(
+                                        match.id,
+                                        10
+                                    );
+
+
+                                    if (input) {
+                                        input.value = match.name;
+                                    }
+
+
+                                    if (hiddenId) {
+                                        hiddenId.value = consumableId;
+                                    }
+                                }
+                            }
+
+
+                            /*
+                             * If there are multiple partial matches,
+                             * try to find a name that starts with the
+                             * typed value.
+                             */
+                            if (!consumableId && typedName) {
+
+                                const normalizedTypedName =
+                                    normalizeName(typedName);
+
+
+                                const startsWithMatch =
+                                    consumableOptions.find(function (item) {
+
+                                        return normalizeName(item.name)
+                                            .startsWith(normalizedTypedName);
+                                    });
+
+
+                                if (startsWithMatch) {
+
+                                    consumableId = parseInt(
+                                        startsWithMatch.id,
+                                        10
+                                    );
+
+
+                                    if (input) {
+                                        input.value =
+                                            startsWithMatch.name;
+                                    }
+
+
+                                    if (hiddenId) {
+                                        hiddenId.value =
+                                            startsWithMatch.id;
+                                    }
+                                }
+                            }
+
+
+                            /*
+                             * No valid consumable found.
+                             */
+                            if (!consumableId) {
+
+                                alert(
+                                    `"${typedName}" was not found. ` +
+                                    "Please select a consumable from the suggestions."
+                                );
+
+
+                                if (input) {
+                                    input.focus();
+                                }
+
+                                return;
+                            }
+
+
+                            /*
+                             * Validate quantity.
+                             */
+                            if (
+                                !Number.isInteger(quantity) ||
+                                quantity <= 0
+                            ) {
+
+                                alert(
+                                    `Please enter a valid quantity for "${typedName}".`
+                                );
+
+
+                                if (quantityInput) {
+                                    quantityInput.focus();
+                                }
+
+                                return;
+                            }
+
+
+                            /*
+                             * Prevent duplicate consumables.
+                             */
+                            if (usedConsumables.has(consumableId)) {
+
+                                alert(
+                                    `"${typedName}" has already been added to this order.`
+                                );
+
+                                if (input) {
+                                    input.focus();
+                                }
+
+                                return;
+                            }
+
+
+                            usedConsumables.add(consumableId);
+
+
+                            /*
+                             * IMPORTANT:
+                             *
+                             * Only IDs and quantities are sent to SQL.
+                             *
+                             * This prevents:
+                             *
+                             * JSON text is not properly formatted
+                             *
+                             * errors caused by sending display text.
+                             */
+                            orderItems.push({
+                                ConsumableID: consumableId,
+                                QuantityOrdered: quantity
+                            });
+                        }
+
+
+                        /*
+                         * No valid items.
+                         */
+                        if (orderItems.length === 0) {
+
+                            alert(
+                                "Please add at least one consumable with a valid quantity."
+                            );
+
+                            return;
+                        }
+
+
+                        /*
+                         * Convert to valid JSON.
+                         */
+                        const jsonInput = document.getElementById(
+                            "order-items-json"
+                        );
+
+
+                        if (!jsonInput) {
+
+                            alert(
+                                "Unable to prepare the order items."
+                            );
+
+                            return;
+                        }
+
+
+                        jsonInput.value = JSON.stringify(orderItems);
+
+
+                        /*
+                         * Submit the form normally.
+                         */
+                        createOrderForm.submit();
+                    });
                 }
 
-            }, 6000);
 
+                /* =========================================================
+                   RECEIVE ORDER
+                ========================================================= */
+
+                let currentReceiveOrderId = 0;
+
+
+                function parseOrderItems(itemsText) {
+
+                    if (!itemsText) {
+                        return [];
+                    }
+
+
+                    /*
+                     * First try JSON.
+                     */
+                    try {
+
+                        const parsed = JSON.parse(itemsText);
+
+                        if (Array.isArray(parsed)) {
+
+                            return parsed.map(function (item) {
+
+                                const id = parseInt(
+                                    item.ConsumableID ??
+                                    item.consumableID ??
+                                    item.Id ??
+                                    item.id ??
+                                    0,
+                                    10
+                                );
+
+
+                                const quantity = parseInt(
+                                    item.QuantityOrdered ??
+                                    item.quantityOrdered ??
+                                    item.Quantity ??
+                                    item.quantity ??
+                                    0,
+                                    10
+                                );
+
+
+                                let name =
+                                    item.ConsumableName ??
+                                    item.consumableName ??
+                                    item.Name ??
+                                    item.name ??
+                                    "";
+
+
+                                if (!name && id) {
+
+                                    const consumable =
+                                        consumableOptions.find(function (c) {
+
+                                            return parseInt(c.id, 10) === id;
+                                        });
+
+
+                                    if (consumable) {
+                                        name = consumable.name;
+                                    }
+                                }
+
+
+                                return {
+                                    id: id,
+                                    name: name || "Unknown Consumable",
+                                    quantity: quantity
+                                };
+                            });
+                        }
+
+                    } catch (error) {
+
+                        /*
+                         * Not JSON.
+                         * Continue to legacy text parsing.
+                         */
+                    }
+
+
+                    /*
+                     * Legacy format:
+                     *
+                     * EDTA Tubes (20), Gloves (50)
+                     */
+                    const result = [];
+
+
+                    const parts = itemsText.split(",");
+
+
+                    parts.forEach(function (part) {
+
+                        const text = part.trim();
+
+                        if (!text) {
+                            return;
+                        }
+
+
+                        const match = text.match(
+                            /^(.+?)\s*\((\d+)\)\s*$/
+                        );
+
+
+                        if (match) {
+
+                            const name = match[1].trim();
+
+                            const quantity = parseInt(
+                                match[2],
+                                10
+                            );
+
+
+                            const consumable =
+                                findConsumable(name);
+
+
+                            result.push({
+                                id: consumable
+                                    ? parseInt(consumable.id, 10)
+                                    : 0,
+
+                                name: consumable
+                                    ? consumable.name
+                                    : name,
+
+                                quantity: quantity
+                            });
+
+                        } else {
+
+                            const consumable =
+                                findConsumable(text);
+
+
+                            result.push({
+                                id: consumable
+                                    ? parseInt(consumable.id, 10)
+                                    : 0,
+
+                                name: consumable
+                                    ? consumable.name
+                                    : text,
+
+                                quantity: 0
+                            });
+                        }
+                    });
+
+
+                    return result;
+                }
+
+
+                function createReceiveItem(item) {
+
+                    const wrapper = document.createElement("div");
+
+                    wrapper.className = "receive-item";
+
+
+                    wrapper.dataset.consumableId =
+                        item.id || "0";
+
+
+                    wrapper.dataset.consumableName =
+                        item.name || "";
+
+
+                    wrapper.innerHTML = `
+                        <div>
+                            <strong>${escapeHtml(item.name)}</strong>
+                        </div>
+
+                        <div>
+                            <input
+                                type="number"
+                                class="form-input receive-quantity"
+                                min="0"
+                                step="1"
+                                value="${item.quantity || 0}"
+                                data-consumable-id="${item.id || 0}"
+                                style="width:100%;"
+                            />
+                        </div>
+                    `;
+
+
+                    return wrapper;
+                }
+
+
+                function escapeHtml(value) {
+
+                    return (value || "")
+                        .toString()
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;")
+                        .replace(/"/g, "&quot;")
+                        .replace(/'/g, "&#039;");
+                }
+
+
+                document.addEventListener("click", function (event) {
+
+                    const receiveButton =
+                        event.target.closest(".receive-order-btn");
+
+
+                    if (!receiveButton) {
+                        return;
+                    }
+
+
+                    const orderRow =
+                        receiveButton.closest(".order-row");
+
+
+                    if (!orderRow) {
+                        return;
+                    }
+
+
+                    currentReceiveOrderId =
+                        parseInt(
+                            receiveButton.dataset.orderId ||
+                            orderRow.dataset.orderId ||
+                            "0",
+                            10
+                        );
+
+
+                    if (!currentReceiveOrderId) {
+
+                        alert("Invalid order.");
+
+                        return;
+                    }
+
+
+                    const orderNumber =
+                        orderRow.dataset.orderNumber || "";
+
+
+                    const supplier =
+                        orderRow.dataset.supplier || "";
+
+
+                    const orderDate =
+                        orderRow.dataset.orderDate || "";
+
+
+                    const itemsText =
+                        orderRow.dataset.items || "";
+
+
+                    /*
+                     * Populate modal information.
+                     */
+                    const orderNumberElement =
+                        document.getElementById("recv-order-number");
+
+
+                    const supplierElement =
+                        document.getElementById("recv-supplier");
+
+
+                    const dateElement =
+                        document.getElementById("recv-date");
+
+
+                    const subElement =
+                        document.getElementById("recv-sub");
+
+
+                    if (orderNumberElement) {
+                        orderNumberElement.textContent =
+                            orderNumber;
+                    }
+
+
+                    if (supplierElement) {
+                        supplierElement.textContent =
+                            supplier;
+                    }
+
+
+                    if (dateElement) {
+                        dateElement.textContent =
+                            orderDate;
+                    }
+
+
+                    if (subElement) {
+
+                        subElement.textContent =
+                            `Receive items for order ${orderNumber}`;
+                    }
+
+
+                    /*
+                     * Populate receive items.
+                     */
+                    const itemsContainer =
+                        document.getElementById("recv-items-list");
+
+
+                    if (!itemsContainer) {
+                        return;
+                    }
+
+
+                    itemsContainer.innerHTML = "";
+
+
+                    const items =
+                        parseOrderItems(itemsText);
+
+
+                    if (items.length === 0) {
+
+                        itemsContainer.innerHTML = `
+                            <div style="padding:15px;">
+                                No consumable items were found for this order.
+                            </div>
+                        `;
+
+                    } else {
+
+                        items.forEach(function (item) {
+
+                            itemsContainer.appendChild(
+                                createReceiveItem(item)
+                            );
+                        });
+                    }
+
+
+                    openModal("m-receive-order");
+                });
+
+
+                /* =========================================================
+                   CONFIRM RECEIVE ORDER
+                ========================================================= */
+
+                const receiveForm =
+                    document.getElementById("receive-order-form");
+
+
+                if (receiveForm) {
+
+                    receiveForm.addEventListener(
+                        "submit",
+                        async function (event) {
+
+                            event.preventDefault();
+
+
+                            if (!currentReceiveOrderId) {
+
+                                alert("Invalid order.");
+
+                                return;
+                            }
+
+
+                            const receiveInputs =
+                                document.querySelectorAll(
+                                    "#recv-items-list .receive-quantity"
+                                );
+
+
+                            const receivedItems = [];
+
+
+                            for (const input of receiveInputs) {
+
+                                const quantity =
+                                    parseInt(
+                                        input.value || "0",
+                                        10
+                                    );
+
+
+                                const consumableId =
+                                    parseInt(
+                                        input.dataset.consumableId ||
+                                        "0",
+                                        10
+                                    );
+
+
+                                if (
+                                    !Number.isInteger(quantity) ||
+                                    quantity < 0
+                                ) {
+
+                                    alert(
+                                        "Please enter valid received quantities."
+                                    );
+
+                                    input.focus();
+
+                                    return;
+                                }
+
+
+                                /*
+                                 * Only send items with quantity > 0.
+                                 */
+                                if (quantity > 0) {
+
+                                    if (!consumableId) {
+
+                                        alert(
+                                            "A consumable could not be identified."
+                                        );
+
+                                        return;
+                                    }
+
+
+                                    receivedItems.push({
+                                        ConsumableID:
+                                            consumableId,
+
+                                        QuantityReceived:
+                                            quantity
+                                    });
+                                }
+                            }
+
+
+                            if (receivedItems.length === 0) {
+
+                                alert(
+                                    "Please enter at least one received quantity."
+                                );
+
+                                return;
+                            }
+
+
+                            const submitButton =
+                                receiveForm.querySelector(
+                                    'button[type="submit"]'
+                                );
+
+
+                            const originalText =
+                                submitButton
+                                    ? submitButton.textContent
+                                    : "";
+
+
+                            if (submitButton) {
+
+                                submitButton.disabled = true;
+
+                                submitButton.textContent =
+                                    "Processing...";
+                            }
+
+
+                            try {
+
+                                const response =
+                                    await fetch(
+                                        '@Url.Action("ReceiveOrder", "ConsumableOrder")',
+                                        {
+                                            method: "POST",
+
+                                            headers: {
+                                                "Content-Type":
+                                                    "application/json",
+
+                                                "RequestVerificationToken":
+                                                    getAntiForgeryToken()
+                                            },
+
+                                            body: JSON.stringify({
+                                                orderId:
+                                                    currentReceiveOrderId,
+
+                                                receivedItems:
+                                                    receivedItems
+                                            })
+                                        }
+                                    );
+
+
+                                if (!response.ok) {
+
+                                    throw new Error(
+                                        "Unable to receive order."
+                                    );
+                                }
+
+
+                                const contentType =
+                                    response.headers.get(
+                                        "content-type"
+                                    ) || "";
+
+
+                                if (
+                                    contentType.includes(
+                                        "application/json"
+                                    )
+                                ) {
+
+                                    const result =
+                                        await response.json();
+
+
+                                    if (
+                                        result &&
+                                        result.success === false
+                                    ) {
+
+                                        throw new Error(
+                                            result.message ||
+                                            "Unable to receive order."
+                                        );
+                                    }
+                                }
+
+
+                                closeModal("m-receive-order");
+
+                                window.location.reload();
+
+                            } catch (error) {
+
+                                alert(
+                                    error.message ||
+                                    "An error occurred while receiving the order."
+                                );
+
+                            } finally {
+
+                                if (submitButton) {
+
+                                    submitButton.disabled = false;
+
+                                    submitButton.textContent =
+                                        originalText;
+                                }
+                            }
+                        }
+                    );
+                }
+
+
+                /* =========================================================
+                   CANCEL ORDER
+                ========================================================= */
+
+                document.addEventListener("click", function (event) {
+
+                    const cancelButton =
+                        event.target.closest(".cancel-order-btn");
+
+
+                    if (!cancelButton) {
+                        return;
+                    }
+
+
+                    const orderId =
+                        cancelButton.dataset.orderId || "";
+
+
+                    const orderNumber =
+                        cancelButton.dataset.orderNumber || "";
+
+
+                    const supplier =
+                        cancelButton.dataset.supplier || "";
+
+
+                    const orderIdInput =
+                        document.getElementById("cancel-order-id");
+
+
+                    const reasonInput =
+                        document.getElementById("cancel-reason");
+
+
+                    const subElement =
+                        document.getElementById("cancel-sub");
+
+
+                    if (orderIdInput) {
+
+                        orderIdInput.value =
+                            orderId;
+                    }
+
+
+                    if (reasonInput) {
+
+                        reasonInput.value = "";
+                    }
+
+
+                    if (subElement) {
+
+                        subElement.textContent =
+                            `Order ${orderNumber} — ${supplier}`;
+                    }
+
+
+                    openModal("m-cancel-order");
+                });
+
+
+                /* =========================================================
+                   CANCEL ORDER FORM
+                ========================================================= */
+
+                const cancelOrderForm =
+                    document.getElementById("cancel-order-form");
+
+
+                if (cancelOrderForm) {
+
+                    cancelOrderForm.addEventListener(
+                        "submit",
+                        function (event) {
+
+                            const orderId =
+                                document.getElementById(
+                                    "cancel-order-id"
+                                );
+
+
+                            const reason =
+                                document.getElementById(
+                                    "cancel-reason"
+                                );
+
+
+                            if (
+                                !orderId ||
+                                !orderId.value ||
+                                parseInt(orderId.value, 10) <= 0
+                            ) {
+
+                                event.preventDefault();
+
+                                alert("Invalid order.");
+
+                                return;
+                            }
+
+
+                            if (
+                                !reason ||
+                                !reason.value.trim()
+                            ) {
+
+                                event.preventDefault();
+
+                                alert(
+                                    "Please enter a cancellation reason."
+                                );
+
+                                if (reason) {
+                                    reason.focus();
+                                }
+
+                                return;
+                            }
+                        }
+                    );
+                }
+
+
+                /* =========================================================
+                   LOGOUT MODAL
+                ========================================================= */
+
+                const logoutButton =
+                    document.getElementById("logout-btn");
+
+
+                const logoutModal =
+                    document.getElementById("logout-modal");
+
+
+                const logoutConfirm =
+                    document.getElementById("logout-confirm");
+
+
+                const logoutCancel =
+                    document.getElementById("logout-cancel");
+
+
+                if (logoutButton && logoutModal) {
+
+                    logoutButton.addEventListener(
+                        "click",
+                        function (event) {
+
+                            event.preventDefault();
+
+
+                            if (logoutConfirm) {
+
+                                logoutConfirm.href =
+                                    logoutButton.href;
+                            }
+
+
+                            logoutModal.style.display =
+                                "flex";
+                        }
+                    );
+                }
+
+
+                if (logoutCancel && logoutModal) {
+
+                    logoutCancel.addEventListener(
+                        "click",
+                        function () {
+
+                            logoutModal.style.display =
+                                "none";
+                        }
+                    );
+                }
+
+
+                /* =========================================================
+                   ESC KEY
+                ========================================================= */
+
+                document.addEventListener(
+                    "keydown",
+                    function (event) {
+
+                        if (event.key !== "Escape") {
+                            return;
+                        }
+
+
+                        document
+                            .querySelectorAll(".modal-overlay.show")
+                            .forEach(function (modal) {
+
+                                modal.classList.remove("show");
+
+                                modal.style.display = "none";
+                            });
+
+
+                        if (logoutModal) {
+
+                            logoutModal.style.display =
+                                "none";
+                        }
+                    }
+                );
+
+
+                /* =========================================================
+                   CLICK OUTSIDE MODAL
+                ========================================================= */
+
+                document.addEventListener(
+                    "click",
+                    function (event) {
+
+                        if (
+                            event.target.classList.contains(
+                                "modal-overlay"
+                            )
+                        ) {
+
+                            event.target.classList.remove(
+                                "show"
+                            );
+
+                            event.target.style.display =
+                                "none";
+                        }
+                    }
+                );
+
+
+                /* =========================================================
+                   SEARCH ORDERS
+                ========================================================= */
+
+                const searchInput =
+                    document.getElementById("order-search");
+
+
+                if (searchInput) {
+
+                    searchInput.addEventListener(
+                        "input",
+                        function () {
+
+                            const search =
+                                normalizeName(
+                                    this.value
+                                );
+
+
+                            const rows =
+                                document.querySelectorAll(
+                                    "#orders-table tbody .order-row"
+                                );
+
+
+                            rows.forEach(function (row) {
+
+                                const rowText =
+                                    normalizeName(
+                                        row.dataset.search ||
+                                        row.textContent
+                                    );
+
+
+                                if (
+                                    !search ||
+                                    rowText.includes(search)
+                                ) {
+
+                                    row.style.display = "";
+
+                                } else {
+
+                                    row.style.display =
+                                        "none";
+                                }
+                            });
+                        }
+                    );
+                }
+
+
+                /* =========================================================
+                   CLOSE BUTTONS FOR MODALS
+                ========================================================= */
+
+                document.querySelectorAll(
+                    "[data-close-modal]"
+                ).forEach(function (button) {
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+
+                            const modalId =
+                                this.dataset.closeModal;
+
+
+                            if (modalId) {
+
+                                closeModal(modalId);
+                            }
+                        }
+                    );
+                });
+
+
+                /* =========================================================
+                   END
+                ========================================================= */
+
+            });
     </script>
 
 </body>

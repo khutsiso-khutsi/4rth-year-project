@@ -1,5 +1,4 @@
-﻿
-@using LabManager.Models
+﻿@using LabManager.Models
 @model IEnumerable<TestType>
 
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
@@ -12,296 +11,276 @@
 }
 
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8" />
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0" />
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Test Catalogue — NMB-HLabSys</title>
-
-    <link rel="preconnect"
-          href="https://fonts.googleapis.com" />
-
-    <link rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossorigin />
-
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap"
-          rel="stylesheet" />
-
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
-
-            /* =========================================================
-                               ROOT
-                            ========================================================= */
+            *, *::before, *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
 
             :root {
                 --navy: #0b1f3a;
-                --navy-dark: #071629;
-                --navy-light: #16365f;
-                --teal: #0f766e;
-                --teal-dark: #0b625c;
-                --teal-light: #14b8a6;
-                --teal-soft: #e8f7f5;
+                --navy2: #122848;
+                --teal: #0d9488;
+                --teal-dark: #0b7c72;
+                --teal-light: rgba(13,148,136,0.1);
                 --white: #ffffff;
-                --bg: #f4f7fb;
-                --border: #e2e8f0;
-                --border-dark: #cbd5e1;
-                --text: #172033;
-                --text-dark: #0f172a;
-                --muted: #64748b;
-                --danger: #dc2626;
-                --danger-dark: #b91c1c;
-                --danger-soft: #fee2e2;
-                --success: #15803d;
-                --success-soft: #dcfce7;
-                --warning: #d97706;
-                --warning-soft: #fef3c7;
-                --blue-soft: #e0f2fe;
-                --blue: #0369a1;
-                --shadow-sm: 0 2px 8px rgba(11, 31, 58, .05);
-                --shadow: 0 8px 28px rgba(11, 31, 58, .07);
-                --shadow-lg: 0 20px 60px rgba(7, 22, 41, .20);
+                --offwhite: #f4f7fb;
+                --muted: #6b7a99;
+                --border: #dde4f0;
+                --red: #dc2626;
+                --red-dark: #b91c1c;
+                --red-light: rgba(220,38,38,0.1);
+                --green: #16a34a;
+                --green-light: rgba(22,163,74,0.1);
+                --amber: #d97706;
+                --amber-light: rgba(217,119,6,0.1);
+                --purple: #4f46e5;
+                --purple-light: rgba(79,70,229,0.1);
                 --radius-sm: 8px;
                 --radius: 12px;
                 --radius-lg: 16px;
-            }
-
-
-            /* =========================================================
-                               RESET
-                            ========================================================= */
-
-            * {
-                box-sizing: border-box;
-            }
-
-            html {
-                scroll-behavior: smooth;
+                --shadow-sm: 0 2px 8px rgba(11,31,58,.05);
+                --shadow: 0 2px 8px rgba(11,31,58,.04);
+                --shadow-lg: 0 20px 60px rgba(11,31,58,.20);
             }
 
             body {
-                margin: 0;
-                font-family: "DM Sans", sans-serif;
-                background: var(--bg);
-                color: var(--text);
+                font-family: 'DM Sans', sans-serif;
+                background: var(--offwhite);
+                color: var(--navy);
+                min-height: 100vh;
                 line-height: 1.5;
             }
 
-            button,
-            input,
-            select,
-            textarea {
+            button, input, select, textarea {
                 font-family: inherit;
             }
 
-
-            /* =========================================================
-                               TOPBAR
-                            ========================================================= */
-
+            /* ── TOPBAR (matches dashboard) ── */
             .topbar {
-                height: 70px;
-                background: linear-gradient(135deg, var(--navy-dark), var(--navy));
-                color: var(--white);
+                background: var(--navy);
+                padding: 0 40px;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                padding: 0 30px;
-                position: fixed;
+                height: 64px;
+                position: sticky;
                 top: 0;
-                left: 0;
-                right: 0;
-                z-index: 1000;
-                box-shadow: 0 2px 12px rgba(0, 0, 0, .12);
+                z-index: 100;
+                box-shadow: 0 2px 20px rgba(0,0,0,0.15);
             }
-
-
-            /* =========================================================
-                               BRAND
-                            ========================================================= */
 
             .brand {
                 display: flex;
                 align-items: center;
-                gap: 13px;
+                gap: 10px;
+                text-decoration: none;
             }
 
-            .brand-icon {
-                width: 40px;
-                height: 40px;
-                border-radius: 10px;
-                background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            .brand-logo {
+                width: 34px;
+                height: 34px;
+                background: var(--teal);
+                border-radius: 8px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 19px;
-                box-shadow: 0 5px 14px rgba(20, 184, 166, .20);
             }
 
-            .brand-text {
-                display: flex;
-                flex-direction: column;
-            }
+                .brand-logo svg {
+                    width: 18px;
+                    height: 18px;
+                    fill: white;
+                }
 
             .brand-name {
-                font-family: "DM Serif Display", serif;
-                font-size: 21px;
-                line-height: 1;
-                letter-spacing: .1px;
+                font-family: 'DM Serif Display', serif;
+                color: white;
+                font-size: 1.1rem;
+                line-height: 1.1;
             }
 
-            .brand-subtitle {
-                font-size: 10px;
-                opacity: .65;
-                margin-top: 5px;
-                letter-spacing: .2px;
-            }
-
-
-            /* =========================================================
-                               TOPBAR USER
-                            ========================================================= */
+                .brand-name span {
+                    display: block;
+                    font-family: 'DM Sans', sans-serif;
+                    font-size: 0.6rem;
+                    font-weight: 300;
+                    color: rgba(255,255,255,0.4);
+                    letter-spacing: 0.1em;
+                    text-transform: uppercase;
+                }
 
             .topbar-right {
                 display: flex;
                 align-items: center;
-                gap: 14px;
+                gap: 16px;
             }
 
-            .user-info {
-                text-align: right;
+            .user-chip {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                background: rgba(255,255,255,0.07);
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 100px;
+                padding: 6px 14px 6px 8px;
             }
 
-            .user-name {
-                font-size: 13px;
-                font-weight: 700;
-            }
-
-            .user-role {
-                font-size: 10px;
-                opacity: .62;
-                margin-top: 2px;
-            }
-
-            .avatar {
-                width: 40px;
-                height: 40px;
+            .user-avatar {
+                width: 28px;
+                height: 28px;
+                background: var(--teal);
                 border-radius: 50%;
-                background: linear-gradient(135deg, var(--teal), var(--teal-light));
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 12px;
-                font-weight: 800;
-                border: 2px solid rgba(255, 255, 255, .15);
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: white;
             }
 
+            .user-email {
+                font-size: 0.8rem;
+                color: rgba(255,255,255,0.75);
+                max-width: 160px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
 
-            /* =========================================================
-                               SIDEBAR
-                            ========================================================= */
+            .logout-btn {
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.12);
+                color: rgba(255,255,255,0.8);
+                padding: 8px 16px;
+                border-radius: 8px;
+                text-decoration: none;
+                font-size: 0.82rem;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s;
+                cursor: pointer;
+            }
 
+                .logout-btn:hover {
+                    background: rgba(255,255,255,0.15);
+                    color: white;
+                }
+
+                .logout-btn svg {
+                    width: 14px;
+                    height: 14px;
+                }
+
+            /* ── LAYOUT ── */
+            .page {
+                display: flex;
+                min-height: calc(100vh - 64px);
+            }
+
+            /* ── SIDEBAR (matches dashboard) ── */
             .sidebar {
-                position: fixed;
-                top: 70px;
-                bottom: 0;
-                left: 0;
-                width: 245px;
-                background: var(--white);
+                width: 220px;
+                background: white;
                 border-right: 1px solid var(--border);
-                padding: 26px 14px;
-                z-index: 900;
-                box-shadow: 2px 0 12px rgba(11, 31, 58, .025);
+                padding: 24px 0;
+                flex-shrink: 0;
+                position: sticky;
+                top: 64px;
+                height: calc(100vh - 64px);
                 overflow-y: auto;
             }
 
-            .nav-section-title {
-                font-size: 10px;
-                font-weight: 800;
+            .nav-section {
+                margin-bottom: 8px;
+            }
+
+            .nav-label {
+                font-size: 0.65rem;
+                font-weight: 600;
+                color: var(--muted);
+                letter-spacing: 0.1em;
                 text-transform: uppercase;
-                letter-spacing: 1.2px;
-                color: #94a3b8;
-                padding: 0 13px 11px;
+                padding: 0 20px;
+                margin-bottom: 4px;
             }
 
             .nav-item {
                 display: flex;
                 align-items: center;
-                gap: 12px;
-                padding: 11px 13px;
-                border-radius: 9px;
-                margin-bottom: 5px;
-                color: #475569;
+                gap: 10px;
+                padding: 10px 20px;
+                color: var(--muted);
                 text-decoration: none;
-                font-size: 13px;
-                font-weight: 600;
-                transition: background .2s ease, color .2s ease, transform .2s ease;
+                font-size: 0.85rem;
+                font-weight: 500;
+                transition: all 0.15s;
+                border-left: 3px solid transparent;
             }
 
                 .nav-item:hover {
-                    background: #f0fdfa;
-                    color: var(--teal);
-                    transform: translateX(2px);
+                    background: var(--offwhite);
+                    color: var(--navy);
                 }
 
                 .nav-item.active {
-                    background: var(--teal-soft);
+                    background: var(--teal-light);
                     color: var(--teal);
-                    font-weight: 800;
-                    box-shadow: inset 3px 0 0 var(--teal);
+                    border-left-color: var(--teal);
+                    font-weight: 600;
                 }
 
-            .nav-icon {
-                width: 21px;
-                text-align: center;
-                font-size: 16px;
-                flex-shrink: 0;
-            }
+                .nav-item svg {
+                    width: 16px;
+                    height: 16px;
+                    flex-shrink: 0;
+                }
 
+                .nav-item:focus-visible {
+                    outline: 2px solid var(--teal);
+                    outline-offset: -2px;
+                }
 
-            /* =========================================================
-                               MAIN
-                            ========================================================= */
-
+            /* ── MAIN (matches dashboard) ── */
             .main {
-                margin-left: 245px;
-                padding: 104px 32px 40px;
-                min-height: 100vh;
+                flex: 1;
+                padding: clamp(24px, 3vw, 40px);
+                overflow-y: auto;
             }
 
-
-            /* =========================================================
-                               PAGE HEADER
-                            ========================================================= */
-
+            /* ── PAGE HEADER ── */
             .page-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: flex-start;
                 gap: 25px;
                 margin-bottom: 25px;
+                flex-wrap: wrap;
             }
 
             .page-title {
-                margin: 0;
-                font-family: "DM Serif Display", serif;
-                font-size: 34px;
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.8rem;
                 font-weight: 400;
-                line-height: 1.15;
                 color: var(--navy);
                 letter-spacing: -.4px;
+                line-height: 1.15;
             }
 
             .page-description {
-                margin: 7px 0 0;
-                font-size: 13px;
+                margin-top: 6px;
+                font-size: 0.85rem;
                 color: var(--muted);
+                font-weight: 300;
                 max-width: 650px;
             }
 
@@ -311,25 +290,21 @@
                 flex-wrap: wrap;
             }
 
-
-            /* =========================================================
-                               BUTTONS
-                            ========================================================= */
-
+            /* ── BUTTONS (recolored to dashboard palette) ── */
             .btn {
                 border: none;
-                border-radius: 8px;
+                border-radius: 10px;
                 padding: 10px 16px;
                 font-family: inherit;
-                font-size: 12px;
-                font-weight: 800;
+                font-size: 0.82rem;
+                font-weight: 600;
                 cursor: pointer;
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
                 gap: 7px;
                 text-decoration: none;
-                transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+                transition: all .18s ease;
             }
 
                 .btn:hover {
@@ -343,77 +318,73 @@
             .btn-primary {
                 background: var(--teal);
                 color: var(--white);
-                box-shadow: 0 4px 12px rgba(15, 118, 110, .18);
+                box-shadow: 0 2px 8px rgba(13,148,136,0.25);
             }
 
                 .btn-primary:hover {
                     background: var(--teal-dark);
-                    box-shadow: 0 6px 16px rgba(15, 118, 110, .23);
+                    box-shadow: 0 4px 12px rgba(13,148,136,0.3);
                 }
 
             .btn-secondary {
-                background: #eef2f6;
-                color: #374151;
+                background: var(--offwhite);
+                color: var(--navy);
+                border: 1px solid var(--border);
             }
 
                 .btn-secondary:hover {
-                    background: #e2e8f0;
+                    background: var(--white);
+                    border-color: var(--teal);
+                    color: var(--teal);
+                    box-shadow: 0 2px 8px rgba(13,148,136,0.1);
                 }
 
             .btn-danger {
-                background: var(--danger);
+                background: var(--red);
                 color: var(--white);
-                box-shadow: 0 4px 12px rgba(220, 38, 38, .14);
+                box-shadow: 0 2px 8px rgba(220,38,38,0.2);
             }
 
                 .btn-danger:hover {
-                    background: var(--danger-dark);
+                    background: var(--red-dark);
                 }
 
-
-            /* =========================================================
-                               ALERTS
-                            ========================================================= */
-
+            /* ── ALERTS ── */
             .alert {
                 padding: 13px 16px;
-                border-radius: 9px;
+                border-radius: 10px;
                 margin-bottom: 20px;
-                font-size: 12px;
-                font-weight: 700;
+                font-size: 0.8rem;
+                font-weight: 600;
                 display: flex;
                 align-items: center;
                 box-shadow: var(--shadow-sm);
             }
 
             .alert-success {
-                background: var(--success-soft);
-                color: var(--success);
-                border: 1px solid #bbf7d0;
+                background: var(--green-light);
+                color: var(--green);
+                border: 1px solid rgba(22,163,74,0.25);
             }
 
             .alert-error {
-                background: var(--danger-soft);
-                color: var(--danger);
-                border: 1px solid #fecaca;
+                background: var(--red-light);
+                color: var(--red);
+                border: 1px solid rgba(220,38,38,0.25);
             }
 
-
-            /* =========================================================
-                               CARD
-                            ========================================================= */
-
+            /* ── CARD ── */
             .card {
-                background: var(--white);
+                background: white;
                 border: 1px solid var(--border);
-                border-radius: var(--radius);
+                border-radius: 16px;
                 box-shadow: var(--shadow);
                 overflow: hidden;
             }
 
             .card-header {
                 min-height: 66px;
-                padding: 17px 22px;
+                padding: 17px 24px;
                 border-bottom: 1px solid var(--border);
                 display: flex;
                 justify-content: space-between;
@@ -422,26 +393,22 @@
             }
 
             .card-title {
-                font-size: 14px;
-                font-weight: 800;
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.05rem;
                 color: var(--navy);
             }
 
             .record-count {
-                font-size: 11px;
+                font-size: 0.72rem;
                 font-weight: 600;
                 color: var(--muted);
-                background: #f8fafc;
+                background: var(--offwhite);
                 border: 1px solid var(--border);
-                padding: 5px 9px;
-                border-radius: 20px;
+                padding: 5px 10px;
+                border-radius: 100px;
             }
 
-
-            /* =========================================================
-                               TABLE
-                            ========================================================= */
-
+            /* ── TABLE ── */
             .table-container {
                 overflow-x: auto;
             }
@@ -453,24 +420,24 @@
             }
 
             th {
-                background: #f8fafc;
-                color: #64748b;
-                font-size: 10px;
+                background: var(--offwhite);
+                color: var(--muted);
+                font-size: 0.7rem;
                 text-transform: uppercase;
-                letter-spacing: .65px;
-                font-weight: 800;
-                padding: 13px 15px;
+                letter-spacing: .08em;
+                font-weight: 600;
+                padding: 12px 15px;
                 text-align: left;
                 border-bottom: 1px solid var(--border);
                 white-space: nowrap;
             }
 
             td {
-                padding: 15px;
-                border-bottom: 1px solid #edf0f3;
-                font-size: 12px;
+                padding: 14px 15px;
+                border-bottom: 1px solid var(--offwhite);
+                font-size: 0.83rem;
                 vertical-align: middle;
-                color: #475569;
+                color: var(--navy);
             }
 
             tbody tr:last-child td {
@@ -482,110 +449,95 @@
             }
 
                 tbody tr:hover {
-                    background: #fbfefd;
+                    background: var(--offwhite);
                 }
 
-            tr:hover td {
-                background: transparent;
-            }
-
-
-            /* =========================================================
-                               TABLE CONTENT
-                            ========================================================= */
-
+            /* ── TABLE CONTENT ── */
             .test-name {
-                font-weight: 800;
+                font-weight: 700;
                 color: var(--navy);
-                font-size: 13px;
+                font-size: 0.85rem;
             }
 
             .category-badge {
                 display: inline-block;
-                padding: 5px 9px;
-                border-radius: 20px;
-                background: var(--teal-soft);
+                padding: 4px 10px;
+                border-radius: 100px;
+                background: var(--teal-light);
                 color: var(--teal);
-                font-size: 10px;
-                font-weight: 800;
+                font-size: 0.7rem;
+                font-weight: 600;
                 white-space: nowrap;
             }
 
             .sample-badge {
                 display: inline-block;
-                padding: 5px 9px;
-                border-radius: 20px;
-                background: #f1f5f9;
-                color: #475569;
-                font-size: 10px;
-                font-weight: 700;
+                padding: 4px 10px;
+                border-radius: 100px;
+                background: var(--offwhite);
+                color: var(--muted);
+                font-size: 0.7rem;
+                font-weight: 600;
                 white-space: nowrap;
+                border: 1px solid var(--border);
             }
 
             .range {
-                font-weight: 700;
-                color: #334155;
-                white-space: nowrap;
-            }
-
-            .tat {
-                font-weight: 800;
+                font-weight: 600;
                 color: var(--navy);
                 white-space: nowrap;
             }
 
+            .tat {
+                font-weight: 700;
+                color: var(--navy);
+                white-space: nowrap;
+            }
 
-            /* =========================================================
-                               ACTION BUTTONS
-                            ========================================================= */
-
+            /* ── ACTION BUTTONS ── */
             .actions {
                 display: flex;
                 gap: 7px;
             }
 
-            .action-btn {
+            .action-icon-btn {
                 border: none;
-                width: 34px;
-                height: 34px;
-                border-radius: 7px;
+                width: 32px;
+                height: 32px;
+                border-radius: 8px;
                 cursor: pointer;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 font-size: 13px;
-                transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+                transition: all .18s ease;
             }
 
-                .action-btn:hover {
+                .action-icon-btn:hover {
                     transform: translateY(-1px);
                 }
 
             .edit-btn {
-                background: var(--blue-soft);
-                color: var(--blue);
+                background: var(--purple-light);
+                color: var(--purple);
             }
 
                 .edit-btn:hover {
-                    background: #bae6fd;
-                    box-shadow: 0 3px 8px rgba(3, 105, 161, .12);
+                    background: rgba(79,70,229,0.2);
+                    box-shadow: 0 3px 8px rgba(79,70,229,0.15);
                 }
 
             .delete-btn {
-                background: var(--danger-soft);
-                color: var(--danger);
+                background: var(--red-light);
+                color: var(--red);
             }
 
                 .delete-btn:hover {
-                    background: #fecaca;
-                    box-shadow: 0 3px 8px rgba(220, 38, 38, .12);
+                    background: rgba(220,38,38,0.2);
+                    box-shadow: 0 3px 8px rgba(220,38,38,0.15);
                 }
 
-
-            /* =========================================================
-                               EMPTY STATE
-                            ========================================================= */
-
+            /* ── EMPTY STATE ── */
             .empty-state {
                 text-align: center;
                 padding: 65px 20px;
@@ -597,7 +549,7 @@
                 height: 70px;
                 margin: 0 auto 17px;
                 border-radius: 50%;
-                background: var(--teal-soft);
+                background: var(--teal-light);
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -605,25 +557,21 @@
             }
 
             .empty-title {
-                font-size: 15px;
-                font-weight: 800;
+                font-size: 1rem;
+                font-weight: 700;
                 color: var(--navy);
                 margin-bottom: 5px;
             }
 
             .empty-state > div:not(.empty-icon):not(.empty-title) {
-                font-size: 12px;
+                font-size: 0.8rem;
             }
 
-
-            /* =========================================================
-                               MODAL OVERLAY
-                            ========================================================= */
-
+            /* ── MODAL OVERLAY ── */
             .modal-overlay {
                 position: fixed;
                 inset: 0;
-                background: rgba(7, 22, 41, .68);
+                background: rgba(11,31,58,.45);
                 backdrop-filter: blur(3px);
                 display: none;
                 align-items: center;
@@ -636,11 +584,6 @@
                     display: flex;
                 }
 
-
-            /* =========================================================
-                               MODAL
-                            ========================================================= */
-
             .modal {
                 width: 100%;
                 max-width: 650px;
@@ -649,27 +592,20 @@
                 background: var(--white);
                 border-radius: var(--radius-lg);
                 box-shadow: var(--shadow-lg);
-                animation: modalIn .22s ease;
-                border: 1px solid rgba(255,255,255,.7);
+                animation: modalIn .18s ease;
             }
 
             @@keyframes modalIn {
-
                 from {
                     opacity: 0;
-                    transform: translateY(15px) scale(.98);
+                    transform: scale(0.96) translateY(8px);
                 }
 
                 to {
                     opacity: 1;
-                    transform: translateY(0) scale(1);
+                    transform: scale(1) translateY(0);
                 }
             }
-
-
-            /* =========================================================
-                               MODAL HEADER
-                            ========================================================= */
 
             .modal-header {
                 padding: 19px 22px;
@@ -681,34 +617,29 @@
             }
 
             .modal-title {
-                font-family: "DM Serif Display", serif;
-                font-size: 22px;
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.3rem;
                 font-weight: 400;
                 color: var(--navy);
-                margin: 0;
             }
 
             .close-btn {
                 width: 32px;
                 height: 32px;
                 border: none;
-                border-radius: 7px;
-                background: #f1f5f9;
-                color: #475569;
+                border-radius: 8px;
+                background: var(--offwhite);
+                color: var(--muted);
                 cursor: pointer;
                 font-size: 18px;
                 transition: background .18s ease, transform .18s ease;
             }
 
                 .close-btn:hover {
-                    background: #e2e8f0;
+                    background: var(--border);
+                    color: var(--navy);
                     transform: rotate(3deg);
                 }
-
-
-            /* =========================================================
-                               MODAL BODY
-                            ========================================================= */
 
             .modal-body {
                 padding: 23px;
@@ -720,14 +651,10 @@
                 display: flex;
                 justify-content: flex-end;
                 gap: 10px;
-                background: #fbfcfe;
+                background: var(--offwhite);
             }
 
-
-            /* =========================================================
-                               FORM
-                            ========================================================= */
-
+            /* ── FORM ── */
             .form-grid {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
@@ -745,24 +672,24 @@
                 }
 
             .form-label {
-                font-size: 11px;
-                font-weight: 800;
-                color: #374151;
+                font-size: 0.75rem;
+                font-weight: 700;
+                color: var(--navy);
             }
 
             .required {
-                color: var(--danger);
+                color: var(--red);
                 margin-left: 2px;
             }
 
             .form-control {
                 width: 100%;
-                border: 1px solid #cfd7e2;
+                border: 1px solid var(--border);
                 border-radius: 8px;
                 padding: 10px 12px;
                 font-family: inherit;
-                font-size: 12px;
-                color: var(--text);
+                font-size: 0.82rem;
+                color: var(--navy);
                 outline: none;
                 background: var(--white);
                 transition: border-color .18s ease, box-shadow .18s ease;
@@ -774,7 +701,7 @@
 
                 .form-control:focus {
                     border-color: var(--teal);
-                    box-shadow: 0 0 0 3px rgba(15,118,110,.10);
+                    box-shadow: 0 0 0 3px var(--teal-light);
                 }
 
             textarea.form-control {
@@ -788,16 +715,12 @@
             }
 
             .form-help {
-                font-size: 10px;
+                font-size: 0.7rem;
                 color: var(--muted);
                 margin-top: -2px;
             }
 
-
-            /* =========================================================
-                               DELETE MODAL
-                            ========================================================= */
-
+            /* ── DELETE MODAL ── */
             .delete-content {
                 text-align: center;
                 padding: 10px 10px 5px;
@@ -807,9 +730,9 @@
                 width: 55px;
                 height: 55px;
                 margin: 0 auto 15px;
-                border-radius: 50%;
-                background: var(--danger-soft);
-                color: var(--danger);
+                border-radius: 14px;
+                background: var(--red-light);
+                color: var(--red);
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -818,41 +741,34 @@
             }
 
             .delete-title {
-                font-size: 18px;
-                font-weight: 800;
+                font-size: 1.2rem;
+                font-weight: 700;
                 color: var(--navy);
+                font-family: 'DM Serif Display', serif;
             }
 
             .delete-message {
                 margin: 8px 0 0;
                 color: var(--muted);
-                font-size: 12px;
+                font-size: 0.85rem;
                 line-height: 1.6;
             }
 
                 .delete-message strong {
-                    color: var(--text);
+                    color: var(--navy);
                 }
 
-
-            /* =========================================================
-                               FOOTER
-                            ========================================================= */
-
+            /* ── FOOTER ── */
             .footer {
                 margin-top: 28px;
                 padding: 0 2px;
                 display: flex;
                 justify-content: space-between;
-                color: #94a3b8;
-                font-size: 10px;
+                color: var(--muted);
+                font-size: 0.7rem;
             }
 
-
-            /* =========================================================
-                               SCROLLBAR
-                            ========================================================= */
-
+            /* ── SCROLLBAR ── */
             .modal::-webkit-scrollbar,
             .sidebar::-webkit-scrollbar,
             .table-container::-webkit-scrollbar {
@@ -863,88 +779,32 @@
             .modal::-webkit-scrollbar-track,
             .sidebar::-webkit-scrollbar-track,
             .table-container::-webkit-scrollbar-track {
-                background: #f1f5f9;
+                background: var(--offwhite);
             }
 
             .modal::-webkit-scrollbar-thumb,
             .sidebar::-webkit-scrollbar-thumb,
             .table-container::-webkit-scrollbar-thumb {
-                background: #cbd5e1;
+                background: var(--border);
                 border-radius: 20px;
             }
 
-
-            /* =========================================================
-                               RESPONSIVE — TABLET
-                            ========================================================= */
-
-            @@media (max-width: 850px) {
-
-                .sidebar {
-                    width: 70px;
-                    padding: 20px 8px;
-                }
-
-                .nav-section-title,
-                .nav-text {
-                    display: none;
-                }
-
-                .nav-item {
-                    justify-content: center;
-                    padding: 12px 8px;
-                }
-
-                    .nav-item.active {
-                        box-shadow: none;
-                    }
-
-                .main {
-                    margin-left: 70px;
-                    padding-left: 22px;
-                    padding-right: 22px;
-                }
-
-                .user-info {
-                    display: none;
-                }
-
-                .page-title {
-                    font-size: 30px;
-                }
-            }
-
-
-            /* =========================================================
-                               RESPONSIVE — MOBILE
-                            ========================================================= */
-
-            @@media (max-width: 650px) {
-
+            /* ── RESPONSIVE (matches dashboard breakpoints) ── */
+            @@media (max-width: 768px) {
                 .topbar {
-                    padding: 0 16px;
+                    padding: 0 20px;
                 }
 
-                .brand-subtitle {
+                .user-email {
                     display: none;
                 }
 
-                .brand-name {
-                    font-size: 18px;
-                }
-
-                .brand-icon {
-                    width: 36px;
-                    height: 36px;
-                }
-
                 .sidebar {
-                    width: 60px;
+                    display: none;
                 }
 
                 .main {
-                    margin-left: 60px;
-                    padding: 92px 15px 30px;
+                    padding: 20px 16px;
                 }
 
                 .page-header {
@@ -953,11 +813,7 @@
                 }
 
                 .page-title {
-                    font-size: 28px;
-                }
-
-                .page-description {
-                    font-size: 12px;
+                    font-size: 1.5rem;
                 }
 
                 .header-actions {
@@ -1006,1399 +862,616 @@
                     line-height: 1.5;
                 }
             }
-
-
-            /* =========================================================
-                               VERY SMALL SCREENS
-                            ========================================================= */
-
-            @@media (max-width: 420px) {
-
-                .topbar {
-                    height: 64px;
-                }
-
-                .sidebar {
-                    top: 64px;
-                }
-
-                .main {
-                    padding-top: 84px;
-                }
-
-                .brand-name {
-                    font-size: 17px;
-                }
-
-                .avatar {
-                    width: 36px;
-                    height: 36px;
-                }
-
-                .page-title {
-                    font-size: 25px;
-                }
-
-                .header-actions {
-                    flex-direction: column;
-                }
-
-                    .header-actions .btn {
-                        width: 100%;
-                    }
-
-                .card-header {
-                    padding: 15px 17px;
-                }
-
-                .record-count {
-                    font-size: 10px;
-                }
-            }
-
     </style>
-
 </head>
-
 <body>
 
-    <!-- =========================
-         TOPBAR
-    ========================= -->
-
-    <header class="topbar">
-
-        <div class="brand">
-
-            <div class="brand-icon">
-                🧪
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
             </div>
-
-            <div class="brand-text">
-
-                <div class="brand-name">
-                    NMB-HLabSys
-                </div>
-
-                <div class="brand-subtitle">
-                    Haematology Laboratory System
-                </div>
-
+            <div class="brand-name">
+                NMB-HLabSys
+                <span>Haematology Lab System</span>
             </div>
-
-        </div>
-
-
+        </a>
         <div class="topbar-right">
-
-            <div class="user-info">
-
-                <div class="user-name">
-                    @(ViewBag.Email ?? "Laboratory Manager")
-                </div>
-
-                <div class="user-role">
-                    Laboratory Management
-                </div>
-
+            <div class="user-chip">
+                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "M")</div>
+                <span class="user-email">@(ViewBag.Email ?? "Laboratory Manager")</span>
             </div>
-
-            <div class="avatar">
-                LM
-            </div>
-
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn" id="logout-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Sign Out
+            </a>
         </div>
+    </div>
 
-    </header>
+    <div class="page">
 
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="nav-section">
+                <div class="nav-label">Management</div>
 
-    <!-- =========================
-         SIDEBAR
-    ========================= -->
+                <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                    </svg>
+                    Dashboard
+                </a>
 
-    <aside class="sidebar">
-
-        <div class="nav-section-title">
-            Management
-        </div>
-
-
-        <a asp-controller="ManagerDashboard"
-           asp-action="Index"
-           class="nav-item">
-
-            <span class="nav-icon">▦</span>
-
-            <span class="nav-text">
-                Dashboard
-            </span>
-
-        </a>
-
-
-        <a asp-controller="TestCatalogue"
-           asp-action="Index"
-           class="nav-item active">
-
-            <span class="nav-icon">🧪</span>
-
-            <span class="nav-text">
-                Test Catalogue
-            </span>
-
-        </a>
-
-
-        <a asp-controller="Consumable"
-           asp-action="Index"
-           class="nav-item">
-
-            <span class="nav-icon">📦</span>
-
-            <span class="nav-text">
-                Consumables
-            </span>
-
-        </a>
-
-
-        <a asp-controller="Doctor"
-           asp-action="Index"
-           class="nav-item">
-
-            <span class="nav-icon">👨‍⚕️</span>
-
-            <span class="nav-text">
-                Doctors
-            </span>
-
-        </a>
-
-
-        <a asp-controller="Technician"
-           asp-action="Index"
-           class="nav-item">
-
-            <span class="nav-icon">👤</span>
-
-            <span class="nav-text">
-                Technicians
-            </span>
-
-        </a>
-
-
-        <a asp-controller="Report"
-           asp-action="Index"
-           class="nav-item">
-
-            <span class="nav-icon">📊</span>
-
-            <span class="nav-text">
-                Reports
-            </span>
-
-        </a>
-
-    </aside>
-
-
-    <!-- =========================
-         MAIN CONTENT
-    ========================= -->
-
-    <main class="main">
-
-
-        <!-- PAGE HEADER -->
-
-        <div class="page-header">
-
-            <div>
-
-                <h1 class="page-title">
+                <a asp-controller="TestCatalogue" asp-action="Index" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M9 3v11a3 3 0 006 0V3" />
+                        <line x1="6" y1="3" x2="18" y2="3" />
+                    </svg>
                     Test Catalogue
-                </h1>
+                </a>
 
-                <p class="page-description">
-                    Manage laboratory test types, reference ranges,
-                    sample types and turnaround times.
-                </p>
+                <a asp-controller="Consumable" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    Consumables
+                </a>
 
+                <a asp-controller="Doctor" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    Doctors
+                </a>
+
+                <a asp-controller="Technician" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                    </svg>
+                    Technicians
+                </a>
+
+                <a asp-controller="Report" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                    Reports
+                </a>
             </div>
+        </aside>
 
+        <!-- MAIN -->
+        <main class="main">
 
-            <div class="header-actions">
-
-                <button type="button"
-                        class="btn btn-secondary"
-                        onclick="openAddCategoryModal()">
-
-                    <span>＋</span>
-
-                    Add Category
-
-                </button>
-
-
-                <button type="button"
-                        class="btn btn-primary"
-                        onclick="openAddModal()">
-
-                    <span>＋</span>
-
-                    Add Test Type
-
-                </button>
-
-            </div>
-
-        </div>
-
-
-        @if (TempData["Success"] != null)
-        {
-            <div class="alert alert-success">
-                ✓ @TempData["Success"]
-            </div>
-        }
-
-
-        @if (TempData["Error"] != null)
-        {
-            <div class="alert alert-error">
-                ⚠ @TempData["Error"]
-            </div>
-        }
-
-
-        <!-- =========================
-             TEST TABLE
-        ========================= -->
-
-        <div class="card">
-
-            <div class="card-header">
-
-                <div class="card-title">
-                    Laboratory Test Types
+            <!-- PAGE HEADER -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Test Catalogue</h1>
+                    <p class="page-description">
+                        Manage laboratory test types, reference ranges,
+                        sample types and turnaround times.
+                    </p>
                 </div>
 
-                <div class="record-count">
-
-                    @(Model?.Count() ?? 0) test type(s)
-
-                </div>
-
-            </div>
-
-
-            @if (Model != null && Model.Any())
-            {
-
-                <div class="table-container">
-
-                    <table>
-
-                        <thead>
-
-                            <tr>
-
-                                <th>Test</th>
-                                <th>Category</th>
-                                <th>Sample Type</th>
-                                <th>Unit</th>
-                                <th>Normal Range</th>
-                                <th>TAT</th>
-                                <th>Consumables</th>
-                                <th>Actions</th>
-
-                            </tr>
-
-                        </thead>
-
-
-                        <tbody>
-
-                            @foreach (var test in Model)
-                            {
-
-                                <tr>
-
-
-                                    <!-- TEST -->
-
-                                    <td>
-
-                                        <div class="test-name">
-                                            @test.TestName
-                                        </div>
-
-                                    </td>
-
-
-                                    <!-- CATEGORY -->
-
-                                    <td>
-
-                                        <span class="category-badge">
-
-                                            @(test.CategoryName ?? "Uncategorised")
-
-                                        </span>
-
-                                    </td>
-
-
-                                    <!-- SAMPLE TYPE -->
-
-                                    <td>
-
-                                        <span class="sample-badge">
-
-                                            @test.SampleTypeId
-
-                                        </span>
-
-                                    </td>
-
-
-                                    <!-- UNIT -->
-
-                                    <td>
-
-                                        @(test.UnitMeasurement ?? "—")
-
-                                    </td>
-
-
-                                    <!-- NORMAL RANGE -->
-
-                                    <td>
-
-                                        <span class="range">
-
-                                            @test.NormalRangeDisplay
-
-                                        </span>
-
-                                    </td>
-
-
-                                    <!-- TAT -->
-
-                                    <td>
-
-                                        <span class="tat">
-
-                                            @test.TurnaroundTime hrs
-
-                                        </span>
-
-                                    </td>
-
-
-                                    <!-- CONSUMABLES -->
-
-                                    <td>
-
-                                        @if (!string.IsNullOrWhiteSpace(test.ConsumablesUsed))
-                                        {
-                                            @test.ConsumablesUsed
-                                        }
-                                        else
-                                        {
-                                            <span style="color:#94a3b8;">
-                                                None
-                                            </span>
-                                        }
-
-                                    </td>
-
-
-                                    <!-- ACTIONS -->
-
-                                    <td>
-
-                                        <div class="actions">
-
-
-                                            <!-- EDIT -->
-
-                                            <button type="button"
-                                                    class="action-btn edit-btn"
-                                                    title="Edit"
-                                                    onclick="openEditModal(
-                                                @test.TestId,
-                                                '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.TestName ?? ""))',
-                                                '@test.CategoryId',
-                                                '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.SampleTypeId ?? ""))',
-                                                '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.UnitMeasurement ?? ""))',
-                                                '@(test.NormalRangeMin?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")',
-                                                '@(test.NormalRangeMax?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")',
-                                                '@test.TurnaroundTime',
-                                                '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.ConsumablesUsed ?? ""))'
-                                                )">
-
-                                                ✎
-
-                                            </button>
-
-
-                                            <!-- DELETE -->
-
-                                            <button type="button"
-                                                    class="action-btn delete-btn"
-                                                    title="Delete"
-                                                    onclick="openDeleteModal(
-                                                @test.TestId,
-                                                '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.TestName ?? ""))'
-                                                )">
-
-                                                🗑
-
-                                            </button>
-
-                                        </div>
-
-                                    </td>
-
-                                </tr>
-
-                            }
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            }
-            else
-            {
-
-                <div class="empty-state">
-
-                    <div class="empty-icon">
-                        🧪
-                    </div>
-
-                    <div class="empty-title">
-                        No test types found
-                    </div>
-
-                    <div>
-                        Add your first laboratory test type to the catalogue.
-                    </div>
-
-                    <br />
-
-                    <button type="button"
-                            class="btn btn-primary"
-                            onclick="openAddModal()">
-
-                        ＋ Add Test Type
-
+                <div class="header-actions">
+                    <button type="button" class="btn btn-secondary" onclick="openAddCategoryModal()">
+                        <span>＋</span> Add Category
                     </button>
-
+                    <button type="button" class="btn btn-primary" onclick="openAddModal()">
+                        <span>＋</span> Add Test Type
+                    </button>
                 </div>
+            </div>
 
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success">✓ @TempData["Success"]</div>
             }
 
-        </div>
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-error">⚠ @TempData["Error"]</div>
+            }
 
+            <!-- TEST TABLE -->
+            <div class="card">
 
-        <!-- =========================
-             FOOTER
-        ========================= -->
+                <div class="card-header">
+                    <div class="card-title">Laboratory Test Types</div>
+                    <div class="record-count">@(Model?.Count() ?? 0) test type(s)</div>
+                </div>
 
-        <div class="footer">
+                @if (Model != null && Model.Any())
+                {
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Test</th>
+                                    <th>Category</th>
+                                    <th>Sample Type</th>
+                                    <th>Unit</th>
+                                    <th>Normal Range</th>
+                                    <th>TAT</th>
+                                    <th>Consumables</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var test in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="test-name">@test.TestName</div>
+                                        </td>
+                                        <td>
+                                            <span class="category-badge">@(test.CategoryName ?? "Uncategorised")</span>
+                                        </td>
+                                        <td>
+                                            <span class="sample-badge">@test.SampleTypeId</span>
+                                        </td>
+                                        <td>@(test.UnitMeasurement ?? "—")</td>
+                                        <td>
+                                            <span class="range">@test.NormalRangeDisplay</span>
+                                        </td>
+                                        <td>
+                                            <span class="tat">@test.TurnaroundTime hrs</span>
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrWhiteSpace(test.ConsumablesUsed))
+                                            {
+                                                @test.ConsumablesUsed
+                                            }
+                                            else
+                                            {
+                                                <span style="color:#94a3b8;">None</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="actions">
+                                                <button type="button"
+                                                        class="action-icon-btn edit-btn"
+                                                        title="Edit"
+                                                        onclick="openEditModal(
+                                                    @test.TestId,
+                                                    '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.TestName ?? ""))',
+                                                    '@test.CategoryId',
+                                                    '@test.SampleTypeId ?? ',
+                                                    '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.UnitMeasurement ?? ""))',
+                                                    '@(test.NormalRangeMin?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")',
+                                                    '@(test.NormalRangeMax?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")',
+                                                    '@test.TurnaroundTime',
+                                                    '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.ConsumablesUsed ?? ""))'
+                                                    )">
+                                                    ✎
+                                                </button>
+                                                <button type="button"
+                                                        class="action-icon-btn delete-btn"
+                                                        title="Delete"
+                                                        onclick="openDeleteModal(
+                                                    @test.TestId,
+                                                    '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.TestName ?? ""))'
+                                                    )">
+                                                    🗑
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-icon">🧪</div>
+                        <div class="empty-title">No test types found</div>
+                        <div>Add your first laboratory test type to the catalogue.</div>
+                        <br />
+                        <button type="button" class="btn btn-primary" onclick="openAddModal()">
+                            ＋ Add Test Type
+                        </button>
+                    </div>
+                }
 
-            <span>
-                NMB-HLabSys · Haematology Laboratory System
-            </span>
+            </div>
 
-            <span>
-                Internal management system · @DateTime.Now.ToString("yyyy")
-            </span>
+            <!-- FOOTER -->
+            <div class="footer">
+                <span>NMB-HLabSys · Haematology Laboratory System</span>
+                <span>Internal management system · @DateTime.Now.ToString("yyyy")</span>
+            </div>
 
-        </div>
-
-    </main>
-
+        </main>
+    </div>
 
     <!-- =====================================================
          ADD TEST TYPE MODAL
     ====================================================== -->
-
-    <div id="addModal"
-         class="modal-overlay">
-
+    <div id="addModal" class="modal-overlay">
         <div class="modal">
-
-            <form asp-controller="TestCatalogue"
-                  asp-action="AddTestType"
-                  method="post">
-
+            <form asp-controller="TestCatalogue" asp-action="AddTestType" method="post">
                 @Html.AntiForgeryToken()
 
-
                 <div class="modal-header">
-
-                    <h2 class="modal-title">
-                        Add Test Type
-                    </h2>
-
-                    <button type="button"
-                            class="close-btn"
-                            onclick="closeModal('addModal')">
-
-                        ×
-
-                    </button>
-
+                    <h2 class="modal-title">Add Test Type</h2>
+                    <button type="button" class="close-btn" onclick="closeModal('addModal')">×</button>
                 </div>
 
-
                 <div class="modal-body">
-
                     <div class="form-grid">
 
-
-                        <!-- TEST NAME -->
-
                         <div class="form-group full">
-
-                            <label class="form-label">
-
-                                Test Name
-
-                                <span class="required">*</span>
-
-                            </label>
-
-                            <input type="text"
-                                   name="TestName"
-                                   class="form-control"
-                                   placeholder="e.g. Full Blood Count"
-                                   required />
-
+                            <label class="form-label">Test Name<span class="required">*</span></label>
+                            <input type="text" name="TestName" class="form-control" placeholder="e.g. Full Blood Count" required />
                         </div>
 
-
-                        <!-- CATEGORY -->
-
                         <div class="form-group">
-
-                            <label class="form-label">
-
-                                Category
-
-                                <span class="required">*</span>
-
-                            </label>
-
-                            <select id="add-CategoryId"
-                                    name="CategoryId"
-                                    class="form-control"
-                                    required>
-
-                                <option value="">
-                                    Select category
-                                </option>
-
+                            <label class="form-label">Category<span class="required">*</span></label>
+                            <select id="add-CategoryId" name="CategoryId" class="form-control" required>
+                                <option value="">Select category</option>
                                 @if (ViewBag.Category != null)
                                 {
                                     @foreach (var sampleType in ViewBag.Category)
                                     {
-                                        <option value="@sampleType.Value">
-                                            @sampleType.Text
-                                        </option>
+                                        <option value="@sampleType.Value">@sampleType.Text</option>
                                     }
                                 }
-
                             </select>
-
                         </div>
 
-
-                        <!-- SAMPLE TYPE -->
-
                         <div class="form-group">
-
-                            <label class="form-label">
-
-                                Sample Type
-
-                                <span class="required">*</span>
-
-                            </label>
-
-                            <select id="add-SampleTypeId"
-                                    name="SampleTypeId"
-                                    class="form-control"
-                                    required>
-
-                                <option value="">
-                                    Select sample type
-                                </option>
-
+                            <label class="form-label">Sample Type<span class="required">*</span></label>
+                            <select id="add-SampleTypeId" name="SampleTypeId" class="form-control" required>
+                                <option value="">Select sample type</option>
                                 @if (ViewBag.SampleType != null)
                                 {
                                     @foreach (var sampleType in ViewBag.SampleType)
                                     {
-                                        <option value="@sampleType.Value">
-                                            @sampleType.Text
-                                        </option>
+                                        <option value="@sampleType.Value">@sampleType.Text</option>
                                     }
                                 }
-
                             </select>
-
                         </div>
 
-
-                        <!-- UNIT -->
-
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Unit Measurement
-                            </label>
-
-                            <select id="add-UnitMeasurement"
-                                    name="UnitMeasurement"
-                                    class="form-control">
-
-                                <option value="">
-                                    Select unit
-                                </option>
-
-                                <option value="µL">
-                                    µL
-                                </option>
-
-                                <option value="mcL">
-                                    mcL
-                                </option>
-
-                                <option value="g/dL">
-                                    g/dL
-                                </option>
-
-                                <option value="g/L">
-                                    g/L
-                                </option>
-
-                                <option value="g/mL">
-                                    g/mL
-                                </option>
-
-                                <option value="k/µL">
-                                    k/µL
-                                </option>
-
-                                <option value="x10³/µL">
-                                    x10³/µL
-                                </option>
-
+                            <label class="form-label">Unit Measurement</label>
+                            <select id="add-UnitMeasurement" name="UnitMeasurement" class="form-control">
+                                <option value="">Select unit</option>
+                                <option value="µL">µL</option>
+                                <option value="mcL">mcL</option>
+                                <option value="g/dL">g/dL</option>
+                                <option value="g/L">g/L</option>
+                                <option value="g/mL">g/mL</option>
+                                <option value="k/µL">k/µL</option>
+                                <option value="x10³/µL">x10³/µL</option>
                             </select>
-
                         </div>
-
-
-                        <!-- TAT -->
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Turnaround Time
-                            </label>
-
-                            <input type="number"
-                                   name="TurnaroundTime"
-                                   class="form-control"
-                                   placeholder="e.g. 24"
-                                   min="0" />
-
-                            <span class="form-help">
-                                Enter TAT in hours.
-                            </span>
-
+                            <label class="form-label">Turnaround Time</label>
+                            <input type="number" name="TurnaroundTime" class="form-control" placeholder="e.g. 24" min="0" />
+                            <span class="form-help">Enter TAT in hours.</span>
                         </div>
-
-
-                        <!-- NORMAL MIN -->
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Normal Range Minimum
-                            </label>
-
-                            <input type="number"
-                                   name="NormalRangeMin"
-                                   class="form-control"
-                                   step="0.01"
-                                   min="0"
-                                   placeholder="e.g. 12.00" />
-
+                            <label class="form-label">Normal Range Minimum</label>
+                            <input type="number" name="NormalRangeMin" class="form-control" step="0.01" min="0" placeholder="e.g. 12.00" />
                         </div>
-
-
-                        <!-- NORMAL MAX -->
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Normal Range Maximum
-                            </label>
-
-                            <input type="number"
-                                   name="NormalRangeMax"
-                                   class="form-control"
-                                   step="0.01"
-                                   min="0"
-                                   placeholder="e.g. 16.00" />
-
+                            <label class="form-label">Normal Range Maximum</label>
+                            <input type="number" name="NormalRangeMax" class="form-control" step="0.01" min="0" placeholder="e.g. 16.00" />
                         </div>
-
-
-                        <!-- CONSUMABLES -->
 
                         <div class="form-group full">
-
-                            <label class="form-label">
-                                Consumables Used
-                            </label>
-
-                            <textarea name="ConsumablesUsed"
-                                      class="form-control"
-                                      placeholder="e.g. EDTA Tube, Reagent A"></textarea>
-
+                            <label class="form-label">Consumables Used</label>
+                            <textarea name="ConsumablesUsed" class="form-control" placeholder="e.g. EDTA Tube, Reagent A"></textarea>
                         </div>
 
                     </div>
-
                 </div>
 
-
                 <div class="modal-footer">
-
-                    <button type="button"
-                            class="btn btn-secondary"
-                            onclick="closeModal('addModal')">
-
-                        Cancel
-
-                    </button>
-
-                    <button type="submit"
-                            class="btn btn-primary">
-
-                        ✓ Save Test Type
-
-                    </button>
-
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">✓ Save Test Type</button>
                 </div>
 
             </form>
-
         </div>
-
     </div>
-
 
     <!-- =====================================================
          ADD CATEGORY MODAL
     ====================================================== -->
-
-    <div id="addCategoryModal"
-         class="modal-overlay">
-
-        <div class="modal"
-             style="max-width:480px;">
-
-            <form asp-controller="TestCatalogue"
-                  asp-action="AddCategory"
-                  method="post">
-
+    <div id="addCategoryModal" class="modal-overlay">
+        <div class="modal" style="max-width:480px;">
+            <form asp-controller="TestCatalogue" asp-action="AddCategory" method="post">
                 @Html.AntiForgeryToken()
 
-
                 <div class="modal-header">
-
-                    <h2 class="modal-title">
-                        Add Category
-                    </h2>
-
-                    <button type="button"
-                            class="close-btn"
-                            onclick="closeModal('addCategoryModal')">
-
-                        ×
-
-                    </button>
-
+                    <h2 class="modal-title">Add Category</h2>
+                    <button type="button" class="close-btn" onclick="closeModal('addCategoryModal')">×</button>
                 </div>
-
 
                 <div class="modal-body">
-
                     <div class="form-grid">
-
-
-                        <!-- CATEGORY NAME -->
-
                         <div class="form-group full">
-
-                            <label class="form-label">
-
-                                Category Name
-
-                                <span class="required">*</span>
-
-                            </label>
-
-                            <input type="text"
-                                   name="CategoryName"
-                                   class="form-control"
-                                   placeholder="e.g. Haematology"
-                                   required />
-
+                            <label class="form-label">Category Name<span class="required">*</span></label>
+                            <input type="text" name="CategoryName" class="form-control" placeholder="e.g. Haematology" required />
                         </div>
-
-
-                        <!-- DESCRIPTION -->
-
                         <div class="form-group full">
-
-                            <label class="form-label">
-                                Description
-                            </label>
-
-                            <textarea name="Description"
-                                      class="form-control"
-                                      placeholder="Optional short description"></textarea>
-
+                            <label class="form-label">Description</label>
+                            <textarea name="Description" class="form-control" placeholder="Optional short description"></textarea>
                         </div>
-
                     </div>
-
                 </div>
 
-
                 <div class="modal-footer">
-
-                    <button type="button"
-                            class="btn btn-secondary"
-                            onclick="closeModal('addCategoryModal')">
-
-                        Cancel
-
-                    </button>
-
-                    <button type="submit"
-                            class="btn btn-primary">
-
-                        ✓ Save Category
-
-                    </button>
-
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addCategoryModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">✓ Save Category</button>
                 </div>
 
             </form>
-
         </div>
-
     </div>
-
 
     <!-- =====================================================
          EDIT TEST TYPE MODAL
     ====================================================== -->
-
-    <div id="editModal"
-         class="modal-overlay">
-
+    <div id="editModal" class="modal-overlay">
         <div class="modal">
-
-            <form asp-controller="TestCatalogue"
-                  asp-action="EditTestType"
-                  method="post">
-
+            <form asp-controller="TestCatalogue" asp-action="EditTestType" method="post">
                 @Html.AntiForgeryToken()
 
-
                 <div class="modal-header">
-
-                    <h2 class="modal-title">
-                        Edit Test Type
-                    </h2>
-
-                    <button type="button"
-                            class="close-btn"
-                            onclick="closeModal('editModal')">
-
-                        ×
-
-                    </button>
-
+                    <h2 class="modal-title">Edit Test Type</h2>
+                    <button type="button" class="close-btn" onclick="closeModal('editModal')">×</button>
                 </div>
 
-
                 <div class="modal-body">
-
-                    <input type="hidden"
-                           id="edit-TestId"
-                           name="TestId" />
-
+                    <input type="hidden" id="edit-TestId" name="TestId" />
 
                     <div class="form-grid">
 
-
-                        <!-- TEST NAME -->
-
                         <div class="form-group full">
-
-                            <label class="form-label">
-
-                                Test Name
-
-                                <span class="required">*</span>
-
-                            </label>
-
-                            <input type="text"
-                                   id="edit-TestName"
-                                   name="TestName"
-                                   class="form-control"
-                                   required />
-
+                            <label class="form-label">Test Name<span class="required">*</span></label>
+                            <input type="text" id="edit-TestName" name="TestName" class="form-control" required />
                         </div>
 
-
-                        <!-- CATEGORY -->
-
                         <div class="form-group">
-
-                            <label class="form-label">
-
-                                Category
-
-                                <span class="required">*</span>
-
-                            </label>
-
-                            <select id="edit-CategoryId"
-                                    name="CategoryId"
-                                    class="form-control"
-                                    required>
-
-                                <option value="">
-                                    Select category
-                                </option>
-
+                            <label class="form-label">Category<span class="required">*</span></label>
+                            <select id="edit-CategoryId" name="CategoryId" class="form-control" required>
+                                <option value="">Select category</option>
                                 @if (ViewBag.Category != null)
                                 {
                                     @foreach (var sampleType in ViewBag.Category)
                                     {
-                                        <option value="@sampleType.Value">
-                                            @sampleType.Text
-                                        </option>
+                                        <option value="@sampleType.Value">@sampleType.Text</option>
                                     }
                                 }
-
                             </select>
-
                         </div>
 
-
-                        <!-- SAMPLE TYPE -->
-
                         <div class="form-group">
-
-                            <label class="form-label">
-
-                                Sample Type
-
-                                <span class="required">*</span>
-
-                            </label>
-
-                            <select id="edit-SampleTypeId"
-                                    name="SampleTypeId"
-                                    class="form-control"
-                                    required>
-
-                                <option value="">
-                                    Select sample type
-                                </option>
-
+                            <label class="form-label">Sample Type<span class="required">*</span></label>
+                            <select id="edit-SampleTypeId" name="SampleTypeId" class="form-control" required>
+                                <option value="">Select sample type</option>
                                 @if (ViewBag.SampleType != null)
                                 {
                                     @foreach (var sampleType in ViewBag.SampleType)
                                     {
-                                        <option value="@sampleType.Value">
-                                            @sampleType.Text
-                                        </option>
+                                        <option value="@sampleType.Value">@sampleType.Text</option>
                                     }
                                 }
-
                             </select>
-
                         </div>
-
-
-                        <!-- UNIT -->
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Unit Measurement
-                            </label>
-
-                            <input type="text"
-                                   id="edit-UnitMeasurement"
-                                   name="UnitMeasurement"
-                                   class="form-control" />
-
+                            <label class="form-label">Unit Measurement</label>
+                            <input type="text" id="edit-UnitMeasurement" name="UnitMeasurement" class="form-control" />
                         </div>
-
-
-                        <!-- TAT -->
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Turnaround Time
-                            </label>
-
-                            <input type="number"
-                                   id="edit-TurnaroundTime"
-                                   name="TurnaroundTime"
-                                   class="form-control"
-                                   min="0" />
-
+                            <label class="form-label">Turnaround Time</label>
+                            <input type="number" id="edit-TurnaroundTime" name="TurnaroundTime" class="form-control" min="0" />
                         </div>
-
-
-                        <!-- NORMAL MIN -->
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Normal Range Minimum
-                            </label>
-
-                            <input type="number"
-                                   id="edit-NormalRangeMin"
-                                   name="NormalRangeMin"
-                                   class="form-control"
-                                   step="0.01" />
-
+                            <label class="form-label">Normal Range Minimum</label>
+                            <input type="number" id="edit-NormalRangeMin" name="NormalRangeMin" class="form-control" step="0.01" />
                         </div>
-
-
-                        <!-- NORMAL MAX -->
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Normal Range Maximum
-                            </label>
-
-                            <input type="number"
-                                   id="edit-NormalRangeMax"
-                                   name="NormalRangeMax"
-                                   class="form-control"
-                                   step="0.01" />
-
+                            <label class="form-label">Normal Range Maximum</label>
+                            <input type="number" id="edit-NormalRangeMax" name="NormalRangeMax" class="form-control" step="0.01" />
                         </div>
-
-
-                        <!-- CONSUMABLES -->
 
                         <div class="form-group full">
-
-                            <label class="form-label">
-                                Consumables Used
-                            </label>
-
-                            <textarea id="edit-ConsumablesUsed"
-                                      name="ConsumablesUsed"
-                                      class="form-control"></textarea>
-
+                            <label class="form-label">Consumables Used</label>
+                            <textarea id="edit-ConsumablesUsed" name="ConsumablesUsed" class="form-control"></textarea>
                         </div>
 
                     </div>
-
                 </div>
 
-
                 <div class="modal-footer">
-
-                    <button type="button"
-                            class="btn btn-secondary"
-                            onclick="closeModal('editModal')">
-
-                        Cancel
-
-                    </button>
-
-                    <button type="submit"
-                            class="btn btn-primary">
-
-                        ✓ Update Test Type
-
-                    </button>
-
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">✓ Update Test Type</button>
                 </div>
 
             </form>
-
         </div>
-
     </div>
-
 
     <!-- =====================================================
          DELETE CONFIRMATION MODAL
     ====================================================== -->
-
-    <div id="deleteModal"
-         class="modal-overlay">
-
-        <div class="modal"
-             style="max-width:450px;">
-
-            <form asp-controller="TestCatalogue"
-                  asp-action="DeleteTest"
-                  method="post">
-
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal" style="max-width:450px;">
+            <form asp-controller="TestCatalogue" asp-action="DeleteTest" method="post">
                 @Html.AntiForgeryToken()
 
-
-                <input type="hidden"
-                       id="delete-TestId"
-                       name="id" />
-
+                <input type="hidden" id="delete-TestId" name="id" />
 
                 <div class="modal-header">
-
-                    <h2 class="modal-title">
-                        Delete Test Type
-                    </h2>
-
-                    <button type="button"
-                            class="close-btn"
-                            onclick="closeModal('deleteModal')">
-
-                        ×
-
-                    </button>
-
+                    <h2 class="modal-title">Delete Test Type</h2>
+                    <button type="button" class="close-btn" onclick="closeModal('deleteModal')">×</button>
                 </div>
-
 
                 <div class="modal-body">
-
                     <div class="delete-content">
-
-                        <div class="delete-icon">
-                            !
-                        </div>
-
-                        <div class="delete-title">
-                            Are you sure?
-                        </div>
-
+                        <div class="delete-icon">!</div>
+                        <div class="delete-title">Are you sure?</div>
                         <p class="delete-message">
-
                             You are about to delete
-
-                            <strong id="delete-TestName">
-                                this test
-                            </strong>.
-
+                            <strong id="delete-TestName">this test</strong>.
                             This action cannot be undone.
-
                         </p>
-
                     </div>
-
                 </div>
 
-
                 <div class="modal-footer">
-
-                    <button type="button"
-                            class="btn btn-secondary"
-                            onclick="closeModal('deleteModal')">
-
-                        Cancel
-
-                    </button>
-
-                    <button type="submit"
-                            class="btn btn-danger">
-
-                        🗑 Delete Test
-
-                    </button>
-
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
+                    <button type="submit" class="btn btn-danger">🗑 Delete Test</button>
                 </div>
 
             </form>
-
         </div>
-
     </div>
 
-
-    <!-- =====================================================
-         JAVASCRIPT
-    ====================================================== -->
+    <!-- ── LOGOUT CONFIRMATION MODAL (matches dashboard) ── -->
+    <div id="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title"
+         style="display:none;position:fixed;inset:0;z-index:999;background:rgba(11,31,58,0.45);align-items:center;justify-content:center;">
+        <div style="background:white;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(11,31,58,0.2);animation:modalIn 0.18s ease;">
+            <div style="width:52px;height:52px;background:#fee2e2;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+            </div>
+            <h3 id="logout-modal-title" style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--navy);margin-bottom:8px;">Sign out?</h3>
+            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:24px;line-height:1.6;">You'll be returned to the login screen. Any unsaved changes will be lost.</p>
+            <div style="display:flex;gap:10px;">
+                <button id="logout-cancel" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:white;color:var(--navy);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancel</button>
+                <a id="logout-confirm" href="#" style="flex:1;padding:10px;border:none;border-radius:10px;background:#dc2626;color:white;font-size:0.85rem;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;font-family:'DM Sans',sans-serif;">Sign Out</a>
+            </div>
+        </div>
+    </div>
 
     <script>
 
             function openAddModal() {
-
-                document.getElementById("addModal")
-                    .classList.add("show");
-
+                document.getElementById("addModal").classList.add("show");
                 document.body.style.overflow = "hidden";
             }
-
 
             function openAddCategoryModal() {
-
-                document.getElementById("addCategoryModal")
-                    .classList.add("show");
-
+                document.getElementById("addCategoryModal").classList.add("show");
                 document.body.style.overflow = "hidden";
             }
 
-
-            function openEditModal(
-                id,
-                testName,
-                categoryId,
-                sampleType,
-                unit,
-                normalMin,
-                normalMax,
-                tat,
-                consumables
-            ) {
-
+            function openEditModal(id, testName, categoryId, sampleType, unit, normalMin, normalMax, tat, consumables) {
                 document.getElementById("edit-TestId").value = id;
-
                 document.getElementById("edit-TestName").value = testName;
-
                 document.getElementById("edit-CategoryId").value = categoryId;
-
                 document.getElementById("edit-SampleTypeId").value = sampleType;
-
                 document.getElementById("edit-UnitMeasurement").value = unit;
-
                 document.getElementById("edit-NormalRangeMin").value = normalMin;
-
                 document.getElementById("edit-NormalRangeMax").value = normalMax;
-
                 document.getElementById("edit-TurnaroundTime").value = tat;
-
                 document.getElementById("edit-ConsumablesUsed").value = consumables;
 
-
-                document.getElementById("editModal")
-                    .classList.add("show");
-
+                document.getElementById("editModal").classList.add("show");
                 document.body.style.overflow = "hidden";
             }
-
 
             function openDeleteModal(id, testName) {
-
                 document.getElementById("delete-TestId").value = id;
-
                 document.getElementById("delete-TestName").textContent = testName;
 
-
-                document.getElementById("deleteModal")
-                    .classList.add("show");
-
+                document.getElementById("deleteModal").classList.add("show");
                 document.body.style.overflow = "hidden";
             }
 
-
             function closeModal(modalId) {
-
-                document.getElementById(modalId)
-                    .classList.remove("show");
-
+                document.getElementById(modalId).classList.remove("show");
                 document.body.style.overflow = "";
             }
 
-
-            document.querySelectorAll(".modal-overlay")
-                .forEach(function (modal) {
-
-                    modal.addEventListener("click", function (event) {
-
-                        if (event.target === modal) {
-
-                            modal.classList.remove("show");
-
-                            document.body.style.overflow = "";
-
-                        }
-
-                    });
-
+            document.querySelectorAll(".modal-overlay").forEach(function (modal) {
+                modal.addEventListener("click", function (event) {
+                    if (event.target === modal) {
+                        modal.classList.remove("show");
+                        document.body.style.overflow = "";
+                    }
                 });
-
-
-            document.addEventListener("keydown", function (event) {
-
-                if (event.key === "Escape") {
-
-                    document.querySelectorAll(".modal-overlay.show")
-                        .forEach(function (modal) {
-
-                            modal.classList.remove("show");
-
-                        });
-
-                    document.body.style.overflow = "";
-
-                }
-
             });
 
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    document.querySelectorAll(".modal-overlay.show").forEach(function (modal) {
+                        modal.classList.remove("show");
+                    });
+                    document.body.style.overflow = "";
+                }
+            });
 
             setTimeout(function () {
+                document.querySelectorAll(".alert").forEach(function (alert) {
+                    alert.style.transition = "opacity .4s ease";
+                    alert.style.opacity = "0";
+                    setTimeout(function () { alert.remove(); }, 400);
+                });
+            }, 5000);
 
-                document.querySelectorAll(".alert")
-                    .forEach(function (alert) {
+            (function () {
+                /* ── LOGOUT MODAL ── */
+                var logoutBtn     = document.getElementById('logout-btn');
+                var logoutModal   = document.getElementById('logout-modal');
+                var logoutCancel  = document.getElementById('logout-cancel');
+                var logoutConfirm = document.getElementById('logout-confirm');
 
-                        alert.style.transition = "opacity .4s ease";
+                if (logoutBtn && logoutModal) {
+                    logoutConfirm.href = logoutBtn.href;
 
-                        alert.style.opacity = "0";
-
-                        setTimeout(function () {
-
-                            alert.remove();
-
-                        }, 400);
-
+                    logoutBtn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        logoutModal.style.display = 'flex';
+                        logoutCancel.focus();
                     });
 
-            }, 5000);
+                    function closeLogoutModal() {
+                        logoutModal.style.display = 'none';
+                        logoutBtn.focus();
+                    }
+
+                    logoutCancel.addEventListener('click', closeLogoutModal);
+                    logoutModal.addEventListener('click', function (e) {
+                        if (e.target === logoutModal) closeLogoutModal();
+                    });
+                    document.addEventListener('keydown', function (e) {
+                        if (e.key === 'Escape' && logoutModal.style.display === 'flex') closeLogoutModal();
+                    });
+                }
+            })();
 
     </script>
 
-
 </body>
-
 </html>

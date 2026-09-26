@@ -1,25 +1,24 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.37111.16
+# Visual Studio Version 18
+VisualStudioVersion = 18.6.11806.211
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "4th year set up", "4th year set up\4th year set up.csproj", "{BB31FB40-3F64-472D-AAF3-19A2F285BF07}"
 	ProjectSection(ProjectDependencies) = postProject
 		{00F33122-9CB7-4236-8CC5-DDD474765932} = {00F33122-9CB7-4236-8CC5-DDD474765932}
 		{2AF82BD7-338A-46A8-9ACB-248D80AD5A56} = {2AF82BD7-338A-46A8-9ACB-248D80AD5A56}
 		{849D5628-9DBD-4761-8A68-290A87F362EA} = {849D5628-9DBD-4761-8A68-290A87F362EA}
-		{B7E5CEC9-E954-4E33-9918-BDF0B8CF5EB0} = {B7E5CEC9-E954-4E33-9918-BDF0B8CF5EB0}
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "admin", "admin\admin.csproj", "{849D5628-9DBD-4761-8A68-290A87F362EA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Doctor", "Doctor\Doctor.csproj", "{2AF82BD7-338A-46A8-9ACB-248D80AD5A56}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LabManager", "LabManager\LabManager.csproj", "{B7E5CEC9-E954-4E33-9918-BDF0B8CF5EB0}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patient", "Patient\Patient.csproj", "{CB402C6B-A88B-4165-9A17-3525E7E60AEB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LabTechnician.", "LabTechnician\LabTechnician..csproj", "{00F33122-9CB7-4236-8CC5-DDD474765932}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LabManager", "LabManager\LabManager.csproj", "{CE0CF3B8-E007-4A1E-1558-FDF2B55332DE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,10 +38,6 @@ Global
 		{2AF82BD7-338A-46A8-9ACB-248D80AD5A56}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2AF82BD7-338A-46A8-9ACB-248D80AD5A56}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2AF82BD7-338A-46A8-9ACB-248D80AD5A56}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B7E5CEC9-E954-4E33-9918-BDF0B8CF5EB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B7E5CEC9-E954-4E33-9918-BDF0B8CF5EB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B7E5CEC9-E954-4E33-9918-BDF0B8CF5EB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B7E5CEC9-E954-4E33-9918-BDF0B8CF5EB0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CB402C6B-A88B-4165-9A17-3525E7E60AEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CB402C6B-A88B-4165-9A17-3525E7E60AEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CB402C6B-A88B-4165-9A17-3525E7E60AEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -51,6 +46,10 @@ Global
 		{00F33122-9CB7-4236-8CC5-DDD474765932}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{00F33122-9CB7-4236-8CC5-DDD474765932}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{00F33122-9CB7-4236-8CC5-DDD474765932}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE0CF3B8-E007-4A1E-1558-FDF2B55332DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE0CF3B8-E007-4A1E-1558-FDF2B55332DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE0CF3B8-E007-4A1E-1558-FDF2B55332DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE0CF3B8-E007-4A1E-1558-FDF2B55332DE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

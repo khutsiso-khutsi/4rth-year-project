@@ -16,20 +16,20 @@ namespace _4th_year_set_up.Controllers
         // PROTOTYPE USER
         // =========================================================
 
-        private static UserProfileViewModel _user = new UserProfileViewModel
-        {
-            Id = "1",
-            FirstName = "Lab",
-            LastName = "Manager",
-            Email = "manager@lab.local",
-            IDNumber = "9001010001088",
-            RegistrationDate = DateTime.Now.AddYears(-1),
-            DateOfBirth = new DateTime(1995, 1, 1),
-            CellphoneNumber = "0812345678",
-            HomeAddress = "Port Elizabeth",
-            Role = "Manager",
-            CurrentPassword = "1234"
-        };
+        //private static UserProfileViewModel _user = new UserProfileViewModel
+        //{
+        //    Id = "1",
+        //    FirstName = "Lab",
+        //    LastName = "Manager",
+        //    Email = "manager@lab.local",
+        //    IDNumber = "9001010001088",
+        //    RegistrationDate = DateTime.Now.AddYears(-1),
+        //    DateOfBirth = new DateTime(1995, 1, 1),
+        //    CellphoneNumber = "0812345678",
+        //    HomeAddress = "Port Elizabeth",
+        //    Role = "Manager",
+        //    CurrentPassword = "1234"
+        //};
 
         // =========================================================
         // TEST CATALOGUE DATA
@@ -446,74 +446,74 @@ namespace _4th_year_set_up.Controllers
         // PROFILE
         // =========================================================
 
-        public IActionResult Profile()
-        {
-            SetSession();
+        //public IActionResult Profile()
+        //{
+        //    SetSession();
 
-            return View(
-                "~/Views/ManagerDashboard/Profile.cshtml",
-                _user);
-        }
+        //    return View(
+        //        "~/Views/ManagerDashboard/Profile.cshtml",
+        //        _user);
+        //}
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult UpdateProfile(ProfileViewModel model)
-        {
-            _user.FirstName = model.FirstName;
-            _user.LastName = model.LastName;
-            _user.DateOfBirth = model.DateOfBirth;
-            _user.CellphoneNumber = model.CellphoneNumber;
-            _user.HomeAddress = model.HomeAddress;
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public IActionResult UpdateProfile(ProfileViewModel model)
+        //{
+        //    _user.FirstName = model.FirstName;
+        //    _user.LastName = model.LastName;
+        //    _user.DateOfBirth = model.DateOfBirth;
+        //    _user.CellphoneNumber = model.CellphoneNumber;
+        //    _user.HomeAddress = model.HomeAddress;
 
-            ViewBag.Success = "Profile updated successfully.";
+        //    ViewBag.Success = "Profile updated successfully.";
 
-            return View(
-                "~/Views/ManagerDashboard/Profile.cshtml",
-                _user);
-        }
+        //    return View(
+        //        "~/Views/ManagerDashboard/Profile.cshtml",
+        //        _user);
+        //}
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult ChangePassword(ProfileViewModel model)
-        {
-            if (model.CurrentPassword != _user.CurrentPassword)
-            {
-                ViewBag.Error = "Current password is incorrect.";
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public IActionResult ChangePassword(ProfileViewModel model)
+        //{
+        //    if (model.CurrentPassword != _user.CurrentPassword)
+        //    {
+        //        ViewBag.Error = "Current password is incorrect.";
 
-                return View(
-                    "~/Views/ManagerDashboard/Profile.cshtml",
-                    _user);
-            }
+        //        return View(
+        //            "~/Views/ManagerDashboard/Profile.cshtml",
+        //            _user);
+        //    }
 
-            if (model.NewPassword != model.ConfirmPassword)
-            {
-                ViewBag.Error = "Passwords do not match.";
+        //    if (model.NewPassword != model.ConfirmPassword)
+        //    {
+        //        ViewBag.Error = "Passwords do not match.";
 
-                return View(
-                    "~/Views/ManagerDashboard/Profile.cshtml",
-                    _user);
-            }
+        //        return View(
+        //            "~/Views/ManagerDashboard/Profile.cshtml",
+        //            _user);
+        //    }
 
-            _user.CurrentPassword = model.NewPassword;
+        //    _user.CurrentPassword = model.NewPassword;
 
-            ViewBag.Success = "Password updated successfully.";
+        //    ViewBag.Success = "Password updated successfully.";
 
-            return View(
-                "~/Views/ManagerDashboard/Profile.cshtml",
-                _user);
-        }
+        //    return View(
+        //        "~/Views/ManagerDashboard/Profile.cshtml",
+        //        _user);
+        //}
 
-        // =========================================================
-        // AUDIT LOG
-        // =========================================================
+        //// =========================================================
+        //// AUDIT LOG
+        //// =========================================================
 
-        public IActionResult AuditLog()
-        {
-            SetSession();
+        //public IActionResult AuditLog()
+        //{
+        //    SetSession();
 
-            return View(
-                "~/Views/ManagerDashboard/Index.cshtml");
-        }
+        //    return View(
+        //        "~/Views/ManagerDashboard/Index.cshtml");
+        //}
 
         // =========================================================
         // REPORT
