@@ -150,32 +150,32 @@ namespace _4th_year_set_up.Controllers
             // we default it to the email's local part since the doctor doesn't pick one.
             var username = model.Email.Split('@')[0] + Random.Shared.Next(100, 999);
 
-            var (result, newUserId) = _userRepo.RegisterUser(
-                username, model.Email.Trim(), passwordHash, PatientRoleId,
+            // sp_RegisterPatientByDoctor (not the generic sp_RegisterUser) — this
+            // is the proc that sets MustChangePassword = 1, matching the spec's
+            // "must change password at first login" requirement.
+            var (result, newUserId, newPatientId) = _doctorData.RegisterPatientByDoctor(
+                username, model.Email.Trim(), passwordHash,
                 model.FirstName.Trim(), model.LastName.Trim(), model.IDNumber.Trim(),
-                model.DateOfBirth, model.CellphoneNumber.Trim(), model.HomeAddress?.Trim() ?? "");
+                model.DateOfBirth, model.CellphoneNumber.Trim());
 
             if (result != "SUCCESS")
             {
-                TempData["Error"] = result switch
-                {
-                    "DUPLICATE_ID" => "A patient with this SA ID number is already registered.",
-                    "DUPLICATE_EMAIL" or "EMAIL_TAKEN" => "A patient with this e-mail address is already registered.",
-                    "USERNAME_TAKEN" => "Could not register patient — please try again.",
-                    _ => "Registration failed. Please try again."
-                };
+                TempData["Error"] = result.Contains("email", StringComparison.OrdinalIgnoreCase)
+                    ? "A patient with this e-mail address is already registered."
+                    : result.Contains("ID number", StringComparison.OrdinalIgnoreCase)
+                        ? "A patient with this SA ID number is already registered."
+                        : "Registration failed. Please try again.";
                 return RedirectToAction("PatientRecords");
             }
 
-            var patientId = _userRepo.GetPatientIdByUserId(newUserId);
-            if (patientId.HasValue)
+            if (newPatientId > 0)
             {
                 foreach (var conditionId in model.ConditionIDs)
-                    _userRepo.AddPatientCondition(patientId.Value, conditionId, null, null);
+                    _userRepo.AddPatientCondition(newPatientId, conditionId, null, null);
                 foreach (var allergyId in model.AllergyIDs)
-                    _userRepo.AddPatientAllergy(patientId.Value, allergyId, null, null);
+                    _userRepo.AddPatientAllergy(newPatientId, allergyId, null, null);
                 foreach (var medicationId in model.MedicationIDs)
-                    _userRepo.AddPatientMedication(patientId.Value, medicationId, null, null, null, null, null);
+                    _userRepo.AddPatientMedication(newPatientId, medicationId, null, null, null, null, null);
             }
 
             _email.SendEmail(model.Email, "Your Student/Patient account — NMB-HLabSys",
@@ -199,11 +199,25 @@ namespace _4th_year_set_up.Controllers
             var model = new CreateTestRequestViewModel
             {
                 Patients = _doctorData.SearchPatients(null),
-                TestTypes = _doctorData.GetAllTestTypes()
+                TestTypes = _doctorData.GetAllTestTypes(),
+                SampleTypes = _doctorData.GetAllSampleTypes()
             };
             ViewBag.History = _doctorData.GetDoctorTestRequests(doctorId);
 
             return View("~/Views/Doctor/TestRequests.cshtml", model);
+        }
+
+        /// <summary>
+        /// AJAX endpoint backing the "system must indicate required samples to
+        /// doctor" requirement: as the doctor ticks test types, the page calls
+        /// this to show which sample type(s) those tests need (from the real
+        /// sp_GetRequiredSamplesForTestTypes).
+        /// </summary>
+        [HttpGet]
+        public IActionResult RequiredSamples(List<int> testTypeIds)
+        {
+            var samples = _doctorData.GetRequiredSamplesForTestTypes(testTypeIds ?? new());
+            return Json(samples.Select(s => new { s.SampleTypeID, s.SampleTypeName }));
         }
 
         [HttpPost]
@@ -219,15 +233,27 @@ namespace _4th_year_set_up.Controllers
                 return RedirectToAction("TestRequests");
             }
 
-            var barcodes = (model.Barcodes ?? new()).Where(b => !string.IsNullOrWhiteSpace(b)).ToList();
-            if (barcodes.Count == 0)
+            var samples = (model.Samples ?? new())
+                .Where(s => !string.IsNullOrWhiteSpace(s.BarcodeNumber) && s.SampleTypeID > 0)
+                .ToList();
+            if (samples.Count == 0)
             {
-                TempData["Error"] = "A test request needs at least one sample barcode.";
+                TempData["Error"] = "A test request needs at least one sample barcode with its sample type selected.";
                 return RedirectToAction("TestRequests");
             }
 
-            var (requestId, requestNumber) = _doctorData.CreateTestRequest(
-                model.PatientID, doctorId, model.Urgency, model.ClinicalNotes, model.TestTypeIDs, barcodes);
+            int requestId;
+            string requestNumber;
+            try
+            {
+                (requestId, requestNumber) = _doctorData.CreateTestRequest(
+                    model.PatientID, doctorId, model.Urgency, model.ClinicalNotes, model.TestTypeIDs, samples);
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Error"] = $"Could not submit test request: {ex.Message}";
+                return RedirectToAction("TestRequests");
+            }
 
             var patient = _doctorData.SearchPatients(null).FirstOrDefault(p => p.PatientID == model.PatientID);
             if (patient != null)
@@ -239,7 +265,7 @@ namespace _4th_year_set_up.Controllers
             }
 
             Log($"Submitted test request {requestNumber} for patient #{model.PatientID}");
-            TempData["Success"] = $"Test request {requestNumber} submitted. Samples needed: {barcodes.Count}.";
+            TempData["Success"] = $"Test request {requestNumber} submitted. Samples recorded: {samples.Count}.";
             return RedirectToAction("TestRequests");
         }
 
@@ -276,7 +302,21 @@ namespace _4th_year_set_up.Controllers
             var detail = _doctorData.GetTestRequestDetail(doctorId, model.RequestID);
             if (detail == null) return NotFound();
 
-            _doctorData.ReleaseResults(model.RequestID, model.ReleaseNotes);
+            // sp_ReleaseTestResults itself requires every item to be
+            // 'Verified' first — check that here so the doctor gets a clear
+            // message instead of a raw SQL error.
+            if (detail.Items.Any(i => i.ItemStatus != TestItemStatus.Verified))
+            {
+                TempData["Error"] = "All test items must be verified by the lab before results can be released.";
+                return RedirectToAction("ViewResults");
+            }
+
+            var (success, message) = _doctorData.ReleaseResults(model.RequestID, doctorId, model.ReleaseNotes);
+            if (!success)
+            {
+                TempData["Error"] = $"Could not release results: {message}";
+                return RedirectToAction("ViewResults");
+            }
 
             var subject = model.AskPatientToBookAppointment
                 ? $"Please book an appointment — results for {detail.RequestNumber}"
@@ -330,7 +370,24 @@ namespace _4th_year_set_up.Controllers
                 return RedirectToAction("TestRequests");
             }
 
-            _doctorData.CancelTestRequest(model.RequestID, model.Reason);
+            var (success, message, _, _) = _doctorData.CancelTestRequest(
+                model.RequestID, model.Reason, CurrentUserId(), "Doctor");
+
+            if (!success)
+            {
+                // See the remarks on DoctorDataAccess.CancelTestRequest: the
+                // real sp_CancelTestRequest has a known bug (it tries to set
+                // TestRequestItems.ItemStatus = 'Cancelled', a value that
+                // column's own CHECK constraint disallows), so a genuine
+                // cancel attempt can currently fail here with a SQL
+                // constraint-violation message. That needs a fix in the
+                // shared database — surfacing the real message rather than
+                // hiding it is intentional, so it gets reported instead of
+                // silently swallowed.
+                TempData["Error"] = $"Could not cancel request: {message}";
+                return RedirectToAction("TestRequests");
+            }
+
             Log($"Cancelled test request {detail.RequestNumber}: {model.Reason}");
             TempData["Success"] = $"Request {detail.RequestNumber} cancelled.";
             return RedirectToAction("TestRequests");

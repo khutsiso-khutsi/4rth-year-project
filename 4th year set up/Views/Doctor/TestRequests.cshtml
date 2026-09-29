@@ -499,27 +499,41 @@
                         @if (Model.TestTypes.Count == 0)
                         {
                             <span style="color:var(--muted);font-size:12.5px;">
-                                No test types are configured yet — see Database/DoctorModule.sql (sp_GetAllTestTypes / TestTypes table).
+                                No test types are configured yet — see the TestTypes table.
                             </span>
                         }
                         @foreach (var t in Model.TestTypes)
                         {
                             <label class="checkbox-label">
-                                <input type="checkbox" name="TestTypeIDs" value="@t.TestTypeID" /> @t.TestName
+                                <input type="checkbox" name="TestTypeIDs" value="@t.TestTypeID" onchange="refreshRequiredSamples()" /> @t.TestName
                             </label>
                         }
+                    </div>
+                    <div id="required-samples-hint" class="barcode-info" style="display:none;">
+                        <div class="barcode-dot"></div>
+                        <span id="required-samples-text"></span>
                     </div>
 
                     <div class="form-section-title">Sample Barcodes (at least one required)</div>
                     <div class="barcode-info">
                         <div class="barcode-dot"></div>
-                        Record one barcode per sample collected for this request.
+                        Record one barcode per sample collected, and the sample type it was collected into.
                     </div>
                     <div id="barcode-list">
                         <div class="barcode-row">
                             <div class="form-group">
                                 <label>Barcode</label>
-                                <input type="text" name="Barcodes" placeholder="e.g. BC-2025-03-0441" />
+                                <input type="text" name="Samples[0].BarcodeNumber" placeholder="e.g. BC-2025-03-0441" />
+                            </div>
+                            <div class="form-group">
+                                <label>Sample Type</label>
+                                <select name="Samples[0].SampleTypeID">
+                                    <option value="">Select…</option>
+                                    @foreach (var st in Model.SampleTypes)
+                                    {
+                                        <option value="@st.SampleTypeID">@st.SampleTypeName</option>
+                                    }
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -602,13 +616,41 @@
         });
     }
 
+    const sampleTypeOptions = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.SampleTypes.Select(s => new { s.SampleTypeID, s.SampleTypeName })));
+    let barcodeRowCount = 1;
+
     function addBarcodeRow() {
         const list = document.getElementById('barcode-list');
         const row = document.createElement('div');
         row.className = 'barcode-row';
-        row.innerHTML = '<div class="form-group"><label>Barcode</label>' +
-            '<input type="text" name="Barcodes" placeholder="e.g. BC-2025-03-0442" /></div>';
+        const idx = barcodeRowCount++;
+        let options = '<option value="">Select…</option>' +
+            sampleTypeOptions.map(st => `<option value="${st.SampleTypeID}">${st.SampleTypeName}</option>`).join('');
+        row.innerHTML =
+            '<div class="form-group"><label>Barcode</label>' +
+            `<input type="text" name="Samples[${idx}].BarcodeNumber" placeholder="e.g. BC-2025-03-0442" /></div>` +
+            '<div class="form-group"><label>Sample Type</label>' +
+            `<select name="Samples[${idx}].SampleTypeID">${options}</select></div>`;
         list.appendChild(row);
+    }
+
+    function refreshRequiredSamples() {
+        const ids = Array.from(document.querySelectorAll('input[name="TestTypeIDs"]:checked')).map(cb => cb.value);
+        const hint = document.getElementById('required-samples-hint');
+        const text = document.getElementById('required-samples-text');
+        if (ids.length === 0) { hint.style.display = 'none'; return; }
+
+        const qs = ids.map(id => 'testTypeIds=' + encodeURIComponent(id)).join('&');
+        fetch('@Url.Action("RequiredSamples", "Doctor")?' + qs)
+            .then(r => r.ok ? r.json() : [])
+            .then(samples => {
+                if (!samples || samples.length === 0) { hint.style.display = 'none'; return; }
+                text.textContent = 'Required sample type(s) for the selected tests: ' +
+                    samples.map(s => s.sampleTypeName).join(', ');
+                hint.style.display = 'flex';
+            })
+            .catch(() => { hint.style.display = 'none'; });
     }
 
     function promptCancelReason(form) {

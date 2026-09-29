@@ -37,11 +37,12 @@
     @if (Model.Samples.Any())
     {
         <p style="font-size:12px;color:#6b7a99;margin-bottom:10px;">
-            Samples: @string.Join(", ", Model.Samples.Select(s => s.BarcodeValue))
+            Samples: @string.Join(", ", Model.Samples.Select(s => s.BarcodeNumber))
         </p>
     }
 
-    @if (Model.RequestStatus == _4th_year_set_up.Models.TestRequestStatus.Completed)
+    @if (Model.RequestStatus == _4th_year_set_up.Models.TestRequestStatus.Completed
+        && Model.Items.All(i => i.ItemStatus == _4th_year_set_up.Models.TestItemStatus.Verified))
     {
         <form method="post" asp-controller="Doctor" asp-action="ReleaseResults" style="margin-top:10px;">
             @Html.AntiForgeryToken()

@@ -4,18 +4,27 @@ using System.Collections.Generic;
 namespace _4th_year_set_up.Models
 {
     /* -----------------------------------------------------------------
-       Shared status vocabulary (feature 3 in the spec). Keep every
-       controller/view that touches request/item status referencing
-       these constants instead of hand-typed strings, so the six values
-       never drift out of sync again.
+       Shared status vocabulary (feature 3 in the spec).
+
+       IMPORTANT: these string values are NOT the spec's literal wording —
+       they are the exact values enforced by the real database's CHECK
+       constraints (see TestRequests/TestRequestItems in the attached
+       schema). Keep every controller/view that touches request/item
+       status referencing these constants instead of hand-typed strings,
+       so the values never drift out of sync with the database again.
+       The C# member *names* below intentionally still read the way the
+       spec described each stage (e.g. ReleasedByDoctor) even though the
+       underlying string is the DB's shorter value ("Released") — that
+       keeps every other file that already references
+       TestRequestStatus.ReleasedByDoctor etc. compiling unchanged.
     ----------------------------------------------------------------- */
     public static class TestRequestStatus
     {
         public const string Submitted = "Submitted";
-        public const string SamplesReceived = "Sample(s) received";
-        public const string InProgress = "In progress";
+        public const string SamplesReceived = "Samples Received";
+        public const string InProgress = "In Progress";
         public const string Completed = "Completed";
-        public const string ReleasedByDoctor = "Released by doctor";
+        public const string ReleasedByDoctor = "Released";
         public const string Cancelled = "Cancelled";
 
         public static readonly string[] All =
@@ -23,9 +32,33 @@ namespace _4th_year_set_up.Models
             Submitted, SamplesReceived, InProgress, Completed, ReleasedByDoctor, Cancelled
         };
 
-        // A doctor may only cancel while the request hasn't reached the lab yet.
+        // A doctor may only cancel while the request hasn't reached the lab yet
+        // (matches sp_CancelTestRequest's own check: 'Submitted' or 'Samples Received').
         public static bool CanDoctorCancel(string status) =>
             status == Submitted || status == SamplesReceived;
+    }
+
+    /// <summary>
+    /// TestRequestItems.ItemStatus has its OWN, different CHECK constraint —
+    /// it does NOT include "Cancelled", even though sp_CancelTestRequest
+    /// (as written in the real database) tries to set cancelled items'
+    /// ItemStatus to 'Cancelled'. That is an existing bug in the shared
+    /// database, not something introduced here — flagged to the team
+    /// rather than silently patched, since fixing it means altering a
+    /// shared CHECK constraint or stored procedure everyone depends on.
+    /// </summary>
+    public static class TestItemStatus
+    {
+        public const string Submitted = "Submitted";
+        public const string InProgress = "In Progress";
+        public const string ToBeReviewed = "To Be Reviewed";
+        public const string Verified = "Verified";
+        public const string Completed = "Completed";
+
+        public static readonly string[] All =
+        {
+            Submitted, InProgress, ToBeReviewed, Verified, Completed
+        };
     }
 
     // ---- 1. Manage Patient Records --------------------------------------
@@ -65,10 +98,28 @@ namespace _4th_year_set_up.Models
         public int TestTypeID { get; set; }
         public string TestName { get; set; } = "";
         public string CategoryName { get; set; } = "";
+        public int SampleTypeID { get; set; }
         public string? UnitName { get; set; }
         public decimal? NormalRangeMin { get; set; }
         public decimal? NormalRangeMax { get; set; }
         public string? SampleTypeName { get; set; }
+    }
+
+    // The full SampleTypes lookup list, used to populate the per-barcode
+    // sample-type dropdown in TestRequests.cshtml.
+    public class SampleTypeOption
+    {
+        public int SampleTypeID { get; set; }
+        public string SampleTypeName { get; set; } = "";
+    }
+
+    // One row of the "+ Add Sample" barcode UI: a barcode number paired with
+    // the sample type it was collected into. sp_CreateTestRequest requires a
+    // SampleTypeID per barcode (JSON: [{"BarcodeNumber":"...","SampleTypeID":n}]).
+    public class SampleBarcodeInput
+    {
+        public string BarcodeNumber { get; set; } = "";
+        public int SampleTypeID { get; set; }
     }
 
     public class CreateTestRequestViewModel
@@ -77,10 +128,11 @@ namespace _4th_year_set_up.Models
         public string Urgency { get; set; } = "Routine";      // Routine / Urgent / STAT
         public string? ClinicalNotes { get; set; }
         public List<int> TestTypeIDs { get; set; } = new();
-        public List<string> Barcodes { get; set; } = new();
+        public List<SampleBarcodeInput> Samples { get; set; } = new();
 
         public List<PatientRecordListItem> Patients { get; set; } = new();
         public List<TestTypeOption> TestTypes { get; set; } = new();
+        public List<SampleTypeOption> SampleTypes { get; set; } = new();
     }
 
     // ---- 3/4. Track status + View results ---------------------------------
@@ -124,11 +176,13 @@ namespace _4th_year_set_up.Models
         public decimal? NormalRangeMax { get; set; }
     }
 
+    // Maps to the real dbo.SampleBarcodes table.
     public class TestRequestSample
     {
-        public int SampleID { get; set; }
-        public string BarcodeValue { get; set; } = "";
-        public DateTime? CollectedDate { get; set; }
+        public int BarcodeID { get; set; }
+        public string BarcodeNumber { get; set; } = "";
+        public string? SampleTypeName { get; set; }
+        public DateTime CollectionDate { get; set; }
         public DateTime? ReceivedDate { get; set; }
     }
 
