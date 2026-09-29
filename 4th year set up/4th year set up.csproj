@@ -4,6 +4,7 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<RootNamespace>_4th_year_set_up</RootNamespace>
+		<UserSecretsId>20aab23f-e4ce-424d-bc82-3b2d553dd062</UserSecretsId>
 	</PropertyGroup>
 	<ItemGroup>
 	  <Compile Remove="Controllers\LabManager\**" />
