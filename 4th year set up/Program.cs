@@ -1,4 +1,5 @@
-﻿using _4th_year_set_up.Services;
+﻿using _4th_year_set_up.DataAccess;
+using _4th_year_set_up.Services;
 using admin.Repository;
 using LabManager.DataAccess;
 using LabManager.Repositories;
@@ -30,6 +31,11 @@ builder.Services.AddScoped<UserRepository>(provider =>
 // Admin class library
 builder.Services.AddScoped<AdminRepository>(provider =>
     new AdminRepository(
+        builder.Configuration.GetConnectionString("conn")!));
+
+// Doctor module (see Database/DoctorModule.sql for the stored procedures it calls)
+builder.Services.AddScoped<DoctorDataAccess>(provider =>
+    new DoctorDataAccess(
         builder.Configuration.GetConnectionString("conn")!));
 
 

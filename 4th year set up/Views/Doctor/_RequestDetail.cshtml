@@ -1,0 +1,70 @@
+@model _4th_year_set_up.Models.DoctorTestRequestSummary
+@* Partial view rendered into the "View" modal on ViewResults.cshtml via AJAX (Doctor/RequestDetail?requestId=). *@
+<div style="font-family:'DM Sans',sans-serif;">
+    <h3 style="font-family:'DM Serif Display',serif;color:#0b1f3a;margin-bottom:10px;">
+        @Model.RequestNumber — @Model.PatientName
+    </h3>
+    <p style="font-size:13px;color:#6b7a99;margin-bottom:14px;">
+        Requested @Model.RequestDate.ToString("yyyy-MM-dd") · Status: <strong>@Model.RequestStatus</strong>
+        @if (Model.HasAbnormalResult)
+        {
+            <span style="color:#dc2626;font-weight:600;"> · ⚠ Abnormal result(s) detected</span>
+        }
+    </p>
+
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">
+        <thead>
+            <tr style="text-align:left;color:#6b7a99;font-size:11px;text-transform:uppercase;">
+                <th style="padding:6px 8px;">Test</th>
+                <th style="padding:6px 8px;">Result</th>
+                <th style="padding:6px 8px;">Normal Range</th>
+                <th style="padding:6px 8px;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr style="border-top:1px solid #dde4f0;@(item.IsAbnormal ? "color:#dc2626;font-weight:700;" : "")">
+                    <td style="padding:8px;">@item.TestName</td>
+                    <td style="padding:8px;">@(item.ResultValue?.ToString() ?? "—") @item.UnitName</td>
+                    <td style="padding:8px;">@item.NormalRangeMin–@item.NormalRangeMax</td>
+                    <td style="padding:8px;">@item.ItemStatus</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (Model.Samples.Any())
+    {
+        <p style="font-size:12px;color:#6b7a99;margin-bottom:10px;">
+            Samples: @string.Join(", ", Model.Samples.Select(s => s.BarcodeValue))
+        </p>
+    }
+
+    @if (Model.RequestStatus == _4th_year_set_up.Models.TestRequestStatus.Completed)
+    {
+        <form method="post" asp-controller="Doctor" asp-action="ReleaseResults" style="margin-top:10px;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="RequestID" value="@Model.RequestID" />
+            <label style="font-size:12px;font-weight:600;color:#6b7a99;text-transform:uppercase;">Note to patient</label>
+            <textarea name="ReleaseNotes" style="width:100%;min-height:70px;margin:6px 0;padding:8px;border:1px solid #dde4f0;border-radius:8px;font-family:inherit;"></textarea>
+            <label style="font-size:12.5px;display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+                <input type="checkbox" name="AskPatientToBookAppointment" value="true" />
+                Ask patient to book an appointment instead of sending raw results
+            </label>
+            <button type="submit" style="background:#0d9488;color:white;border:none;border-radius:8px;padding:9px 18px;font-weight:500;cursor:pointer;">
+                Release to Patient
+            </button>
+            <a href="@Url.Action("ResultsPdf", "Doctor", new { requestId = Model.RequestID })"
+               style="margin-left:10px;color:#0b1f3a;text-decoration:underline;font-size:13px;">
+                Download PDF
+            </a>
+        </form>
+    }
+    else
+    {
+        <a href="@Url.Action("ResultsPdf", "Doctor", new { requestId = Model.RequestID })" style="color:#0b1f3a;text-decoration:underline;font-size:13px;">
+            Download PDF
+        </a>
+    }
+</div>

@@ -1,3 +1,4 @@
+@model _4th_year_set_up.Models.DoctorReportViewModel
 @{
     ViewData["Title"] = "Reports";
     Layout = null;
@@ -741,11 +742,11 @@
             <div class="date-grid">
                 <div class="form-group">
                     <label>From Date</label>
-                    <input type="date" id="date-from" value="2025-02-01" />
+                    <input type="date" id="date-from" value="@Model.FromDate.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="form-group">
                     <label>To Date</label>
-                    <input type="date" id="date-to" value="2025-03-03" />
+                    <input type="date" id="date-to" value="@Model.ToDate.ToString("yyyy-MM-dd")" />
                 </div>
             </div>
             <div class="btn-row">
@@ -758,17 +759,16 @@
                     </svg>
                     Generate PDF Report
                 </button>
-                <button class="btn btn-outline" onclick="printPreview()">
+                <button class="btn btn-outline" onclick="refreshPreview()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <polyline points="6 9 6 2 18 2 18 9" />
-                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                        <rect x="6" y="14" width="12" height="8" />
+                        <polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                        <polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
                     </svg>
-                    Print Preview
+                    Refresh Preview
                 </button>
                 <span id="report-msg" class="report-msg">
                     <span class="report-msg-dot"></span>
-                    PDF report generated!
+                    Opening PDF report…
                 </span>
             </div>
         </div>
@@ -790,7 +790,7 @@
                         <div class="preview-subtitle">Showing requests within selected date range</div>
                     </div>
                 </div>
-                <span class="badge badge-verified" style="font-size:0.7rem;">2 Records</span>
+                <span class="badge badge-verified" style="font-size:0.7rem;">@Model.Requests.Count Records</span>
             </div>
             <div class="table-wrap">
                 <table>
@@ -799,54 +799,34 @@
                             <th>Request #</th>
                             <th>Patient</th>
                             <th>Date</th>
-                            <th>Tests</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td><span class="mono">REQ-2025-089</span></td>
-                            <td>K. Mashamba</td>
-                            <td>2025-03-01</td>
-                            <td>FBC, Diff</td>
-                            <td><span class="badge badge-verified">Verified</span></td>
-                            <td>
-                                <button class="btn btn-outline" style="padding:5px 12px;font-size:0.75rem;" onclick="viewRequest('REQ-2025-089')">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-                                    </svg>
-                                    View
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><span class="mono">REQ-2025-090</span></td>
-                            <td>P. Ndlovu</td>
-                            <td>2025-03-02</td>
-                            <td>Coag, FBC</td>
-                            <td><span class="badge badge-inprogress">In Progress</span></td>
-                            <td>
-                                <button class="btn btn-outline" style="padding:5px 12px;font-size:0.75rem;" onclick="viewRequest('REQ-2025-090')">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-                                    </svg>
-                                    View
-                                </button>
-                            </td>
-                        </tr>
+                        @if (Model.Requests.Count == 0)
+                        {
+                            <tr><td colspan="5" style="text-align:center;color:var(--muted);">No requests in this range.</td></tr>
+                        }
+                        @foreach (var r in Model.Requests)
+                        {
+                            <tr>
+                                <td><span class="mono">@r.RequestNumber</span></td>
+                                <td>@r.PatientName</td>
+                                <td>@r.RequestDate.ToString("yyyy-MM-dd")</td>
+                                <td><span class="badge badge-inprogress">@r.RequestStatus</span></td>
+                                <td>
+                                    <a class="btn btn-outline" style="padding:5px 12px;font-size:0.75rem;" asp-controller="Doctor" asp-action="TestRequests">
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
             <div class="table-footer">
-                <span class="table-count">2 of 2 records shown</span>
-                <button class="btn btn-outline" style="padding:6px 14px;font-size:0.78rem;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;">
-                        <polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" />
-                        <polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
-                    </svg>
-                    Refresh
-                </button>
+                <span class="table-count">@Model.Requests.Count record(s) shown</span>
             </div>
         </div>
 
@@ -855,17 +835,18 @@
 
 <script>
     function generateReport() {
+        const from = document.getElementById('date-from').value;
+        const to = document.getElementById('date-to').value;
         const msg = document.getElementById('report-msg');
         msg.classList.add('visible');
         setTimeout(() => msg.classList.remove('visible'), 3000);
+        window.location.href = '@Url.Action("ReportPdf", "Doctor")?from=' + from + '&to=' + to;
     }
 
-    function printPreview() {
-        window.print();
-    }
-
-    function viewRequest(id) {
-        alert('Viewing request: ' + id);
+    function refreshPreview() {
+        const from = document.getElementById('date-from').value;
+        const to = document.getElementById('date-to').value;
+        window.location.href = '@Url.Action("Reports", "Doctor")' + '?from=' + from + '&to=' + to;
     }
 
     // Update preview range label when dates change

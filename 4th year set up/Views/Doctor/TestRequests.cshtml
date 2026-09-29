@@ -1,7 +1,9 @@
 ﻿@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
+@model _4th_year_set_up.Models.CreateTestRequestViewModel
 @{
+    var history = ViewBag.History as List<_4th_year_set_up.Models.DoctorTestRequestSummary> ?? new();
 //     <!-- ─── TEST REQUESTS ─── -->
 //     <div class="page" id="page-testrequests">
 //         <div class="page-header">
@@ -371,6 +373,10 @@
         .badge-verified   { background: #dcfce7; color: #166534; }
         .badge-inprogress { background: #e8f0fe; color: var(--blue); }
         .badge-submitted  { background: #f0fdf4; color: #15803d; }
+        .badge-received   { background: #fef9c3; color: #854d0e; }
+        .badge-completed  { background: #dcfce7; color: #166534; }
+        .badge-released   { background: #e8f0fe; color: var(--blue); }
+        .badge-cancelled  { background: #fee2e2; color: var(--red); }
     </style>
 </head>
 <body>
@@ -449,70 +455,80 @@
                 <button class="tab" onclick="switchTab('history')">Request History</button>
             </div>
 
+            @if (TempData["Success"] != null)
+            {
+                <div style="padding:14px 24px;color:#059669;font-size:13px;">@TempData["Success"]</div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div style="padding:14px 24px;color:var(--red);font-size:13px;">@TempData["Error"]</div>
+            }
+
             <!-- New Request Tab -->
             <div id="tab-new" class="tab-body">
-                <div class="form-section-title">Patient & Urgency</div>
-                <div class="form-grid" style="margin-bottom: 4px;">
-                    <div class="form-group">
-                        <label>Patient</label>
-                        <select id="req-patient">
-                            <option>K. Mashamba</option>
-                            <option>P. Ndlovu</option>
-                            <option>M. Jacobs</option>
-                            <option>J. Fortuin</option>
-                        </select>
+                <form method="post" asp-controller="Doctor" asp-action="SubmitTestRequest">
+                    @Html.AntiForgeryToken()
+                    <div class="form-section-title">Patient & Urgency</div>
+                    <div class="form-grid" style="margin-bottom: 4px;">
+                        <div class="form-group">
+                            <label>Patient</label>
+                            <select name="PatientID" required>
+                                <option value="">Select patient…</option>
+                                @foreach (var p in Model.Patients)
+                                {
+                                    <option value="@p.PatientID">@p.FullName (@p.IDNumber)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Urgency</label>
+                            <select name="Urgency">
+                                <option>Routine</option>
+                                <option>Urgent</option>
+                                <option>STAT</option>
+                            </select>
+                        </div>
+                        <div class="form-group full">
+                            <label>Clinical Notes</label>
+                            <textarea name="ClinicalNotes" placeholder="Describe symptoms, reason for tests..."></textarea>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Urgency</label>
-                        <select id="req-urgency">
-                            <option>Routine</option>
-                            <option>Urgent</option>
-                            <option>STAT</option>
-                        </select>
-                    </div>
-                    <div class="form-group full">
-                        <label>Clinical Notes</label>
-                        <textarea placeholder="Describe symptoms, reason for tests..."></textarea>
-                    </div>
-                </div>
 
-                <div class="form-section-title">Select Test Types</div>
-                <div class="checkbox-group">
-                    <label class="checkbox-label"><input type="checkbox"> Full Blood Count</label>
-                    <label class="checkbox-label"><input type="checkbox"> Differential Count</label>
-                    <label class="checkbox-label"><input type="checkbox" checked> Coagulation (PT)</label>
-                    <label class="checkbox-label"><input type="checkbox"> Coagulation (aPTT)</label>
-                    <label class="checkbox-label"><input type="checkbox"> Peripheral Blood Film</label>
-                    <label class="checkbox-label"><input type="checkbox"> Platelet Count</label>
-                </div>
-
-                <div class="form-section-title">Sample Barcodes</div>
-                <div class="barcode-info">
-                    <div class="barcode-dot"></div>
-                    Required samples: EDTA Whole Blood (x1), Citrate Plasma (x1)
-                </div>
-                <div class="barcode-row">
-                    <div class="form-group">
-                        <label>Barcode</label>
-                        <input type="text" value="BC-2025-03-0441" readonly />
+                    <div class="form-section-title">Select Test Types (at least one required)</div>
+                    <div class="checkbox-group">
+                        @if (Model.TestTypes.Count == 0)
+                        {
+                            <span style="color:var(--muted);font-size:12.5px;">
+                                No test types are configured yet — see Database/DoctorModule.sql (sp_GetAllTestTypes / TestTypes table).
+                            </span>
+                        }
+                        @foreach (var t in Model.TestTypes)
+                        {
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="TestTypeIDs" value="@t.TestTypeID" /> @t.TestName
+                            </label>
+                        }
                     </div>
-                    <div class="form-group">
-                        <label>Sample Type</label>
-                        <select>
-                            <option>Whole Blood (EDTA)</option>
-                            <option>Citrate Plasma</option>
-                        </select>
-                    </div>
-                    <button class="btn-outline">+ Add Sample</button>
-                </div>
 
-                <div style="display:flex; align-items:center; gap:16px;">
-                    <button class="btn-primary" onclick="submitRequest()">Submit Request</button>
-                    <span class="submit-msg" id="submit-msg">
-                        <span class="dot"></span>
-                        Test request submitted! Patient notified via email.
-                    </span>
-                </div>
+                    <div class="form-section-title">Sample Barcodes (at least one required)</div>
+                    <div class="barcode-info">
+                        <div class="barcode-dot"></div>
+                        Record one barcode per sample collected for this request.
+                    </div>
+                    <div id="barcode-list">
+                        <div class="barcode-row">
+                            <div class="form-group">
+                                <label>Barcode</label>
+                                <input type="text" name="Barcodes" placeholder="e.g. BC-2025-03-0441" />
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-outline" onclick="addBarcodeRow()" style="margin-bottom:20px;">+ Add Sample</button>
+
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <button type="submit" class="btn-primary">Submit Request</button>
+                    </div>
+                </form>
             </div>
 
             <!-- History Tab -->
@@ -524,35 +540,52 @@
                             <th>Patient</th>
                             <th>Date</th>
                             <th>Urgency</th>
-                            <th>Tests</th>
                             <th>Status</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td class="mono">REQ-2025-089</td>
-                            <td>K. Mashamba</td>
-                            <td>2025-03-01</td>
-                            <td><span class="badge badge-stat">STAT</span></td>
-                            <td>FBC, Diff</td>
-                            <td><span class="badge badge-verified">Verified</span></td>
-                        </tr>
-                        <tr>
-                            <td class="mono">REQ-2025-090</td>
-                            <td>P. Ndlovu</td>
-                            <td>2025-03-02</td>
-                            <td><span class="badge badge-urgent">Urgent</span></td>
-                            <td>Coag, FBC</td>
-                            <td><span class="badge badge-inprogress">In Progress</span></td>
-                        </tr>
-                        <tr>
-                            <td class="mono">REQ-2025-091</td>
-                            <td>M. Jacobs</td>
-                            <td>2025-03-03</td>
-                            <td><span class="badge badge-routine">Routine</span></td>
-                            <td>FBC</td>
-                            <td><span class="badge badge-submitted">Submitted</span></td>
-                        </tr>
+                        @if (history.Count == 0)
+                        {
+                            <tr><td colspan="6" style="text-align:center;color:var(--muted);">No test requests yet.</td></tr>
+                        }
+                        @foreach (var r in history)
+                        {
+                            var badgeClass = r.Urgency switch
+                            {
+                                "STAT" => "badge-stat",
+                                "Urgent" => "badge-urgent",
+                                _ => "badge-routine"
+                            };
+                            var statusClass = r.RequestStatus switch
+                            {
+                                _4th_year_set_up.Models.TestRequestStatus.Submitted => "badge-submitted",
+                                _4th_year_set_up.Models.TestRequestStatus.SamplesReceived => "badge-received",
+                                _4th_year_set_up.Models.TestRequestStatus.InProgress => "badge-inprogress",
+                                _4th_year_set_up.Models.TestRequestStatus.Completed => "badge-completed",
+                                _4th_year_set_up.Models.TestRequestStatus.ReleasedByDoctor => "badge-released",
+                                _4th_year_set_up.Models.TestRequestStatus.Cancelled => "badge-cancelled",
+                                _ => "badge-routine"
+                            };
+                            <tr>
+                                <td class="mono">@r.RequestNumber</td>
+                                <td>@r.PatientName</td>
+                                <td>@r.RequestDate.ToString("yyyy-MM-dd")</td>
+                                <td><span class="badge @badgeClass">@r.Urgency</span></td>
+                                <td><span class="badge @statusClass">@r.RequestStatus</span></td>
+                                <td>
+                                    @if (r.CanCancel)
+                                    {
+                                        <form method="post" asp-controller="Doctor" asp-action="CancelTestRequest" onsubmit="return promptCancelReason(this)">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="RequestID" value="@r.RequestID" />
+                                            <input type="hidden" name="Reason" class="cancel-reason-input" />
+                                            <button type="submit" class="btn-outline">Cancel</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
@@ -569,10 +602,20 @@
         });
     }
 
-    function submitRequest() {
-        const msg = document.getElementById('submit-msg');
-        msg.style.opacity = '1';
-        setTimeout(() => msg.style.opacity = '0', 4000);
+    function addBarcodeRow() {
+        const list = document.getElementById('barcode-list');
+        const row = document.createElement('div');
+        row.className = 'barcode-row';
+        row.innerHTML = '<div class="form-group"><label>Barcode</label>' +
+            '<input type="text" name="Barcodes" placeholder="e.g. BC-2025-03-0442" /></div>';
+        list.appendChild(row);
+    }
+
+    function promptCancelReason(form) {
+        const reason = prompt('Reason for cancelling this test request:');
+        if (!reason) return false;
+        form.querySelector('.cancel-reason-input').value = reason;
+        return true;
     }
 </script>
 
