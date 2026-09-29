@@ -1,0 +1,45 @@
+@model _4th_year_set_up.Models.DoctorTestRequestSummary
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <style>
+        body { font-family: 'DM Sans', Arial, sans-serif; color: #0b1f3a; padding: 30px; }
+        h1 { font-size: 20px; margin-bottom: 4px; }
+        .muted { color: #6b7a99; font-size: 12px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { border-bottom: 1px solid #dde4f0; padding: 8px; text-align: left; }
+        .abnormal { color: #dc2626; font-weight: 700; }
+    </style>
+</head>
+<body>
+    <h1>NMB-HLabSys — Test Results</h1>
+    <div class="muted">
+        Request @Model.RequestNumber · Patient: @Model.PatientName · Requested @Model.RequestDate.ToString("yyyy-MM-dd")
+        · Status: @Model.RequestStatus
+    </div>
+    <table>
+        <thead>
+            <tr><th>Test</th><th>Result</th><th>Normal Range</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr class="@(item.IsAbnormal ? "abnormal" : "")">
+                    <td>@item.TestName</td>
+                    <td>@(item.ResultValue?.ToString() ?? "—") @item.UnitName</td>
+                    <td>@item.NormalRangeMin–@item.NormalRangeMax</td>
+                    <td>@item.ItemStatus</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (!string.IsNullOrWhiteSpace(Model.ReleaseNotes))
+    {
+        <p style="margin-top:20px;"><strong>Doctor's note:</strong> @Model.ReleaseNotes</p>
+    }
+</body>
+</html>

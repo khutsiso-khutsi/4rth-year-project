@@ -1,3 +1,4 @@
+@model _4th_year_set_up.Models.AlertsPageViewModel
 @{
     ViewData["Title"] = "Alerts";
     Layout = null;
@@ -339,17 +340,17 @@
         </div>
 
         <div class="card">
-            <div class="filter-row">
+            <form class="filter-row" method="get" asp-controller="Doctor" asp-action="Alerts">
                 <div class="form-group">
                     <label>From</label>
-                    <input type="date" value="2025-02-26" />
+                    <input type="date" name="from" value="@Model.FromDate.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="form-group">
                     <label>To</label>
-                    <input type="date" value="2025-03-03" />
+                    <input type="date" name="to" value="@Model.ToDate.ToString("yyyy-MM-dd")" />
                 </div>
-                <button class="btn btn-primary btn-sm">Filter</button>
-            </div>
+                <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+            </form>
 
             <table>
                 <thead>
@@ -364,48 +365,29 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><div class="patient-cell"><div class="alert-dot"></div>K. Mashamba</div></td>
-                        <td>Haemoglobin</td>
-                        <td class="result-abnormal">9.2 g/dL</td>
-                        <td class="mono">12.0–17.5</td>
-                        <td class="mono">REQ-889</td>
-                        <td>2025-03-01</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm"
-                                onclick="openModal('K. Mashamba', 'Haemoglobin', '9.2 g/dL', '12.0–17.5 g/dL', 'REQ-889', '2025-03-01', 'Low haemoglobin — possible anaemia. Review iron studies and reticulocyte count.')">
-                                View
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><div class="patient-cell"><div class="alert-dot"></div>K. Mashamba</div></td>
-                        <td>Platelet Count</td>
-                        <td class="result-abnormal">88 ×10⁹/µL</td>
-                        <td class="mono">150–400</td>
-                        <td class="mono">REQ-889</td>
-                        <td>2025-03-01</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm"
-                                onclick="openModal('K. Mashamba', 'Platelet Count', '88 ×10⁹/µL', '150–400 ×10⁹/µL', 'REQ-889', '2025-03-01', 'Thrombocytopenia detected. Consider peripheral blood film review and clinical correlation.')">
-                                View
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><div class="patient-cell"><div class="alert-dot"></div>P. Ndlovu</div></td>
-                        <td>PT (Prothrombin)</td>
-                        <td class="result-abnormal">18.2 sec</td>
-                        <td class="mono">11–13.5</td>
-                        <td class="mono">REQ-890</td>
-                        <td>2025-03-02</td>
-                        <td>
-                            <button class="btn btn-outline btn-sm"
-                                onclick="openModal('P. Ndlovu', 'PT (Prothrombin Time)', '18.2 sec', '11–13.5 sec', 'REQ-890', '2025-03-02', 'Prolonged PT. Evaluate for coagulation factor deficiency or anticoagulant therapy effect.')">
-                                View
-                            </button>
-                        </td>
-                    </tr>
+                    @if (Model.Alerts.Count == 0)
+                    {
+                        <tr><td colspan="7" style="text-align:center;color:var(--muted);">No abnormal results in this date range.</td></tr>
+                    }
+                    @foreach (var a in Model.Alerts)
+                    {
+                        var range = $"{a.NormalRangeMin}–{a.NormalRangeMax} {a.UnitName}";
+                        var result = $"{a.ResultValue} {a.UnitName}";
+                        <tr>
+                            <td><div class="patient-cell"><div class="alert-dot"></div>@a.PatientName</div></td>
+                            <td>@a.TestName</td>
+                            <td class="result-abnormal">@result</td>
+                            <td class="mono">@range</td>
+                            <td class="mono">@a.RequestNumber</td>
+                            <td>@a.RequestDate.ToString("yyyy-MM-dd")</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm"
+                                    onclick="openModal('@a.PatientName', '@a.TestName', '@result', '@range', '@a.RequestNumber', '@a.RequestDate.ToString("yyyy-MM-dd")', '@Html.Raw(a.ResultNotes)')">
+                                    View
+                                </button>
+                            </td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>
