@@ -1,5 +1,6 @@
 ﻿using _4th_year_set_up.Services;
 using admin.Repository;
+using Doctor.Repository;
 using LabManager.DataAccess;
 using LabManager.Repositories;
 using LabManager.Repository;
@@ -39,6 +40,9 @@ builder.Services.AddTransient<IConsumablesRepository, ConsumablesRepository>();
 builder.Services.AddTransient<IOrderRepository, ConsumableOrderRepository>();
 builder.Services.AddTransient<ITestCategoryrepository, TestCategoryRepository>();
 builder.Services.AddTransient<IStaffRepository, StaffRepository>();
+builder.Services.AddScoped<DoctorRepository>(provider =>
+    new DoctorRepository(
+        builder.Configuration.GetConnectionString("conn")!));
 
 
 var app = builder.Build();

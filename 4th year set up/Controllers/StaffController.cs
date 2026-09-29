@@ -2,6 +2,7 @@
 using LabManager.Repositories;
 using LabManager.Repository;
 using Microsoft.AspNetCore.Mvc;
+using LabManager.Models;
 
 namespace LabManager.Controllers
 {
@@ -107,7 +108,7 @@ namespace LabManager.Controllers
                 }
 
 
-                var doctor = new Doctor
+                var doctor = new LabManager.Models.Doctor
                 {
                     FirstName = firstName.Trim(),
                     LastName = lastName.Trim(),
@@ -203,7 +204,7 @@ namespace LabManager.Controllers
                 }
 
 
-                var doctor = new Doctor
+                var doctor = new LabManager.Models.Doctor
                 {
                     Id = id,
                     FirstName = firstName.Trim(),

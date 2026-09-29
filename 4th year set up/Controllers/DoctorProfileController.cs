@@ -3,7 +3,7 @@ using Patient.Models;
 
 namespace Patient.Controllers
 {
-    public class DoctorController : Controller
+    public class DoctorProfileController : Controller
     {
         public IActionResult Profile()
         {
