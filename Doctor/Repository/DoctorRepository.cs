@@ -24,6 +24,9 @@ namespace Doctor.Repository
         public (int DoctorID, string DoctorName, string Email)? GetDoctorByUserId(int userId)
             => _dataAccess.GetDoctorByUserId(userId);
 
+        public (int DoctorID, string FirstName, string LastName, string Email)? GetDoctorProfileByUserId(int userId)
+            => _dataAccess.GetDoctorProfileByUserId(userId);
+
         // ---- 1. Manage Patient Records -----------------------------------
 
         public List<PatientRecordListItem> SearchPatients(string? searchTerm)

@@ -460,24 +460,35 @@ namespace _4th_year_set_up.Controllers
 
         // ---- Profile (merged from the old DoctorProfileController) ---------------
 
+        /// <summary>
+        /// Builds a DoctorProfileViewModel from real data where the schema is
+        /// confirmed (DoctorID, FirstName, LastName, Email — via
+        /// GetDoctorProfileByUserId) and leaves every other field at its
+        /// default (empty string / default DateTime) rather than a fabricated
+        /// placeholder, since LicenseNumber/Specialization/Department/
+        /// PracticeAddress/HomeAddress/CellphoneNumber/DateOfBirth are not yet
+        /// confirmed columns on the real Doctors table.
+        /// </summary>
+        private DoctorProfileViewModel CurrentDoctorProfile()
+        {
+            var profile = _doctorData.GetDoctorProfileByUserId(CurrentUserId());
+            return new DoctorProfileViewModel
+            {
+                DoctorID = profile?.DoctorID ?? 0,
+                FirstName = profile?.FirstName ?? "",
+                LastName = profile?.LastName ?? "",
+                Email = profile?.Email ?? CurrentEmail()
+                // LicenseNumber, DateOfBirth, CellphoneNumber, HomeAddress,
+                // Specialization, Department, PracticeAddress, RegistrationDate:
+                // left at their type defaults. TODO once the Doctors table's
+                // real columns for these are confirmed, populate them here
+                // instead of leaving them blank.
+            };
+        }
+
         public IActionResult Profile()
         {
-            var vm = new DoctorProfileViewModel
-            {
-                DoctorID = 1,
-                FirstName = "Dev",
-                LastName = "Doctor",
-                Email = CurrentEmail(),
-                LicenseNumber = "MP-2024-00123",
-                DateOfBirth = new DateTime(1982, 4, 10),
-                CellphoneNumber = "0831234567",
-                HomeAddress = "45 Settler's Way, Port Elizabeth",
-                Specialization = "Haematology",
-                Department = "Haematology",
-                PracticeAddress = "Greenacres Hospital, Port Elizabeth",
-                RegistrationDate = DateTime.Now.AddYears(-3)
-            };
-
+            var vm = CurrentDoctorProfile();
             ViewBag.Email = vm.Email;
             return View(vm);
         }
@@ -491,10 +502,11 @@ namespace _4th_year_set_up.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult UpdateProfile(DoctorProfileViewModel model)
         {
-            model.DoctorID = 1;
-            model.Email = CurrentEmail();
-            model.LicenseNumber = "MP-2024-00123";
-            model.RegistrationDate = DateTime.Now.AddYears(-3);
+            // DoctorID and Email identify who's logged in — these must come
+            // from the session/DB, never trusted from the posted form.
+            var current = CurrentDoctorProfile();
+            model.DoctorID = current.DoctorID;
+            model.Email = current.Email;
             ViewBag.Email = model.Email;
 
             if (!ModelState.IsValid)
@@ -515,22 +527,7 @@ namespace _4th_year_set_up.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult ChangePassword(string CurrentPassword, string NewPassword, string ConfirmPassword)
         {
-            var vm = new DoctorProfileViewModel
-            {
-                DoctorID = 1,
-                FirstName = "Dev",
-                LastName = "Doctor",
-                Email = CurrentEmail(),
-                LicenseNumber = "MP-2024-00123",
-                DateOfBirth = new DateTime(1982, 4, 10),
-                CellphoneNumber = "0831234567",
-                HomeAddress = "45 Settler's Way, Port Elizabeth",
-                Specialization = "Haematology",
-                Department = "Haematology",
-                PracticeAddress = "Greenacres Hospital, Port Elizabeth",
-                RegistrationDate = DateTime.Now.AddYears(-3)
-            };
-
+            var vm = CurrentDoctorProfile();
             ViewBag.Email = vm.Email;
 
             if (string.IsNullOrWhiteSpace(CurrentPassword))

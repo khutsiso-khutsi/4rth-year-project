@@ -72,6 +72,40 @@ namespace Doctor.DataAccess
             return null;
         }
 
+        /// <summary>
+        /// Same join as GetDoctorByUserId, but with FirstName/LastName kept
+        /// separate (rather than concatenated into DoctorName) for the
+        /// profile page's editable name fields.
+        ///
+        /// NOTE: only DoctorID/FirstName/LastName/Email are confirmed real
+        /// Doctors-table columns. LicenseNumber, Specialization, Department,
+        /// PracticeAddress, HomeAddress, CellphoneNumber and DateOfBirth are
+        /// NOT populated here — nobody has confirmed those columns exist on
+        /// the real Doctors table yet, so the profile page leaves them blank
+        /// rather than showing invented placeholder data.
+        /// </summary>
+        public (int DoctorID, string FirstName, string LastName, string Email)? GetDoctorProfileByUserId(int userId)
+        {
+            using var conn = Open();
+            using var cmd = new SqlCommand(@"
+                SELECT d.DoctorID, d.FirstName, d.LastName, u.Email
+                FROM Doctors d
+                INNER JOIN Users u ON u.UserID = d.UserID
+                WHERE d.UserID = @UserID", conn);
+            cmd.Parameters.AddWithValue("@UserID", userId);
+            using var reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                return (
+                    reader.GetInt32(reader.GetOrdinal("DoctorID")),
+                    reader.GetString(reader.GetOrdinal("FirstName")),
+                    reader.GetString(reader.GetOrdinal("LastName")),
+                    reader.GetString(reader.GetOrdinal("Email"))
+                );
+            }
+            return null;
+        }
+
         // ---- 1. Manage Patient Records ---------------------------------------
         // No sp_SearchPatients / sp_CheckPatientIdNumberExists exist, so these
         // are plain SQL too.
