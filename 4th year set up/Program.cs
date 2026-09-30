@@ -1,4 +1,4 @@
-﻿using _4th_year_set_up.DataAccess;
+﻿using Doctor.Repository;
 using _4th_year_set_up.Services;
 using admin.Repository;
 using LabManager.DataAccess;
@@ -33,9 +33,10 @@ builder.Services.AddScoped<AdminRepository>(provider =>
     new AdminRepository(
         builder.Configuration.GetConnectionString("conn")!));
 
-// Doctor module (see Database/DoctorModule.sql for the stored procedures it calls)
-builder.Services.AddScoped<DoctorDataAccess>(provider =>
-    new DoctorDataAccess(
+// Doctor module (real NMB_HaematologyLab schema/stored procedures — see
+// Doctor/DataAccess/DoctorDataAccess.cs)
+builder.Services.AddScoped<DoctorRepository>(provider =>
+    new DoctorRepository(
         builder.Configuration.GetConnectionString("conn")!));
 
 

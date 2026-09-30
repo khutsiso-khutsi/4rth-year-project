@@ -1,4 +1,4 @@
-@model _4th_year_set_up.Models.DoctorTestRequestSummary
+@model Doctor.Models.DoctorTestRequestSummary
 @* Partial view rendered into the "View" modal on ViewResults.cshtml via AJAX (Doctor/RequestDetail?requestId=). *@
 <div style="font-family:'DM Sans',sans-serif;">
     <h3 style="font-family:'DM Serif Display',serif;color:#0b1f3a;margin-bottom:10px;">
@@ -41,8 +41,8 @@
         </p>
     }
 
-    @if (Model.RequestStatus == _4th_year_set_up.Models.TestRequestStatus.Completed
-        && Model.Items.All(i => i.ItemStatus == _4th_year_set_up.Models.TestItemStatus.Verified))
+    @if (Model.RequestStatus == Doctor.Models.TestRequestStatus.Completed
+        && Model.Items.All(i => i.ItemStatus == Doctor.Models.TestItemStatus.Verified))
     {
         <form method="post" asp-controller="Doctor" asp-action="ReleaseResults" style="margin-top:10px;">
             @Html.AntiForgeryToken()

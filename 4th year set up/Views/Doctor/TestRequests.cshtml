@@ -1,9 +1,9 @@
 ﻿@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
-@model _4th_year_set_up.Models.CreateTestRequestViewModel
+@model Doctor.Models.CreateTestRequestViewModel
 @{
-    var history = ViewBag.History as List<_4th_year_set_up.Models.DoctorTestRequestSummary> ?? new();
+    var history = ViewBag.History as List<Doctor.Models.DoctorTestRequestSummary> ?? new();
 //     <!-- ─── TEST REQUESTS ─── -->
 //     <div class="page" id="page-testrequests">
 //         <div class="page-header">
@@ -573,12 +573,12 @@
                             };
                             var statusClass = r.RequestStatus switch
                             {
-                                _4th_year_set_up.Models.TestRequestStatus.Submitted => "badge-submitted",
-                                _4th_year_set_up.Models.TestRequestStatus.SamplesReceived => "badge-received",
-                                _4th_year_set_up.Models.TestRequestStatus.InProgress => "badge-inprogress",
-                                _4th_year_set_up.Models.TestRequestStatus.Completed => "badge-completed",
-                                _4th_year_set_up.Models.TestRequestStatus.ReleasedByDoctor => "badge-released",
-                                _4th_year_set_up.Models.TestRequestStatus.Cancelled => "badge-cancelled",
+                                Doctor.Models.TestRequestStatus.Submitted => "badge-submitted",
+                                Doctor.Models.TestRequestStatus.SamplesReceived => "badge-received",
+                                Doctor.Models.TestRequestStatus.InProgress => "badge-inprogress",
+                                Doctor.Models.TestRequestStatus.Completed => "badge-completed",
+                                Doctor.Models.TestRequestStatus.ReleasedByDoctor => "badge-released",
+                                Doctor.Models.TestRequestStatus.Cancelled => "badge-cancelled",
                                 _ => "badge-routine"
                             };
                             <tr>

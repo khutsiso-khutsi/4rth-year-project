@@ -1,7 +1,7 @@
 ﻿@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
-@model List<_4th_year_set_up.Models.DoctorTestRequestSummary>
+@model List<Doctor.Models.DoctorTestRequestSummary>
 @{
     <!-- ─── VIEW RESULTS ─── -->
     // <div class="page" id="page-results">
@@ -664,7 +664,7 @@
                             <span class="result-patient">@req.PatientName</span>
                             <span class="result-date">@req.RequestDate.ToString("yyyy-MM-dd")</span>
                             <span class="badge @(req.Urgency == "STAT" ? "badge-stat" : req.Urgency == "Urgent" ? "badge-urgent" : "badge-routine")">@req.Urgency</span>
-                            <span class="badge @(req.RequestStatus == _4th_year_set_up.Models.TestRequestStatus.ReleasedByDoctor ? "badge-verified" : "badge-inprogress")">@req.RequestStatus</span>
+                            <span class="badge @(req.RequestStatus == Doctor.Models.TestRequestStatus.ReleasedByDoctor ? "badge-verified" : "badge-inprogress")">@req.RequestStatus</span>
                         </div>
 
                         @if (req.HasAbnormalResult)
@@ -688,7 +688,7 @@
                             </div>
                         }
 
-                        @if (req.RequestStatus == _4th_year_set_up.Models.TestRequestStatus.Completed)
+                        @if (req.RequestStatus == Doctor.Models.TestRequestStatus.Completed)
                         {
                             <div class="actions-bar">
                                 <form method="post" asp-controller="Doctor" asp-action="ReleaseResults">

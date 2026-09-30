@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace _4th_year_set_up.Models
+namespace Doctor.Models
 {
     /* -----------------------------------------------------------------
        Shared status vocabulary (feature 3 in the spec).

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Text.Json;
 using Microsoft.Data.SqlClient;
-using _4th_year_set_up.Models;
+using Doctor.Models;
 
-namespace _4th_year_set_up.DataAccess
+namespace Doctor.DataAccess
 {
     /// <summary>
     /// Data access for the Doctor module (patient records, test requests,

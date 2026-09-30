@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
-using _4th_year_set_up.DataAccess;
-using _4th_year_set_up.Models;
+using Doctor.Repository;
+using Doctor.Models;
 using _4th_year_set_up.Services;
 using Patient.Models;
 using Patient.Repository;
@@ -22,14 +22,14 @@ namespace _4th_year_set_up.Controllers
     public class DoctorController : Controller
     {
         private readonly UserRepository _userRepo;
-        private readonly DoctorDataAccess _doctorData;
+        private readonly DoctorRepository _doctorData;
         private readonly EmailService _email;
 
         // Same RoleID convention HomeController.Register already uses for
         // patients created through public sign-up (see HomeController.cs).
         private const int PatientRoleId = 5;
 
-        public DoctorController(UserRepository userRepo, DoctorDataAccess doctorData, EmailService email)
+        public DoctorController(UserRepository userRepo, DoctorRepository doctorData, EmailService email)
         {
             _userRepo = userRepo;
             _doctorData = doctorData;
