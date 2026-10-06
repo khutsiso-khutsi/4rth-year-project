@@ -1,23 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="DataAccess\**" />
-    <Compile Remove="Repository\**" />
-    <EmbeddedResource Remove="DataAccess\**" />
-    <EmbeddedResource Remove="Repository\**" />
-    <None Remove="DataAccess\**" />
-    <None Remove="Repository\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.TagHelpers" Version="2.3.10" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.TagHelpers" Version="2.3.10" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
+	</ItemGroup>
 
 </Project>

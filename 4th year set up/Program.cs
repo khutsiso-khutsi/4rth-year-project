@@ -1,4 +1,4 @@
-﻿using _4th_year_set_up.DataAccess;
+﻿using Doctor.Repository;
 using _4th_year_set_up.Services;
 using admin.Repository;
 using LabManager.DataAccess;
@@ -10,8 +10,13 @@ using Rotativa.AspNetCore;
 
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddControllersWithViews();
-//RotativaConfiguration.Setup(builder.Environment.WebRootPath, "Rotativa");
+// FirstLoginPasswordFilter: users with a temporary password must change it
+// before they can open any other page (spec: change password at first login).
+builder.Services.AddControllersWithViews(options =>
+    options.Filters.Add<_4th_year_set_up.Filters.FirstLoginPasswordFilter>());
+// PDFs need wwwroot\Rotativa\wkhtmltopdf.exe; start without it if it's missing
+if (File.Exists(Path.Combine(builder.Environment.WebRootPath, "Rotativa", "wkhtmltopdf.exe")))
+    RotativaConfiguration.Setup(builder.Environment.WebRootPath, "Rotativa");
 
 // ✅ Changed from AddSingleton to AddScoped
 builder.Services.AddScoped<EmailService>();
@@ -33,14 +38,15 @@ builder.Services.AddScoped<AdminRepository>(provider =>
     new AdminRepository(
         builder.Configuration.GetConnectionString("conn")!));
 
-// Doctor module (see Database/DoctorModule.sql for the stored procedures it calls)
-builder.Services.AddScoped<DoctorDataAccess>(provider =>
-    new DoctorDataAccess(
+// Doctor module (real NMB_HaematologyLab schema/stored procedures — see
+// Doctor/DataAccess/DoctorDataAccess.cs)
+builder.Services.AddScoped<DoctorRepository>(provider =>
+    new DoctorRepository(
         builder.Configuration.GetConnectionString("conn")!));
 
 
 //Lab Manager
-builder.Services.AddTransient<ISqlDataAcess ,SqlDataAccess>(); 
+builder.Services.AddTransient<ISqlDataAcess, SqlDataAccess>();
 builder.Services.AddTransient<IConsumablesRepository, ConsumablesRepository>();
 builder.Services.AddTransient<IOrderRepository, ConsumableOrderRepository>();
 builder.Services.AddTransient<ITestCategoryrepository, TestCategoryRepository>();
@@ -72,5 +78,3 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
-
-

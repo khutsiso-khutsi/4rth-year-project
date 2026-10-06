@@ -4,24 +4,24 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<RootNamespace>_4th_year_set_up</RootNamespace>
+		<UserSecretsId>20aab23f-e4ce-424d-bc82-3b2d553dd062</UserSecretsId>
 	</PropertyGroup>
 	<ItemGroup>
-	  <Compile Remove="Controllers\LabManager\**" />
-	  <Content Remove="Controllers\LabManager\**" />
-	  <EmbeddedResource Remove="Controllers\LabManager\**" />
-	  <None Remove="Controllers\LabManager\**" />
+		<Compile Remove="Controllers\LabManager\**" />
+		<Content Remove="Controllers\LabManager\**" />
+		<EmbeddedResource Remove="Controllers\LabManager\**" />
+		<None Remove="Controllers\LabManager\**" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
-		<PackageReference Include="MailKit" Version="4.15.1" />
-		<PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
+		<PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
+		<PackageReference Include="MailKit" Version="4.18.1" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
 		<PackageReference Include="Rotativa.AspNetCore" Version="1.4.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\admin\admin.csproj" />
 		<ProjectReference Include="..\Doctor\Doctor.csproj" />
 		<ProjectReference Include="..\LabManager\LabManager.csproj" />
-		<ProjectReference Include="..\LabTechnician\LabTechnician..csproj" />
 		<ProjectReference Include="..\Patient\Patient.csproj" />
 	</ItemGroup>
 </Project>

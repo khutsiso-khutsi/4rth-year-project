@@ -1,8 +1,9 @@
 using System;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
-using _4th_year_set_up.DataAccess;
-using _4th_year_set_up.Models;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Doctor.Repository;
+using Doctor.Models;
 using _4th_year_set_up.Services;
 using Patient.Models;
 using Patient.Repository;
@@ -22,37 +23,61 @@ namespace _4th_year_set_up.Controllers
     public class DoctorController : Controller
     {
         private readonly UserRepository _userRepo;
-        private readonly DoctorDataAccess _doctorData;
+        private readonly DoctorRepository _doctorData;
         private readonly EmailService _email;
 
         // Same RoleID convention HomeController.Register already uses for
         // patients created through public sign-up (see HomeController.cs).
         private const int PatientRoleId = 5;
 
-        public DoctorController(UserRepository userRepo, DoctorDataAccess doctorData, EmailService email)
+        public DoctorController(UserRepository userRepo, DoctorRepository doctorData, EmailService email)
         {
             _userRepo = userRepo;
             _doctorData = doctorData;
             _email = email;
         }
 
-        // ---- helpers --------------------------------------------------------
+        // ---- access control -------------------------------------------------
 
-        private string CurrentEmail() => HttpContext.Session.GetString("Email") ?? "dev-doctor@test.com";
-
-        private int CurrentUserId() => HttpContext.Session.GetInt32("UserID") ?? 1;
+        private int _doctorId;
+        private string _doctorName = "";
 
         /// <summary>
-        /// Resolves the logged-in user to a DoctorID. Falls back to DoctorID 1
-        /// in dev/demo sessions (mirrors the "dev-doctor@test.com" fallback the
-        /// stub actions used everywhere before this) so the pages keep working
-        /// before the Doctors table is fully populated/linked in your DB.
+        /// Runs before every action in this controller. Only a logged-in user
+        /// with the Doctor role AND a linked Doctors row gets through; anyone
+        /// else is sent to the login page. (This used to fall back to
+        /// DoctorID 1 for anyone, which let logged-out users see patient data.)
         /// </summary>
-        private (int DoctorID, string DoctorName) CurrentDoctor()
+        public override void OnActionExecuting(ActionExecutingContext context)
         {
-            var doctor = _doctorData.GetDoctorByUserId(CurrentUserId());
-            return doctor.HasValue ? (doctor.Value.DoctorID, doctor.Value.DoctorName) : (1, "Dev Doctor");
+            if (HttpContext.Session.GetString("RoleName") != "Doctor")
+            {
+                context.Result = RedirectToAction("Login", "Home");
+                return;
+            }
+
+            var userId = HttpContext.Session.GetInt32("UserID");
+            var doctor = userId.HasValue ? _doctorData.GetDoctorByUserId(userId.Value) : null;
+            if (doctor == null)
+            {
+                HttpContext.Session.Clear();
+                context.Result = RedirectToAction("Login", "Home");
+                return;
+            }
+
+            _doctorId = doctor.Value.DoctorID;
+            _doctorName = doctor.Value.DoctorName;
+            base.OnActionExecuting(context);
         }
+
+        // ---- helpers --------------------------------------------------------
+
+        private string CurrentEmail() => HttpContext.Session.GetString("Email") ?? "";
+
+        private int CurrentUserId() => HttpContext.Session.GetInt32("UserID") ?? 0;
+
+        // Always the logged-in doctor: OnActionExecuting has already checked it.
+        private (int DoctorID, string DoctorName) CurrentDoctor() => (_doctorId, _doctorName);
 
         private void Log(string activity) => _userRepo.LogActivity(activity, CurrentEmail());
 
@@ -109,10 +134,21 @@ namespace _4th_year_set_up.Controllers
         [HttpGet]
         public IActionResult PatientDetail(int patientId)
         {
+            // The patient decides what this doctor may see (Consent page).
+            if (!_userRepo.DoctorHasConsent(patientId, _doctorId))
+                return Json(new { hasConsent = false });
+
             var history = _userRepo.GetMedicalHistory(patientId);
+            var (shareAll, sharedIds) = _userRepo.GetConditionAccess(patientId, _doctorId);
+            var conditions = shareAll
+                ? history.Conditions
+                : history.Conditions.Where(c => sharedIds.Contains(c.ConditionID)).ToList();
+
             return Json(new
             {
-                conditions = history.Conditions.Select(c => new { c.ConditionName, diagnosed = c.DiagnosedDate?.ToString("yyyy-MM-dd"), c.Notes }),
+                hasConsent = true,
+                shareAll,
+                conditions = conditions.Select(c => new { c.ConditionName, diagnosed = c.DiagnosedDate?.ToString("yyyy-MM-dd"), c.Notes }),
                 allergies = history.Allergies.Select(a => new { a.AllergyName, a.Severity, a.Notes }),
                 medications = history.Medications.Select(m => new { m.MedicationName, m.Dosage, m.Frequency })
             });
@@ -150,32 +186,32 @@ namespace _4th_year_set_up.Controllers
             // we default it to the email's local part since the doctor doesn't pick one.
             var username = model.Email.Split('@')[0] + Random.Shared.Next(100, 999);
 
-            var (result, newUserId) = _userRepo.RegisterUser(
-                username, model.Email.Trim(), passwordHash, PatientRoleId,
+            // sp_RegisterPatientByDoctor (not the generic sp_RegisterUser) — this
+            // is the proc that sets MustChangePassword = 1, matching the spec's
+            // "must change password at first login" requirement.
+            var (result, newUserId, newPatientId) = _doctorData.RegisterPatientByDoctor(
+                username, model.Email.Trim(), passwordHash,
                 model.FirstName.Trim(), model.LastName.Trim(), model.IDNumber.Trim(),
-                model.DateOfBirth, model.CellphoneNumber.Trim(), model.HomeAddress?.Trim() ?? "");
+                model.DateOfBirth, model.CellphoneNumber.Trim());
 
             if (result != "SUCCESS")
             {
-                TempData["Error"] = result switch
-                {
-                    "DUPLICATE_ID" => "A patient with this SA ID number is already registered.",
-                    "DUPLICATE_EMAIL" or "EMAIL_TAKEN" => "A patient with this e-mail address is already registered.",
-                    "USERNAME_TAKEN" => "Could not register patient — please try again.",
-                    _ => "Registration failed. Please try again."
-                };
+                TempData["Error"] = result.Contains("email", StringComparison.OrdinalIgnoreCase)
+                    ? "A patient with this e-mail address is already registered."
+                    : result.Contains("ID number", StringComparison.OrdinalIgnoreCase)
+                        ? "A patient with this SA ID number is already registered."
+                        : "Registration failed. Please try again.";
                 return RedirectToAction("PatientRecords");
             }
 
-            var patientId = _userRepo.GetPatientIdByUserId(newUserId);
-            if (patientId.HasValue)
+            if (newPatientId > 0)
             {
                 foreach (var conditionId in model.ConditionIDs)
-                    _userRepo.AddPatientCondition(patientId.Value, conditionId, null, null);
+                    _userRepo.AddPatientCondition(newPatientId, conditionId, null, null);
                 foreach (var allergyId in model.AllergyIDs)
-                    _userRepo.AddPatientAllergy(patientId.Value, allergyId, null, null);
+                    _userRepo.AddPatientAllergy(newPatientId, allergyId, null, null);
                 foreach (var medicationId in model.MedicationIDs)
-                    _userRepo.AddPatientMedication(patientId.Value, medicationId, null, null, null, null, null);
+                    _userRepo.AddPatientMedication(newPatientId, medicationId, null, null, null, null, null);
             }
 
             _email.SendEmail(model.Email, "Your Student/Patient account — NMB-HLabSys",
@@ -199,11 +235,25 @@ namespace _4th_year_set_up.Controllers
             var model = new CreateTestRequestViewModel
             {
                 Patients = _doctorData.SearchPatients(null),
-                TestTypes = _doctorData.GetAllTestTypes()
+                TestTypes = _doctorData.GetAllTestTypes(),
+                SampleTypes = _doctorData.GetAllSampleTypes()
             };
             ViewBag.History = _doctorData.GetDoctorTestRequests(doctorId);
 
             return View("~/Views/Doctor/TestRequests.cshtml", model);
+        }
+
+        /// <summary>
+        /// AJAX endpoint backing the "system must indicate required samples to
+        /// doctor" requirement: as the doctor ticks test types, the page calls
+        /// this to show which sample type(s) those tests need (from the real
+        /// sp_GetRequiredSamplesForTestTypes).
+        /// </summary>
+        [HttpGet]
+        public IActionResult RequiredSamples(List<int> testTypeIds)
+        {
+            var samples = _doctorData.GetRequiredSamplesForTestTypes(testTypeIds ?? new());
+            return Json(samples.Select(s => new { s.SampleTypeID, s.SampleTypeName }));
         }
 
         [HttpPost]
@@ -219,15 +269,27 @@ namespace _4th_year_set_up.Controllers
                 return RedirectToAction("TestRequests");
             }
 
-            var barcodes = (model.Barcodes ?? new()).Where(b => !string.IsNullOrWhiteSpace(b)).ToList();
-            if (barcodes.Count == 0)
+            var samples = (model.Samples ?? new())
+                .Where(s => !string.IsNullOrWhiteSpace(s.BarcodeNumber) && s.SampleTypeID > 0)
+                .ToList();
+            if (samples.Count == 0)
             {
-                TempData["Error"] = "A test request needs at least one sample barcode.";
+                TempData["Error"] = "A test request needs at least one sample barcode with its sample type selected.";
                 return RedirectToAction("TestRequests");
             }
 
-            var (requestId, requestNumber) = _doctorData.CreateTestRequest(
-                model.PatientID, doctorId, model.Urgency, model.ClinicalNotes, model.TestTypeIDs, barcodes);
+            int requestId;
+            string requestNumber;
+            try
+            {
+                (requestId, requestNumber) = _doctorData.CreateTestRequest(
+                    model.PatientID, doctorId, model.Urgency, model.ClinicalNotes, model.TestTypeIDs, samples);
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Error"] = $"Could not submit test request: {ex.Message}";
+                return RedirectToAction("TestRequests");
+            }
 
             var patient = _doctorData.SearchPatients(null).FirstOrDefault(p => p.PatientID == model.PatientID);
             if (patient != null)
@@ -239,7 +301,7 @@ namespace _4th_year_set_up.Controllers
             }
 
             Log($"Submitted test request {requestNumber} for patient #{model.PatientID}");
-            TempData["Success"] = $"Test request {requestNumber} submitted. Samples needed: {barcodes.Count}.";
+            TempData["Success"] = $"Test request {requestNumber} submitted. Samples recorded: {samples.Count}.";
             return RedirectToAction("TestRequests");
         }
 
@@ -276,7 +338,21 @@ namespace _4th_year_set_up.Controllers
             var detail = _doctorData.GetTestRequestDetail(doctorId, model.RequestID);
             if (detail == null) return NotFound();
 
-            _doctorData.ReleaseResults(model.RequestID, model.ReleaseNotes);
+            // sp_ReleaseTestResults itself requires every item to be
+            // 'Verified' first — check that here so the doctor gets a clear
+            // message instead of a raw SQL error.
+            if (detail.Items.Any(i => i.ItemStatus != TestItemStatus.Verified))
+            {
+                TempData["Error"] = "All test items must be verified by the lab before results can be released.";
+                return RedirectToAction("ViewResults");
+            }
+
+            var (success, message) = _doctorData.ReleaseResults(model.RequestID, doctorId, model.ReleaseNotes);
+            if (!success)
+            {
+                TempData["Error"] = $"Could not release results: {message}";
+                return RedirectToAction("ViewResults");
+            }
 
             var subject = model.AskPatientToBookAppointment
                 ? $"Please book an appointment — results for {detail.RequestNumber}"
@@ -330,7 +406,24 @@ namespace _4th_year_set_up.Controllers
                 return RedirectToAction("TestRequests");
             }
 
-            _doctorData.CancelTestRequest(model.RequestID, model.Reason);
+            var (success, message, _, _) = _doctorData.CancelTestRequest(
+                model.RequestID, model.Reason, CurrentUserId(), "Doctor");
+
+            if (!success)
+            {
+                // See the remarks on DoctorDataAccess.CancelTestRequest: the
+                // real sp_CancelTestRequest has a known bug (it tries to set
+                // TestRequestItems.ItemStatus = 'Cancelled', a value that
+                // column's own CHECK constraint disallows), so a genuine
+                // cancel attempt can currently fail here with a SQL
+                // constraint-violation message. That needs a fix in the
+                // shared database — surfacing the real message rather than
+                // hiding it is intentional, so it gets reported instead of
+                // silently swallowed.
+                TempData["Error"] = $"Could not cancel request: {message}";
+                return RedirectToAction("TestRequests");
+            }
+
             Log($"Cancelled test request {detail.RequestNumber}: {model.Reason}");
             TempData["Success"] = $"Request {detail.RequestNumber} cancelled.";
             return RedirectToAction("TestRequests");
@@ -403,24 +496,35 @@ namespace _4th_year_set_up.Controllers
 
         // ---- Profile (merged from the old DoctorProfileController) ---------------
 
+        /// <summary>
+        /// Builds a DoctorProfileViewModel from real data where the schema is
+        /// confirmed (DoctorID, FirstName, LastName, Email — via
+        /// GetDoctorProfileByUserId) and leaves every other field at its
+        /// default (empty string / default DateTime) rather than a fabricated
+        /// placeholder, since LicenseNumber/Specialization/Department/
+        /// PracticeAddress/HomeAddress/CellphoneNumber/DateOfBirth are not yet
+        /// confirmed columns on the real Doctors table.
+        /// </summary>
+        private DoctorProfileViewModel CurrentDoctorProfile()
+        {
+            var profile = _doctorData.GetDoctorProfileByUserId(CurrentUserId());
+            return new DoctorProfileViewModel
+            {
+                DoctorID = profile?.DoctorID ?? 0,
+                FirstName = profile?.FirstName ?? "",
+                LastName = profile?.LastName ?? "",
+                Email = profile?.Email ?? CurrentEmail()
+                // LicenseNumber, DateOfBirth, CellphoneNumber, HomeAddress,
+                // Specialization, Department, PracticeAddress, RegistrationDate:
+                // left at their type defaults. TODO once the Doctors table's
+                // real columns for these are confirmed, populate them here
+                // instead of leaving them blank.
+            };
+        }
+
         public IActionResult Profile()
         {
-            var vm = new DoctorProfileViewModel
-            {
-                DoctorID = 1,
-                FirstName = "Dev",
-                LastName = "Doctor",
-                Email = CurrentEmail(),
-                LicenseNumber = "MP-2024-00123",
-                DateOfBirth = new DateTime(1982, 4, 10),
-                CellphoneNumber = "0831234567",
-                HomeAddress = "45 Settler's Way, Port Elizabeth",
-                Specialization = "Haematology",
-                Department = "Haematology",
-                PracticeAddress = "Greenacres Hospital, Port Elizabeth",
-                RegistrationDate = DateTime.Now.AddYears(-3)
-            };
-
+            var vm = CurrentDoctorProfile();
             ViewBag.Email = vm.Email;
             return View(vm);
         }
@@ -434,10 +538,11 @@ namespace _4th_year_set_up.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult UpdateProfile(DoctorProfileViewModel model)
         {
-            model.DoctorID = 1;
-            model.Email = CurrentEmail();
-            model.LicenseNumber = "MP-2024-00123";
-            model.RegistrationDate = DateTime.Now.AddYears(-3);
+            // DoctorID and Email identify who's logged in — these must come
+            // from the session/DB, never trusted from the posted form.
+            var current = CurrentDoctorProfile();
+            model.DoctorID = current.DoctorID;
+            model.Email = current.Email;
             ViewBag.Email = model.Email;
 
             if (!ModelState.IsValid)
@@ -458,22 +563,7 @@ namespace _4th_year_set_up.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult ChangePassword(string CurrentPassword, string NewPassword, string ConfirmPassword)
         {
-            var vm = new DoctorProfileViewModel
-            {
-                DoctorID = 1,
-                FirstName = "Dev",
-                LastName = "Doctor",
-                Email = CurrentEmail(),
-                LicenseNumber = "MP-2024-00123",
-                DateOfBirth = new DateTime(1982, 4, 10),
-                CellphoneNumber = "0831234567",
-                HomeAddress = "45 Settler's Way, Port Elizabeth",
-                Specialization = "Haematology",
-                Department = "Haematology",
-                PracticeAddress = "Greenacres Hospital, Port Elizabeth",
-                RegistrationDate = DateTime.Now.AddYears(-3)
-            };
-
+            var vm = CurrentDoctorProfile();
             ViewBag.Email = vm.Email;
 
             if (string.IsNullOrWhiteSpace(CurrentPassword))

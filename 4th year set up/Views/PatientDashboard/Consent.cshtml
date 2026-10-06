@@ -6,6 +6,52 @@
     var activeConsents  = Model.Consents.Count(c => c.ConsentGranted);
     var revokedConsents = Model.Consents.Count(c => !c.ConsentGranted);
     var sharedRequests  = Model.TestRequests.Count(r => r.IsShared);
+
+    // "All conditions" / "Choose conditions" + the tick list. Used by the
+    // Grant form and the Medical Condition Access card.
+    void ConditionScope(List<Patient.Models.PatientCondition> conds, bool shareAll, List<int> sharedIds, string key)
+    {
+        <div class="scope-options">
+            <label class="scope-opt">
+                <input type="radio" name="scope" value="all" checked="@shareAll" />
+                <strong>All conditions</strong>
+                <small>Every condition on your record, including ones you add later.</small>
+            </label>
+            <label class="scope-opt">
+                <input type="radio" name="scope" value="selected" checked="@(!shareAll)" />
+                <strong>Choose conditions</strong>
+                <small>Only the conditions you tick below.</small>
+            </label>
+        </div>
+        <div class="cond-picker">
+            @if (!conds.Any())
+            {
+                <div class="cond-empty">You have no medical conditions on your record yet. Add them on the Medical History page.</div>
+            }
+            else
+            {
+                <div class="cond-tools">
+                    <input type="text" placeholder="Search your conditions…" aria-label="Search conditions" />
+                    <button type="button" data-check="all">Select all</button>
+                    <button type="button" data-check="none">Clear</button>
+                </div>
+                <div class="cond-list">
+                    @foreach (var c in conds)
+                    {
+                        <label class="cond-check">
+                            <input type="checkbox" name="conditionIds" value="@c.ConditionID" checked="@(sharedIds.Contains(c.ConditionID))" />
+                            <span>@c.ConditionName</span>
+                            @if (c.DiagnosedDate.HasValue)
+                            {
+                                <span class="cond-date">Diagnosed @c.DiagnosedDate.Value.ToString("dd MMM yyyy")</span>
+                            }
+                        </label>
+                    }
+                </div>
+                <div class="cond-count"></div>
+            }
+        </div>
+    }
 }
 
 <!DOCTYPE html>
@@ -190,6 +236,36 @@
         .bulk-btn.revoke { border-color: rgba(220,38,38,0.3); color: var(--red); }
         .bulk-btn.revoke:hover { background: var(--red); color: white; border-color: var(--red); }
 
+        /* ── CONDITION ACCESS ── */
+        .scope-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .scope-opt { position: relative; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px 10px 36px; cursor: pointer; background: white; transition: border-color 0.15s, background 0.15s; }
+        .scope-opt input { position: absolute; left: 12px; top: 13px; accent-color: var(--teal); }
+        .scope-opt strong { font-size: 0.82rem; color: var(--navy); }
+        .scope-opt small { font-size: 0.7rem; color: var(--muted); line-height: 1.4; }
+        .scope-opt:has(input:checked) { border-color: var(--teal); background: var(--teal-light); }
+        .cond-picker { display: none; border: 1px solid var(--border); border-radius: 10px; background: var(--offwhite); padding: 10px; margin-bottom: 14px; }
+        .cond-picker.open { display: block; }
+        .cond-tools { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+        .cond-tools input { flex: 1; background: white; border: 1px solid var(--border); color: var(--navy); padding: 7px 10px; border-radius: 8px; font-size: 0.8rem; font-family: 'DM Sans', sans-serif; outline: none; }
+        .cond-tools input:focus { border-color: var(--teal); }
+        .cond-tools button { background: none; border: none; color: var(--teal); font-size: 0.72rem; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
+        .cond-list { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+        .cond-check { display: flex; align-items: center; gap: 10px; background: white; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; cursor: pointer; font-size: 0.82rem; }
+        .cond-check input { accent-color: var(--teal); width: 15px; height: 15px; flex-shrink: 0; }
+        .cond-check .cond-date { margin-left: auto; font-size: 0.7rem; color: var(--muted); }
+        .cond-check:has(input:checked) { border-color: rgba(13,148,136,0.4); }
+        .cond-count { font-size: 0.72rem; color: var(--muted); margin-top: 8px; }
+        .cond-empty { font-size: 0.8rem; color: var(--muted); padding: 8px 4px; }
+        .scope-pill { display: inline-block; margin-left: 4px; padding: 1px 8px; border-radius: 100px; background: var(--teal-light); color: var(--teal); font-size: 0.66rem; font-weight: 600; }
+        .manage-link { font-size: 0.72rem; font-weight: 600; color: var(--teal); text-decoration: none; white-space: nowrap; }
+        .manage-link:hover { text-decoration: underline; }
+        .consent-item.selected { border-color: var(--teal); box-shadow: 0 0 0 2px var(--teal-light); }
+        .flash { border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; font-size: 0.85rem; font-weight: 500; }
+        .flash-ok { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .flash-err { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .right-col { display: flex; flex-direction: column; }
+        @@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .scope-options { grid-template-columns: 1fr; } }
+
         /* ── LOGOUT MODAL ── */
         #logout-modal { display: none; position: fixed; inset: 0; z-index: 999; background: rgba(11,31,58,0.45); align-items: center; justify-content: center; }
         #logout-modal.open { display: flex; }
@@ -268,6 +344,15 @@
                 </div>
             </div>
 
+            @if (TempData["Success"] != null)
+            {
+                <div class="flash flash-ok">@TempData["Success"]</div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="flash flash-err">@TempData["Error"]</div>
+            }
+
             <!-- STATS -->
             <div class="stats" id="statsRow">
                 <div class="stat-card">
@@ -313,19 +398,23 @@
                         </h3>
                         <div class="info-tip">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
-                            Granting access lets a doctor view all your test results and records. You can revoke this at any time.
+                            Pick a doctor, then choose whether they can see all your medical conditions or only the ones you tick. You can change or revoke this at any time.
                         </div>
-                        <form asp-controller="PatientDashboard" asp-action="GrantConsent" method="post">
+                        <form asp-controller="PatientDashboard" asp-action="GrantConsent" method="post" class="scope-form">
                             <div class="form-group">
-                                <label>Select Doctor</label>
+                                <label>1. Select Doctor</label>
                                 <select name="doctorId" required>
                                     <option value="">— Choose a doctor —</option>
-                                    @foreach (var d in Model.AllDoctors ?? Enumerable.Empty<dynamic>())
+                                    @foreach (var d in Model.AllDoctors)
                                     {
                                         <option value="@d.DoctorID">Dr. @d.DoctorName</option>
                                     }
                                 </select>
                             </div>
+                            <div class="form-group" style="margin-bottom:8px;">
+                                <label>2. Medical conditions they can see</label>
+                            </div>
+                            @{ ConditionScope(Model.MyConditions, true, new List<int>(), "grant"); }
                             <button type="submit" class="btn btn-primary">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                                 Grant Access
@@ -356,7 +445,8 @@
                             @foreach (var c in Model.Consents)
                             {
                                 var initials = c.DoctorName?.Length > 0 ? c.DoctorName.Substring(0, 1).ToUpper() : "D";
-                                <div class="consent-item">
+                                Model.AccessSummaryByDoctor.TryGetValue(c.DoctorID, out var summary);
+                                <div class="consent-item @(c.DoctorID == Model.SelectedDoctorID ? "selected" : "")">
                                     <div class="doctor-avatar">@initials</div>
                                     <div class="consent-info">
                                         <div class="consent-name">Dr. @c.DoctorName</div>
@@ -365,6 +455,10 @@
                                             @if (c.ConsentGranted)
                                             {
                                                 <span>Since @c.GrantedDate.ToString("dd MMM yyyy")</span>
+                                                @if (summary != null)
+                                                {
+                                                    <span class="scope-pill">@summary</span>
+                                                }
                                             }
                                             else
                                             {
@@ -372,6 +466,10 @@
                                             }
                                         </div>
                                     </div>
+                                    @if (c.ConsentGranted)
+                                    {
+                                        <a class="manage-link" href="@Url.Action("Consent", "PatientDashboard", new { selectedDoctorId = c.DoctorID })#conditions">Manage</a>
+                                    }
                                     <span class="badge @(c.ConsentGranted ? "badge-active" : "badge-revoked")">
                                         @(c.ConsentGranted ? "Active" : "Revoked")
                                     </span>
@@ -391,7 +489,43 @@
                     </div>
                 </div>
 
-                <!-- ══ RIGHT: TEST REQUEST ACCESS ══ -->
+                <!-- ══ RIGHT ══ -->
+                <div class="right-col">
+
+                @if (Model.SelectedDoctorID > 0)
+                {
+                    var selDoc = Model.AllDoctors.FirstOrDefault(d => d.DoctorID == Model.SelectedDoctorID);
+                    <div class="section-card" id="conditions">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                            Medical Condition Access
+                            <span style="margin-left:auto;font-family:'DM Sans',sans-serif;font-size:0.75rem;font-weight:500;color:var(--muted);">Dr. @selDoc?.DoctorName</span>
+                        </h3>
+                        @if (!Model.SelectedDoctorHasConsent)
+                        {
+                            <div class="empty-state">
+                                <div class="empty-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                                </div>
+                                <h4>This doctor has no access</h4>
+                                <p>Grant access on the left first, then choose which conditions they can see.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <form asp-controller="PatientDashboard" asp-action="SaveConditionAccess" method="post" class="scope-form">
+                                <input type="hidden" name="doctorId" value="@Model.SelectedDoctorID" />
+                                @{ ConditionScope(Model.MyConditions, Model.ShareAllConditions, Model.SharedConditionIds, "edit"); }
+                                <button type="submit" class="btn btn-primary">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                    Save Access
+                                </button>
+                            </form>
+                        }
+                    </div>
+                }
+
+                <!-- TEST REQUEST ACCESS -->
                 <div class="section-card" id="sc3" style="margin-bottom:0;">
                     <h3>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
@@ -408,7 +542,7 @@
                         <label>Doctor:</label>
                         <select id="doctorSelect" onchange="filterByDoctor(this.value)">
                             <option value="0">— Select a doctor —</option>
-                            @foreach (var d in Model.AllDoctors ?? Enumerable.Empty<dynamic>())
+                            @foreach (var d in Model.AllDoctors)
                             {
                                 <option value="@d.DoctorID" selected="@(Model.SelectedDoctorID == d.DoctorID ? "selected" : null)">
                                     Dr. @d.DoctorName
@@ -510,6 +644,8 @@
                     }
                 </div>
 
+                </div><!-- end right-col -->
+
             </div><!-- end grid -->
 
         </main>
@@ -608,6 +744,52 @@
                 btn.addEventListener('click', function(e) {
                     if (!confirm('Revoke access to all test requests for this doctor?')) e.preventDefault();
                 });
+            });
+
+            /* ─── CONDITION SCOPE: show list only for "Choose conditions" ─── */
+            document.querySelectorAll('.scope-form').forEach(function (form) {
+                var picker = form.querySelector('.cond-picker');
+                var count  = form.querySelector('.cond-count');
+                var boxes  = form.querySelectorAll('.cond-check input');
+
+                function sync() {
+                    var choose = form.querySelector('input[name="scope"]:checked');
+                    var open = choose && choose.value === 'selected';
+                    if (picker) picker.classList.toggle('open', open);
+                    if (count) {
+                        var n = form.querySelectorAll('.cond-check input:checked').length;
+                        count.textContent = n + ' of ' + boxes.length + ' selected';
+                    }
+                }
+                form.querySelectorAll('input[name="scope"]').forEach(function (r) { r.addEventListener('change', sync); });
+                boxes.forEach(function (b) { b.addEventListener('change', sync); });
+
+                var search = form.querySelector('.cond-tools input');
+                if (search) search.addEventListener('input', function () {
+                    var q = search.value.trim().toLowerCase();
+                    form.querySelectorAll('.cond-check').forEach(function (row) {
+                        row.style.display = row.textContent.toLowerCase().indexOf(q) > -1 ? '' : 'none';
+                    });
+                });
+                form.querySelectorAll('[data-check]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        var on = btn.getAttribute('data-check') === 'all';
+                        form.querySelectorAll('.cond-check').forEach(function (row) {
+                            if (row.style.display !== 'none') row.querySelector('input').checked = on;
+                        });
+                        sync();
+                    });
+                });
+
+                form.addEventListener('submit', function (e) {
+                    var choose = form.querySelector('input[name="scope"]:checked');
+                    if (choose && choose.value === 'selected' &&
+                        form.querySelectorAll('.cond-check input:checked').length === 0) {
+                        e.preventDefault();
+                        showToast('Tick at least one condition, or choose "All conditions".', 'warning');
+                    }
+                });
+                sync();
             });
 
             /* ─── LOGOUT MODAL ─── */

@@ -36,7 +36,66 @@ namespace Patient.DataAccess
                 return (user, passwordHash);
             }
 
+            reader.Close();
+
+            // Staff added through sp_AddDoctor (and similar) get a blank
+            // Username, and the spec says the e-mail IS the username, so if
+            // the proc found nobody, look the account up by e-mail instead.
+            using var byEmail = new SqlCommand(@"
+                SELECT u.UserID, u.Email, u.RoleID, r.RoleName, u.PasswordHash
+                FROM Users u
+                INNER JOIN Roles r ON r.RoleID = u.RoleID
+                WHERE u.Email = @Email AND u.IsActive = 1", conn);
+            byEmail.Parameters.AddWithValue("@Email", username);
+            using var r2 = byEmail.ExecuteReader();
+            if (r2.Read())
+            {
+                var user = new UserSession
+                {
+                    UserID = r2.GetInt32(r2.GetOrdinal("UserID")),
+                    Email = r2.GetString(r2.GetOrdinal("Email")),
+                    RoleID = r2.GetInt32(r2.GetOrdinal("RoleID")),
+                    RoleName = r2.GetString(r2.GetOrdinal("RoleName")),
+                };
+                return (user, r2.GetString(r2.GetOrdinal("PasswordHash")));
+            }
+
             return (null, null);
+        }
+
+        /// <summary>True when the account still has a temporary password that must be changed.</summary>
+        public bool MustChangePassword(int userId)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(
+                "SELECT ISNULL(MustChangePassword, 0) FROM Users WHERE UserID = @UserID", conn);
+            cmd.Parameters.AddWithValue("@UserID", userId);
+            conn.Open();
+            var result = cmd.ExecuteScalar();
+            return result != null && result != DBNull.Value && Convert.ToBoolean(result);
+        }
+
+        /// <summary>Checks a password against the one currently stored for this user.</summary>
+        public bool PasswordMatches(int userId, string password)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("SELECT PasswordHash FROM Users WHERE UserID = @UserID", conn);
+            cmd.Parameters.AddWithValue("@UserID", userId);
+            conn.Open();
+            var hash = cmd.ExecuteScalar() as string;
+            return hash != null && BCrypt.Net.BCrypt.Verify(password, hash);
+        }
+
+        /// <summary>Saves the user's own new password and clears the "must change" flag.</summary>
+        public void SetOwnPassword(int userId, string newPassword)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(
+                "UPDATE Users SET PasswordHash = @Hash, MustChangePassword = 0 WHERE UserID = @UserID", conn);
+            cmd.Parameters.AddWithValue("@Hash", BCrypt.Net.BCrypt.HashPassword(newPassword));
+            cmd.Parameters.AddWithValue("@UserID", userId);
+            conn.Open();
+            cmd.ExecuteNonQuery();
         }
 
         public void UpdateLastLogin(int userId)
@@ -141,12 +200,23 @@ namespace Patient.DataAccess
             return cmd.ExecuteNonQuery() > 0;
         }
 
+        // Is there an active account with this e-mail address? (forgot password)
+        public bool EmailExists(string email)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(
+                "SELECT COUNT(*) FROM Users WHERE Email = @Email AND IsActive = 1", conn);
+            cmd.Parameters.AddWithValue("@Email", email);
+            conn.Open();
+            return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+        }
+
         public bool ResetPasswordByEmail(string email, string newPassword)
         {
             var hashed = BCrypt.Net.BCrypt.HashPassword(newPassword);
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(
-                "UPDATE Users SET PasswordHash = @Hash WHERE Email = @Email", conn);
+                "UPDATE Users SET PasswordHash = @Hash, MustChangePassword = 1 WHERE Email = @Email", conn);
             cmd.Parameters.AddWithValue("@Hash", hashed);
             cmd.Parameters.AddWithValue("@Email", email);
             conn.Open();
@@ -310,31 +380,48 @@ namespace Patient.DataAccess
                     });
             }
 
-            using (var cmd = new SqlCommand("sp_GetAllConditions", con))
-            {
-                cmd.CommandType = CommandType.StoredProcedure;
-                using var dr = cmd.ExecuteReader();
-                while (dr.Read())
-                    vm.AllConditions.Add(((int)dr["ConditionID"], dr["ConditionName"].ToString()!));
-            }
+            // Pick-lists for the "add" forms, each item with its category so the
+            // pickers can group them. Plain SQL (same pattern as GetAllRoles)
+            // because the sp_GetAll* procs don't reliably return CategoryName.
+            // Only active, non-deleted items; items whose category is missing
+            // are grouped under "Other".
+            vm.AllConditions = LoadLookup(con, @"
+                SELECT x.ConditionID AS Id, x.ConditionName AS Name, ISNULL(c.CategoryName, 'Other') AS Category
+                FROM MedicalConditions x
+                LEFT JOIN MedicalConditionCategories c ON c.ConditionCategoryID = x.ConditionCategoryID
+                WHERE x.IsActive = 1 AND x.DeletedAt IS NULL
+                ORDER BY Category, Name");
 
-            using (var cmd = new SqlCommand("sp_GetAllAllergies", con))
-            {
-                cmd.CommandType = CommandType.StoredProcedure;
-                using var dr = cmd.ExecuteReader();
-                while (dr.Read())
-                    vm.AllAllergies.Add(((int)dr["AllergyID"], dr["AllergyName"].ToString()!));
-            }
+            vm.AllAllergies = LoadLookup(con, @"
+                SELECT x.AllergyID AS Id, x.AllergyName AS Name, ISNULL(c.CategoryName, 'Other') AS Category
+                FROM Allergies x
+                LEFT JOIN AllergyCategories c ON c.AllergyCategoryID = x.AllergyCategoryID
+                WHERE x.IsActive = 1 AND x.DeletedAt IS NULL
+                ORDER BY Category, Name");
 
-            using (var cmd = new SqlCommand("sp_GetAllMedications", con))
-            {
-                cmd.CommandType = CommandType.StoredProcedure;
-                using var dr = cmd.ExecuteReader();
-                while (dr.Read())
-                    vm.AllMedications.Add(((int)dr["MedicationID"], dr["MedicationName"].ToString()!));
-            }
+            vm.AllMedications = LoadLookup(con, @"
+                SELECT x.MedicationID AS Id, x.MedicationName AS Name, ISNULL(c.CategoryName, 'Other') AS Category
+                FROM Medications x
+                LEFT JOIN MedicationCategories c ON c.MedicationCategoryID = x.MedicationCategoryID
+                WHERE x.IsActive = 1 AND x.DeletedAt IS NULL
+                ORDER BY Category, Name");
 
             return vm;
+        }
+
+        private static List<LookupItem> LoadLookup(SqlConnection con, string sql)
+        {
+            var list = new List<LookupItem>();
+            using var cmd = new SqlCommand(sql, con);
+            using var dr = cmd.ExecuteReader();
+            while (dr.Read())
+                list.Add(new LookupItem
+                {
+                    Id = (int)dr["Id"],
+                    Name = dr["Name"].ToString()!,
+                    Category = dr["Category"].ToString()!
+                });
+            return list;
         }
 
         public void AddPatientCondition(int patientId, int conditionId, DateTime? diagnosedDate, string? notes)
@@ -462,6 +549,40 @@ namespace Patient.DataAccess
                     });
             }
 
+            // The patient's own conditions, for the "choose which ones" list
+            using (var cmd = new SqlCommand("sp_GetPatientConditions", con))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@PatientID", patientId);
+                using var dr = cmd.ExecuteReader();
+                while (dr.Read())
+                    vm.MyConditions.Add(new PatientCondition
+                    {
+                        PatientID = (int)dr["PatientID"],
+                        ConditionID = (int)dr["ConditionID"],
+                        ConditionName = dr["ConditionName"].ToString()!,
+                        DiagnosedDate = dr["DiagnosedDate"] as DateTime?,
+                        Notes = dr["Notes"] as string
+                    });
+            }
+
+            // "All conditions" / "3 conditions" label for each doctor in the list
+            foreach (var c in vm.Consents.Where(c => c.ConsentGranted))
+            {
+                var (all, ids) = LoadConditionAccess(con, patientId, c.DoctorID);
+                vm.AccessSummaryByDoctor[c.DoctorID] = all
+                    ? "All conditions"
+                    : ids.Count == 1 ? "1 condition" : $"{ids.Count} conditions";
+            }
+
+            if (selectedDoctorId > 0)
+            {
+                vm.SelectedDoctorHasConsent = vm.Consents.Any(c => c.DoctorID == selectedDoctorId && c.ConsentGranted);
+                var (all, ids) = LoadConditionAccess(con, patientId, selectedDoctorId);
+                vm.ShareAllConditions = all;
+                vm.SharedConditionIds = ids;
+            }
+
             if (selectedDoctorId > 0)
             {
                 using var cmd = new SqlCommand("sp_GetConsentTestRequests", con);
@@ -481,6 +602,104 @@ namespace Patient.DataAccess
             }
 
             return vm;
+        }
+
+        // ---- Condition-level access -----------------------------------------
+
+        /// <summary>
+        /// Reads which conditions a doctor may see. No row yet means the
+        /// patient consented before this feature existed, so: all conditions.
+        /// </summary>
+        private static (bool ShareAll, List<int> ConditionIds) LoadConditionAccess(SqlConnection con, int patientId, int doctorId)
+        {
+            bool shareAll = true;
+            var ids = new List<int>();
+
+            using (var cmd = new SqlCommand(
+                "SELECT ShareAllConditions FROM PatientConditionAccess WHERE PatientID = @P AND DoctorID = @D", con))
+            {
+                cmd.Parameters.AddWithValue("@P", patientId);
+                cmd.Parameters.AddWithValue("@D", doctorId);
+                var result = cmd.ExecuteScalar();
+                if (result == null || result == DBNull.Value)
+                    return (true, ids);
+                shareAll = Convert.ToBoolean(result);
+            }
+
+            if (!shareAll)
+            {
+                using var cmd = new SqlCommand(
+                    "SELECT ConditionID FROM PatientConditionAccessItems WHERE PatientID = @P AND DoctorID = @D", con);
+                cmd.Parameters.AddWithValue("@P", patientId);
+                cmd.Parameters.AddWithValue("@D", doctorId);
+                using var dr = cmd.ExecuteReader();
+                while (dr.Read()) ids.Add((int)dr["ConditionID"]);
+            }
+            return (shareAll, ids);
+        }
+
+        public (bool ShareAll, List<int> ConditionIds) GetConditionAccess(int patientId, int doctorId)
+        {
+            using var con = new SqlConnection(_connectionString);
+            con.Open();
+            return LoadConditionAccess(con, patientId, doctorId);
+        }
+
+        /// <summary>
+        /// Saves "all conditions" or the exact list of ticked conditions for
+        /// one doctor. Replaces whatever was there before.
+        /// </summary>
+        public void SaveConditionAccess(int patientId, int doctorId, bool shareAll, IEnumerable<int> conditionIds)
+        {
+            using var con = new SqlConnection(_connectionString);
+            con.Open();
+            using var tx = con.BeginTransaction();
+
+            using (var cmd = new SqlCommand(@"
+                IF EXISTS (SELECT 1 FROM PatientConditionAccess WHERE PatientID = @P AND DoctorID = @D)
+                    UPDATE PatientConditionAccess SET ShareAllConditions = @All, UpdatedAt = GETDATE()
+                    WHERE PatientID = @P AND DoctorID = @D
+                ELSE
+                    INSERT INTO PatientConditionAccess (PatientID, DoctorID, ShareAllConditions, UpdatedAt)
+                    VALUES (@P, @D, @All, GETDATE());
+                DELETE FROM PatientConditionAccessItems WHERE PatientID = @P AND DoctorID = @D;", con, tx))
+            {
+                cmd.Parameters.AddWithValue("@P", patientId);
+                cmd.Parameters.AddWithValue("@D", doctorId);
+                cmd.Parameters.AddWithValue("@All", shareAll);
+                cmd.ExecuteNonQuery();
+            }
+
+            if (!shareAll)
+            {
+                // The controller only passes conditions this patient actually has
+                foreach (var id in conditionIds.Distinct())
+                {
+                    using var cmd = new SqlCommand(
+                        "INSERT INTO PatientConditionAccessItems (PatientID, DoctorID, ConditionID) VALUES (@P, @D, @C)", con, tx);
+                    cmd.Parameters.AddWithValue("@P", patientId);
+                    cmd.Parameters.AddWithValue("@D", doctorId);
+                    cmd.Parameters.AddWithValue("@C", id);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+
+            tx.Commit();
+        }
+
+        /// <summary>True when the patient currently has consent switched on for this doctor.</summary>
+        public bool DoctorHasConsent(int patientId, int doctorId)
+        {
+            using var con = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("sp_GetPatientConsents", con);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@PatientID", patientId);
+            con.Open();
+            using var dr = cmd.ExecuteReader();
+            while (dr.Read())
+                if ((int)dr["DoctorID"] == doctorId && (bool)dr["ConsentGranted"])
+                    return true;
+            return false;
         }
 
         public void GrantConsent(int patientId, int doctorId)

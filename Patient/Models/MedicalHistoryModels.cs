@@ -35,14 +35,25 @@ namespace Patient.Models
         public string? Notes { get; set; }
     }
 
+    /// <summary>
+    /// One entry in a pick-list (a condition, allergy or medication) with
+    /// the category it belongs to, so the pickers can group by category.
+    /// </summary>
+    public class LookupItem
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Category { get; set; } = "";
+    }
+
     public class MedicalHistoryViewModel
     {
         public List<PatientCondition> Conditions { get; set; } = new();
         public List<PatientAllergy> Allergies { get; set; } = new();
         public List<PatientMedication> Medications { get; set; } = new();
-        public List<(int Id, string Name)> AllConditions { get; set; } = new();
-        public List<(int Id, string Name)> AllAllergies { get; set; } = new();
-        public List<(int Id, string Name)> AllMedications { get; set; } = new();
+        public List<LookupItem> AllConditions { get; set; } = new();
+        public List<LookupItem> AllAllergies { get; set; } = new();
+        public List<LookupItem> AllMedications { get; set; } = new();
     }
 
 }
