@@ -1,6 +1,7 @@
 ﻿@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
+@model List<_4th_year_set_up.Models.DoctorTestRequestSummary>
 @{
     <!-- ─── VIEW RESULTS ─── -->
     // <div class="page" id="page-results">
@@ -597,11 +598,11 @@
                 <div class="nav-user">
                     <div class="nav-avatar">D</div>
                     <div class="nav-user-info">
-                        <div class="nav-user-name">doctor@nmb.ac.za</div>
+                        <div class="nav-user-name">@ViewBag.Email</div>
                         <div class="nav-user-role">Doctor</div>
                     </div>
                 </div>
-                <a href="#" class="btn-signout">
+                <a asp-controller="Home" asp-action="Logout" class="btn-signout">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                         <polyline points="16 17 21 12 16 7" />
@@ -651,67 +652,76 @@
                     <p class="page-sub">View and release results to patients</p>
                 </div>
 
-                <div class="card">
-                    <div class="result-header-bar">
-                        <span class="result-req-id">REQ-2025-089</span>
-                        <span class="result-patient">K. Mashamba</span>
-                        <span class="result-date">2025-03-01</span>
-                        <span class="badge badge-stat">STAT</span>
-                        <span class="badge badge-verified">Verified</span>
-                    </div>
-
-                    <div class="result-alert">
-                        ⚠ 2 abnormal results detected — highlighted below
-                    </div>
-
-                    <div class="result-section-title">Full Blood Count</div>
-
-                    <div class="result-row">
-                        <span class="result-name"><span class="abnormal-indicator"></span>Haemoglobin</span>
-                        <span class="result-val abnormal">9.2 g/dL</span>
-                        <span class="result-range">Normal: 12.0–17.5 g/dL</span>
-                    </div>
-                    <div class="result-row">
-                        <span class="result-name">WBC Count</span>
-                        <span class="result-val normal">7.8 ×10⁹/µL</span>
-                        <span class="result-range">Normal: 4.5–11.0 ×10⁹/µL</span>
-                    </div>
-                    <div class="result-row">
-                        <span class="result-name"><span class="abnormal-indicator"></span>Platelet Count</span>
-                        <span class="result-val abnormal">88 ×10⁹/µL</span>
-                        <span class="result-range">Normal: 150–400 ×10⁹/µL</span>
-                    </div>
-                    <div class="result-row">
-                        <span class="result-name">MCV</span>
-                        <span class="result-val normal">86.4 fL</span>
-                        <span class="result-range">Normal: 80–100 fL</span>
-                    </div>
-
-                    <div class="actions-bar">
-                        <div class="form-group">
-                            <label>Note to Patient</label>
-                            <textarea placeholder="e.g. Please make an appointment to discuss these results..."></textarea>
+                @if (Model == null || Model.Count == 0)
+                {
+                    <div class="card" style="padding:24px;color:var(--muted);">No completed test requests awaiting review yet.</div>
+                }
+                @foreach (var req in Model ?? new())
+                {
+                    <div class="card">
+                        <div class="result-header-bar">
+                            <span class="result-req-id">@req.RequestNumber</span>
+                            <span class="result-patient">@req.PatientName</span>
+                            <span class="result-date">@req.RequestDate.ToString("yyyy-MM-dd")</span>
+                            <span class="badge @(req.Urgency == "STAT" ? "badge-stat" : req.Urgency == "Urgent" ? "badge-urgent" : "badge-routine")">@req.Urgency</span>
+                            <span class="badge @(req.RequestStatus == _4th_year_set_up.Models.TestRequestStatus.ReleasedByDoctor ? "badge-verified" : "badge-inprogress")">@req.RequestStatus</span>
                         </div>
-                        <div style="display:flex; align-items:center; gap:16px;">
-                            <button class="btn-primary" onclick="releaseResult()">Release to Patient</button>
-                            <button class="btn-outline">Download PDF</button>
-                            <span class="submit-msg" id="release-msg">
-                                <span class="dot"></span>
-                                Results released! Patient notified via email with PDF.
-                            </span>
-                        </div>
+
+                        @if (req.HasAbnormalResult)
+                        {
+                            <div class="result-alert">
+                                ⚠ @req.Items.Count(i => i.IsAbnormal) abnormal result(s) detected — highlighted below
+                            </div>
+                        }
+
+                        <div class="result-section-title">Results</div>
+
+                        @foreach (var item in req.Items)
+                        {
+                            <div class="result-row">
+                                <span class="result-name">
+                                    @if (item.IsAbnormal) { <span class="abnormal-indicator"></span> }
+                                    @item.TestName
+                                </span>
+                                <span class="result-val @(item.IsAbnormal ? "abnormal" : "normal")">@(item.ResultValue?.ToString() ?? "—") @item.UnitName</span>
+                                <span class="result-range">Normal: @item.NormalRangeMin–@item.NormalRangeMax @item.UnitName</span>
+                            </div>
+                        }
+
+                        @if (req.RequestStatus == _4th_year_set_up.Models.TestRequestStatus.Completed)
+                        {
+                            <div class="actions-bar">
+                                <form method="post" asp-controller="Doctor" asp-action="ReleaseResults">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="RequestID" value="@req.RequestID" />
+                                    <div class="form-group">
+                                        <label>Note to Patient</label>
+                                        <textarea name="ReleaseNotes" placeholder="e.g. Please make an appointment to discuss these results..."></textarea>
+                                    </div>
+                                    <label style="font-size:12.5px;display:flex;align-items:center;gap:6px;margin-bottom:14px;">
+                                        <input type="checkbox" name="AskPatientToBookAppointment" value="true" />
+                                        Ask patient to book an appointment instead of e-mailing raw results
+                                    </label>
+                                    <div style="display:flex; align-items:center; gap:16px;">
+                                        <button type="submit" class="btn-primary">Release to Patient</button>
+                                        <a class="btn-outline" href="@Url.Action("ResultsPdf", "Doctor", new { requestId = req.RequestID })">Download PDF</a>
+                                    </div>
+                                </form>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="actions-bar">
+                                <a class="btn-outline" href="@Url.Action("ResultsPdf", "Doctor", new { requestId = req.RequestID })">Download PDF</a>
+                                <span style="margin-left:12px;font-size:12.5px;color:var(--muted);">
+                                    Released @req.ReleasedDate?.ToString("yyyy-MM-dd") — @req.ReleaseNotes
+                                </span>
+                            </div>
+                        }
                     </div>
-                </div>
+                }
             </main>
         </div>
-
-        <script>
-            function releaseResult() {
-                const msg = document.getElementById('release-msg');
-                msg.style.opacity = '1';
-                setTimeout(() => msg.style.opacity = '0', 4000);
-            }
-        </script>
 
     </body>
     </html>

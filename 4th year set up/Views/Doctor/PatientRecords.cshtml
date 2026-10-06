@@ -1,6 +1,10 @@
-﻿@{
+﻿@model List<_4th_year_set_up.Models.PatientRecordListItem>
+@{
     ViewData["Title"] = "My Patients";
     Layout = null;
+    var allConditions = ViewBag.AllConditions as List<(int Id, string Name)> ?? new();
+    var allAllergies = ViewBag.AllAllergies as List<(int Id, string Name)> ?? new();
+    var allMedications = ViewBag.AllMedications as List<(int Id, string Name)> ?? new();
 }
 
 <!DOCTYPE html>
@@ -573,9 +577,21 @@
                 <button class="btn-primary" onclick="openRegisterModal()">+ Register Patient</button>
             </div>
 
+            @if (TempData["Success"] != null)
+            {
+                <div class="card" style="border-color:#16a34a;color:#16a34a;">@TempData["Success"]</div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="card" style="border-color:var(--red);color:var(--red);">@TempData["Error"]</div>
+            }
+
             <div class="card">
                 <div class="search-bar">
-                    <input class="search-input" type="text" id="searchInput" placeholder="Search by name or ID..." onkeyup="filterTable()" />
+                    <form method="get" asp-controller="Doctor" asp-action="PatientRecords" style="display:flex;flex:1;gap:10px;">
+                        <input class="search-input" type="text" name="q" value="@ViewBag.SearchTerm" placeholder="Search by name, SA ID or e-mail..." />
+                        <button class="btn-outline" type="submit">Search</button>
+                    </form>
                 </div>
                 <table id="patientTable">
                     <thead>
@@ -583,44 +599,27 @@
                             <th>Name</th>
                             <th>SA ID</th>
                             <th>DOB</th>
-                            <th>Conditions</th>
-                            <th>Last Request</th>
+                            <th>Cellphone</th>
+                            <th>E-mail</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>K. Mashamba</td>
-                            <td class="mono">9204115800086</td>
-                            <td>1992-04-11</td>
-                            <td>Hypertension</td>
-                            <td>2025-03-01</td>
-                            <td><button class="btn-outline" onclick="openPatientModal('K. Mashamba','9204115800086','1992-04-11','082 444 5566','patient@gmail.com','Hypertension','Penicillin','Amlodipine 5mg')">View</button></td>
-                        </tr>
-                        <tr>
-                            <td>P. Ndlovu</td>
-                            <td class="mono">8811204200083</td>
-                            <td>1988-11-20</td>
-                            <td>Diabetes, Anaemia</td>
-                            <td>2025-03-02</td>
-                            <td><button class="btn-outline" onclick="openPatientModal('P. Ndlovu','8811204200083','1988-11-20','071 222 3344','pndlovu@mail.com','Diabetes, Anaemia','None','Metformin 500mg')">View</button></td>
-                        </tr>
-                        <tr>
-                            <td>M. Jacobs</td>
-                            <td class="mono">9512034800084</td>
-                            <td>1995-12-03</td>
-                            <td>None</td>
-                            <td>2025-03-03</td>
-                            <td><button class="btn-outline" onclick="openPatientModal('M. Jacobs','9512034800084','1995-12-03','083 111 9988','mjacobs@mail.com','None','None','None')">View</button></td>
-                        </tr>
-                        <tr>
-                            <td>J. Fortuin</td>
-                            <td class="mono">7703125400087</td>
-                            <td>1977-03-12</td>
-                            <td>Asthma</td>
-                            <td>2025-02-20</td>
-                            <td><button class="btn-outline" onclick="openPatientModal('J. Fortuin','7703125400087','1977-03-12','064 555 7711','jfortuin@mail.com','Asthma','Aspirin','Salbutamol inhaler')">View</button></td>
-                        </tr>
+                        @if (Model == null || Model.Count == 0)
+                        {
+                            <tr><td colspan="6" style="text-align:center;color:var(--muted);">No patients found.</td></tr>
+                        }
+                        @foreach (var p in Model ?? new())
+                        {
+                            <tr>
+                                <td>@p.FullName</td>
+                                <td class="mono">@p.IDNumber</td>
+                                <td>@p.DateOfBirth.ToString("yyyy-MM-dd")</td>
+                                <td>@p.CellphoneNumber</td>
+                                <td>@p.Email</td>
+                                <td><button class="btn-outline" onclick="openPatientModal(@p.PatientID, '@p.FullName', '@p.IDNumber', '@p.DateOfBirth.ToString("yyyy-MM-dd")', '@p.CellphoneNumber', '@p.Email')">View</button></td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
@@ -669,35 +668,82 @@
 
     <!-- Register Patient Modal -->
     <div class="modal-backdrop" id="registerModal">
-        <div class="modal">
+        <div class="modal" style="max-height:88vh;overflow-y:auto;">
             <div class="modal-header">
                 <h2 class="modal-title">Register New Patient</h2>
                 <button class="modal-close" onclick="closeRegisterModal()">&#x2715;</button>
             </div>
-            <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" placeholder="e.g. Thabo Nkosi" />
-            </div>
-            <div class="form-group">
-                <label>SA ID Number</label>
-                <input type="text" placeholder="13-digit ID number" maxlength="13" />
-            </div>
-            <div class="form-group">
-                <label>Date of Birth</label>
-                <input type="date" />
-            </div>
-            <div class="form-group">
-                <label>Phone Number</label>
-                <input type="tel" placeholder="e.g. 082 123 4567" />
-            </div>
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" placeholder="patient@email.com" />
-            </div>
-            <div class="modal-actions">
-                <button class="btn-outline" onclick="closeRegisterModal()">Cancel</button>
-                <button class="btn-primary">Register Patient</button>
-            </div>
+            <form method="post" asp-controller="Doctor" asp-action="RegisterPatient">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" name="FirstName" required />
+                </div>
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <input type="text" name="LastName" required />
+                </div>
+                <div class="form-group">
+                    <label>SA ID Number</label>
+                    <input type="text" name="IDNumber" placeholder="13-digit ID number" maxlength="13" required />
+                </div>
+                <div class="form-group">
+                    <label>Date of Birth</label>
+                    <input type="date" name="DateOfBirth" required />
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" name="CellphoneNumber" placeholder="e.g. 0821234567" required />
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="Email" placeholder="patient@email.com" required />
+                </div>
+                <div class="form-group">
+                    <label>Home Address</label>
+                    <input type="text" name="HomeAddress" />
+                </div>
+                <div class="form-group">
+                    <label>Known Medical Conditions</label>
+                    <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12.5px;">
+                        @foreach (var c in allConditions)
+                        {
+                            <label style="display:flex;align-items:center;gap:4px;font-weight:400;">
+                                <input type="checkbox" name="ConditionIDs" value="@c.Id" style="width:auto;" /> @c.Name
+                            </label>
+                        }
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Known Allergies</label>
+                    <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12.5px;">
+                        @foreach (var a in allAllergies)
+                        {
+                            <label style="display:flex;align-items:center;gap:4px;font-weight:400;">
+                                <input type="checkbox" name="AllergyIDs" value="@a.Id" style="width:auto;" /> @a.Name
+                            </label>
+                        }
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Current Medication</label>
+                    <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12.5px;">
+                        @foreach (var m in allMedications)
+                        {
+                            <label style="display:flex;align-items:center;gap:4px;font-weight:400;">
+                                <input type="checkbox" name="MedicationIDs" value="@m.Id" style="width:auto;" /> @m.Name
+                            </label>
+                        }
+                    </div>
+                </div>
+                <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">
+                    A password will be generated automatically and e-mailed to the patient. They must change it at first login.
+                </p>
+                <div class="modal-actions">
+                    <button type="button" class="btn-outline" onclick="closeRegisterModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Register Patient</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -710,16 +756,30 @@
             });
         }
 
-        function openPatientModal(name, id, dob, phone, email, conditions, allergies, medication) {
+        function openPatientModal(patientId, name, id, dob, phone, email) {
             document.getElementById('modal-name').textContent = name;
             document.getElementById('modal-id').textContent = id;
             document.getElementById('modal-dob').textContent = dob;
             document.getElementById('modal-phone').textContent = phone;
             document.getElementById('modal-email').textContent = email;
-            document.getElementById('modal-conditions').textContent = conditions;
-            document.getElementById('modal-allergies').textContent = allergies;
-            document.getElementById('modal-medication').textContent = medication;
+            document.getElementById('modal-conditions').textContent = 'Loading…';
+            document.getElementById('modal-allergies').textContent = 'Loading…';
+            document.getElementById('modal-medication').textContent = 'Loading…';
             document.getElementById('patientModal').classList.add('open');
+
+            fetch('@Url.Action("PatientDetail", "Doctor")?patientId=' + patientId)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('modal-conditions').textContent =
+                        data.conditions.length ? data.conditions.map(c => c.conditionName).join(', ') : 'None recorded';
+                    document.getElementById('modal-allergies').textContent =
+                        data.allergies.length ? data.allergies.map(a => a.allergyName).join(', ') : 'None recorded';
+                    document.getElementById('modal-medication').textContent =
+                        data.medications.length ? data.medications.map(m => m.medicationName).join(', ') : 'None recorded';
+                })
+                .catch(() => {
+                    document.getElementById('modal-conditions').textContent = 'Unable to load';
+                });
         }
 
         function closePatientModal() {
