@@ -1,7 +1,91 @@
-﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using Patient.Models
 @{
     ViewData["Title"] = "Patient Dashboard";
     Layout = null;
+
+    var requests = ViewData["Requests"] as List<TestRequest> ?? new();
+    var history  = ViewData["History"] as MedicalHistoryViewModel ?? new MedicalHistoryViewModel();
+    var consents = ViewData["Consents"] as List<DoctorConsent> ?? new();
+    string? firstName = ViewBag.FirstName as string;
+    string email = (ViewBag.Email as string) ?? "";
+
+    // ── What the page needs, worked out once ──
+    var released  = requests.Where(r => r.RequestStatus == "Released").ToList();
+    var open      = requests.Where(r => r.RequestStatus != "Released" && r.RequestStatus != "Cancelled").ToList();
+    var latest    = released.OrderByDescending(r => r.ReleasedDate ?? r.RequestDate).FirstOrDefault();
+    var releasedItems = released.SelectMany(r => r.Items.Where(i => i.ResultValue.HasValue).Select(i => new { Req = r, Item = i })).ToList();
+
+    bool IsOut(TestRequestItem i) =>
+        i.IsAbnormal ||
+        (i.ResultValue.HasValue && ((i.NormalRangeMax.HasValue && i.ResultValue > i.NormalRangeMax) ||
+                                    (i.NormalRangeMin.HasValue && i.ResultValue < i.NormalRangeMin)));
+    string Flag(TestRequestItem i) =>
+        i.ResultValue.HasValue && i.NormalRangeMax.HasValue && i.ResultValue > i.NormalRangeMax ? "High" :
+        i.ResultValue.HasValue && i.NormalRangeMin.HasValue && i.ResultValue < i.NormalRangeMin ? "Low" :
+        i.IsAbnormal ? "Abnormal" : "";
+    string Num(decimal? v) => v.HasValue ? v.Value.ToString("0.##") : "—";
+    string Range(TestRequestItem i) =>
+        i.NormalRangeMin.HasValue && i.NormalRangeMax.HasValue ? $"{Num(i.NormalRangeMin)} – {Num(i.NormalRangeMax)}" :
+        i.NormalRangeMax.HasValue ? $"≤ {Num(i.NormalRangeMax)}" :
+        i.NormalRangeMin.HasValue ? $"≥ {Num(i.NormalRangeMin)}" : "—";
+
+    // Abnormal results from the most recent released result of each test
+    var latestPerTest = releasedItems
+        .GroupBy(x => x.Item.TestName)
+        .Select(g => g.OrderByDescending(x => x.Item.VerificationDateTime ?? x.Item.CompletionDateTime ?? x.Req.RequestDate).First())
+        .ToList();
+    var attention = latestPerTest.Where(x => IsOut(x.Item)).OrderBy(x => x.Item.TestName).ToList();
+
+    // Sparkline series: tests with at least 2 released results
+    var trends = releasedItems
+        .GroupBy(x => x.Item.TestName)
+        .Select(g => new
+        {
+            Test = g.Key,
+            Unit = g.Select(x => x.Item.UnitName).FirstOrDefault(u => !string.IsNullOrEmpty(u)) ?? "",
+            Min = g.Select(x => x.Item.NormalRangeMin).FirstOrDefault(v => v.HasValue),
+            Max = g.Select(x => x.Item.NormalRangeMax).FirstOrDefault(v => v.HasValue),
+            Points = g.OrderBy(x => x.Item.VerificationDateTime ?? x.Item.CompletionDateTime ?? x.Req.RequestDate)
+                      .Select(x => new { V = x.Item.ResultValue!.Value, Out = IsOut(x.Item) }).ToList()
+        })
+        .Where(t => t.Points.Count >= 2)
+        .OrderByDescending(t => t.Points.Count).ThenBy(t => t.Test)
+        .Take(3)
+        .ToList();
+
+    var activeConsents = consents.Where(c => c.ConsentGranted).ToList();
+    var abnormalCount = attention.Count;   // same rule as the red banner: latest result per test
+
+    var hour = DateTime.Now.Hour;
+    var greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
+    var summaryBits = new List<string>();
+    if (open.Any()) summaryBits.Add($"{open.Count} request{(open.Count == 1 ? "" : "s")} in progress");
+    if (released.Any()) summaryBits.Add($"{released.Count} released");
+    if (attention.Any()) summaryBits.Add($"{attention.Count} result{(attention.Count == 1 ? "" : "s")} to discuss with your doctor");
+    var summary = summaryBits.Any() ? string.Join(" · ", summaryBits) : "No test requests yet. When your doctor orders tests, you'll follow them here.";
+
+    // Request tracker steps
+    var steps = new[] { "Submitted", "Samples Received", "In Progress", "Completed", "Released" };
+    int StepIndex(string status) => Array.FindIndex(steps, s => string.Equals(s, status, StringComparison.OrdinalIgnoreCase));
+
+    // SVG sparkline points (120 x 36 box) with the normal band
+    (string Line, List<(double X, double Y, bool Out)> Dots, double BandTop, double BandBottom) Spark(List<(decimal V, bool Out)> pts, decimal? min, decimal? max)
+    {
+        const double W = 120, H = 36, Pad = 4;
+        var vals = pts.Select(p => (double)p.V).ToList();
+        var lo = vals.Min(); var hi = vals.Max();
+        if (min.HasValue) lo = Math.Min(lo, (double)min.Value);
+        if (max.HasValue) hi = Math.Max(hi, (double)max.Value);
+        if (hi - lo < 1e-9) { hi += 1; lo -= 1; }
+        double Y(double v) => Pad + (H - 2 * Pad) * (1 - (v - lo) / (hi - lo));
+        var dots = pts.Select((p, i) => (X: Pad + (W - 2 * Pad) * (pts.Count == 1 ? 0.5 : (double)i / (pts.Count - 1)), Y: Y((double)p.V), Out: p.Out)).ToList();
+        var line = string.Join(" ", dots.Select(d => $"{d.X:0.#},{d.Y:0.#}"));
+        var top = max.HasValue ? Y((double)max.Value) : Pad;
+        var bottom = min.HasValue ? Y((double)min.Value) : H - Pad;
+        return (line, dots, top, bottom);
+    }
 }
 
 <!DOCTYPE html>
@@ -12,565 +96,196 @@
     <title>Patient Dashboard — NMB-HLabSys</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@@0;1&family=DM+Sans:wght@@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
             --navy: #0b1f3a;
             --navy2: #122848;
             --teal: #0d9488;
+            --teal-dark: #0b7a70;
             --teal-light: rgba(13,148,136,0.1);
             --white: #ffffff;
             --offwhite: #f4f7fb;
             --muted: #6b7a99;
             --border: #dde4f0;
             --red: #dc2626;
+            --red-bg: #fef2f2;
             --green: #16a34a;
             --amber: #d97706;
+            --amber-bg: #fffbeb;
         }
 
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--offwhite);
-            color: var(--navy);
-            min-height: 100vh;
-        }
+        body { font-family: 'DM Sans', sans-serif; background: var(--offwhite); color: var(--navy); min-height: 100vh; }
+        a { color: inherit; }
 
         /* ── TOPBAR ── */
-        .topbar {
-            background: var(--navy);
-            padding: 0 40px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 64px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-        }
-
-        .brand-logo {
-            width: 34px;
-            height: 34px;
-            background: var(--teal);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-            .brand-logo svg {
-                width: 18px;
-                height: 18px;
-                fill: white;
-            }
-
-        .brand-name {
-            font-family: 'DM Serif Display', serif;
-            color: white;
-            font-size: 1.1rem;
-            line-height: 1.1;
-        }
-
-            .brand-name span {
-                display: block;
-                font-family: 'DM Sans', sans-serif;
-                font-size: 0.6rem;
-                font-weight: 300;
-                color: rgba(255,255,255,0.4);
-                letter-spacing: 0.1em;
-                text-transform: uppercase;
-            }
-
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .user-chip {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 100px;
-            padding: 6px 14px 6px 8px;
-        }
-
-        .user-avatar {
-            width: 28px;
-            height: 28px;
-            background: var(--teal);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: white;
-        }
-
-        .user-email {
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.75);
-            max-width: 160px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .logout-btn {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            color: rgba(255,255,255,0.8);
-            padding: 8px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 0.82rem;
-            font-weight: 500;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-            .logout-btn:hover {
-                background: rgba(255,255,255,0.15);
-                color: white;
-            }
-
-            .logout-btn svg {
-                width: 14px;
-                height: 14px;
-            }
+        .topbar { background: var(--navy); padding: 0 40px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.15); }
+        .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .brand-logo { width: 34px; height: 34px; background: var(--teal); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .brand-logo svg { width: 18px; height: 18px; fill: white; }
+        .brand-name { font-family: 'DM Serif Display', serif; color: white; font-size: 1.1rem; line-height: 1.1; }
+        .brand-name span { display: block; font-family: 'DM Sans', sans-serif; font-size: 0.6rem; font-weight: 300; color: rgba(255,255,255,0.4); letter-spacing: 0.1em; text-transform: uppercase; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .user-chip { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; padding: 6px 14px 6px 8px; }
+        .user-avatar { width: 28px; height: 28px; background: var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; color: white; }
+        .user-email { font-size: 0.8rem; color: rgba(255,255,255,0.75); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .logout-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 0.82rem; font-weight: 500; transition: background 0.2s; display: flex; align-items: center; gap: 6px; }
+        .logout-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+        .logout-btn svg { width: 14px; height: 14px; }
 
         /* ── LAYOUT ── */
-        .page {
-            display: flex;
-            min-height: calc(100vh - 64px);
-        }
-
-        /* ── SIDEBAR ── */
-        .sidebar {
-            width: 220px;
-            background: white;
-            border-right: 1px solid var(--border);
-            padding: 24px 0;
-            flex-shrink: 0;
-            position: sticky;
-            top: 64px;
-            height: calc(100vh - 64px);
-            overflow-y: auto;
-        }
-
-        .nav-section {
-            margin-bottom: 8px;
-        }
-
-        .nav-label {
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: var(--muted);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            padding: 0 20px;
-            margin-bottom: 4px;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 20px;
-            color: var(--muted);
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.15s;
-            border-left: 3px solid transparent;
-        }
-
-            .nav-item:hover {
-                background: var(--offwhite);
-                color: var(--navy);
-            }
-
-            .nav-item.active {
-                background: var(--teal-light);
-                color: var(--teal);
-                border-left-color: var(--teal);
-            }
-
-            .nav-item svg {
-                width: 16px;
-                height: 16px;
-                flex-shrink: 0;
-            }
-
-        /* ── MAIN ── */
-        .main {
-            flex: 1;
-            padding: clamp(24px, 3vw, 40px);
-            overflow-y: auto;
-        }
+        .page { display: flex; min-height: calc(100vh - 64px); }
+        .sidebar { width: 220px; background: white; border-right: 1px solid var(--border); padding: 24px 0; flex-shrink: 0; position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto; }
+        .nav-section { margin-bottom: 8px; }
+        .nav-label { font-size: 0.65rem; font-weight: 600; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; padding: 0 20px; margin-bottom: 4px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: background 0.15s, color 0.15s; border-left: 3px solid transparent; white-space: nowrap; }
+        .nav-item:hover { background: var(--offwhite); color: var(--navy); }
+        .nav-item.active { background: var(--teal-light); color: var(--teal); border-left-color: var(--teal); }
+        .nav-item:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
+        .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .main { flex: 1; min-width: 0; padding: clamp(20px, 3vw, 36px); }
+        .wrap { max-width: 1180px; margin: 0 auto; }
 
         /* ── HERO ── */
-        .hero {
-            background: var(--navy);
-            border-radius: 20px;
-            padding: 32px 36px;
-            margin-bottom: 32px;
-            position: relative;
-            overflow: hidden;
-        }
+        .hero { background: var(--navy); border-radius: 20px; padding: 28px 32px; margin-bottom: 20px; position: relative; overflow: hidden; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+        .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 55% 90% at 92% 40%, rgba(13,148,136,0.28) 0%, transparent 62%); }
+        .hero::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px); background-size: 40px 40px; }
+        .hero > * { position: relative; z-index: 2; }
+        .hero-date { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #5eead4; margin-bottom: 10px; }
+        .hero h1 { font-family: 'DM Serif Display', serif; font-size: clamp(1.5rem, 2.6vw, 2.15rem); color: white; line-height: 1.15; margin-bottom: 8px; }
+        .hero h1 span { color: #5eead4; font-style: italic; }
+        .hero p { color: rgba(255,255,255,0.65); font-size: 0.9rem; max-width: 560px; line-height: 1.55; }
+        .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.84rem; font-weight: 600; padding: 10px 16px; border-radius: 10px; text-decoration: none; border: 1px solid transparent; transition: background 0.15s, transform 0.15s; cursor: pointer; }
+        .btn svg { width: 15px; height: 15px; }
+        .btn-primary { background: var(--teal); color: white; }
+        .btn-primary:hover { background: var(--teal-dark); transform: translateY(-1px); }
+        .btn-ghost { background: rgba(255,255,255,0.08); color: white; border-color: rgba(255,255,255,0.16); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.15); }
 
-            .hero::before {
-                content: '';
-                position: absolute;
-                inset: 0;
-                background: radial-gradient(ellipse 60% 80% at 90% 50%, rgba(13,148,136,0.2) 0%, transparent 60%);
-            }
+        /* ── ATTENTION ── */
+        .attention { background: white; border: 1px solid #fecaca; border-left: 4px solid var(--red); border-radius: 14px; padding: 18px 20px; margin-bottom: 20px; }
+        .attention-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .attention-head svg { width: 18px; height: 18px; stroke: var(--red); flex-shrink: 0; }
+        .attention-head h2 { font-size: 0.95rem; font-weight: 700; color: var(--navy); }
+        .attention-head p { font-size: 0.8rem; color: var(--muted); margin-left: auto; }
+        .attention-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+        .att-item { background: var(--red-bg); border-radius: 10px; padding: 10px 12px; text-decoration: none; display: block; }
+        .att-item .t { font-size: 0.8rem; color: var(--muted); }
+        .att-item .v { font-size: 1.05rem; font-weight: 700; color: var(--red); margin-top: 2px; }
+        .att-item .r { font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+        .nudges { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .nudge { display: flex; gap: 12px; align-items: flex-start; background: var(--amber-bg); border: 1px solid #fde68a; border-radius: 12px; padding: 14px 16px; text-decoration: none; }
+        .nudge svg { width: 18px; height: 18px; stroke: var(--amber); flex-shrink: 0; margin-top: 1px; }
+        .nudge strong { display: block; font-size: 0.86rem; color: #92400e; margin-bottom: 2px; }
+        .nudge span { font-size: 0.8rem; color: #a16207; line-height: 1.45; }
 
-            .hero::after {
-                content: '';
-                position: absolute;
-                inset: 0;
-                background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-                background-size: 40px 40px;
-            }
+        /* ── STATS ── */
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat { background: white; border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; text-decoration: none; transition: box-shadow 0.15s, transform 0.15s; display: block; }
+        .stat:hover { box-shadow: 0 6px 18px rgba(11,31,58,0.08); transform: translateY(-1px); }
+        .stat .k { font-size: 0.76rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+        .stat .k i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .stat .v { font-family: 'DM Serif Display', serif; font-size: 1.75rem; line-height: 1.1; margin-top: 6px; color: var(--navy); }
+        .stat .v.red { color: var(--red); }
 
-        .hero-content {
-            position: relative;
-            z-index: 2;
-        }
+        /* ── GRID & PANELS ── */
+        .grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+        .col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+        .panel { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; box-shadow: 0 2px 8px rgba(11,31,58,0.04); min-width: 0; }
+        .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+        .panel-head h2 { font-family: 'DM Serif Display', serif; font-size: 1.12rem; color: var(--navy); }
+        .panel-head .sub { font-size: 0.78rem; color: var(--muted); }
+        .link { font-size: 0.8rem; font-weight: 600; color: var(--teal); text-decoration: none; white-space: nowrap; }
+        .link:hover { text-decoration: underline; }
+        .empty { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 18px 8px; line-height: 1.55; }
 
-        .hero-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(13,148,136,0.15);
-            border: 1px solid rgba(13,148,136,0.3);
-            color: #5eead4;
-            font-size: 0.68rem;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            padding: 4px 10px;
-            border-radius: 100px;
-            margin-bottom: 14px;
-        }
+        /* latest results rows */
+        .res-row { display: grid; grid-template-columns: minmax(0, 1.3fr) auto minmax(90px, 1fr); align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid var(--border); }
+        .res-row:first-of-type { border-top: none; }
+        .res-name { font-size: 0.87rem; font-weight: 600; color: var(--navy); }
+        .res-cat { font-size: 0.73rem; color: var(--muted); margin-top: 1px; }
+        .res-val { text-align: right; font-size: 0.95rem; font-weight: 700; color: var(--navy); white-space: nowrap; }
+        .res-val small { font-size: 0.72rem; font-weight: 500; color: var(--muted); margin-left: 2px; }
+        .res-val.out { color: var(--red); }
+        .flag { display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; background: #fee2e2; color: var(--red); margin-left: 6px; vertical-align: 1px; }
+        .rbar { position: relative; height: 6px; border-radius: 100px; background: #eef2f8; }
+        .rbar .band { position: absolute; top: 0; bottom: 0; background: rgba(22,163,74,0.22); border-radius: 100px; }
+        .rbar .pin { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%, -50%); background: var(--teal); border: 2px solid white; box-shadow: 0 0 0 1px rgba(11,31,58,0.15); }
+        .rbar .pin.out { background: var(--red); }
+        .rbar-lbl { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--muted); margin-top: 4px; }
+        .note { margin-top: 12px; background: var(--offwhite); border-radius: 10px; padding: 10px 12px; font-size: 0.8rem; color: var(--navy); line-height: 1.5; }
+        .note b { color: var(--muted); font-weight: 600; }
 
-            .hero-tag::before {
-                content: '';
-                width: 5px;
-                height: 5px;
-                background: #5eead4;
-                border-radius: 50%;
-            }
+        /* tracker */
+        .trk { padding: 12px 0; border-top: 1px solid var(--border); }
+        .trk:first-of-type { border-top: none; padding-top: 2px; }
+        .trk-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+        .trk-num { font-size: 0.86rem; font-weight: 700; color: var(--navy); }
+        .trk-meta { font-size: 0.74rem; color: var(--muted); }
+        .urg { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 7px; border-radius: 100px; background: #dbeafe; color: #1d4ed8; }
+        .urg.urgent { background: #fee2e2; color: var(--red); }
+        .urg.stat { background: #f3e8ff; color: #7c3aed; }
+        .steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 10px; }
+        .step { height: 5px; border-radius: 100px; background: #e5eaf2; }
+        .step.done { background: var(--teal); }
+        .step.now { background: linear-gradient(90deg, var(--teal) 50%, #99e0d9 50%); }
+        .step-lbl { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.72rem; color: var(--muted); }
+        .step-lbl b { color: var(--teal); font-weight: 600; }
 
-        .hero h1 {
-            font-family: 'DM Serif Display', serif;
-            font-size: clamp(1.5rem, 2.5vw, 2.2rem);
-            color: white;
-            margin-bottom: 8px;
-            line-height: 1.2;
-        }
+        /* sparklines */
+        .sparks { display: grid; gap: 10px; }
+        .spark { display: grid; grid-template-columns: minmax(0, 1fr) 120px; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; text-decoration: none; transition: border-color 0.15s; }
+        .spark:hover { border-color: var(--teal); }
+        .spark .n { font-size: 0.84rem; font-weight: 600; color: var(--navy); }
+        .spark .l { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+        .spark .l b { color: var(--navy); }
+        .spark .l b.out { color: var(--red); }
+        .spark svg { width: 120px; height: 36px; display: block; }
 
-            .hero h1 span {
-                color: #5eead4;
-                font-style: italic;
-            }
+        /* health snapshot */
+        .snap-group { margin-top: 12px; }
+        .snap-group:first-of-type { margin-top: 0; }
+        .snap-k { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+        .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+        .chip { font-size: 0.78rem; padding: 4px 10px; border-radius: 100px; background: var(--offwhite); border: 1px solid var(--border); color: var(--navy); }
+        .chip.allergy { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+        .chip.none { color: var(--muted); border-style: dashed; background: white; }
+        .doc { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+        .doc-av { width: 32px; height: 32px; border-radius: 9px; background: var(--teal-light); color: var(--teal); display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 0.95rem; flex-shrink: 0; }
+        .doc-n { font-size: 0.84rem; font-weight: 600; }
+        .doc-s { font-size: 0.73rem; color: var(--muted); }
 
-        .hero p {
-            color: rgba(255,255,255,0.5);
-            font-size: 0.88rem;
-            font-weight: 300;
-        }
+        /* entrance */
+        .reveal { opacity: 0; transform: translateY(8px); transition: opacity 0.35s ease, transform 0.35s ease; }
+        .reveal.in { opacity: 1; transform: none; }
+        @@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
 
-        /* ── STATS ROW ── */
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
-        .stat-card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
-        }
-
-        .stat-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 9px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 12px;
-        }
-
-            .stat-icon svg {
-                width: 16px;
-                height: 16px;
-            }
-
-        .stat-value {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.6rem;
-            color: var(--navy);
-            line-height: 1;
-            margin-bottom: 4px;
-        }
-
-        .stat-label {
-            font-size: 0.78rem;
-            color: var(--muted);
-            font-weight: 400;
-        }
-
-        /* ── SECTION HEADER ── */
-        .section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .section-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.2rem;
-            color: var(--navy);
-        }
-
-        .section-link {
-            font-size: 0.8rem;
-            color: var(--teal);
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-            .section-link:hover {
-                text-decoration: underline;
-            }
-
-        /* ── CARDS GRID ── */
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
-        .card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
-            transition: box-shadow 0.2s, transform 0.2s;
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
-
-            .card:hover {
-                box-shadow: 0 8px 24px rgba(11,31,58,0.1);
-                transform: translateY(-2px);
-            }
-
-        .card-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 16px;
-        }
-
-            .card-icon svg {
-                width: 20px;
-                height: 20px;
-            }
-
-        .card h3 {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--navy);
-            margin-bottom: 6px;
-        }
-
-        .card p {
-            font-size: 0.8rem;
-            color: var(--muted);
-            line-height: 1.6;
-        }
-
-        .card-arrow {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            margin-top: 16px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--teal);
-        }
-
-            .card-arrow svg {
-                width: 13px;
-                height: 13px;
-            }
-
-        /* ── RECENT ACTIVITY ── */
-        .activity-list {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
-        }
-
-        .activity-item {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-            transition: background 0.15s;
-        }
-
-            .activity-item:last-child {
-                border-bottom: none;
-            }
-
-            .activity-item:hover {
-                background: var(--offwhite);
-            }
-
-        .activity-dot {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-            .activity-dot svg {
-                width: 15px;
-                height: 15px;
-            }
-
-        .activity-info {
-            flex: 1;
-        }
-
-        .activity-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--navy);
-            margin-bottom: 2px;
-        }
-
-        .activity-sub {
-            font-size: 0.75rem;
-            color: var(--muted);
-        }
-
-        .activity-time {
-            font-size: 0.73rem;
-            color: var(--muted);
-            white-space: nowrap;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 100px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-
-        .badge-green {
-            background: #dcfce7;
-            color: var(--green);
-        }
-
-        .badge-amber {
-            background: #fef3c7;
-            color: var(--amber);
-        }
-
-        .badge-blue {
-            background: #dbeafe;
-            color: #1d4ed8;
-        }
-
-        .badge-red {
-            background: #fee2e2;
-            color: var(--red);
-        }
-
-        /* ── ALERT BANNER ── */
-        .alert-banner {
-            background: #fef3c7;
-            border: 1px solid #fde68a;
-            border-radius: 12px;
-            padding: 14px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
-            font-size: 0.85rem;
-            color: #92400e;
-            font-weight: 500;
-        }
-
-            .alert-banner svg {
-                width: 18px;
-                height: 18px;
-                flex-shrink: 0;
-                stroke: #d97706;
-            }
+        /* ── MODAL / TOAST ── */
+        #logout-modal { display: none; position: fixed; inset: 0; z-index: 999; background: rgba(11,31,58,0.45); align-items: center; justify-content: center; }
+        #logout-modal.open { display: flex; }
+        #toast { position: fixed; bottom: 24px; right: 24px; z-index: 1000; background: var(--navy); color: white; padding: 12px 18px; border-radius: 12px; font-size: 0.82rem; font-weight: 500; display: flex; align-items: center; gap: 10px; opacity: 0; transform: translateY(8px); transition: opacity 0.25s, transform 0.25s; pointer-events: none; max-width: 320px; }
 
         /* ── RESPONSIVE ── */
+        @@media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
         @@media (max-width: 768px) {
-            .topbar {
-                padding: 0 20px;
-            }
-
-            .user-email {
-                display: none;
-            }
-
-            .sidebar {
-                display: none;
-            }
-
-            .main {
-                padding: 20px 16px;
-            }
-
-            .hero {
-                padding: 24px 20px;
-            }
+            .topbar { padding: 0 16px; }
+            .brand-name span { display: none; }
+            .logout-btn { padding: 8px 10px; white-space: nowrap; }
+            .user-chip { padding: 4px; }
+            .user-email { display: none; }
+            .page { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; position: sticky; top: 64px; z-index: 50; padding: 0; border-right: none; border-bottom: 1px solid var(--border); overflow-x: auto; display: flex; }
+            .nav-section { display: flex; margin: 0; }
+            .nav-section + .nav-section { display: none; }
+            .nav-label { display: none; }
+            .nav-item { border-left: none; border-bottom: 3px solid transparent; padding: 12px 14px; }
+            .nav-item.active { border-bottom-color: var(--teal); }
+            .main { padding: 16px; }
+            .hero { padding: 22px 20px; }
+            .res-row { grid-template-columns: minmax(0, 1fr) auto; }
+            .res-row .rcol { grid-column: 1 / -1; }
+            .attention-head p { display: none; }
         }
     </style>
 </head>
@@ -582,22 +297,15 @@
             <div class="brand-logo">
                 <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
             </div>
-            <div class="brand-name">
-                NMB-HLabSys
-                <span>Haematology Lab System</span>
-            </div>
+            <div class="brand-name">NMB-HLabSys <span>Haematology Lab System</span></div>
         </a>
         <div class="topbar-right">
             <div class="user-chip">
-                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "P")</div>
-                <span class="user-email">@ViewBag.Email</span>
+                <div class="user-avatar">@((firstName ?? email).Length > 0 ? (firstName ?? email).Substring(0, 1).ToUpper() : "P")</div>
+                <span class="user-email">@email</span>
             </div>
             <a asp-controller="Home" asp-action="Logout" class="logout-btn" id="logout-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
                 Sign Out
             </a>
         </div>
@@ -606,10 +314,10 @@
     <div class="page">
 
         <!-- SIDEBAR -->
-        <aside class="sidebar">
+        <aside class="sidebar" aria-label="Patient menu">
             <div class="nav-section">
                 <div class="nav-label">Main</div>
-                <a asp-controller="PatientDashboard" asp-action="Index" class="nav-item active">
+                <a asp-controller="PatientDashboard" asp-action="Index" class="nav-item active" aria-current="page">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
                     Dashboard
                 </a>
@@ -639,510 +347,388 @@
             </div>
         </aside>
 
-        <!-- MAIN CONTENT -->
         <main class="main">
+            <div class="wrap">
 
-            <!-- HERO -->
-            <div class="hero">
-                <div class="hero-content">
-                    <div class="hero-tag">Patient Portal</div>
-                    <h1>Welcome back, <span>@(ViewBag.PatientName ?? ViewBag.Email)</span></h1>
-                    <p id="hero-datetime">@DateTime.Now.ToString("dddd, dd MMMM yyyy") — Here's your health summary for today.</p>
-                </div>
-            </div>
+                <!-- HERO -->
+                <section class="hero reveal">
+                    <div>
+                        <div class="hero-date">@DateTime.Now.ToString("dddd, d MMMM yyyy")</div>
+                        <h1>@greeting@(firstName != null ? ", " : "")<span>@firstName</span></h1>
+                        <p>@summary</p>
+                    </div>
+                    <div class="hero-actions">
+                        <a asp-controller="PatientDashboard" asp-action="MyResults" class="btn btn-primary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                            View my results
+                        </a>
+                        <a href="@Url.Action("MyResults", "PatientDashboard")#trackResults" class="btn btn-ghost">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+                            Track over time
+                        </a>
+                    </div>
+                </section>
 
-            <!-- ABNORMAL RESULT ALERT — only shows if there are abnormal results -->
-            @if (ViewBag.HasAbnormalResults == true)
-            {
-                <div class="alert-banner" id="alert-banner" role="alert" aria-live="polite">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                        <line x1="12" y1="9" x2="12" y2="13" />
-                        <line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
-                    You have abnormal test results that require attention. Please consult your doctor.
-                </div>
-            }
+                @if (ViewBag.NoPatientRecord == true)
+                {
+                    <div class="nudge reveal" style="margin-bottom:20px">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                        <div><strong>No patient record is linked to this account</strong><span>Please contact the lab so they can link your login to your patient file.</span></div>
+                    </div>
+                }
 
-            <!-- STATS -->
-            <div class="stats">
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#dcfce7">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                    </div>
-                    <div class="stat-value" data-target="@(ViewBag.TestResultCount ?? 0)">0</div>
-                    <div class="stat-label">Test Results</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#fee2e2">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-                    </div>
-                    <div class="stat-value" data-target="@(ViewBag.AbnormalCount ?? 0)">0</div>
-                    <div class="stat-label">Abnormal Results</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#fef3c7">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
-                    </div>
-                    <div class="stat-value" data-target="@(ViewBag.ActiveConditionCount ?? 0)">0</div>
-                    <div class="stat-label">Active Conditions</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#dbeafe">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 1 1-2-2V9m0 0h18" /></svg>
-                    </div>
-                    <div class="stat-value" data-target="@(ViewBag.ActiveMedicationCount ?? 0)">0</div>
-                    <div class="stat-label">Active Medications</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:rgba(13,148,136,0.1)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                    </div>
-                    <div class="stat-value" data-target="@(ViewBag.AssignedDoctorCount ?? 0)">0</div>
-                    <div class="stat-label">Assigned Doctor</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#f3e8ff">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                    </div>
-                    <div class="stat-value" data-target="@(ViewBag.ConsentCount ?? 0)">0</div>
-                    <div class="stat-label">Active Consents</div>
-                </div>
-            </div>
+                <!-- NEEDS ATTENTION -->
+                @if (attention.Any())
+                {
+                    <section class="attention reveal" role="region" aria-label="Results outside the normal range">
+                        <div class="attention-head">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+                            <h2>@attention.Count result@(attention.Count == 1 ? " is" : "s are") outside the normal range</h2>
+                            <p>Your most recent result for each test. Please discuss these with your doctor.</p>
+                        </div>
+                        <div class="attention-list">
+                            @foreach (var a in attention)
+                            {
+                                <a class="att-item" asp-controller="PatientDashboard" asp-action="MyResults">
+                                    <div class="t">@a.Item.TestName</div>
+                                    <div class="v">@Num(a.Item.ResultValue) @a.Item.UnitName · @Flag(a.Item)</div>
+                                    <div class="r">Normal @Range(a.Item) · @((a.Item.VerificationDateTime ?? a.Req.RequestDate).ToString("d MMM yyyy"))</div>
+                                </a>
+                            }
+                        </div>
+                    </section>
+                }
 
-            <!-- QUICK ACCESS -->
-            <div class="section-header">
-                <h2 class="section-title">Quick Access</h2>
-            </div>
-            <div class="cards">
-                <a asp-controller="PatientDashboard" asp-action="MyResults" class="card">
-                    <div class="card-icon" style="background:#dcfce7">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
-                    </div>
-                    <h3>My Results</h3>
-                    <p>View your latest haematology lab test results and download PDF reports.</p>
-                    <div class="card-arrow">
-                        View Results
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6" /></svg>
-                    </div>
-                </a>
-                <a asp-controller="PatientDashboard" asp-action="MedicalHistory" class="card">
-                    <div class="card-icon" style="background:#dbeafe">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
-                    </div>
-                    <h3>Medical History</h3>
-                    <p>Manage your conditions, allergies and current medications.</p>
-                    <div class="card-arrow">
-                        View History
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6" /></svg>
-                    </div>
-                </a>
-                <a asp-controller="PatientDashboard" asp-action="Consent" class="card">
-                    <div class="card-icon" style="background:#f3e8ff">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                    </div>
-                    <h3>Consent Management</h3>
-                    <p>Control which doctors can access your test results and records.</p>
-                    <div class="card-arrow">
-                        Manage Consent
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6" /></svg>
-                    </div>
-                </a>
-                <a asp-controller="PatientDashboard" asp-action="Profile" class="card">
-                    <div class="card-icon" style="background:rgba(13,148,136,0.1)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                    </div>
-                    <h3>My Profile</h3>
-                    <p>Update your personal details, contact info and change your password.</p>
-                    <div class="card-arrow">
-                        View Profile
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6" /></svg>
-                    </div>
-                </a>
-            </div>
-
-            <!-- RECENT ACTIVITY -->
-            <div class="section-header">
-                <h2 class="section-title">Recent Activity</h2>
-                <a asp-controller="PatientDashboard" asp-action="MyResults" class="section-link">View all results →</a>
-            </div>
-            <div class="activity-list">
+                <!-- NUDGES -->
                 @{
-                    var requests = ViewData["Requests"] as List<Patient.Models.TestRequest>;
+                    var noHistory = !history.Conditions.Any() && !history.Allergies.Any() && !history.Medications.Any();
+                    var noDoctor = !activeConsents.Any();
                 }
-                @if (requests != null && requests.Any())
+                @if (ViewBag.NoPatientRecord != true && (noHistory || noDoctor))
                 {
-                    @foreach (var req in requests.Take(5))
-                    {
-                        var isCompleted = req.RequestStatus == "Completed";
-                        var isPending = req.RequestStatus == "Pending";
-                        var dotBg = isCompleted ? "#dcfce7" : isPending ? "#fef3c7" : "#dbeafe";
-                        var dotStroke = isCompleted ? "#16a34a" : isPending ? "#d97706" : "#1d4ed8";
-                        var badgeClass = isCompleted ? "badge-green" : isPending ? "badge-amber" : "badge-blue";
-                        <div class="activity-item">
-                            <div class="activity-dot" style="background:@dotBg">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="@dotStroke" stroke-width="2" stroke-linecap="round">
-                                    @if (isCompleted)
-                                    {
-                                        <polyline points="20 6 9 17 4 12" />
-                                    }
-                                    else
-                                    {
-                                        <circle cx="12" cy="12" r="10" />
-                                        <line x1="12" y1="8" x2="12" y2="12" />
-                                        <line x1="12" y1="16" x2="12.01" y2="16" />
-                                    }
-                                </svg>
-                            </div>
-                            <div class="activity-info">
-                                <div class="activity-title">@req.RequestNumber — @req.Urgency</div>
-                                <div class="activity-sub">Dr. @req.DoctorName · @req.RequestDate.ToString("dd MMM yyyy")</div>
-                            </div>
-                            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-                                <span class="badge @badgeClass">@req.RequestStatus</span>
-                                <span class="activity-time" data-date="@req.RequestDate.ToString("o")">@((DateTime.Now - req.RequestDate).Days) days ago</span>
-                            </div>
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="activity-item">
-                        <div class="activity-info" style="text-align:center;padding:12px 0;color:var(--muted);font-size:0.85rem;">
-                            No recent activity found.
-                        </div>
+                    <div class="nudges reveal">
+                        @if (noHistory)
+                        {
+                            <a class="nudge" asp-controller="PatientDashboard" asp-action="MedicalHistory">
+                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                                <div><strong>Add your medical history</strong><span>Your conditions, allergies and medication help the lab and your doctor read your results correctly.</span></div>
+                            </a>
+                        }
+                        @if (noDoctor)
+                        {
+                            <a class="nudge" asp-controller="PatientDashboard" asp-action="Consent">
+                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                                <div><strong>No doctor can see your history</strong><span>Grant a doctor access on the Consent page so they can review your previous results.</span></div>
+                            </a>
+                        }
                     </div>
                 }
-            </div>
 
+                <!-- STATS -->
+                <div class="stats reveal">
+                    <a class="stat" asp-controller="PatientDashboard" asp-action="MyResults">
+                        <div class="k"><i style="background:#d97706"></i>In progress</div>
+                        <div class="v">@open.Count</div>
+                    </a>
+                    <a class="stat" asp-controller="PatientDashboard" asp-action="MyResults">
+                        <div class="k"><i style="background:#16a34a"></i>Released requests</div>
+                        <div class="v">@released.Count</div>
+                    </a>
+                    <a class="stat" asp-controller="PatientDashboard" asp-action="MyResults">
+                        <div class="k"><i style="background:#dc2626"></i>Need attention</div>
+                        <div class="v @(abnormalCount > 0 ? "red" : "")">@abnormalCount</div>
+                    </a>
+                    <a class="stat" asp-controller="PatientDashboard" asp-action="Consent">
+                        <div class="k"><i style="background:#0d9488"></i>Doctors with access</div>
+                        <div class="v">@activeConsents.Count</div>
+                    </a>
+                    <a class="stat" asp-controller="PatientDashboard" asp-action="MedicalHistory">
+                        <div class="k"><i style="background:#1d4ed8"></i>Conditions</div>
+                        <div class="v">@history.Conditions.Count</div>
+                    </a>
+                    <a class="stat" asp-controller="PatientDashboard" asp-action="MedicalHistory">
+                        <div class="k"><i style="background:#7c3aed"></i>Medications</div>
+                        <div class="v">@history.Medications.Count</div>
+                    </a>
+                </div>
+
+                <div class="grid">
+                    <div class="col">
+
+                        <!-- LATEST RESULTS -->
+                        <section class="panel reveal" aria-labelledby="latestTitle">
+                            <div class="panel-head">
+                                <div>
+                                    <h2 id="latestTitle">Latest results</h2>
+                                    @if (latest != null)
+                                    {
+                                        <div class="sub">@latest.RequestNumber · released @((latest.ReleasedDate ?? latest.RequestDate).ToString("d MMM yyyy")) · Dr @latest.DoctorName</div>
+                                    }
+                                </div>
+                                <a class="link" asp-controller="PatientDashboard" asp-action="MyResults">All results →</a>
+                            </div>
+
+                            @if (latest == null || !latest.Items.Any(i => i.ResultValue.HasValue))
+                            {
+                                <div class="empty">No released results yet.<br />Your results appear here once your doctor has reviewed and released them.</div>
+                            }
+                            else
+                            {
+                                @foreach (var i in latest.Items.Where(i => i.ResultValue.HasValue).OrderBy(i => i.CategoryName).ThenBy(i => i.TestName))
+                                {
+                                    var outR = IsOut(i);
+                                    var hasRange = i.NormalRangeMin.HasValue && i.NormalRangeMax.HasValue && i.NormalRangeMax > i.NormalRangeMin;
+                                    double bandL = 0, bandW = 0, pin = 50;
+                                    if (hasRange)
+                                    {
+                                        var mn = (double)i.NormalRangeMin!.Value; var mx = (double)i.NormalRangeMax!.Value;
+                                        var span = mx - mn; var lo = mn - span * 0.5; var hi = mx + span * 0.5;
+                                        double P(double v) => Math.Clamp((v - lo) / (hi - lo) * 100, 2, 98);
+                                        bandL = P(mn); bandW = P(mx) - bandL; pin = P((double)i.ResultValue!.Value);
+                                    }
+                                    <div class="res-row">
+                                        <div>
+                                            <div class="res-name">@i.TestName</div>
+                                            <div class="res-cat">@i.CategoryName</div>
+                                        </div>
+                                        <div class="res-val @(outR ? "out" : "")">
+                                            @Num(i.ResultValue)<small>@i.UnitName</small>
+                                            @if (outR)
+                                            {
+                                                <span class="flag">@Flag(i)</span>
+                                            }
+                                        </div>
+                                        <div class="rcol">
+                                            @if (hasRange)
+                                            {
+                                                <div class="rbar" role="img" aria-label="@i.TestName @Num(i.ResultValue), normal range @Range(i)">
+                                                    <div class="band" style="left:@bandL.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%;width:@bandW.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%"></div>
+                                                    <div class="pin @(outR ? "out" : "")" style="left:@pin.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%"></div>
+                                                </div>
+                                                <div class="rbar-lbl"><span>@Num(i.NormalRangeMin)</span><span>@Num(i.NormalRangeMax)</span></div>
+                                            }
+                                            else
+                                            {
+                                                <div class="res-cat" style="text-align:right">Normal @Range(i)</div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(latest.ReleaseNotes))
+                                {
+                                    <div class="note"><b>Note from your doctor:</b> @latest.ReleaseNotes</div>
+                                }
+                            }
+                        </section>
+
+                        <!-- TRENDS -->
+                        <section class="panel reveal" aria-labelledby="trendTitle">
+                            <div class="panel-head">
+                                <div>
+                                    <h2 id="trendTitle">Your trends</h2>
+                                    <div class="sub">Released results over time · green band is the normal range</div>
+                                </div>
+                                <a class="link" href="@Url.Action("MyResults", "PatientDashboard")#trackResults">Full graph →</a>
+                            </div>
+                            @if (!trends.Any())
+                            {
+                                <div class="empty">Trends appear once a test has at least two released results.</div>
+                            }
+                            else
+                            {
+                                <div class="sparks">
+                                    @foreach (var t in trends)
+                                    {
+                                        var sp = Spark(t.Points.Select(p => (p.V, p.Out)).ToList(), t.Min, t.Max);
+                                        var last = t.Points.Last();
+                                        var first = t.Points.First();
+                                        var diff = last.V - first.V;
+                                        var inv = System.Globalization.CultureInfo.InvariantCulture;
+                                        <a class="spark" href="@Url.Action("MyResults", "PatientDashboard")#trackResults">
+                                            <div>
+                                                <div class="n">@t.Test</div>
+                                                <div class="l">Latest <b class="@(last.Out ? "out" : "")">@Num(last.V) @t.Unit</b> · @(diff >= 0 ? "+" : "")@Num(diff) since first · @t.Points.Count results</div>
+                                            </div>
+                                            <svg viewBox="0 0 120 36" role="img" aria-label="@t.Test trend, @t.Points.Count results, latest @Num(last.V) @t.Unit">
+                                                @if (t.Min.HasValue || t.Max.HasValue)
+                                                {
+                                                    <rect x="0" y="@sp.BandTop.ToString("0.#", inv)" width="120" height="@Math.Max(0, sp.BandBottom - sp.BandTop).ToString("0.#", inv)" fill="rgba(22,163,74,0.12)" />
+                                                }
+                                                <polyline points="@sp.Line" fill="none" stroke="#0d9488" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+                                                @foreach (var d in sp.Dots)
+                                                {
+                                                    <circle cx="@d.X.ToString("0.#", inv)" cy="@d.Y.ToString("0.#", inv)" r="@(d.Out ? "3.2" : "2.4")" fill="@(d.Out ? "#dc2626" : "#0d9488")" stroke="white" stroke-width="1.2" />
+                                                }
+                                            </svg>
+                                        </a>
+                                    }
+                                </div>
+                            }
+                        </section>
+                    </div>
+
+                    <div class="col">
+
+                        <!-- REQUEST TRACKER -->
+                        <section class="panel reveal" aria-labelledby="trackTitle">
+                            <div class="panel-head">
+                                <div>
+                                    <h2 id="trackTitle">Request tracker</h2>
+                                    <div class="sub">Where your current tests are</div>
+                                </div>
+                            </div>
+                            @if (!open.Any())
+                            {
+                                <div class="empty">Nothing in progress right now.</div>
+                            }
+                            else
+                            {
+                                @foreach (var r in open.Take(4))
+                                {
+                                    var idx = StepIndex(r.RequestStatus);
+                                    var urgCls = r.Urgency?.ToLower() == "urgent" ? "urgent" : r.Urgency?.ToLower() == "stat" ? "stat" : "";
+                                    <div class="trk">
+                                        <div class="trk-top">
+                                            <div>
+                                                <div class="trk-num">@r.RequestNumber</div>
+                                                <div class="trk-meta">@r.RequestDate.ToString("d MMM yyyy") · Dr @r.DoctorName · @r.Items.Count test@(r.Items.Count == 1 ? "" : "s")</div>
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(r.Urgency))
+                                            {
+                                                <span class="urg @urgCls">@r.Urgency</span>
+                                            }
+                                        </div>
+                                        <div class="steps" role="img" aria-label="Status: @r.RequestStatus, step @(idx + 1) of @steps.Length">
+                                            @for (var s = 0; s < steps.Length; s++)
+                                            {
+                                                <div class="step @(s < idx ? "done" : s == idx ? "now" : "")"></div>
+                                            }
+                                        </div>
+                                        <div class="step-lbl"><b>@r.RequestStatus</b><span>@(idx >= 0 && idx < steps.Length - 1 ? "Next: " + steps[idx + 1] : "")</span></div>
+                                    </div>
+                                }
+                                @if (open.Count > 4)
+                                {
+                                    <a class="link" asp-controller="PatientDashboard" asp-action="MyResults">+@(open.Count - 4) more →</a>
+                                }
+                            }
+                        </section>
+
+                        <!-- HEALTH SNAPSHOT -->
+                        <section class="panel reveal" aria-labelledby="snapTitle">
+                            <div class="panel-head">
+                                <h2 id="snapTitle">Health snapshot</h2>
+                                <a class="link" asp-controller="PatientDashboard" asp-action="MedicalHistory">Edit →</a>
+                            </div>
+                            <div class="snap-group">
+                                <div class="snap-k">Conditions</div>
+                                <div class="chips">
+                                    @if (history.Conditions.Any()) { foreach (var c in history.Conditions) { <span class="chip">@c.ConditionName</span> } }
+                                    else { <span class="chip none">None recorded</span> }
+                                </div>
+                            </div>
+                            <div class="snap-group">
+                                <div class="snap-k">Allergies</div>
+                                <div class="chips">
+                                    @if (history.Allergies.Any()) { foreach (var a in history.Allergies) { <span class="chip allergy">@a.AllergyName@(string.IsNullOrEmpty(a.Severity) ? "" : " · " + a.Severity)</span> } }
+                                    else { <span class="chip none">None recorded</span> }
+                                </div>
+                            </div>
+                            <div class="snap-group">
+                                <div class="snap-k">Medication</div>
+                                <div class="chips">
+                                    @if (history.Medications.Any()) { foreach (var m in history.Medications) { <span class="chip">@m.MedicationName@(string.IsNullOrEmpty(m.Dosage) ? "" : " · " + m.Dosage)</span> } }
+                                    else { <span class="chip none">None recorded</span> }
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- DOCTORS -->
+                        <section class="panel reveal" aria-labelledby="docTitle">
+                            <div class="panel-head">
+                                <h2 id="docTitle">Doctors with access</h2>
+                                <a class="link" asp-controller="PatientDashboard" asp-action="Consent">Manage →</a>
+                            </div>
+                            @if (!activeConsents.Any())
+                            {
+                                <div class="empty">No doctor has access to your history yet.</div>
+                            }
+                            else
+                            {
+                                @foreach (var d in activeConsents)
+                                {
+                                    <div class="doc">
+                                        <div class="doc-av">@(string.IsNullOrEmpty(d.DoctorName) ? "D" : d.DoctorName.Substring(0, 1).ToUpper())</div>
+                                        <div>
+                                            <div class="doc-n">Dr @d.DoctorName</div>
+                                            <div class="doc-s">Since @d.GrantedDate.ToString("d MMM yyyy")</div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </section>
+                    </div>
+                </div>
+
+            </div>
         </main>
     </div>
 
-    <!-- ── LOGOUT CONFIRMATION MODAL ── -->
-    <div id="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title"
-         style="display:none;position:fixed;inset:0;z-index:999;background:rgba(11,31,58,0.45);align-items:center;justify-content:center;">
-        <div style="background:white;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(11,31,58,0.2);animation:modalIn 0.18s ease;">
+    <!-- LOGOUT MODAL -->
+    <div id="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
+        <div style="background:white;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(11,31,58,0.2);">
             <div style="width:52px;height:52px;background:#fee2e2;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
             </div>
             <h3 id="logout-modal-title" style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--navy);margin-bottom:8px;">Sign out?</h3>
-            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:24px;line-height:1.6;">You'll be returned to the login screen. Any unsaved changes will be lost.</p>
+            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:24px;line-height:1.6;">You'll be returned to the login screen.</p>
             <div style="display:flex;gap:10px;">
                 <button id="logout-cancel" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:white;color:var(--navy);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancel</button>
-                <a id="logout-confirm" href="#" style="flex:1;padding:10px;border:none;border-radius:10px;background:#dc2626;color:white;font-size:0.85rem;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;font-family:'DM Sans',sans-serif;">Sign Out</a>
+                <a id="logout-confirm" href="#" style="flex:1;padding:10px;border-radius:10px;background:#dc2626;color:white;font-size:0.85rem;font-weight:600;text-align:center;text-decoration:none;font-family:'DM Sans',sans-serif;">Sign Out</a>
             </div>
         </div>
     </div>
 
-    <!-- ── TOAST NOTIFICATION ── -->
-    <div id="toast" role="status" aria-live="polite"
-         style="position:fixed;bottom:24px;right:24px;z-index:1000;background:var(--navy);color:white;padding:12px 18px;border-radius:12px;font-size:0.82rem;font-weight:500;display:flex;align-items:center;gap:10px;opacity:0;transform:translateY(8px);transition:opacity 0.25s,transform 0.25s;pointer-events:none;max-width:320px;">
-        <span id="toast-icon" style="font-size:1rem;"></span>
-        <span id="toast-msg"></span>
-    </div>
-
-    <style>
-        @@keyframes modalIn {
-            from {
-                opacity: 0;
-                transform: scale(0.96) translateY(8px);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-
-        @@keyframes countUp {
-            from {
-                opacity: 0;
-                transform: translateY(6px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .stat-value.animated {
-            animation: countUp 0.4s ease forwards;
-        }
-
-        /* Page-load fade-in for main sections */
-        .hero, .stats, .cards, .activity-list {
-            opacity: 0;
-            transform: translateY(12px);
-            transition: opacity 0.4s ease, transform 0.4s ease;
-        }
-
-            .hero.visible, .stats.visible, .cards.visible, .activity-list.visible {
-                opacity: 1;
-                transform: translateY(0);
-            }
-
-        /* Active nav item keyboard focus ring */
-        .nav-item:focus-visible {
-            outline: 2px solid var(--teal);
-            outline-offset: -2px;
-        }
-
-        /* Logout modal backdrop click area */
-        #logout-modal.open {
-            display: flex !important;
-        }
-
-        /* Relative timestamps tooltip */
-        .activity-time[title] {
-            cursor: help;
-            border-bottom: 1px dotted var(--border);
-        }
-    </style>
+    <!-- TOAST -->
+    <div id="toast" role="status" aria-live="polite"><span id="toast-icon"></span><span id="toast-msg"></span></div>
 
     <script>
         (function () {
             'use strict';
 
-            /* ─── 1. STAGGERED PAGE-LOAD ANIMATIONS ─── */
-            const sections = document.querySelectorAll('.hero, .stats, .cards, .activity-list');
-            sections.forEach(function(el, i) {
-                el.style.transitionDelay = (i * 80) + 'ms';
-                // Use rAF so CSS transition fires after first paint
-                requestAnimationFrame(function() {
-                    requestAnimationFrame(function() {
-                        el.classList.add('visible');
-                    });
-                });
+            // Staggered entrance
+            document.querySelectorAll('.reveal').forEach(function (el, i) {
+                el.style.transitionDelay = Math.min(i * 60, 400) + 'ms';
+                requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add('in'); }); });
             });
 
-            /* ─── 2. ANIMATED STAT COUNTERS ─── */
-            function animateCounter(el, target, duration) {
-                var start = null;
-                var from = 0;
-                function step(ts) {
-                    if (!start) start = ts;
-                    var progress = Math.min((ts - start) / duration, 1);
-                    // Ease-out cubic
-                    var eased = 1 - Math.pow(1 - progress, 3);
-                    el.textContent = Math.round(from + (target - from) * eased);
-                    if (progress < 1) requestAnimationFrame(step);
-                    else {
-                        el.textContent = target;
-                        el.classList.add('animated');
-                    }
-                }
-                requestAnimationFrame(step);
+            // Logout confirmation
+            var btn = document.getElementById('logout-btn');
+            var modal = document.getElementById('logout-modal');
+            var cancel = document.getElementById('logout-cancel');
+            var confirmBtn = document.getElementById('logout-confirm');
+            if (btn && modal) {
+                confirmBtn.href = btn.href;
+                btn.addEventListener('click', function (e) { e.preventDefault(); modal.classList.add('open'); cancel.focus(); });
+                function close() { modal.classList.remove('open'); btn.focus(); }
+                cancel.addEventListener('click', close);
+                modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+                document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('open')) close(); });
             }
 
-            // Trigger counters when stats section enters viewport
-            var statsSection = document.querySelector('.stats');
-            if (statsSection && 'IntersectionObserver' in window) {
-                var counterDone = false;
-                var io = new IntersectionObserver(function(entries) {
-                    if (entries[0].isIntersecting && !counterDone) {
-                        counterDone = true;
-                        document.querySelectorAll('.stat-value[data-target]').forEach(function(el) {
-                            var target = parseInt(el.getAttribute('data-target'), 10) || 0;
-                            animateCounter(el, target, 900);
-                        });
-                    }
-                }, { threshold: 0.3 });
-                io.observe(statsSection);
-            } else {
-                // Fallback: set values immediately
-                document.querySelectorAll('.stat-value[data-target]').forEach(function(el) {
-                    el.textContent = el.getAttribute('data-target');
-                });
-            }
-
-            /* ─── 3. LIVE CLOCK IN HERO ─── */
-            var heroDt = document.getElementById('hero-datetime');
-            if (heroDt) {
-                var days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-                var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-                function padZ(n) { return n < 10 ? '0' + n : String(n); }
-                function formatHero(d) {
-                    var h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
-                    var ampm = h >= 12 ? 'PM' : 'AM';
-                    var h12 = h % 12 || 12;
-                    var dd = String(d.getDate()).padStart(2, '0');
-                    return days[d.getDay()] + ', ' + dd + ' ' + months[d.getMonth()] + ' ' + d.getFullYear()
-                        + ' \u2014 ' + h12 + ':' + padZ(m) + ':' + padZ(s) + ' ' + ampm;
-                }
-                function tickHero() { heroDt.textContent = formatHero(new Date()); }
-                tickHero();
-                setInterval(tickHero, 1000);
-            }
-
-            /* ─── 4. RELATIVE TIMESTAMPS WITH TOOLTIPS ─── */
-            document.querySelectorAll('.activity-time[data-date]').forEach(function(el) {
-                var raw = el.getAttribute('data-date');
-                if (!raw) return;
-                var d = new Date(raw);
-                if (isNaN(d)) return;
-                // Absolute date as tooltip
-                el.setAttribute('title', d.toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' }));
-                // Relative label
-                var diff = Date.now() - d.getTime();
-                var mins  = Math.floor(diff / 60000);
-                var hours = Math.floor(diff / 3600000);
-                var days  = Math.floor(diff / 86400000);
-                var weeks = Math.floor(days / 7);
-                var label;
-                if (mins < 1)       label = 'Just now';
-                else if (mins < 60) label = mins + ' min' + (mins !== 1 ? 's' : '') + ' ago';
-                else if (hours < 24) label = hours + ' hour' + (hours !== 1 ? 's' : '') + ' ago';
-                else if (days < 7)  label = days + ' day' + (days !== 1 ? 's' : '') + ' ago';
-                else if (weeks < 5) label = weeks + ' week' + (weeks !== 1 ? 's' : '') + ' ago';
-                else                label = d.toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
-                el.textContent = label;
-            });
-
-            /* ─── 5. LOGOUT CONFIRMATION MODAL ─── */
-            var logoutBtn    = document.getElementById('logout-btn');
-            var logoutModal  = document.getElementById('logout-modal');
-            var logoutCancel = document.getElementById('logout-cancel');
-            var logoutConfirm = document.getElementById('logout-confirm');
-
-            if (logoutBtn && logoutModal) {
-                // Copy the real href to confirm button
-                logoutConfirm.href = logoutBtn.href;
-
-                logoutBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    logoutModal.classList.add('open');
-                    logoutModal.style.display = 'flex';
-                    logoutCancel.focus();
-                });
-
-                function closeModal() {
-                    logoutModal.classList.remove('open');
-                    logoutModal.style.display = 'none';
-                    logoutBtn.focus();
-                }
-
-                logoutCancel.addEventListener('click', closeModal);
-
-                // Close on backdrop click
-                logoutModal.addEventListener('click', function(e) {
-                    if (e.target === logoutModal) closeModal();
-                });
-
-                // Close on Escape
-                document.addEventListener('keydown', function(e) {
-                    if (e.key === 'Escape' && logoutModal.style.display === 'flex') closeModal();
-                });
-            }
-
-            /* ─── 6. TOAST NOTIFICATION HELPER ─── */
-            var toast    = document.getElementById('toast');
-            var toastMsg = document.getElementById('toast-msg');
-            var toastIco = document.getElementById('toast-icon');
-            var toastTimer;
-
-            function showToast(msg, type) {
-                type = type || 'info';
-                var icons = { success: '✓', warning: '⚠', error: '✕', info: 'ℹ' };
-                toastMsg.textContent = msg;
-                toastIco.textContent = icons[type] || icons.info;
-                toast.style.opacity = '1';
-                toast.style.transform = 'translateY(0)';
-                clearTimeout(toastTimer);
-                toastTimer = setTimeout(function() {
-                    toast.style.opacity = '0';
-                    toast.style.transform = 'translateY(8px)';
-                }, 3500);
-            }
-
-            // Expose globally so other scripts can use it
-            window.showToast = showToast;
-
-            // Show a welcome toast on first visit in this session
-            if (!sessionStorage.getItem('dashboard_welcomed')) {
-                sessionStorage.setItem('dashboard_welcomed', '1');
-                setTimeout(function() { showToast('Dashboard loaded successfully', 'success'); }, 800);
-            }
-
-            /* ─── 7. ABNORMAL RESULTS ALERT AUTO-DISMISS ─── */
-            var alertBanner = document.getElementById('alert-banner');
-            if (alertBanner) {
-                // Add a dismiss button dynamically
-                var dismissBtn = document.createElement('button');
-                dismissBtn.textContent = '×';
-                dismissBtn.setAttribute('aria-label', 'Dismiss alert');
-                dismissBtn.style.cssText = 'margin-left:auto;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#92400e;line-height:1;padding:0 0 0 8px;flex-shrink:0;';
-                alertBanner.appendChild(dismissBtn);
-                dismissBtn.addEventListener('click', function() {
-                    alertBanner.style.transition = 'opacity 0.3s, max-height 0.3s, padding 0.3s, margin 0.3s';
-                    alertBanner.style.maxHeight = alertBanner.offsetHeight + 'px';
-                    requestAnimationFrame(function() {
-                        alertBanner.style.opacity = '0';
-                        alertBanner.style.maxHeight = '0';
-                        alertBanner.style.padding = '0 20px';
-                        alertBanner.style.marginBottom = '0';
-                    });
-                    setTimeout(function() { alertBanner.remove(); }, 350);
-                });
-            }
-
-            /* ─── 8. ACTIVITY ITEM CLICK → NAVIGATE ─── */
-            document.querySelectorAll('.activity-item').forEach(function(item) {
-                var titleEl = item.querySelector('.activity-title');
-                if (!titleEl) return;
-                item.style.cursor = 'pointer';
-                item.addEventListener('click', function() {
-                    // Navigate to MyResults — the server will handle filtering
-                    window.location.href = item.getAttribute('data-href') || '/PatientDashboard/MyResults';
-                });
-                // Keyboard accessibility
-                item.setAttribute('tabindex', '0');
-                item.setAttribute('role', 'button');
-                item.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        item.click();
-                    }
-                });
-            });
-
-            /* ─── 9. STAT CARD HOVER TOOLTIP (accessible title) ─── */
-            var statLabels = {
-                'Test Results':        'Total haematology test results on file',
-                'Abnormal Results':    'Results outside the normal reference range',
-                'Active Conditions':   'Current diagnosed medical conditions',
-                'Active Medications':  'Medications currently prescribed',
-                'Assigned Doctor':     'Doctors with access to your records',
-                'Active Consents':     'Active data-sharing consent agreements'
+            // Toast (e.g. after changing the temporary password)
+            var toast = document.getElementById('toast');
+            window.showToast = function (msg, icon) {
+                document.getElementById('toast-msg').textContent = msg;
+                document.getElementById('toast-icon').textContent = icon || '✓';
+                toast.style.opacity = '1'; toast.style.transform = 'translateY(0)';
+                setTimeout(function () { toast.style.opacity = '0'; toast.style.transform = 'translateY(8px)'; }, 3500);
             };
-            document.querySelectorAll('.stat-card').forEach(function(card) {
-                var label = card.querySelector('.stat-label');
-                if (label && statLabels[label.textContent.trim()]) {
-                    card.setAttribute('title', statLabels[label.textContent.trim()]);
-                }
-            });
-
-            /* ─── 10. KEYBOARD SHORTCUT HINTS ─── */
-            // Alt+1-4 = quick nav to the four main sections
-            var shortcuts = {
-                '1': '/PatientDashboard/MyResults',
-                '2': '/PatientDashboard/MedicalHistory',
-                '3': '/PatientDashboard/Consent',
-                '4': '/PatientDashboard/Profile'
-            };
-            document.addEventListener('keydown', function(e) {
-                if (e.altKey && shortcuts[e.key]) {
-                    e.preventDefault();
-                    window.location.href = shortcuts[e.key];
-                }
-            });
-
+            @if (TempData["Success"] != null)
+            {
+                <text>window.showToast(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Success"]?.ToString())));</text>
+            }
         })();
     </script>
-
 </body>
 </html>

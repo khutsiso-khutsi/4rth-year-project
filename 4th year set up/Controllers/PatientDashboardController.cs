@@ -95,33 +95,38 @@ namespace _4th_year_set_up.Controllers
 
         public IActionResult Index()
         {
-            var role = HttpContext.Session.GetString("RoleName");
-            if (role == null || role != "Patient")
+            if (!IsPatient())
                 return RedirectToAction("Login", "Home");
-
-            var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
-            var patientId = _userRepo.GetPatientIdByUserId(userId);
-
-            // load dashboard counts if patient record exists
-            if (patientId != null)
-            {
-                var requests = _userRepo.GetPatientTestRequests(patientId.Value);
-                var history = _userRepo.GetMedicalHistory(patientId.Value);
-
-                ViewBag.TestResultCount = requests?.Count ?? 0;
-                ViewBag.ActiveConditionCount = history?.Conditions?.Count ?? 0;
-                ViewBag.ActiveMedicationCount = history?.Medications?.Count ?? 0;
-            }
-            else
-            {
-                // shouldnt really happen but just in case
-                ViewBag.TestResultCount = 0;
-                ViewBag.ActiveConditionCount = 0;
-                ViewBag.ActiveMedicationCount = 0;
-            }
 
             ViewBag.Email = HttpContext.Session.GetString("Email");
             ViewBag.UserID = HttpContext.Session.GetInt32("UserID");
+
+            var patientId = GetCurrentPatientId();
+            if (patientId == null)
+            {
+                ViewBag.NoPatientRecord = true;
+                return View();
+            }
+
+            // Everything the dashboard shows comes from the same calls the
+            // other patient pages use, so the numbers always match them.
+            var requests = _userRepo.GetPatientTestRequests(patientId.Value)
+                .OrderByDescending(r => r.RequestDate).ToList();
+            foreach (var req in requests)
+            {
+                req.Items = _userRepo.GetTestRequestItems(req.RequestID);
+                HideUnreleasedResults(req);   // unreleased values never reach the page
+            }
+
+            var history = _userRepo.GetMedicalHistory(patientId.Value);
+            var consents = _userRepo.GetConsentData(patientId.Value).Consents;
+            var profile = _userRepo.GetPatientProfile(patientId.Value);
+
+            ViewData["Requests"] = requests;
+            ViewData["History"] = history;
+            ViewData["Consents"] = consents;
+            ViewBag.FirstName = string.IsNullOrWhiteSpace(profile?.FirstName) ? null : profile!.FirstName;
+
             Log("Accessed patient dashboard");
             return View();
         }

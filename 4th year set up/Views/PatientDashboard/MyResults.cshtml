@@ -1,8 +1,36 @@
-﻿@using Patient.Models
+@using Patient.Models
 @{
     ViewData["Title"] = "My Results";
     Layout = null;
     var requests = ViewData["Requests"] as List<TestRequest> ?? new();
+
+    // Spec 5 "Track Test Results": every released numeric result, grouped by
+    // test type, oldest first, for the graph. Unreleased values were already
+    // blanked by the controller, so only results the doctor released appear.
+    var trends = requests
+        .Where(r => r.RequestStatus == "Released")
+        .SelectMany(r => r.Items.Where(i => i.ResultValue.HasValue).Select(i => new { Req = r, Item = i }))
+        .GroupBy(x => x.Item.TestName)
+        .OrderBy(g => g.Key)
+        .Select(g => new
+        {
+            test = g.Key,
+            category = g.First().Item.CategoryName,
+            unit = g.Select(x => x.Item.UnitName).FirstOrDefault(u => !string.IsNullOrEmpty(u)) ?? "",
+            min = g.Select(x => x.Item.NormalRangeMin).FirstOrDefault(v => v.HasValue),
+            max = g.Select(x => x.Item.NormalRangeMax).FirstOrDefault(v => v.HasValue),
+            points = g.Select(x => new
+                {
+                    date = (x.Item.VerificationDateTime ?? x.Item.CompletionDateTime ?? x.Req.RequestDate).ToString("yyyy-MM-dd"),
+                    value = x.Item.ResultValue!.Value,
+                    abnormal = x.Item.IsAbnormal,
+                    request = x.Req.RequestNumber
+                })
+                .OrderBy(p => p.date)
+                .ToList()
+        })
+        .ToList();
+    var trendJson = System.Text.Json.JsonSerializer.Serialize(trends);
 }
 
 <!DOCTYPE html>
@@ -1078,6 +1106,33 @@
                 padding: 20px 16px 48px;
             }
         }
+        /* ── TRACK RESULTS (graph) ── */
+        .trend-card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 22px 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(11,31,58,0.04); }
+        .trend-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+        .trend-head h2 { font-family: 'DM Serif Display', serif; font-size: 1.15rem; color: var(--navy); margin-bottom: 2px; }
+        .trend-head p { font-size: 12.5px; color: var(--muted); }
+        .trend-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .trend-controls label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+        .trend-controls input[type=date] { font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; color: var(--navy); background: white; }
+        .trend-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px; }
+        .trend-stat { background: var(--offwhite); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+        .trend-stat .k { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+        .trend-stat .v { font-size: 15px; font-weight: 600; color: var(--navy); }
+        .trend-stat .v.flag { color: var(--red); }
+        .trend-chart-wrap { position: relative; height: 300px; }
+        .trend-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 10px; }
+        .trend-legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .trend-legend i { display: inline-block; }
+        .lg-line { width: 18px; height: 2px; background: var(--teal); }
+        .lg-band { width: 14px; height: 10px; background: rgba(22,163,74,0.12); border: 1px dashed rgba(22,163,74,0.5); }
+        .lg-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--red); }
+        .trend-toggle { background: none; border: none; color: var(--teal); font-weight: 600; font-size: 12.5px; cursor: pointer; font-family: 'DM Sans', sans-serif; margin-top: 12px; padding: 0; }
+        .trend-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+        .trend-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+        .trend-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--navy); }
+        .trend-table td.flag { color: var(--red); font-weight: 600; }
+        .trend-empty { text-align: center; padding: 28px 16px; color: var(--muted); font-size: 13.5px; }
+        @@media (max-width: 640px) { .trend-chart-wrap { height: 240px; } .trend-card { padding: 18px 16px; } }
     </style>
 </head>
 <body>
@@ -1180,6 +1235,52 @@
                     <div class="stat-pill-label">Latest Request</div>
                 </div>
             </div>
+
+            <!-- TRACK A TEST OVER TIME -->
+            <section class="trend-card" id="trackResults" aria-labelledby="trendTitle">
+                <div class="trend-head">
+                    <div>
+                        <h2 id="trendTitle">Track a test over time</h2>
+                        <p>Pick a test to see how your released results have changed. The shaded band is the normal range.</p>
+                    </div>
+                    @if (trends.Any())
+                    {
+                        <div class="trend-controls">
+                            <select class="filter-select" id="trendTest" aria-label="Test to track">
+                                @foreach (var t in trends)
+                                {
+                                    <option value="@t.test">@t.test (@t.points.Count result@(t.points.Count == 1 ? "" : "s"))</option>
+                                }
+                            </select>
+                            <label for="trendFrom">From</label>
+                            <input type="date" id="trendFrom" />
+                            <label for="trendTo">To</label>
+                            <input type="date" id="trendTo" />
+                        </div>
+                    }
+                </div>
+
+                @if (!trends.Any())
+                {
+                    <div class="trend-empty">No released results to graph yet. Once your doctor releases results, you can track them here.</div>
+                }
+                else
+                {
+                    <div class="trend-summary" id="trendSummary"></div>
+                    <div class="trend-chart-wrap"><canvas id="trendChart" role="img" aria-label="Line graph of the selected test's results over time"></canvas></div>
+                    <div class="trend-empty" id="trendNone" style="display:none">No results for this test in the chosen dates.</div>
+                    <div class="trend-legend">
+                        <span><i class="lg-line"></i>Your result</span>
+                        <span><i class="lg-band"></i>Normal range</span>
+                        <span><i class="lg-dot"></i>Outside normal range</span>
+                    </div>
+                    <button type="button" class="trend-toggle" id="trendTableBtn" aria-expanded="false">Show as table</button>
+                    <table class="trend-table" id="trendTable" hidden>
+                        <thead><tr><th>Date</th><th>Result</th><th>Normal range</th><th>Request</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                }
+            </section>
 
             <!-- FILTER BAR -->
             <div class="filter-bar">
@@ -1292,13 +1393,16 @@
                                             aria-label="Quick view @req.RequestNumber">
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                                     </button>
-                                    <!-- Download PDF -->
+                                    <!-- Download PDF (only once the doctor has released the results) -->
+                                    @if (req.RequestStatus == "Released")
+                                    {
                                     <a href="/PatientDashboard/PrintResult?requestId=@req.RequestID"
                                        target="_blank" class="download-btn" title="Download PDF"
                                        aria-label="Download PDF for @req.RequestNumber"
                                        style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--teal-light);color:var(--teal);border:1px solid rgba(13,148,136,0.2);text-decoration:none;transition:background 0.15s;flex-shrink:0;">
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                                     </a>
+                                    }
                                     <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9" /></svg>
                                 </div>
                             </div>
@@ -1418,10 +1522,13 @@
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
                                             Full Page View
                                         </button>
+                                        @if (req.RequestStatus == "Released")
+                                        {
                                         <a href="/PatientDashboard/PrintResult?requestId=@req.RequestID" target="_blank" class="action-btn primary">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                                             Download PDF
                                         </a>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -1784,6 +1891,7 @@
                 qvMeta.textContent = 'Dr. ' + (card.dataset.doctor || '') + (d ? ' · ' + d.toLocaleDateString(undefined, { day:'numeric', month:'long', year:'numeric' }) : '');
                 qvBody.innerHTML = buildQVContent(card);
                 qvPdfLink.href = '/PatientDashboard/PrintResult?requestId=' + (card.dataset.id || '');
+                qvPdfLink.style.display = card.dataset.status === 'Released' ? '' : 'none';
                 qvOverlay.classList.add('open');
                 document.body.style.overflow = 'hidden';
             }
@@ -1811,6 +1919,7 @@
                 activeCard = card;
                 fpBody.innerHTML = buildFPContent(card);
                 fpPdfLink.href = '/PatientDashboard/PrintResult?requestId=' + (card.dataset.id || '');
+                fpPdfLink.style.display = card.dataset.status === 'Released' ? '' : 'none';
                 fpOverlay.classList.add('open');
                 fpOverlay.scrollTop = 0;
                 document.body.style.overflow = 'hidden';
@@ -1868,5 +1977,177 @@
 
         })();
     </script>
+    @if (trends.Any())
+    {
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+        <script>
+            (function () {
+                'use strict';
+                var TRENDS = @Html.Raw(trendJson);
+                var TEAL = '#0d9488', RED = '#dc2626', INK = '#0b1f3a', MUTED = '#6b7a99', GRID = '#e8edf5';
+                var sel = document.getElementById('trendTest');
+                var fromEl = document.getElementById('trendFrom');
+                var toEl = document.getElementById('trendTo');
+                var summary = document.getElementById('trendSummary');
+                var none = document.getElementById('trendNone');
+                var tableBody = document.querySelector('#trendTable tbody');
+                var chart = null;
+
+                function fmtDate(iso) {
+                    var d = new Date(iso + 'T00:00:00');
+                    return d.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
+                }
+                function num(v) { return Number(v).toLocaleString('en-ZA', { maximumFractionDigits: 2 }); }
+                function rangeText(t) {
+                    if (t.min == null && t.max == null) return '—';
+                    if (t.min == null) return '≤ ' + num(t.max);
+                    if (t.max == null) return '≥ ' + num(t.min);
+                    return num(t.min) + ' – ' + num(t.max);
+                }
+                function flagText(t, v) {
+                    if (t.max != null && v > t.max) return 'High';
+                    if (t.min != null && v < t.min) return 'Low';
+                    return '';
+                }
+                function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+
+                // Shades the normal range behind the line
+                var bandPlugin = {
+                    id: 'normalBand',
+                    beforeDatasetsDraw: function (c) {
+                        var t = c.$trend; if (!t || (t.min == null && t.max == null)) return;
+                        var y = c.scales.y, a = c.chartArea, ctx = c.ctx;
+                        var top = t.max != null ? y.getPixelForValue(t.max) : a.top;
+                        var bottom = t.min != null ? y.getPixelForValue(t.min) : a.bottom;
+                        top = Math.max(top, a.top); bottom = Math.min(bottom, a.bottom);
+                        if (bottom <= top) return;
+                        ctx.save();
+                        ctx.fillStyle = 'rgba(22,163,74,0.08)';
+                        ctx.fillRect(a.left, top, a.right - a.left, bottom - top);
+                        ctx.strokeStyle = 'rgba(22,163,74,0.45)';
+                        ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+                        ctx.beginPath(); ctx.moveTo(a.left, top); ctx.lineTo(a.right, top);
+                        ctx.moveTo(a.left, bottom); ctx.lineTo(a.right, bottom); ctx.stroke();
+                        ctx.restore();
+                    }
+                };
+
+                function draw() {
+                    var t = TRENDS.find(function (x) { return x.test === sel.value; }) || TRENDS[0];
+                    var pts = t.points.filter(function (p) {
+                        return (!fromEl.value || p.date >= fromEl.value) && (!toEl.value || p.date <= toEl.value);
+                    });
+                    var unit = t.unit ? ' ' + t.unit : '';
+
+                    // Summary tiles
+                    if (pts.length) {
+                        var last = pts[pts.length - 1], first = pts[0];
+                        var lastFlag = flagText(t, last.value) || (last.abnormal ? 'Abnormal' : '');
+                        var change = pts.length > 1 ? last.value - first.value : null;
+                        summary.innerHTML =
+                            '<div class="trend-stat"><div class="k">Latest (' + esc(fmtDate(last.date)) + ')</div><div class="v' + (lastFlag ? ' flag' : '') + '">' + esc(num(last.value) + unit) + (lastFlag ? ' · ' + esc(lastFlag) : '') + '</div></div>' +
+                            '<div class="trend-stat"><div class="k">Normal range</div><div class="v">' + esc(rangeText(t) + (rangeText(t) !== '—' ? unit : '')) + '</div></div>' +
+                            '<div class="trend-stat"><div class="k">Change since ' + esc(fmtDate(first.date)) + '</div><div class="v">' + (change == null ? '—' : esc((change > 0 ? '+' : '') + num(change) + unit)) + '</div></div>' +
+                            '<div class="trend-stat"><div class="k">Results shown</div><div class="v">' + pts.length + '</div></div>';
+                    } else {
+                        summary.innerHTML = '';
+                    }
+                    none.style.display = pts.length ? 'none' : 'block';
+                    document.querySelector('.trend-chart-wrap').style.display = pts.length ? '' : 'none';
+
+                    // Table view (same data, for screen readers / exact values)
+                    tableBody.innerHTML = pts.slice().reverse().map(function (p) {
+                        var f = flagText(t, p.value) || (p.abnormal ? 'Abnormal' : '');
+                        return '<tr><td>' + esc(fmtDate(p.date)) + '</td><td class="' + (f ? 'flag' : '') + '">' + esc(num(p.value) + unit) + (f ? ' (' + esc(f) + ')' : '') +
+                               '</td><td>' + esc(rangeText(t)) + '</td><td>' + esc(p.request) + '</td></tr>';
+                    }).join('');
+
+                    if (!pts.length || typeof Chart === 'undefined') return;
+
+                    var values = pts.map(function (p) { return p.value; });
+                    var lo = Math.min.apply(null, values.concat(t.min != null ? [t.min] : []));
+                    var hi = Math.max.apply(null, values.concat(t.max != null ? [t.max] : []));
+                    var pad = (hi - lo) * 0.15 || Math.abs(hi) * 0.1 || 1;
+                    var isOut = function (p) { return p.abnormal || !!flagText(t, p.value); };
+
+                    var data = {
+                        labels: pts.map(function (p) { return fmtDate(p.date); }),
+                        datasets: [{
+                            label: t.test,
+                            data: values,
+                            borderColor: TEAL,
+                            borderWidth: 2,
+                            tension: 0.25,
+                            pointRadius: pts.map(function (p) { return isOut(p) ? 6 : 4; }),
+                            pointHoverRadius: 8,
+                            pointHitRadius: 14,
+                            pointBackgroundColor: pts.map(function (p) { return isOut(p) ? RED : TEAL; }),
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2
+                        }]
+                    };
+                    var options = {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 300 },
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: INK, padding: 10, displayColors: false,
+                                titleFont: { family: 'DM Sans', weight: '600' }, bodyFont: { family: 'DM Sans' },
+                                callbacks: {
+                                    label: function (ctx) {
+                                        var p = pts[ctx.dataIndex], f = flagText(t, p.value) || (p.abnormal ? 'Abnormal' : '');
+                                        var lines = [num(p.value) + unit + (f ? '  (' + f + ')' : '')];
+                                        if (rangeText(t) !== '—') lines.push('Normal: ' + rangeText(t) + unit);
+                                        lines.push('Request ' + p.request);
+                                        return lines;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    color: MUTED, font: { family: 'DM Sans', size: 11 }, maxRotation: 0,
+                                    autoSkip: true, autoSkipPadding: 18,
+                                    // short "04 Mar 26" on the axis; the tooltip keeps the full date
+                                    callback: function (v, i) {
+                                        var d = new Date(pts[i].date + 'T00:00:00');
+                                        return d.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: '2-digit' });
+                                    }
+                                }
+                            },
+                            y: {
+                                suggestedMin: lo - pad, suggestedMax: hi + pad,
+                                grid: { color: GRID }, border: { display: false },
+                                ticks: { color: MUTED, font: { family: 'DM Sans', size: 11 } },
+                                title: { display: !!t.unit, text: t.unit, color: MUTED, font: { family: 'DM Sans', size: 11 } }
+                            }
+                        }
+                    };
+
+                    if (chart) chart.destroy();
+                    chart = new Chart(document.getElementById('trendChart'), { type: 'line', data: data, options: options, plugins: [bandPlugin] });
+                    chart.$trend = t;
+                    chart.update('none');
+                }
+
+                [sel, fromEl, toEl].forEach(function (el) { el.addEventListener('change', draw); });
+
+                var tBtn = document.getElementById('trendTableBtn');
+                var table = document.getElementById('trendTable');
+                tBtn.addEventListener('click', function () {
+                    table.hidden = !table.hidden;
+                    tBtn.textContent = table.hidden ? 'Show as table' : 'Hide table';
+                    tBtn.setAttribute('aria-expanded', String(!table.hidden));
+                });
+
+                draw();
+            })();
+        </script>
+    }
 </body>
 </html>
