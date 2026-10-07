@@ -1,4 +1,4 @@
-﻿@* 
+@* 
 @{
     ViewData["Title"] = "Doctor Dashboard";
     Layout = null;
@@ -561,7 +561,7 @@
         </a>
         <div class="topbar-right">
             <div class="user-chip">
-                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "P")</div>
+                <div class="user-avatar">@((string.IsNullOrEmpty(ViewBag.Email as string) ? "P" : ((string)ViewBag.Email).Substring(0, 1).ToUpper()))</div>
                 <span class="user-email">@ViewBag.Email</span>
             </div>
             <a asp-controller="Home" asp-action="Logout" class="logout-btn">

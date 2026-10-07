@@ -50,6 +50,15 @@ namespace Patient.Repository
 
         public bool ResetPassword(string token, string newPassword)
             => _dataAccess.ResetPassword(token, newPassword);
+        public bool MustChangePassword(int userId) => _dataAccess.MustChangePassword(userId);
+
+        public bool PasswordMatches(int userId, string password) => _dataAccess.PasswordMatches(userId, password);
+
+        public void SetOwnPassword(int userId, string newPassword) => _dataAccess.SetOwnPassword(userId, newPassword);
+
+        public bool EmailExists(string email)
+            => _dataAccess.EmailExists(email);
+
         public bool ResetPasswordByEmail(string email, string newPassword)
     => _dataAccess.ResetPasswordByEmail(email, newPassword);
         public List<TestRequest> GetPatientTestRequests(int patientId)
@@ -85,6 +94,15 @@ namespace Patient.Repository
 
         public ConsentViewModel GetConsentData(int patientId, int selectedDoctorId = 0)
     => _dataAccess.GetConsentData(patientId, selectedDoctorId);
+
+        public (bool ShareAll, List<int> ConditionIds) GetConditionAccess(int patientId, int doctorId)
+            => _dataAccess.GetConditionAccess(patientId, doctorId);
+
+        public void SaveConditionAccess(int patientId, int doctorId, bool shareAll, IEnumerable<int> conditionIds)
+            => _dataAccess.SaveConditionAccess(patientId, doctorId, shareAll, conditionIds);
+
+        public bool DoctorHasConsent(int patientId, int doctorId)
+            => _dataAccess.DoctorHasConsent(patientId, doctorId);
 
         public void GrantConsent(int patientId, int doctorId)
             => _dataAccess.GrantConsent(patientId, doctorId);

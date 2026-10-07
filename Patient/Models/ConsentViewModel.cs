@@ -9,6 +9,13 @@ namespace Patient.Models
         public List<DoctorOption> AllDoctors { get; set; } = new();
         public List<DoctorConsent> Consents { get; set; } = new();
         public List<ConsentTestRequest> TestRequests { get; set; } = new();
+
+        // Condition-level access
+        public List<PatientCondition> MyConditions { get; set; } = new();
+        public bool SelectedDoctorHasConsent { get; set; }
+        public bool ShareAllConditions { get; set; } = true;
+        public List<int> SharedConditionIds { get; set; } = new();
+        public Dictionary<int, string> AccessSummaryByDoctor { get; set; } = new();
     }
 
     public class DoctorOption

@@ -1,9 +1,15 @@
 ﻿using Doctor.DataAccess;
 using Doctor.Models;
-using Patient.Models;
 
 namespace Doctor.Repository
 {
+    /// <summary>
+    /// Thin pass-through wrapper over DoctorDataAccess, mirroring the
+    /// Patient.Repository.UserRepository pattern: the controller depends on
+    /// this repository (constructed once via DI with the connection string),
+    /// and every method here just forwards to the underlying data-access
+    /// class of the same name.
+    /// </summary>
     public class DoctorRepository
     {
         private readonly DoctorDataAccess _dataAccess;
@@ -13,47 +19,64 @@ namespace Doctor.Repository
             _dataAccess = new DoctorDataAccess(connectionString);
         }
 
-        // Feature 1: Manage Patient Records
-        public (string result, int newUserId, int newPatientId) RegisterPatientByDoctor(
-            string username, string email, string passwordHash, string firstName,
-            string lastName, string idNumber, DateTime dateOfBirth, string cellphone)
-            => _dataAccess.RegisterPatientByDoctor(username, email, passwordHash, firstName,
-                lastName, idNumber, dateOfBirth, cellphone);
+        // ---- Identity ---------------------------------------------------
 
-        // Feature 2: Create Test Requests
-        public List<(int SampleTypeID, string SampleTypeName)> GetRequiredSamplesForTestTypes(string testTypeIdsJson)
-            => _dataAccess.GetRequiredSamplesForTestTypes(testTypeIdsJson);
+        public (int DoctorID, string DoctorName, string Email)? GetDoctorByUserId(int userId)
+            => _dataAccess.GetDoctorByUserId(userId);
 
-        public (string result, int newRequestId) CreateTestRequest(
+        public (int DoctorID, string FirstName, string LastName, string Email)? GetDoctorProfileByUserId(int userId)
+            => _dataAccess.GetDoctorProfileByUserId(userId);
+
+        // ---- 1. Manage Patient Records -----------------------------------
+
+        public List<PatientRecordListItem> SearchPatients(string? searchTerm)
+            => _dataAccess.SearchPatients(searchTerm);
+
+        public bool PatientIdNumberExists(string idNumber)
+            => _dataAccess.PatientIdNumberExists(idNumber);
+
+        public (string Result, int NewUserId, int NewPatientId) RegisterPatientByDoctor(
+            string username, string email, string passwordHash,
+            string firstName, string lastName, string idNumber,
+            DateTime dateOfBirth, string cellphoneNumber)
+            => _dataAccess.RegisterPatientByDoctor(
+                username, email, passwordHash, firstName, lastName,
+                idNumber, dateOfBirth, cellphoneNumber);
+
+        // ---- 2. Create Test Requests --------------------------------------
+
+        public List<TestTypeOption> GetAllTestTypes()
+            => _dataAccess.GetAllTestTypes();
+
+        public List<SampleTypeOption> GetAllSampleTypes()
+            => _dataAccess.GetAllSampleTypes();
+
+        public List<SampleTypeOption> GetRequiredSamplesForTestTypes(List<int> testTypeIds)
+            => _dataAccess.GetRequiredSamplesForTestTypes(testTypeIds);
+
+        public (int RequestID, string RequestNumber) CreateTestRequest(
             int patientId, int doctorId, string urgency, string? clinicalNotes,
-            string testTypeIdsJson, string barcodesJson)
-            => _dataAccess.CreateTestRequest(patientId, doctorId, urgency, clinicalNotes, testTypeIdsJson, barcodesJson);
+            List<int> testTypeIds, List<SampleBarcodeInput> samples)
+            => _dataAccess.CreateTestRequest(patientId, doctorId, urgency, clinicalNotes, testTypeIds, samples);
 
-        // Feature 3: Track Test Request Status / Cancel
-        public (string result, string? notifyDoctorEmail, string? notifyDoctorName) CancelTestRequest(
-            int requestId, string cancellationReason, int cancelledByUserId, string cancelledByRole)
-            => _dataAccess.CancelTestRequest(requestId, cancellationReason, cancelledByUserId, cancelledByRole);
+        // ---- 3/4. Track status + View results -----------------------------
 
-        public List<TestRequest> GetPatientTestRequests(int patientId)
-            => _dataAccess.GetPatientTestRequests(patientId);
+        public List<DoctorTestRequestSummary> GetDoctorTestRequests(int doctorId, DateTime? from = null, DateTime? to = null)
+            => _dataAccess.GetDoctorTestRequests(doctorId, from, to);
 
-        // Feature 4: View Results
-        public List<TestResultViewModel> GetTestResultsForDoctor(int requestId, int doctorId)
-            => _dataAccess.GetTestResultsForDoctor(requestId, doctorId);
+        public DoctorTestRequestSummary? GetTestRequestDetail(int doctorId, int requestId)
+            => _dataAccess.GetTestRequestDetail(doctorId, requestId);
 
-        public string ReleaseTestResults(int requestId, int doctorId, string? releaseNote)
-            => _dataAccess.ReleaseTestResults(requestId, doctorId, releaseNote);
+        public (bool Success, string Message, string? NotifyDoctorEmail, string? NotifyDoctorName) CancelTestRequest(
+            int requestId, string reason, int cancelledByUserId, string cancelledByRole)
+            => _dataAccess.CancelTestRequest(requestId, reason, cancelledByUserId, cancelledByRole);
 
-        // Feature 5: View Alerts
-        public List<AlertViewModel> GetDoctorAlerts(int doctorId, DateTime? fromDate)
-            => _dataAccess.GetDoctorAlerts(doctorId, fromDate);
+        public (bool Success, string Message) ReleaseResults(int requestId, int doctorId, string releaseNotes)
+            => _dataAccess.ReleaseResults(requestId, doctorId, releaseNotes);
 
-        // Feature 6: Doctor Reports
-        public List<TestRequestViewModel> GetDoctorTestRequestsByDateRange(int doctorId, DateTime start, DateTime end)
-            => _dataAccess.GetDoctorTestRequestsByDateRange(doctorId, start, end);
+        // ---- 5. Alerts -----------------------------------------------------
 
-        // Shared
-        public List<(int DoctorID, string DoctorName, string Email)> GetAllDoctors()
-            => _dataAccess.GetAllDoctors();
+        public List<AbnormalAlertViewModel> GetAbnormalAlerts(int doctorId, DateTime? from, DateTime? to)
+            => _dataAccess.GetAbnormalAlerts(doctorId, from, to);
     }
 }
