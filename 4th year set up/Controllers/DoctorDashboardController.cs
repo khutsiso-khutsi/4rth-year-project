@@ -144,14 +144,73 @@ namespace _4th_year_set_up.Controllers
                 ? history.Conditions
                 : history.Conditions.Where(c => sharedIds.Contains(c.ConditionID)).ToList();
 
+            // Test requests the patient ticked for this doctor on their Consent page
+            var shared = _userRepo.GetConsentData(patientId, _doctorId).TestRequests
+                .Where(r => r.IsShared)
+                .OrderByDescending(r => r.RequestDate)
+                .Select(r => new
+                {
+                    r.RequestID,
+                    r.RequestNumber,
+                    date = r.RequestDate.ToString("d MMM yyyy"),
+                    r.RequestStatus,
+                    url = Url.Action("SharedRequest", "Doctor", new { patientId, requestId = r.RequestID })
+                });
+
             return Json(new
             {
                 hasConsent = true,
                 shareAll,
                 conditions = conditions.Select(c => new { c.ConditionName, diagnosed = c.DiagnosedDate?.ToString("yyyy-MM-dd"), c.Notes }),
                 allergies = history.Allergies.Select(a => new { a.AllergyName, a.Severity, a.Notes }),
-                medications = history.Medications.Select(m => new { m.MedicationName, m.Dosage, m.Frequency })
+                medications = history.Medications.Select(m => new { m.MedicationName, m.Dosage, m.Frequency }),
+                sharedRequests = shared
             });
+        }
+
+        /// <summary>
+        /// Spec (Consent): the patient chooses which test requests a doctor may
+        /// see. Opens one of those shared requests. Checked server-side, so
+        /// typing another requestId in the URL doesn't get past consent.
+        /// Values only show once the request has been released.
+        /// </summary>
+        public IActionResult SharedRequest(int patientId, int requestId)
+        {
+            ViewBag.Email = CurrentEmail();
+
+            if (!_userRepo.DoctorHasConsent(patientId, _doctorId))
+            {
+                TempData["Error"] = "This patient has not given you consent.";
+                return RedirectToAction("PatientRecords");
+            }
+
+            var isShared = _userRepo.GetConsentData(patientId, _doctorId).TestRequests
+                .Any(r => r.RequestID == requestId && r.IsShared);
+            var request = isShared
+                ? _userRepo.GetPatientTestRequests(patientId).FirstOrDefault(r => r.RequestID == requestId)
+                : null;
+
+            if (request == null)
+            {
+                TempData["Error"] = "The patient has not shared that test request with you.";
+                return RedirectToAction("PatientRecords");
+            }
+
+            request.Items = _userRepo.GetTestRequestItems(requestId);
+            if (request.RequestStatus != TestRequestStatus.ReleasedByDoctor)
+            {
+                foreach (var item in request.Items)
+                {
+                    item.ResultValue = null;
+                    item.ResultNotes = null;
+                    item.IsAbnormal = false;
+                }
+            }
+
+            ViewBag.Patient = _userRepo.GetPatientProfile(patientId);
+            ViewBag.PatientId = patientId;
+            Log($"Viewed shared test request {request.RequestNumber}");
+            return View(request);
         }
 
         [HttpPost]
