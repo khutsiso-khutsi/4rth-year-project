@@ -57,10 +57,10 @@ namespace LabManager.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateOrder(
-     int supplier,
+     int supplierId,
      string items)
         {
-            if (supplier <= 0)
+            if (supplierId <= 0)
             {
                 TempData["Error"] =
                     "Please select a supplier.";
@@ -76,14 +76,12 @@ namespace LabManager.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Get suppliers
             var suppliers =
                 await _orderRepository.GetSuppliers();
 
-            // Find selected supplier
             var selectedSupplier =
                 suppliers.FirstOrDefault(
-                    s => s.SupplierID == supplier);
+                    s => s.SupplierID == supplierId);
 
             if (selectedSupplier == null)
             {
@@ -99,14 +97,9 @@ namespace LabManager.Controllers
             var order = new ConsumableOrder
             {
                 OrderNumber = orderNumber,
-
-                // Store supplier NAME in ConsumableOrder
-                SupplierID = supplier,
-
+                SupplierID = supplierId,
                 OrderDate = DateTime.Now,
-
                 Status = "Ordered",
-
                 Items = items.Trim()
             };
 

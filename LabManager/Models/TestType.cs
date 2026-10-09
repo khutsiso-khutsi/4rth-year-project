@@ -1,4 +1,5 @@
-﻿using System;
+﻿using _4th_year_set_up.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -30,7 +31,7 @@ namespace LabManager.Models
 
         public string? ConsumablesUsed { get; set; }
 
-        public bool IsActive { get; set; }
+
 
         public string NormalRangeDisplay
         {
@@ -38,23 +39,110 @@ namespace LabManager.Models
             {
                 if (NormalRangeMin.HasValue && NormalRangeMax.HasValue)
                 {
-                    return $"{NormalRangeMin:0.##} - {NormalRangeMax:0.##}";
-                }
-
-                if (NormalRangeMin.HasValue)
-                {
-                    return $"{NormalRangeMin:0.##} -";
-                }
-
-                if (NormalRangeMax.HasValue)
-                {
-                    return $"- {NormalRangeMax:0.##}";
+                    var difference = NormalRangeMax.Value - NormalRangeMin.Value;
+                    return difference.ToString();
                 }
 
                 return "—";
             }
         }
     }
+
+ 
+        public class DashboardViewModel
+        {
+            // ============================================================
+            // TEST CATALOGUE
+            // ============================================================
+
+            /// <summary>
+            /// Total number of test categories.
+            /// Examples: Full Blood Count, Differential Count,
+            /// Peripheral Blood Film, Coagulation Studies.
+            /// </summary>
+            public int CategoryCount { get; set; }
+
+            /// <summary>
+            /// Total number of test types in the catalogue.
+            /// </summary>
+            public int TestTypeCount { get; set; }
+
+            /// <summary>
+            /// Recent test types displayed on the dashboard.
+            /// </summary>
+            public IEnumerable<TestType> RecentTests { get; set; }
+                = new List<TestType>();
+
+
+            // ============================================================
+            // CONSUMABLES
+            // ============================================================
+
+            /// <summary>
+            /// Total number of consumable stock items.
+            /// </summary>
+            public int ConsumableCount { get; set; }
+
+            /// <summary>
+            /// Number of consumables that are below or within
+            /// 10% of their reorder level.
+            /// </summary>
+            public int LowStockCount { get; set; }
+
+            /// <summary>
+            /// Consumables that require attention because their
+            /// quantity on hand is near or below the reorder level.
+            /// </summary>
+            public IEnumerable<Consumable> StockAlerts { get; set; }
+                = new List<Consumable>();
+
+
+            // ============================================================
+            // SUPPLIERS
+            // ============================================================
+
+            /// <summary>
+            /// Total number of active suppliers.
+            /// </summary>
+            public int SupplierCount { get; set; }
+
+
+            // ============================================================
+            // STAFF
+            // ============================================================
+
+            /// <summary>
+            /// Total number of doctor users.
+            /// </summary>
+            public int DoctorCount { get; set; }
+
+            /// <summary>
+            /// Total number of laboratory technician users.
+            /// </summary>
+            public int TechnicianCount { get; set; }
+
+
+            // ============================================================
+            // CONSUMABLE ORDERS
+            // ============================================================
+
+            /// <summary>
+            /// Number of open orders.
+            /// Includes:
+            /// Ordered
+            /// Partially complete
+            /// </summary>
+            public int OpenOrderCount { get; set; }
+
+            /// <summary>
+            /// Recent consumable orders displayed on the dashboard.
+            /// </summary>
+            public IEnumerable<ConsumableOrder> RecentOrders { get; set; }
+                = new List<ConsumableOrder>();
+        }
+    
+
+
 
 
 }

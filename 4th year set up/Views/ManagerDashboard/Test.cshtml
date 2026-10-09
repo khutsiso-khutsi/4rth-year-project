@@ -1139,7 +1139,7 @@
 
                                 @foreach (var cat in categories)
                                 {
-                                    <option value="@cat.Id">@cat.CategoryName</option>
+                                    <option value="@cat.CategoryID">@cat.CategoryName</option>
                                 }
 
                             </select>
@@ -1214,34 +1214,14 @@
                         <!-- NORMAL MIN -->
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Normal Range Minimum
-                            </label>
-
-                            <input type="number"
-                                   name="NormalRangeMin"
-                                   class="form-control"
-                                   step="0.01"
-                                   placeholder="e.g. 12.00" />
-
+                            <label class="form-label">Normal Range Min</label>
+                            <input type="number" name="NormalRangeMin" class="form-control" step="any" placeholder="e.g. 12.00" />
                         </div>
 
-
                         <!-- NORMAL MAX -->
-
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Normal Range Maximum
-                            </label>
-
-                            <input type="number"
-                                   name="NormalRangeMax"
-                                   class="form-control"
-                                   step="0.01"
-                                   placeholder="e.g. 16.00" />
-
+                            <label class="form-label">Normal Range Maximum</label>
+                            <input type="number" name="NormalRangeMax" class="form-control" step="0.01" placeholder="e.g. 16.00" />
                         </div>
 
 
@@ -1371,7 +1351,7 @@
 
                                 @foreach (var cat in categories)
                                 {
-                                    <option value="@cat.Id">@cat.CategoryName</option>
+                                    <option value="@cat.CategoryID">@cat.CategoryName</option>
                                 }
 
                             </select>
@@ -1452,7 +1432,8 @@
                                    id="edit-NormalRangeMin"
                                    name="NormalRangeMin"
                                    class="form-control"
-                                   step="0.01" />
+                                   step="any"
+                                   placeholder="e.g. 12.00" />
 
                         </div>
 

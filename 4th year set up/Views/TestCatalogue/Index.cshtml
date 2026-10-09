@@ -8,6 +8,26 @@
     ViewData["Title"] = "Test Catalogue";
     var categories = ViewBag.Categories as IEnumerable<TestCategory>
                      ?? Enumerable.Empty<TestCategory>();
+
+    var categoryDictionary = new Dictionary<string, string>();
+    var sampleTypeDictionary = new Dictionary<string, string>();   
+
+    // raw sample types list (optional). Controller may set ViewBag.SampleTypes for this.
+    var sampleTypes = ViewBag.SampleTypes as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+
+    if (ViewBag.Category is IEnumerable<dynamic> supplier)
+    {
+        // Populate the dictionary with valid fridge data
+        categoryDictionary = supplier.ToDictionary(supplier => (string)supplier.Value, supplier => (string)supplier.Text);
+    
+    }
+
+    if (ViewBag.SampleType is IEnumerable<dynamic> sample)
+    {
+        // Populate the dictionary with valid sample type data
+        sampleTypeDictionary = sample.ToDictionary(sample => (string)sample.Value, sample => (string)sample.Text);
+    }
+
 }
 
 <!DOCTYPE html>
@@ -18,6 +38,7 @@
     <title>Test Catalogue — NMB-HLabSys</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
+
             *, *::before, *::after {
                 box-sizing: border-box;
                 margin: 0;
@@ -1018,10 +1039,22 @@
                                             <div class="test-name">@test.TestName</div>
                                         </td>
                                         <td>
-                                            <span class="category-badge">@(test.CategoryName ?? "Uncategorised")</span>
+                                            @{
+                                                var catList = ViewBag.Category as IEnumerable<SelectListItem>;
+                                                var categoryText = catList?.FirstOrDefault(c => c.Value == test.CategoryId.ToString())?.Text
+                                                    ?? categories.FirstOrDefault(c => c.CategoryID == test.CategoryId)?.CategoryName
+                                                    ?? "—";
+                                            }
+                                            <div>@categoryText</div>
                                         </td>
                                         <td>
-                                            <span class="sample-badge">@test.SampleTypeId</span>
+                                            @{ 
+                                                var sampleList = ViewBag.SampleType as IEnumerable<SelectListItem>;
+                                                var sampleText = sampleList?.FirstOrDefault(s => s.Value == test.SampleTypeId.ToString())?.Text
+                                                    ?? sampleTypes.FirstOrDefault(s => s.SampleTypeID.ToString() == test.SampleTypeId.ToString())?.SampleName
+                                                    ??  "—";
+                                            }
+                                            <div>@sampleText</div>
                                         </td>
                                         <td>@(test.UnitMeasurement ?? "—")</td>
                                         <td>
@@ -1042,31 +1075,45 @@
                                         </td>
                                         <td>
                                             <div class="actions">
-                                                <button type="button"
-                                                        class="action-icon-btn edit-btn"
-                                                        title="Edit"
-                                                        onclick="openEditModal(
-                                                    @test.TestId,
-                                                    '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.TestName ?? ""))',
-                                                    '@test.CategoryId',
-                                                    '@test.SampleTypeId ?? ',
-                                                    '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.UnitMeasurement ?? ""))',
-                                                    '@(test.NormalRangeMin?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")',
-                                                    '@(test.NormalRangeMax?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")',
-                                                    '@test.TurnaroundTime',
-                                                    '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.ConsumablesUsed ?? ""))'
-                                                    )">
-                                                    ✎
-                                                </button>
-                                                <button type="button"
-                                                        class="action-icon-btn delete-btn"
-                                                        title="Delete"
-                                                        onclick="openDeleteModal(
-                                                    @test.TestId,
-                                                    '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.TestName ?? ""))'
-                                                    )">
-                                                    🗑
-                                                </button>
+                                                @if (test.TestId > 0)
+                                                {
+                                                    <button type="button"
+                                                            class="action-icon-btn edit-btn"
+                                                            title="Edit"
+                                                            data-testid="@test.TestId"
+                                                            data-testname="@System.Net.WebUtility.HtmlEncode(test.TestName ?? "")"
+                                                            data-categoryid="@test.CategoryId"
+                                                            data-sampletypeid="@test.SampleTypeId"
+                                                            data-unit="@System.Net.WebUtility.HtmlEncode(test.UnitMeasurement ?? "")"
+                                                            data-normalmin="@(test.NormalRangeMin?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")"
+                                                            data-normalmax="@(test.NormalRangeMax?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")"
+                                                            data-tat="@test.TurnaroundTime"
+                                                            data-consumables="@System.Net.WebUtility.HtmlEncode(test.ConsumablesUsed ?? "")"
+                                                            onclick="populateEditModal(this)">
+                                                        ✎
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="button" class="action-icon-btn edit-btn" title="Edit (invalid)" onclick="showInvalidIdWarning()">✎</button>
+                                                }
+
+                                                @if (test.TestId > 0)
+                                                {
+                                                    <button type="button"
+                                                            class="action-icon-btn delete-btn"
+                                                            title="Delete"
+                                                            onclick="openDeleteModal(
+                                                        @test.TestId,
+                                                        '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.TestName ?? ""))'
+                                                        )">
+                                                        🗑
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="button" class="action-icon-btn delete-btn" title="Delete (invalid)" onclick="showInvalidIdWarning()">🗑</button>
+                                                }
                                             </div>
                                         </td>
                                     </tr>
@@ -1244,7 +1291,8 @@
                 </div>
 
                 <div class="modal-body">
-                    <input type="hidden" id="edit-TestId" name="TestId" />
+                    <!-- Hidden field for the TestId so it posts back with the form -->
+                    <input type="hidden" id="edit-TestId" name="TestId" value="" />
 
                     <div class="form-grid">
 
@@ -1414,6 +1462,25 @@
                 document.body.style.overflow = "";
             }
 
+            // Populate the edit modal from the button's data-* attributes
+            // Always open the modal even if TestId is missing or invalid — the form will handle submission validation.
+            function populateEditModal(button) {
+                if (!button) return;
+
+                var dataset = button.dataset || {};
+                var id = dataset.testid || button.getAttribute('data-testid') || "";
+                var testName = dataset.testname || "";
+                var categoryId = dataset.categoryid || "";
+                var sampleType = dataset.sampletypeid || "";
+                var unit = dataset.unit || "";
+                var normalMin = dataset.normalmin || "";
+                var normalMax = dataset.normalmax || "";
+                var tat = dataset.tat || "";
+                var consumables = dataset.consumables || "";
+
+                openEditModal(id, testName, categoryId, sampleType, unit, normalMin, normalMax, tat, consumables);
+            }
+
             document.querySelectorAll(".modal-overlay").forEach(function (modal) {
                 modal.addEventListener("click", function (event) {
                     if (event.target === modal) {
@@ -1422,6 +1489,8 @@
                     }
                 });
             });
+
+            // showInvalidIdWarning removed per request
 
             document.addEventListener("keydown", function (event) {
                 if (event.key === "Escape") {

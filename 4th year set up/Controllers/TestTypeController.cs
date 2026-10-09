@@ -3,6 +3,7 @@ using LabManager.Repositories;
 using LabManager.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Globalization;
 
 namespace LabManager.Controllers
 {
@@ -25,10 +26,15 @@ namespace LabManager.Controllers
             
 
                 IEnumerable<TestCategory> category = await _repository.GetCategory();
-                ViewBag.Category = category.Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.CategoryName });
+                ViewBag.Category = category.Select(c => new SelectListItem { Value = c.CategoryID.ToString(), Text = c.CategoryName });
 
                 IEnumerable<TestType> sample = await _repository.GetSampleType();
-                ViewBag.SampleType = sample.Select(c => new SelectListItem { Value = c.SampleTypeId.ToString(), Text = c.SampleName });
+                // expose raw sample types for views that expect them
+                ViewBag.SampleTypes = sample;
+                // build a SelectListItem list for dropdowns; ensure Text falls back to the id when name is missing
+                ViewBag.SampleType = sample
+                    .Select(c => new SelectListItem { Value = c.SampleTypeId.ToString(), Text = c.SampleName ?? c.SampleTypeId.ToString() })
+                    .ToList();
 
                 var tests = await _repository.GetAllTestTypes();
 
@@ -48,6 +54,34 @@ namespace LabManager.Controllers
         {
             try
             {
+                // parse decimal inputs explicitly to avoid missing values when model binder can't parse due to culture
+                var minStr = Request.Form["NormalRangeMin"].FirstOrDefault();
+                var maxStr = Request.Form["NormalRangeMax"].FirstOrDefault();
+
+                if (!string.IsNullOrWhiteSpace(minStr))
+                {
+                    if (decimal.TryParse(minStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var minVal) ||
+                        decimal.TryParse(minStr, NumberStyles.Any, CultureInfo.CurrentCulture, out minVal))
+                    {
+                        test.NormalRangeMin = minVal;
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(maxStr))
+                {
+                    if (decimal.TryParse(maxStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var maxVal) ||
+                        decimal.TryParse(maxStr, NumberStyles.Any, CultureInfo.CurrentCulture, out maxVal))
+                    {
+                        test.NormalRangeMax = maxVal;
+                    }
+                }
+
+                // if SampleTypeId posted as text (e.g. from legacy hardcoded options), try parse to int
+                var sampleStr = Request.Form["SampleTypeId"].FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(sampleStr) && int.TryParse(sampleStr, out var sampleId))
+                {
+                    test.SampleTypeId = sampleId;
+                }
                 if (string.IsNullOrWhiteSpace(test.TestName))
                 {
                     TempData["Error"] =
@@ -155,6 +189,43 @@ namespace LabManager.Controllers
         {
             try
             {
+                // ensure we pick up values that the model binder may have missed (e.g. TestId, numeric fields)
+                var idStr = Request.Form["TestId"].FirstOrDefault();
+                // prefer the posted TestId when present (model binder may miss it)
+                if (!string.IsNullOrWhiteSpace(idStr) && int.TryParse(idStr, out var idVal) && idVal > 0)
+                {
+                    test.TestId = idVal;
+                }
+
+                // parse decimal inputs explicitly to avoid missing values when model binder can't parse due to culture
+                var minStr = Request.Form["NormalRangeMin"].FirstOrDefault();
+                var maxStr = Request.Form["NormalRangeMax"].FirstOrDefault();
+
+                if (!string.IsNullOrWhiteSpace(minStr))
+                {
+                    if (decimal.TryParse(minStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var minVal) ||
+                        decimal.TryParse(minStr, NumberStyles.Any, CultureInfo.CurrentCulture, out minVal))
+                    {
+                        test.NormalRangeMin = minVal;
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(maxStr))
+                {
+                    if (decimal.TryParse(maxStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var maxVal) ||
+                        decimal.TryParse(maxStr, NumberStyles.Any, CultureInfo.CurrentCulture, out maxVal))
+                    {
+                        test.NormalRangeMax = maxVal;
+                    }
+                }
+
+                // if SampleTypeId posted as text, try parse to int
+                var sampleStr = Request.Form["SampleTypeId"].FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(sampleStr) && int.TryParse(sampleStr, out var sampleId))
+                {
+                    test.SampleTypeId = sampleId;
+                }
+
                 if (test.TestId <= 0)
                 {
                     TempData["Error"] =
@@ -171,21 +242,7 @@ namespace LabManager.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                //if (!test.CategoryId.HasValue)
-                //{
-                //    TempData["Error"] =
-                //        "Please select a category.";
-
-                //    return RedirectToAction(nameof(Index));
-                //}
-
-                //if (string.IsNullOrWhiteSpace(test.SampleTypeId))
-                //{
-                //    TempData["Error"] =
-                //        "Please select a sample type.";
-
-                //    return RedirectToAction(nameof(Index));
-                //}
+               
 
                 if (test.NormalRangeMin.HasValue &&
                     test.NormalRangeMax.HasValue &&

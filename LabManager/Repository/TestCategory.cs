@@ -18,7 +18,7 @@ namespace LabManager.Repositories
         // ---------------------------------------------------------
         public async Task<IEnumerable<TestType>> GetAllTestTypes()
         {
-            return await _dataAccess.GetData<TestType, object>(
+            return await _dataAccess.GetData<TestType, dynamic>(
                 "sp_GetAllTestTypes",
                 new { }
             );

@@ -186,8 +186,8 @@ namespace LabManager.Controllers
             }
 
             if (AdjustmentType != "Increase" &&
-                AdjustmentType != "Decrease " &&
-                AdjustmentType != "set")
+                AdjustmentType != "Decrease" &&
+                AdjustmentType != "Set")
             {
                 TempData["Error"] =
                     "Invalid adjustment type.";
