@@ -626,6 +626,8 @@
             .main { padding: 20px 16px; }
             .hero { padding: 24px 20px; }
         }
+        .readonly-note { font-size: 0.75rem; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+        .pw-hint { font-size: 0.72rem; color: var(--muted); margin-top: 5px; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -745,20 +747,20 @@
                     </div>
                     <div class="stats-row">
                         <div class="stat-item">
-                            <div class="stat-label">Department</div>
-                            <div class="stat-value">@Model.Department</div>
+                            <div class="stat-label">HPCSA No.</div>
+                            <div class="stat-value" style="font-family:'Courier New',monospace;font-size:0.78rem;">@(string.IsNullOrEmpty(Model.HPCSANumber) ? "—" : Model.HPCSANumber)</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-label">Specialization</div>
-                            <div class="stat-value">@Model.Specialization</div>
+                            <div class="stat-label">Contact</div>
+                            <div class="stat-value">@(string.IsNullOrEmpty(Model.ContactNumber) ? "—" : Model.ContactNumber)</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-label">License No.</div>
-                            <div class="stat-value" style="font-family:'Courier New',monospace;font-size:0.78rem;">@Model.LicenseNumber</div>
+                            <div class="stat-label">Role</div>
+                            <div class="stat-value">Doctor</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-label">Member Since</div>
-                            <div class="stat-value">@Model.RegistrationDate.ToString("MMM yyyy")</div>
+                            <div class="stat-value">@(Model.RegistrationDate?.ToString("MMM yyyy") ?? "—")</div>
                         </div>
                     </div>
                 </div>
@@ -774,17 +776,18 @@
                     </div>
                     <div class="card-body">
                         <div class="form-group" style="margin-bottom:12px;">
-                            <label>Email Address</label>
-                            <input asp-for="Email" readonly />
+                            <label>Email Address (your username)</label>
+                            <input type="text" value="@Model.Email" readonly />
                         </div>
                         <div class="form-group" style="margin-bottom:12px;">
-                            <label>License Number</label>
-                            <input asp-for="LicenseNumber" readonly />
+                            <label>HPCSA Number</label>
+                            <input type="text" value="@Model.HPCSANumber" readonly />
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="margin-bottom:12px;">
                             <label>Registration Date</label>
-                            <input type="text" value="@Model.RegistrationDate.ToString("dd MMM yyyy")" readonly />
+                            <input type="text" value="@(Model.RegistrationDate?.ToString("dd MMM yyyy") ?? "—")" readonly />
                         </div>
+                        <p class="readonly-note">To change your e-mail address or HPCSA number, contact the lab administrator.</p>
                     </div>
                 </div>
             </div>
@@ -805,54 +808,21 @@
                             @Html.AntiForgeryToken()
                             <input type="hidden" asp-for="DoctorID" />
 
-                            <div class="form-section-title">Basic Information</div>
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label asp-for="FirstName">First Name</label>
-                                    <input asp-for="FirstName" />
+                                    <input asp-for="FirstName" maxlength="50" />
                                     <span asp-validation-for="FirstName" class="field-error"></span>
                                 </div>
                                 <div class="form-group">
                                     <label asp-for="LastName">Last Name</label>
-                                    <input asp-for="LastName" />
+                                    <input asp-for="LastName" maxlength="50" />
                                     <span asp-validation-for="LastName" class="field-error"></span>
                                 </div>
                                 <div class="form-group">
-                                    <label asp-for="CellphoneNumber">Cellphone Number</label>
-                                    <input asp-for="CellphoneNumber" />
-                                    <span asp-validation-for="CellphoneNumber" class="field-error"></span>
-                                </div>
-                                <div class="form-group">
-                                    <label asp-for="DateOfBirth">Date of Birth</label>
-                                    <input asp-for="DateOfBirth" type="date" />
-                                    <span asp-validation-for="DateOfBirth" class="field-error"></span>
-                                </div>
-                                <div class="form-group full">
-                                    <label asp-for="HomeAddress">Home Address</label>
-                                    <input asp-for="HomeAddress" />
-                                    <span asp-validation-for="HomeAddress" class="field-error"></span>
-                                </div>
-                            </div>
-
-                            <hr class="form-divider" />
-                            <div class="form-section-title">Professional Information</div>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label asp-for="Specialization">Specialization</label>
-                                    <input asp-for="Specialization" />
-                                    <span asp-validation-for="Specialization" class="field-error"></span>
-                                </div>
-                                <div class="form-group">
-                                    <label asp-for="Department">Department</label>
-                                    <select asp-for="Department" asp-items="Model.DepartmentList">
-                                        <option value="">-- Select department --</option>
-                                    </select>
-                                    <span asp-validation-for="Department" class="field-error"></span>
-                                </div>
-                                <div class="form-group full">
-                                    <label asp-for="PracticeAddress">Practice / Hospital Address</label>
-                                    <input asp-for="PracticeAddress" />
-                                    <span asp-validation-for="PracticeAddress" class="field-error"></span>
+                                    <label asp-for="ContactNumber">Contact Number</label>
+                                    <input asp-for="ContactNumber" inputmode="numeric" maxlength="10" placeholder="e.g. 0821234567" />
+                                    <span asp-validation-for="ContactNumber" class="field-error"></span>
                                 </div>
                             </div>
 
@@ -879,17 +849,18 @@
                             @Html.AntiForgeryToken()
                             <div class="form-group" style="margin-bottom:14px;">
                                 <label>Current Password</label>
-                                <input type="password" name="CurrentPassword" required />
+                                <input type="password" name="CurrentPassword" autocomplete="current-password" required />
                             </div>
                             <hr class="form-divider" />
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label>New Password</label>
-                                    <input type="password" name="NewPassword" id="newPass" required />
+                                    <input type="password" name="NewPassword" id="newPass" autocomplete="new-password" required />
+                                    <div class="pw-hint">At least 8 characters, with an uppercase letter, a number and a special character.</div>
                                 </div>
                                 <div class="form-group">
                                     <label>Confirm New Password</label>
-                                    <input type="password" name="ConfirmPassword" id="confirmPass" required />
+                                    <input type="password" name="ConfirmPassword" id="confirmPass" autocomplete="new-password" required />
                                 </div>
                             </div>
                             <div class="btn-row">
@@ -911,25 +882,13 @@
     document.getElementById('personalForm').addEventListener('submit', function (e) {
         const firstName = this.querySelector('[name="FirstName"]').value.trim();
         const lastName  = this.querySelector('[name="LastName"]').value.trim();
-        const phone     = this.querySelector('[name="CellphoneNumber"]').value.trim();
-        const address   = this.querySelector('[name="HomeAddress"]').value.trim();
-        const spec      = this.querySelector('[name="Specialization"]').value.trim();
-        const practice  = this.querySelector('[name="PracticeAddress"]').value.trim();
+        const phone     = this.querySelector('[name="ContactNumber"]').value.replace(/\D/g, '');
 
         if (firstName.length < 2 || lastName.length < 2) {
             e.preventDefault(); alert('First and last name must each be at least 2 characters.'); return;
         }
-        if (!/^\d{10}$/.test(phone)) {
-            e.preventDefault(); alert('Cellphone number must be exactly 10 digits.'); return;
-        }
-        if (address.length < 5) {
-            e.preventDefault(); alert('Please enter a valid home address.'); return;
-        }
-        if (spec.length < 2) {
-            e.preventDefault(); alert('Please enter a valid specialization.'); return;
-        }
-        if (practice.length < 5) {
-            e.preventDefault(); alert('Please enter a valid practice address.'); return;
+        if (!/^0\d{9}$/.test(phone)) {
+            e.preventDefault(); alert('Contact number must be 10 digits and start with 0, e.g. 0821234567.'); return;
         }
     });
 
@@ -949,6 +908,9 @@
         }
         if (!/[0-9]/.test(newPass)) {
             e.preventDefault(); alert('New password must contain at least one number.'); return;
+        }
+        if (!/[^A-Za-z0-9]/.test(newPass)) {
+            e.preventDefault(); alert('New password must contain at least one special character.'); return;
         }
         if (newPass !== confirm) {
             e.preventDefault(); alert('New password and confirmation do not match.'); return;

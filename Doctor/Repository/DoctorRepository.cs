@@ -1,3 +1,4 @@
+using Patient.Models;
 using Doctor.DataAccess;
 using Doctor.Models;
 
@@ -26,6 +27,12 @@ namespace Doctor.Repository
 
         public (int DoctorID, string FirstName, string LastName, string Email)? GetDoctorProfileByUserId(int userId)
             => _dataAccess.GetDoctorProfileByUserId(userId);
+
+        public DoctorProfileViewModel? GetDoctorOwnProfile(int userId)
+            => _dataAccess.GetDoctorOwnProfile(userId);
+
+        public void UpdateDoctorOwnProfile(int doctorId, string firstName, string lastName, string contactNumber)
+            => _dataAccess.UpdateDoctorOwnProfile(doctorId, firstName, lastName, contactNumber);
 
         // ---- 1. Manage Patient Records -----------------------------------
 

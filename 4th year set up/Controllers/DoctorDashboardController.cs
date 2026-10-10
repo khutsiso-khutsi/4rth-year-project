@@ -144,14 +144,73 @@ namespace _4th_year_set_up.Controllers
                 ? history.Conditions
                 : history.Conditions.Where(c => sharedIds.Contains(c.ConditionID)).ToList();
 
+            // Test requests the patient ticked for this doctor on their Consent page
+            var shared = _userRepo.GetConsentData(patientId, _doctorId).TestRequests
+                .Where(r => r.IsShared)
+                .OrderByDescending(r => r.RequestDate)
+                .Select(r => new
+                {
+                    r.RequestID,
+                    r.RequestNumber,
+                    date = r.RequestDate.ToString("d MMM yyyy"),
+                    r.RequestStatus,
+                    url = Url.Action("SharedRequest", "Doctor", new { patientId, requestId = r.RequestID })
+                });
+
             return Json(new
             {
                 hasConsent = true,
                 shareAll,
                 conditions = conditions.Select(c => new { c.ConditionName, diagnosed = c.DiagnosedDate?.ToString("yyyy-MM-dd"), c.Notes }),
                 allergies = history.Allergies.Select(a => new { a.AllergyName, a.Severity, a.Notes }),
-                medications = history.Medications.Select(m => new { m.MedicationName, m.Dosage, m.Frequency })
+                medications = history.Medications.Select(m => new { m.MedicationName, m.Dosage, m.Frequency }),
+                sharedRequests = shared
             });
+        }
+
+        /// <summary>
+        /// Spec (Consent): the patient chooses which test requests a doctor may
+        /// see. Opens one of those shared requests. Checked server-side, so
+        /// typing another requestId in the URL doesn't get past consent.
+        /// Values only show once the request has been released.
+        /// </summary>
+        public IActionResult SharedRequest(int patientId, int requestId)
+        {
+            ViewBag.Email = CurrentEmail();
+
+            if (!_userRepo.DoctorHasConsent(patientId, _doctorId))
+            {
+                TempData["Error"] = "This patient has not given you consent.";
+                return RedirectToAction("PatientRecords");
+            }
+
+            var isShared = _userRepo.GetConsentData(patientId, _doctorId).TestRequests
+                .Any(r => r.RequestID == requestId && r.IsShared);
+            var request = isShared
+                ? _userRepo.GetPatientTestRequests(patientId).FirstOrDefault(r => r.RequestID == requestId)
+                : null;
+
+            if (request == null)
+            {
+                TempData["Error"] = "The patient has not shared that test request with you.";
+                return RedirectToAction("PatientRecords");
+            }
+
+            request.Items = _userRepo.GetTestRequestItems(requestId);
+            if (request.RequestStatus != TestRequestStatus.ReleasedByDoctor)
+            {
+                foreach (var item in request.Items)
+                {
+                    item.ResultValue = null;
+                    item.ResultNotes = null;
+                    item.IsAbnormal = false;
+                }
+            }
+
+            ViewBag.Patient = _userRepo.GetPatientProfile(patientId);
+            ViewBag.PatientId = patientId;
+            Log($"Viewed shared test request {request.RequestNumber}");
+            return View(request);
         }
 
         [HttpPost]
@@ -494,114 +553,94 @@ namespace _4th_year_set_up.Controllers
             };
         }
 
-        // ---- Profile (merged from the old DoctorProfileController) ---------------
+        // ---- Profile -------------------------------------------------------------
 
-        /// <summary>
-        /// Builds a DoctorProfileViewModel from real data where the schema is
-        /// confirmed (DoctorID, FirstName, LastName, Email — via
-        /// GetDoctorProfileByUserId) and leaves every other field at its
-        /// default (empty string / default DateTime) rather than a fabricated
-        /// placeholder, since LicenseNumber/Specialization/Department/
-        /// PracticeAddress/HomeAddress/CellphoneNumber/DateOfBirth are not yet
-        /// confirmed columns on the real Doctors table.
-        /// </summary>
+        /// <summary>The logged-in doctor's profile, straight from Doctors/Users.</summary>
         private DoctorProfileViewModel CurrentDoctorProfile()
-        {
-            var profile = _doctorData.GetDoctorProfileByUserId(CurrentUserId());
-            return new DoctorProfileViewModel
-            {
-                DoctorID = profile?.DoctorID ?? 0,
-                FirstName = profile?.FirstName ?? "",
-                LastName = profile?.LastName ?? "",
-                Email = profile?.Email ?? CurrentEmail()
-                // LicenseNumber, DateOfBirth, CellphoneNumber, HomeAddress,
-                // Specialization, Department, PracticeAddress, RegistrationDate:
-                // left at their type defaults. TODO once the Doctors table's
-                // real columns for these are confirmed, populate them here
-                // instead of leaving them blank.
-            };
-        }
+            => _doctorData.GetDoctorOwnProfile(CurrentUserId())
+               ?? new DoctorProfileViewModel { DoctorID = _doctorId, Email = CurrentEmail() };
 
         public IActionResult Profile()
         {
             var vm = CurrentDoctorProfile();
             ViewBag.Email = vm.Email;
-            return View(vm);
+            ViewBag.Success = TempData["Success"];
+            ViewBag.Error = TempData["Error"];
+            return View("~/Views/Doctor/Profile.cshtml", vm);
         }
 
-        public IActionResult ShowProfile()
-        {
-            return View("Profile");
-        }
+        public IActionResult ShowProfile() => RedirectToAction("Profile");
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult UpdateProfile(DoctorProfileViewModel model)
         {
-            // DoctorID and Email identify who's logged in — these must come
-            // from the session/DB, never trusted from the posted form.
+            // Who is being edited, and the read-only fields, always come from the
+            // database, never from the posted form.
             var current = CurrentDoctorProfile();
             model.DoctorID = current.DoctorID;
             model.Email = current.Email;
-            ViewBag.Email = model.Email;
+            model.HPCSANumber = current.HPCSANumber;
+            model.RegistrationDate = current.RegistrationDate;
+            ViewBag.Email = current.Email;
+
+            model.FirstName = (model.FirstName ?? "").Trim();
+            model.LastName = (model.LastName ?? "").Trim();
+            model.ContactNumber = new string((model.ContactNumber ?? "").Where(char.IsDigit).ToArray());
+            ModelState.Clear();
+            TryValidateModel(model);
 
             if (!ModelState.IsValid)
             {
-                ViewBag.Error = "Please fix the errors and try again.";
-                return View("Profile", model);
+                ViewBag.Error = "Please fix the highlighted fields and try again.";
+                return View("~/Views/Doctor/Profile.cshtml", model);
             }
 
-            // TODO: persist changes to database here — no sp_UpdateDoctorProfile
-            // exists yet; add one following the sp_UpdatePatientProfile pattern
-            // in Patient/DataAccess/UserDataAccess.cs once the Doctors table's
-            // exact editable columns are confirmed.
-            ViewBag.Success = "Your profile has been updated successfully.";
-            return View("Profile", model);
+            _doctorData.UpdateDoctorOwnProfile(model.DoctorID, model.FirstName, model.LastName, model.ContactNumber);
+            Log("Updated own doctor profile");
+            TempData["Success"] = "Your profile has been updated.";
+            return RedirectToAction("Profile");
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult ChangePassword(string CurrentPassword, string NewPassword, string ConfirmPassword)
         {
-            var vm = CurrentDoctorProfile();
-            ViewBag.Email = vm.Email;
+            CurrentPassword ??= "";
+            NewPassword ??= "";
+            ConfirmPassword ??= "";
 
-            if (string.IsNullOrWhiteSpace(CurrentPassword))
+            string? error =
+                CurrentPassword.Length == 0 ? "Please enter your current password." :
+                !_userRepo.PasswordMatches(CurrentUserId(), CurrentPassword) ? "Your current password is incorrect." :
+                PasswordRuleError(NewPassword) is string ruleError ? ruleError :
+                NewPassword != ConfirmPassword ? "New password and confirmation do not match." :
+                NewPassword == CurrentPassword ? "New password cannot be the same as your current password." :
+                null;
+
+            if (error != null)
             {
-                ViewBag.Error = "Please enter your current password.";
-                return View("Profile", vm);
-            }
-            if (NewPassword != ConfirmPassword)
-            {
-                ViewBag.Error = "New password and confirmation do not match.";
-                return View("Profile", vm);
-            }
-            if (NewPassword.Length < 8)
-            {
-                ViewBag.Error = "New password must be at least 8 characters.";
-                return View("Profile", vm);
-            }
-            if (!System.Text.RegularExpressions.Regex.IsMatch(NewPassword, "[A-Z]"))
-            {
-                ViewBag.Error = "New password must contain at least one uppercase letter.";
-                return View("Profile", vm);
-            }
-            if (!System.Text.RegularExpressions.Regex.IsMatch(NewPassword, "[0-9]"))
-            {
-                ViewBag.Error = "New password must contain at least one number.";
-                return View("Profile", vm);
-            }
-            if (NewPassword == CurrentPassword)
-            {
-                ViewBag.Error = "New password cannot be the same as your current password.";
-                return View("Profile", vm);
+                TempData["Error"] = error;
+                return RedirectToAction("Profile");
             }
 
-            // TODO: verify CurrentPassword hash and save NewPassword hash here —
-            // needs a sp_ChangeDoctorPassword proc analogous to
-            // sp_ChangePatientPassword once Doctors/Users linkage is finalised.
-            ViewBag.Success = "Password changed successfully.";
-            return View("Profile", vm);
+            _userRepo.SetOwnPassword(CurrentUserId(), NewPassword);
+            Log("Changed own password");
+            TempData["Success"] = "Your password has been changed. Use the new one next time you sign in.";
+            return RedirectToAction("Profile");
+        }
+
+        /// <summary>
+        /// Spec password rules (same as Home/ChangePassword): at least 8
+        /// characters, an uppercase letter, a number and a special character.
+        /// </summary>
+        private static string? PasswordRuleError(string password)
+        {
+            if (password.Length < 8) return "New password must be at least 8 characters.";
+            if (!password.Any(char.IsUpper)) return "New password must contain at least one uppercase letter.";
+            if (!password.Any(char.IsDigit)) return "New password must contain at least one number.";
+            if (password.All(char.IsLetterOrDigit)) return "New password must contain at least one special character.";
+            return null;
         }
     }
 }

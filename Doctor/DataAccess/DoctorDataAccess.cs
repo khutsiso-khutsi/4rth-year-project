@@ -1,10 +1,10 @@
-using Doctor.Models;
-using Microsoft.Data.SqlClient;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Text.Json;
+using Microsoft.Data.SqlClient;
+using Doctor.Models;
+using Patient.Models;
 
 namespace Doctor.DataAccess
 {
@@ -105,6 +105,53 @@ namespace Doctor.DataAccess
                 );
             }
             return null;
+        }
+
+        /// <summary>
+        /// The doctor's own profile for the Profile page. Plain SQL, the same as
+        /// the lookup above, because no stored procedure reads a doctor by UserID.
+        /// </summary>
+        public DoctorProfileViewModel? GetDoctorOwnProfile(int userId)
+        {
+            using var conn = Open();
+            using var cmd = new SqlCommand(@"
+                SELECT d.DoctorID, d.FirstName, d.LastName, d.HPCSANumber, d.ContactNumber,
+                       u.Email, u.CreatedDate
+                FROM Doctors d
+                INNER JOIN Users u ON u.UserID = d.UserID
+                WHERE d.UserID = @UserID", conn);
+            cmd.Parameters.AddWithValue("@UserID", userId);
+            using var r = cmd.ExecuteReader();
+            if (!r.Read()) return null;
+
+            return new DoctorProfileViewModel
+            {
+                DoctorID = Convert.ToInt32(r["DoctorID"]),
+                FirstName = r["FirstName"] as string ?? "",
+                LastName = r["LastName"] as string ?? "",
+                HPCSANumber = r["HPCSANumber"] as string ?? "",
+                ContactNumber = r["ContactNumber"] as string ?? "",
+                Email = r["Email"] as string ?? "",
+                RegistrationDate = r["CreatedDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(r["CreatedDate"])
+            };
+        }
+
+        /// <summary>
+        /// Saves the fields a doctor may change on their own profile. E-mail and
+        /// HPCSA number are left alone (the admin manages those via sp_UpdateDoctor).
+        /// </summary>
+        public void UpdateDoctorOwnProfile(int doctorId, string firstName, string lastName, string contactNumber)
+        {
+            using var conn = Open();
+            using var cmd = new SqlCommand(@"
+                UPDATE Doctors
+                SET FirstName = @FirstName, LastName = @LastName, ContactNumber = @ContactNumber
+                WHERE DoctorID = @DoctorID", conn);
+            cmd.Parameters.AddWithValue("@FirstName", firstName);
+            cmd.Parameters.AddWithValue("@LastName", lastName);
+            cmd.Parameters.AddWithValue("@ContactNumber", contactNumber);
+            cmd.Parameters.AddWithValue("@DoctorID", doctorId);
+            cmd.ExecuteNonQuery();
         }
 
         // ---- 1. Manage Patient Records ---------------------------------------
