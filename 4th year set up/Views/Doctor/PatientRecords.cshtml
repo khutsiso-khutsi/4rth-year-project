@@ -484,6 +484,8 @@
             padding: 32px;
             width: 480px;
             max-width: 95vw;
+            max-height: 88vh;
+            overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0,0,0,0.2);
         }
 
@@ -537,6 +539,20 @@
         .modal-field.full {
             grid-column: 1 / -1;
         }
+
+        /* Test requests the patient shared with this doctor */
+        .shared-list { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
+        .shared-list a {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px;
+            text-decoration: none; color: var(--navy); font-size: 0.82rem; transition: border-color 0.15s, background 0.15s;
+        }
+        .shared-list a:hover { border-color: var(--teal); background: var(--teal-light); }
+        .shared-list .s-num { font-weight: 600; }
+        .shared-list .s-date { color: var(--muted); font-size: 0.76rem; margin-left: 6px; font-weight: 400; }
+        .shared-list .s-status { font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 100px; background: rgba(217,119,6,0.1); color: var(--amber); white-space: nowrap; }
+        .shared-list .s-status.released { background: rgba(22,163,74,0.1); color: var(--green); }
+        .shared-empty { font-size: 0.84rem; color: var(--muted); }
 
         /* ── FORM (register modal) ── */
         .form-group {
@@ -771,7 +787,7 @@
     </a>
     <div class="topbar-right">
         <div class="user-chip">
-            <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "D")</div>
+            <div class="user-avatar">@((string.IsNullOrEmpty(ViewBag.Email as string) ? "D" : ((string)ViewBag.Email).Substring(0, 1).ToUpper()))</div>
             <span class="user-email">@(ViewBag.Email ?? "Doctor")</span>
         </div>
         <a asp-controller="Home" asp-action="Logout" class="logout-btn">
@@ -938,6 +954,10 @@
                 <label>Current Medication</label>
                 <p id="modal-medication"></p>
             </div>
+            <div class="modal-field full">
+                <label>Shared Test Results</label>
+                <div id="modal-shared"><p class="shared-empty"></p></div>
+            </div>
         </div>
     </div>
 </div>
@@ -1060,6 +1080,7 @@
         document.getElementById('modal-conditions').textContent = 'Loading…';
         document.getElementById('modal-allergies').textContent = 'Loading…';
         document.getElementById('modal-medication').textContent = 'Loading…';
+        document.getElementById('modal-shared').innerHTML = '<p class="shared-empty">Loading…</p>';
         document.getElementById('patientModal').classList.add('open');
 
         fetch('@Url.Action("PatientDetail", "Doctor")?patientId=' + patientId)
@@ -1070,6 +1091,7 @@
                     document.getElementById('modal-conditions').textContent = msg;
                     document.getElementById('modal-allergies').textContent = '—';
                     document.getElementById('modal-medication').textContent = '—';
+                    document.getElementById('modal-shared').innerHTML = '<p class="shared-empty">—</p>';
                     return;
                 }
                 var cond = data.conditions.length ? data.conditions.map(c => c.conditionName).join(', ') : 'None shared';
@@ -1080,10 +1102,49 @@
                     data.allergies.length ? data.allergies.map(a => a.allergyName).join(', ') : 'None recorded';
                 document.getElementById('modal-medication').textContent =
                     data.medications.length ? data.medications.map(m => m.medicationName).join(', ') : 'None recorded';
+                renderShared(data.sharedRequests || []);
             })
             .catch(() => {
                 document.getElementById('modal-conditions').textContent = 'Unable to load';
             });
+    }
+
+    // Test requests the patient ticked for this doctor on their Consent page.
+    // Built with DOM methods (not innerHTML) so request data can't inject markup.
+    function renderShared(list) {
+        var box = document.getElementById('modal-shared');
+        box.innerHTML = '';
+        if (!list.length) {
+            var p = document.createElement('p');
+            p.className = 'shared-empty';
+            p.textContent = 'The patient has not shared any test requests with you.';
+            box.appendChild(p);
+            return;
+        }
+        var ul = document.createElement('ul');
+        ul.className = 'shared-list';
+        list.forEach(function (r) {
+            var li = document.createElement('li');
+            var a = document.createElement('a');
+            a.href = r.url;
+            var left = document.createElement('span');
+            var num = document.createElement('span');
+            num.className = 's-num';
+            num.textContent = r.requestNumber;
+            var date = document.createElement('span');
+            date.className = 's-date';
+            date.textContent = r.date;
+            left.appendChild(num);
+            left.appendChild(date);
+            var st = document.createElement('span');
+            st.className = 's-status' + (r.requestStatus === 'Released' ? ' released' : '');
+            st.textContent = r.requestStatus === 'Released' ? 'Results released' : r.requestStatus;
+            a.appendChild(left);
+            a.appendChild(st);
+            li.appendChild(a);
+            ul.appendChild(li);
+        });
+        box.appendChild(ul);
     }
 
     function closePatientModal() {

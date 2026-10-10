@@ -1,0 +1,197 @@
+@model _4th_year_set_up.Models.PatientReportViewModel
+@using Patient.Models
+@{
+    Layout = null;
+    // NOTE: this page is turned into a PDF by wkhtmltopdf (an old WebKit),
+    // so it sticks to tables and plain colours — no flexbox, grid or CSS
+    // variables, which wkhtmltopdf doesn't understand.
+
+    var p = Model.Profile;
+    var patientName = p == null ? "" : $"{p.FirstName} {p.LastName}".Trim();
+
+    bool IsOut(TestRequestItem i) =>
+        i.IsAbnormal ||
+        (i.ResultValue.HasValue && ((i.NormalRangeMax.HasValue && i.ResultValue > i.NormalRangeMax) ||
+                                    (i.NormalRangeMin.HasValue && i.ResultValue < i.NormalRangeMin)));
+    string Flag(TestRequestItem i) =>
+        i.ResultValue.HasValue && i.NormalRangeMax.HasValue && i.ResultValue > i.NormalRangeMax ? "High" :
+        i.ResultValue.HasValue && i.NormalRangeMin.HasValue && i.ResultValue < i.NormalRangeMin ? "Low" :
+        i.IsAbnormal ? "Abnormal" : "";
+    string Num(decimal? v) => v.HasValue ? v.Value.ToString("0.##") : "—";
+    string Range(TestRequestItem i) =>
+        i.NormalRangeMin.HasValue && i.NormalRangeMax.HasValue ? $"{Num(i.NormalRangeMin)} – {Num(i.NormalRangeMax)}" :
+        i.NormalRangeMax.HasValue ? $"≤ {Num(i.NormalRangeMax)}" :
+        i.NormalRangeMin.HasValue ? $"≥ {Num(i.NormalRangeMin)}" : "—";
+
+    // Every result in the period, grouped by test category (spec 6)
+    var rows = Model.Requests
+        .SelectMany(r => r.Items
+            .Where(i => i.ResultValue.HasValue || !string.IsNullOrWhiteSpace(i.ResultNotes))   // skip tests with nothing recorded
+            .Select(i => new { Req = r, Item = i }))
+        .ToList();
+    var byCategory = rows
+        .GroupBy(x => string.IsNullOrWhiteSpace(x.Item.CategoryName) ? "Other" : x.Item.CategoryName)
+        .OrderBy(g => g.Key)
+        .ToList();
+    var outCount = rows.Count(x => IsOut(x.Item));
+    var notes = Model.Requests.Where(r => !string.IsNullOrWhiteSpace(r.ReleaseNotes)).ToList();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Results report @Model.From.ToString("d MMM yyyy") – @Model.To.ToString("d MMM yyyy")</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, Helvetica, sans-serif; color: #0b1f3a; background: #ffffff; font-size: 12px; line-height: 1.45; padding: 28px 34px; }
+        table { width: 100%; border-collapse: collapse; }
+        .head td { vertical-align: top; }
+        .brand { font-size: 18px; font-weight: bold; color: #0b1f3a; }
+        .brand-sub { font-size: 10px; color: #6b7a99; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+        .doc-title { font-size: 18px; font-weight: bold; text-align: right; }
+        .doc-sub { font-size: 11px; color: #6b7a99; text-align: right; margin-top: 3px; }
+        .rule { height: 3px; background: #0d9488; margin: 14px 0 16px; }
+
+        .info td { padding: 5px 10px 5px 0; font-size: 11.5px; vertical-align: top; }
+        .info .k { color: #6b7a99; width: 110px; }
+        .info .v { font-weight: bold; }
+
+        .summary { margin: 16px 0 6px; }
+        .summary td { width: 25%; border: 1px solid #dde4f0; background: #f4f7fb; padding: 9px 12px; }
+        .summary .k { font-size: 10px; color: #6b7a99; text-transform: uppercase; letter-spacing: 0.5px; }
+        .summary .v { font-size: 17px; font-weight: bold; margin-top: 2px; }
+        .summary .v.red { color: #b91c1c; }
+
+        h2.cat { font-size: 13px; margin: 20px 0 6px; padding: 6px 10px; background: #e8f5f3; color: #0b5e57; border-left: 4px solid #0d9488; page-break-after: avoid; }
+        h2.cat span { font-weight: normal; color: #6b7a99; font-size: 11px; }
+        .res th { text-align: left; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7a99; padding: 6px 8px; border-bottom: 1.5px solid #c9d3e3; }
+        .res td { padding: 6px 8px; border-bottom: 1px solid #e6ebf3; font-size: 11.5px; vertical-align: top; }
+        .res tr { page-break-inside: avoid; }
+        .res td.num { text-align: right; font-weight: bold; white-space: nowrap; }
+        .res td.unit { color: #6b7a99; white-space: nowrap; }
+        .res tr.out td.num { color: #b91c1c; }
+        .flag { font-size: 9.5px; font-weight: bold; color: #b91c1c; background: #fde8e8; padding: 2px 6px; }
+        .rnote { font-size: 10px; color: #6b7a99; margin-top: 2px; }
+
+        h2.sec { font-size: 13px; margin: 22px 0 8px; }
+        .note { border-left: 3px solid #c9d3e3; padding: 4px 0 4px 10px; margin-bottom: 8px; font-size: 11.5px; }
+        .note b { color: #6b7a99; }
+        .empty { border: 1px dashed #c9d3e3; padding: 26px; text-align: center; color: #6b7a99; margin-top: 18px; }
+        .foot { margin-top: 26px; padding-top: 10px; border-top: 1px solid #dde4f0; font-size: 9.5px; color: #6b7a99; }
+
+        /* Shown only when wkhtmltopdf is missing and this opens as a web page */
+        .toolbar { margin: -28px -34px 22px; padding: 12px 34px; background: #0b1f3a; color: #ffffff; font-size: 12.5px; }
+        .toolbar a, .toolbar button { color: #ffffff; font-size: 12.5px; font-family: Arial, sans-serif; }
+        .toolbar button { background: #0d9488; border: none; padding: 7px 14px; cursor: pointer; font-weight: bold; margin-left: 12px; }
+        @@media print { .toolbar { display: none; } body { padding: 0; } }
+    </style>
+</head>
+<body>
+    @if (Model.PrintMode)
+    {
+        <div class="toolbar">
+            <a href="@Url.Action("MyResults", "PatientDashboard")">← Back to My Results</a>
+            <button type="button" onclick="window.print()">Print / Save as PDF</button>
+        </div>
+    }
+
+    <table class="head">
+        <tr>
+            <td>
+                <div class="brand">NMB-HLabSys</div>
+                <div class="brand-sub">Nelson Mandela Bay Haematology Diagnostic Laboratories</div>
+            </td>
+            <td>
+                <div class="doc-title">Patient Results Report</div>
+                <div class="doc-sub">@Model.From.ToString("d MMMM yyyy") to @Model.To.ToString("d MMMM yyyy")</div>
+                <div class="doc-sub">Generated @DateTime.Now.ToString("d MMMM yyyy, HH:mm")</div>
+            </td>
+        </tr>
+    </table>
+    <div class="rule"></div>
+
+    <table class="info">
+        <tr>
+            <td class="k">Patient</td><td class="v">@(string.IsNullOrEmpty(patientName) ? "—" : patientName)</td>
+            <td class="k">SA ID number</td><td class="v">@(p?.IDNumber ?? "—")</td>
+        </tr>
+        <tr>
+            <td class="k">Date of birth</td><td class="v">@(p != null && p.DateOfBirth != default ? p.DateOfBirth.ToString("d MMMM yyyy") : "—")</td>
+            <td class="k">E-mail</td><td class="v">@(p?.Email ?? "—")</td>
+        </tr>
+    </table>
+
+    @if (!rows.Any())
+    {
+        <div class="empty">
+            No released results between @Model.From.ToString("d MMM yyyy") and @Model.To.ToString("d MMM yyyy").<br />
+            Results appear in this report once your doctor has reviewed and released them.
+        </div>
+    }
+    else
+    {
+        <table class="summary">
+            <tr>
+                <td><div class="k">Test requests</div><div class="v">@Model.Requests.Count</div></td>
+                <td><div class="k">Results</div><div class="v">@rows.Count</div></td>
+                <td><div class="k">Test categories</div><div class="v">@byCategory.Count</div></td>
+                <td><div class="k">Outside normal range</div><div class="v @(outCount > 0 ? "red" : "")">@outCount</div></td>
+            </tr>
+        </table>
+
+        @foreach (var cat in byCategory)
+        {
+            <h2 class="cat">@cat.Key <span>· @cat.Count() result@(cat.Count() == 1 ? "" : "s")</span></h2>
+            <table class="res">
+                <thead>
+                    <tr>
+                        <th style="width:14%">Date</th>
+                        <th style="width:20%">Request</th>
+                        <th>Test</th>
+                        <th style="width:11%;text-align:right">Result</th>
+                        <th style="width:10%">Unit</th>
+                        <th style="width:14%">Normal range</th>
+                        <th style="width:9%">Flag</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var x in cat.OrderBy(x => x.Item.VerificationDateTime ?? x.Item.CompletionDateTime ?? x.Req.RequestDate).ThenBy(x => x.Item.TestName))
+                    {
+                        var i = x.Item;
+                        var outR = IsOut(i);
+                        <tr class="@(outR ? "out" : "")">
+                            <td>@((i.VerificationDateTime ?? i.CompletionDateTime ?? x.Req.RequestDate).ToString("d MMM yyyy"))</td>
+                            <td>@x.Req.RequestNumber</td>
+                            <td>
+                                @i.TestName
+                                @if (!string.IsNullOrWhiteSpace(i.ResultNotes))
+                                {
+                                    <div class="rnote">@i.ResultNotes</div>
+                                }
+                            </td>
+                            <td class="num">@Num(i.ResultValue)</td>
+                            <td class="unit">@i.UnitName</td>
+                            <td>@Range(i)</td>
+                            <td>@if (outR) { <span class="flag">@Flag(i)</span> }</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (notes.Any())
+        {
+            <h2 class="sec">Notes from your doctor</h2>
+            @foreach (var r in notes)
+            {
+                <div class="note"><b>@r.RequestNumber · @((r.ReleasedDate ?? r.RequestDate).ToString("d MMM yyyy")) · Dr @r.DoctorName:</b> @r.ReleaseNotes</div>
+            }
+        }
+    }
+
+    <div class="foot">
+        This report lists only results released to you by your doctor. Results outside the normal range are flagged;
+        please discuss them with your doctor. Confidential: contains personal medical information.
+    </div>
+</body>
+</html>

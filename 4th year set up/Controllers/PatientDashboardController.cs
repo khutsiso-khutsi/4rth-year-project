@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Patient.Models;
 using Patient.Repository;
 using _4th_year_set_up.Services;
+using Rotativa.AspNetCore;
 
 namespace _4th_year_set_up.Controllers
 {
@@ -11,13 +12,15 @@ namespace _4th_year_set_up.Controllers
         private readonly UserRepository _userRepo;
         private readonly EmailService _email;
         private readonly ILogger<PatientDashboardController> _logger;
+        private readonly IWebHostEnvironment _env;
 
         public PatientDashboardController(UserRepository userRepo, EmailService email,
-            ILogger<PatientDashboardController> logger)
+            ILogger<PatientDashboardController> logger, IWebHostEnvironment env)
         {
             _userRepo = userRepo;
             _email = email;
             _logger = logger;
+            _env = env;
         }
 
         /// <summary>
@@ -544,6 +547,65 @@ namespace _4th_year_set_up.Controllers
             Log("Changed password");
             TempData["Success"] = "Password changed successfully.";
             return RedirectToAction("Profile");
+        }
+
+        /// <summary>
+        /// Spec 6 "Patient Reports (PDF)": every released result in a date
+        /// range, grouped by test category. Downloads as a real PDF through
+        /// Rotativa; if wkhtmltopdf.exe isn't installed (wwwroot\Rotativa),
+        /// shows the same report as a printable page instead of crashing.
+        /// </summary>
+        [HttpGet]
+        public IActionResult Report(DateTime? from, DateTime? to)
+        {
+            if (!IsPatient())
+                return RedirectToAction("Login", "Home");
+
+            var patientId = GetCurrentPatientId();
+            if (patientId == null) return RedirectToAction("Index");
+
+            var toDate = (to ?? DateTime.Today).Date;
+            var fromDate = (from ?? toDate.AddMonths(-12)).Date;
+            if (fromDate > toDate)
+            {
+                TempData["Error"] = "The 'From' date must be on or before the 'To' date.";
+                return RedirectToAction("MyResults");
+            }
+
+            // Released requests whose release (or request) date falls in the range
+            var requests = _userRepo.GetPatientTestRequests(patientId.Value)
+                .Where(r => r.RequestStatus == "Released")
+                .Where(r =>
+                {
+                    var d = (r.ReleasedDate ?? r.RequestDate).Date;
+                    return d >= fromDate && d <= toDate;
+                })
+                .OrderBy(r => r.ReleasedDate ?? r.RequestDate)
+                .ToList();
+            foreach (var r in requests)
+                r.Items = _userRepo.GetTestRequestItems(r.RequestID);
+
+            var model = new _4th_year_set_up.Models.PatientReportViewModel
+            {
+                Profile = _userRepo.GetPatientProfile(patientId.Value),
+                Requests = requests,
+                From = fromDate,
+                To = toDate
+            };
+            Log($"Downloaded results report {fromDate:yyyy-MM-dd} to {toDate:yyyy-MM-dd}");
+
+            var fileName = $"my-results-{fromDate:yyyy-MM-dd}-to-{toDate:yyyy-MM-dd}.pdf";
+            if (!_4th_year_set_up.Services.PdfSupport.Ready)
+            {
+                model.PrintMode = true;   // browser "Save as PDF" fallback
+                return View("~/Views/PatientDashboard/ReportPdf.cshtml", model);
+            }
+
+            return new ViewAsPdf("~/Views/PatientDashboard/ReportPdf.cshtml", model)
+            {
+                FileName = fileName,
+                CustomSwitches = "--footer-center \"Page [page] of [topage]\" --footer-font-size 8 --footer-font-name Arial"
+            };
         }
 
         public IActionResult PrintResult(int requestId)

@@ -1106,6 +1106,21 @@
                 padding: 20px 16px 48px;
             }
         }
+        /* ── RESULTS REPORT (PDF) ── */
+        .report-card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 18px 22px; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(11,31,58,0.04); display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+        .report-card .rc-icon { width: 42px; height: 42px; border-radius: 11px; background: var(--teal-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .report-card .rc-icon svg { width: 20px; height: 20px; stroke: var(--teal); }
+        .report-card .rc-text { flex: 1; min-width: 200px; }
+        .report-card h2 { font-family: 'DM Serif Display', serif; font-size: 1.05rem; color: var(--navy); }
+        .report-card p { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+        .report-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .report-form label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+        .report-form input[type=date] { font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; color: var(--navy); background: white; }
+        .report-form button { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 16px; border: none; border-radius: 8px; background: var(--teal); color: white; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .report-form button:hover { background: #0b7a70; }
+        .report-form button svg { width: 14px; height: 14px; }
+        .report-err { width: 100%; font-size: 12.5px; color: var(--red); }
+
         /* ── TRACK RESULTS (graph) ── */
         .trend-card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 22px 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(11,31,58,0.04); }
         .trend-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -1144,7 +1159,7 @@
         </a>
         <div class="topbar-right">
             <div class="user-chip">
-                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "P")</div>
+                <div class="user-avatar">@((string.IsNullOrEmpty(ViewBag.Email as string) ? "P" : ((string)ViewBag.Email).Substring(0, 1).ToUpper()))</div>
                 <span class="user-email">@ViewBag.Email</span>
             </div>
             <a asp-controller="Home" asp-action="Logout" class="logout-btn" id="logout-btn">
@@ -1235,6 +1250,26 @@
                     <div class="stat-pill-label">Latest Request</div>
                 </div>
             </div>
+
+            <!-- RESULTS REPORT (PDF) — spec 6: all results in a date range, grouped by category -->
+            <section class="report-card" aria-labelledby="reportTitle">
+                <div class="rc-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><polyline points="9 15 12 18 15 15" /></svg></div>
+                <div class="rc-text">
+                    <h2 id="reportTitle">Download results report</h2>
+                    <p>A PDF of all your released results in a date range, grouped by test category.</p>
+                </div>
+                <form class="report-form" method="get" action="@Url.Action("Report", "PatientDashboard")" id="reportForm">
+                    <label for="repFrom">From</label>
+                    <input type="date" id="repFrom" name="from" value="@DateTime.Today.AddMonths(-12).ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                    <label for="repTo">To</label>
+                    <input type="date" id="repTo" name="to" value="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                    <button type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>Download PDF</button>
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="report-err" role="alert">@TempData["Error"]</div>
+                    }
+                </form>
+            </section>
 
             <!-- TRACK A TEST OVER TIME -->
             <section class="trend-card" id="trackResults" aria-labelledby="trendTitle">
@@ -1975,6 +2010,15 @@
                 logoutModal.addEventListener('click', function(e) { if (e.target === logoutModal) closeLogout(); });
             }
 
+        })();
+    </script>
+    <script>
+        // Report dates: "From" can't be after "To"
+        (function () {
+            var f = document.getElementById('repFrom'), t = document.getElementById('repTo');
+            if (!f || !t) return;
+            function sync() { f.max = t.value; t.min = f.value; }
+            f.addEventListener('change', sync); t.addEventListener('change', sync); sync();
         })();
     </script>
     @if (trends.Any())

@@ -435,10 +435,9 @@ namespace _4th_year_set_up.Controllers
             var (doctorId, _) = CurrentDoctor();
             var detail = _doctorData.GetTestRequestDetail(doctorId, requestId);
             if (detail == null) return NotFound();
-            // TODO: requires the Rotativa wkhtmltopdf binary to be present locally
-            // (already referenced via Rotativa.AspNetCore in the .csproj — see
-            // ManagerDashboardController.cs for how it's used elsewhere in this
-            // solution). Renders Views/Doctor/ResultsPdf.cshtml to PDF.
+            // Without wkhtmltopdf, open it as a page the browser can print / save as PDF
+            if (!PdfSupport.Ready)
+                return View("~/Views/Doctor/ResultsPdf.cshtml", detail);
             return new ViewAsPdf("~/Views/Doctor/ResultsPdf.cshtml", detail)
             {
                 FileName = $"{detail.RequestNumber}-results.pdf"
@@ -545,8 +544,8 @@ namespace _4th_year_set_up.Controllers
                 ToDate = to,
                 Requests = _doctorData.GetDoctorTestRequests(doctorId, from, to)
             };
-            // TODO: requires the Rotativa wkhtmltopdf binary locally (see note on
-            // ResultsPdf above). Renders Views/Doctor/ReportPdf.cshtml to PDF.
+            if (!PdfSupport.Ready)
+                return View("~/Views/Doctor/ReportPdf.cshtml", model);
             return new ViewAsPdf("~/Views/Doctor/ReportPdf.cshtml", model)
             {
                 FileName = $"doctor-report-{from:yyyy-MM-dd}-to-{to:yyyy-MM-dd}.pdf"

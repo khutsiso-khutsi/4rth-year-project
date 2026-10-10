@@ -14,9 +14,9 @@ var builder = WebApplication.CreateBuilder(args);
 // before they can open any other page (spec: change password at first login).
 builder.Services.AddControllersWithViews(options =>
     options.Filters.Add<_4th_year_set_up.Filters.FirstLoginPasswordFilter>());
-// PDFs need wwwroot\Rotativa\wkhtmltopdf.exe; start without it if it's missing
-if (File.Exists(Path.Combine(builder.Environment.WebRootPath, "Rotativa", "wkhtmltopdf.exe")))
-    RotativaConfiguration.Setup(builder.Environment.WebRootPath, "Rotativa");
+// PDFs need wkhtmltopdf.exe (wwwroot\Rotativa, or the normal install folder).
+// If it's missing the site still starts; PDF pages open as printable pages.
+_4th_year_set_up.Services.PdfSupport.Configure(builder.Environment.WebRootPath);
 
 // ✅ Changed from AddSingleton to AddScoped
 builder.Services.AddScoped<EmailService>();
