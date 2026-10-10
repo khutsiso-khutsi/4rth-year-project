@@ -1,5 +1,6 @@
-﻿@{
+@{
     ViewData["Title"] = "Home";
+    Layout = null;   // full standalone page; don't wrap it in the Bootstrap _Layout
 }
 
 <!DOCTYPE html>
@@ -8,7 +9,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NMB Haematology Lab System</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@@0;1&family=DM+Sans:wght@@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
         *, *::before, *::after {
             box-sizing: border-box;
@@ -31,6 +32,9 @@
         html {
             scroll-behavior: smooth;
         }
+
+        /* anchor links (#roles, #how, #faq) stop below the fixed top bar */
+        [id] { scroll-margin-top: 72px; }
 
         body {
             font-family: 'DM Sans', sans-serif;
@@ -495,7 +499,7 @@
 
         .steps-row {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 0;
             position: relative;
         }
@@ -504,8 +508,8 @@
                 content: '';
                 position: absolute;
                 top: 28px;
-                left: 14%;
-                right: 14%;
+                left: 10%;
+                right: 10%;
                 height: 1px;
                 background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 20%, rgba(255,255,255,0.15) 80%, rgba(255,255,255,0) 100%);
             }
@@ -630,7 +634,7 @@
         }
 
         .faq-item.open .faq-answer {
-            max-height: 300px;
+            max-height: 420px;
             padding: 0 24px 20px;
         }
 
@@ -1099,8 +1103,50 @@
                     animation-delay: 0.4s;
                 }
 
-       
-            
+        @@keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+            30% { transform: translateY(-4px); opacity: 1; }
+        }
+
+        /* ── REQUEST TRACKER PREVIEW (hero card) ── */
+        .track-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 26px 26px 22px; backdrop-filter: blur(12px); width: 100%; max-width: 400px; box-shadow: 0 30px 80px rgba(0,0,0,0.25); }
+        .track-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+        .track-kicker { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.4); font-weight: 600; }
+        .track-num { font-size: 1.05rem; font-weight: 600; color: white; margin-top: 4px; }
+        .track-meta { font-size: 0.78rem; color: rgba(255,255,255,0.45); margin-top: 2px; }
+        .track-urg { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 100px; background: rgba(220,38,38,0.18); color: #fca5a5; white-space: nowrap; }
+        .track-steps { list-style: none; margin: 18px 0 16px; position: relative; }
+        .track-steps::before { content: ''; position: absolute; left: 11px; top: 12px; bottom: 12px; width: 2px; background: rgba(255,255,255,0.1); }
+        .track-steps li { position: relative; display: flex; align-items: center; gap: 14px; padding: 8px 0; font-size: 0.86rem; color: rgba(255,255,255,0.4); }
+        .track-dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.18); background: var(--navy); display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 1; }
+        .track-dot svg { width: 12px; height: 12px; stroke: white; }
+        .track-steps li.done { color: rgba(255,255,255,0.85); }
+        .track-steps li.done .track-dot { background: var(--teal); border-color: var(--teal); }
+        .track-steps li.now { color: white; font-weight: 600; }
+        .track-steps li.now .track-dot { border-color: #5eead4; box-shadow: 0 0 0 4px rgba(94,234,212,0.15); }
+        .track-steps li.now .track-dot::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #5eead4; animation: pulse 1.6s ease-in-out infinite; }
+        .track-steps li small { margin-left: auto; font-size: 0.72rem; font-weight: 400; color: rgba(255,255,255,0.35); }
+        @@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.75); } }
+        .track-result { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 14px; }
+        .track-result .lbl { font-size: 0.75rem; color: rgba(255,255,255,0.45); }
+        .track-result .val { font-size: 0.95rem; font-weight: 600; color: white; }
+        .track-result .flag { margin-left: auto; font-size: 0.68rem; font-weight: 700; padding: 3px 9px; border-radius: 100px; background: rgba(220,38,38,0.18); color: #fca5a5; }
+        .track-note { font-size: 0.72rem; color: rgba(255,255,255,0.3); margin-top: 12px; text-align: center; }
+
+        @@media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            .track-steps li.now .track-dot::after, .typing span { animation: none; }
+            .role-card, .btn-primary { transition: none; }
+        }
+
+        /* ── RESPONSIVE (this @@media line had been deleted, so these
+              "mobile" rules were applying on every screen size) ── */
+        @@media (max-width: 900px) {
+            nav { padding: 0 20px; }
+            .nav-links a.nav-anchor { display: none; }
+            .hero { padding: 104px 20px 64px; min-height: auto; }
+            .nav-title span { display: none; }
+            .sdg-banner { padding: 16px 20px; flex-direction: column; text-align: center; gap: 10px; }
 
             .hero-inner {
                 grid-template-columns: 1fr;
@@ -1127,6 +1173,8 @@
                 grid-template-columns: 1fr 1fr;
                 gap: 32px;
             }
+
+            .step:last-child { grid-column: 1 / -1; }
 
                 .steps-row::before {
                     display: none;
@@ -1157,11 +1205,11 @@
         
     </style>
 </head>
-<body>
+<body id="top">
 
     <!-- NAV -->
     <nav>
-        <a class="nav-brand" href="#">
+        <a class="nav-brand" href="#top" aria-label="NMB-HLabSys home">
             <div class="nav-logo">
                 <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
             </div>
@@ -1171,8 +1219,9 @@
             </div>
         </a>
         <div class="nav-links">
-            <a href="#roles">Roles</a>
-            <a href="#faq">FAQ</a>
+            <a href="#roles" class="nav-anchor">Roles</a>
+            <a href="#how" class="nav-anchor">How it works</a>
+            <a href="#faq" class="nav-anchor">FAQ</a>
             <a asp-controller="Home" asp-action="Login" class="btn-login">Login</a>
             <a asp-controller="Home" asp-action="Register" class="btn-register">Register</a>
         </div>
@@ -1203,64 +1252,31 @@
                 </div>
             </div>
 
-            <div class="hero-visual">
-                <div class="stats-card">
-                    <div class="stats-card-header">System Overview</div>
-                    <div class="stat-row">
-                        <div class="stat-icon" style="background:rgba(13,148,136,0.15)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                <circle cx="9" cy="7" r="4" />
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                            </svg>
+            <div class="hero-visual" aria-hidden="true">
+                <div class="track-card">
+                    <div class="track-top">
+                        <div>
+                            <div class="track-kicker">Test request</div>
+                            <div class="track-num">REQ-20261007-0142</div>
+                            <div class="track-meta">Full Blood Count · Iron Studies</div>
                         </div>
-                        <div class="stat-info">
-                            <div class="stat-label">System Users</div>
-                            <div class="stat-value">5 Roles</div>
-                        </div>
-                        <span class="stat-badge" style="background:rgba(13,148,136,0.12);color:#0d9488">Active</span>
+                        <span class="track-urg">Urgent</span>
                     </div>
-                    <div class="stat-row">
-                        <div class="stat-icon" style="background:rgba(26,79,138,0.12)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="#1a4f8a" stroke-width="2" stroke-linecap="round">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                <polyline points="14 2 14 8 20 8" />
-                                <line x1="16" y1="13" x2="8" y2="13" />
-                                <line x1="16" y1="17" x2="8" y2="17" />
-                            </svg>
+                    <ul class="track-steps">
+                        <li class="done"><span class="track-dot"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg></span>Submitted by doctor<small>08:12</small></li>
+                        <li class="done"><span class="track-dot"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg></span>Samples received<small>09:40</small></li>
+                        <li class="done"><span class="track-dot"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg></span>In progress<small>10:05</small></li>
+                        <li class="now"><span class="track-dot"></span>Completed &amp; verified<small>now</small></li>
+                        <li><span class="track-dot"></span>Released to patient</li>
+                    </ul>
+                    <div class="track-result">
+                        <div>
+                            <div class="lbl">Haemoglobin</div>
+                            <div class="val">10.9 g/dL</div>
                         </div>
-                        <div class="stat-info">
-                            <div class="stat-label">Test Requests</div>
-                            <div class="stat-value">Tracked Live</div>
-                        </div>
-                        <span class="stat-badge" style="background:rgba(26,79,138,0.1);color:#1a4f8a">Real-time</span>
+                        <span class="flag">Low · flagged</span>
                     </div>
-                    <div class="stat-row">
-                        <div class="stat-icon" style="background:rgba(220,38,38,0.08)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round">
-                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                            </svg>
-                        </div>
-                        <div class="stat-info">
-                            <div class="stat-label">Abnormal Alerts</div>
-                            <div class="stat-value">Auto-flagged</div>
-                        </div>
-                        <span class="stat-badge" style="background:rgba(220,38,38,0.08);color:#dc2626">Alert</span>
-                    </div>
-                    <div class="stat-row">
-                        <div class="stat-icon" style="background:rgba(13,148,136,0.1)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round">
-                                <rect x="5" y="2" width="14" height="20" rx="2" />
-                                <line x1="12" y1="18" x2="12.01" y2="18" />
-                            </svg>
-                        </div>
-                        <div class="stat-info">
-                            <div class="stat-label">PDF Reports</div>
-                            <div class="stat-value">Instant Export</div>
-                        </div>
-                        <span class="stat-badge" style="background:rgba(13,148,136,0.1);color:#0d9488">Export</span>
-                    </div>
+                    <div class="track-note">Example only · every step is tracked and every abnormal result is flagged</div>
                 </div>
             </div>
         </div>
@@ -1279,7 +1295,7 @@
             <h2 class="section-title">Built for Every Role<br />in the Lab</h2>
             <p class="section-desc">Five dedicated portals — each tailored to the specific tasks and responsibilities of each user type.</p>
             <div class="roles-grid">
-                <a href="#" class="role-card" style="--card-color:#0d9488; --icon-bg:#e8f5f3">
+                <a href="@Url.Action("Login", "Home")" class="role-card" style="--card-color:#0d9488; --icon-bg:#e8f5f3">
                     <div class="role-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round">
                             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -1289,7 +1305,7 @@
                     <div class="role-name">Lab Manager</div>
                     <div class="role-desc">Oversee staff, test catalogue, consumables, suppliers and system reports.</div>
                 </a>
-                <a href="#" class="role-card" style="--card-color:#1a4f8a; --icon-bg:#e8eef8">
+                <a href="@Url.Action("Login", "Home")" class="role-card" style="--card-color:#1a4f8a; --icon-bg:#e8eef8">
                     <div class="role-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="#1a4f8a" stroke-width="2" stroke-linecap="round">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -1298,7 +1314,7 @@
                     <div class="role-name">Doctor</div>
                     <div class="role-desc">Submit test requests, track progress, view and release results to patients.</div>
                 </a>
-                <a href="#" class="role-card" style="--card-color:#7c3aed; --icon-bg:#f0ebff">
+                <a href="@Url.Action("Login", "Home")" class="role-card" style="--card-color:#7c3aed; --icon-bg:#f0ebff">
                     <div class="role-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round">
                             <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18" />
@@ -1307,7 +1323,7 @@
                     <div class="role-name">Lab Technician</div>
                     <div class="role-desc">Receive samples, perform and verify tests, capture results with full audit trail.</div>
                 </a>
-                <a href="#" class="role-card" style="--card-color:#ea580c; --icon-bg:#fff3ed">
+                <a href="@Url.Action("Login", "Home")" class="role-card" style="--card-color:#ea580c; --icon-bg:#fff3ed">
                     <div class="role-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -1317,7 +1333,7 @@
                     <div class="role-name">Patient</div>
                     <div class="role-desc">Register, track requests, view released results and manage consent settings.</div>
                 </a>
-                <a href="#" class="role-card" style="--card-color:#dc2626; --icon-bg:#fef2f2">
+                <a href="@Url.Action("Login", "Home")" class="role-card" style="--card-color:#dc2626; --icon-bg:#fef2f2">
                     <div class="role-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round">
                             <circle cx="12" cy="12" r="3" />
@@ -1332,7 +1348,7 @@
     </div>
 
     <!-- HOW IT WORKS -->
-    <section class="how-section">
+    <section class="how-section" id="how">
         <div class="how-inner">
             <div class="section-label">Workflow</div>
             <h2 class="section-title">How It Works</h2>
@@ -1340,23 +1356,28 @@
             <div class="steps-row">
                 <div class="step">
                     <div class="step-num">1</div>
-                    <div class="step-title">Doctor Submits</div>
-                    <div class="step-desc">Doctor creates a test request with samples, urgency level and clinical notes.</div>
+                    <div class="step-title">Doctor Requests</div>
+                    <div class="step-desc">The doctor picks the tests, sets the urgency, adds clinical notes and records the sample barcodes. The patient is emailed.</div>
                 </div>
                 <div class="step">
                     <div class="step-num">2</div>
                     <div class="step-title">Lab Receives</div>
-                    <div class="step-desc">Technician verifies barcodes, receives samples and begins processing.</div>
+                    <div class="step-desc">A technician scans the barcodes and marks the samples as received.</div>
                 </div>
                 <div class="step">
                     <div class="step-num">3</div>
-                    <div class="step-title">Results Verified</div>
-                    <div class="step-desc">A second technician verifies results before they are released.</div>
+                    <div class="step-title">Tested &amp; Verified</div>
+                    <div class="step-desc">Results are captured, abnormal values are flagged automatically, and a second technician verifies them.</div>
                 </div>
                 <div class="step">
                     <div class="step-num">4</div>
-                    <div class="step-title">Patient Notified</div>
-                    <div class="step-desc">Doctor reviews and releases results. Patient receives secure access.</div>
+                    <div class="step-title">Doctor Releases</div>
+                    <div class="step-desc">The doctor reviews the results and releases them with a note, or asks the patient to book an appointment.</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">5</div>
+                    <div class="step-title">Patient Views</div>
+                    <div class="step-desc">The patient sees the results, tracks them over time on a graph and downloads PDF reports.</div>
                 </div>
             </div>
         </div>
@@ -1370,15 +1391,15 @@
             <p class="section-desc" style="text-align:center;max-width:100%;margin-bottom:40px">Everything you need to know about NMB-HLabSys.</p>
 
             <div class="faq-item">
-                <button class="faq-question" onclick="toggleFaq(this)">
+                <button class="faq-question" type="button" aria-expanded="false" onclick="toggleFaq(this)">
                     How do I register as a patient?
                     <div class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg></div>
                 </button>
-                <div class="faq-answer"><p>Click the <strong>Register</strong> button on this page or in the navigation bar. Fill in your personal details including your SA ID number, date of birth, cellphone number and home address. Once submitted, you can log in immediately.</p></div>
+                <div class="faq-answer"><p>Click the <strong>Register</strong> button on this page or in the navigation bar. Fill in your personal details, including your SA ID number, date of birth, cellphone number and home address, and choose a password. You'll get a welcome e-mail and can log in straight away. If your doctor registered you instead, you'll receive a temporary password by e-mail and will be asked to choose your own the first time you log in.</p></div>
             </div>
 
             <div class="faq-item">
-                <button class="faq-question" onclick="toggleFaq(this)">
+                <button class="faq-question" type="button" aria-expanded="false" onclick="toggleFaq(this)">
                     How do I view my lab results?
                     <div class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg></div>
                 </button>
@@ -1386,7 +1407,7 @@
             </div>
 
             <div class="faq-item">
-                <button class="faq-question" onclick="toggleFaq(this)">
+                <button class="faq-question" type="button" aria-expanded="false" onclick="toggleFaq(this)">
                     Is my personal and medical data secure?
                     <div class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg></div>
                 </button>
@@ -1394,23 +1415,31 @@
             </div>
 
             <div class="faq-item">
-                <button class="faq-question" onclick="toggleFaq(this)">
+                <button class="faq-question" type="button" aria-expanded="false" onclick="toggleFaq(this)">
                     What do I do if I forget my password?
                     <div class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg></div>
                 </button>
-                <div class="faq-answer"><p>On the login page, click <strong>Forgot Password</strong>. Enter your registered email address and a reset link will be sent to you. The link expires after a set period for security.</p></div>
+                <div class="faq-answer"><p>On the login page, click <strong>Forgot Password</strong>. Enter your registered e-mail address and we'll e-mail you a temporary password. When you log in with it, you'll be asked to choose a new password straight away.</p></div>
             </div>
 
             <div class="faq-item">
-                <button class="faq-question" onclick="toggleFaq(this)">
+                <button class="faq-question" type="button" aria-expanded="false" onclick="toggleFaq(this)">
+                    Which doctors can see my medical history?
+                    <div class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg></div>
+                </button>
+                <div class="faq-answer"><p>Only the doctors you choose. On the <strong>Consent</strong> page you can give a doctor access to all your medical conditions or only the ones you tick, and choose which previous test requests they can see. The doctor is e-mailed when you grant access, and you can revoke it at any time.</p></div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" type="button" aria-expanded="false" onclick="toggleFaq(this)">
                     Can I download my results as a PDF?
                     <div class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg></div>
                 </button>
-                <div class="faq-answer"><p>Yes. Once your results are released, you will find a <strong>Download PDF</strong> button on your results page. The PDF includes your full result report with reference ranges and any flagged abnormalities.</p></div>
+                <div class="faq-answer"><p>Yes. Once your results are released, you will find a <strong>Download PDF</strong> button on your results page. The PDF includes your results with normal ranges and any flagged abnormal values. You can also track a test over time on a graph under <strong>My Results</strong>.</p></div>
             </div>
 
             <div class="faq-item">
-                <button class="faq-question" onclick="toggleFaq(this)">
+                <button class="faq-question" type="button" aria-expanded="false" onclick="toggleFaq(this)">
                     Who do I contact for support?
                     <div class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg></div>
                 </button>
@@ -1472,19 +1501,18 @@
 
         <div class="footer-links-col">
             <div class="footer-col-title">Portals</div>
-            <a href="#">Doctor Portal</a>
-            <a href="#">Patient Portal</a>
-            <a href="#">Lab Technician</a>
-            <a href="#">Lab Manager</a>
-            <a href="#">Admin</a>
+            <a href="@Url.Action("Login", "Home")">Doctor Portal</a>
+            <a href="@Url.Action("Login", "Home")">Patient Portal</a>
+            <a href="@Url.Action("Login", "Home")">Lab Technician</a>
+            <a href="@Url.Action("Login", "Home")">Lab Manager</a>
+            <a href="@Url.Action("Login", "Home")">Admin</a>
         </div>
 
         <div class="footer-links-col">
             <div class="footer-col-title">Contact</div>
             <a href="mailto:support@nmb-hlabsys.ac.za">support@nmb-hlabsys.ac.za</a>
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Use</a>
-            <a href="#">Report an Issue</a>
+            <a href="mailto:support@nmb-hlabsys.ac.za?subject=NMB-HLabSys%20issue">Report an Issue</a>
+            <a href="#faq">Help &amp; FAQ</a>
         </div>
 
         <div class="footer-bottom">
@@ -1494,7 +1522,7 @@
     </footer>
 
     <!-- CHAT WIDGET -->
-    <button class="chat-bubble" onclick="toggleChat()">
+    <button class="chat-bubble" type="button" aria-label="Open help chat" onclick="toggleChat()">
         <div class="chat-badge"></div>
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -1512,7 +1540,7 @@
                 <div class="chat-header-name">NMB-HLabSys Support</div>
                 <div class="chat-header-status">Online</div>
             </div>
-            <button class="chat-close" onclick="toggleChat()">
+            <button class="chat-close" type="button" aria-label="Close chat" onclick="toggleChat()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
@@ -1531,12 +1559,13 @@
             <button class="suggestion" onclick="askQuestion('How do I register?')">How do I register?</button>
             <button class="suggestion" onclick="askQuestion('How do I view my results?')">View my results</button>
             <button class="suggestion" onclick="askQuestion('I forgot my password')">Forgot password</button>
+            <button class="suggestion" onclick="askQuestion('Which doctors can see my history?')">Doctor access</button>
             <button class="suggestion" onclick="askQuestion('Is my data secure?')">Is my data secure?</button>
         </div>
 
         <div class="chat-input-row">
             <input type="text" class="chat-input" id="chatInput" placeholder="Type your question..." onkeydown="if(event.key==='Enter') sendMessage()" />
-            <button class="chat-send" onclick="sendMessage()">
+            <button class="chat-send" type="button" aria-label="Send" onclick="sendMessage()">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round">
                     <line x1="22" y1="2" x2="11" y2="13" />
                     <polygon points="22 2 15 22 11 13 2 9 22 2" />
@@ -1550,37 +1579,59 @@
         function toggleFaq(btn) {
             const item = btn.closest('.faq-item');
             const isOpen = item.classList.contains('open');
-            document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
-            if (!isOpen) item.classList.add('open');
+            document.querySelectorAll('.faq-item.open').forEach(i => {
+                i.classList.remove('open');
+                i.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+            });
+            if (!isOpen) {
+                item.classList.add('open');
+                btn.setAttribute('aria-expanded', 'true');
+            }
         }
 
         // ── CHAT ──
         function toggleChat() {
-            document.getElementById('chatWindow').classList.toggle('open');
+            const w = document.getElementById('chatWindow');
+            w.classList.toggle('open');
+            if (w.classList.contains('open')) document.getElementById('chatInput').focus();
         }
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') document.getElementById('chatWindow').classList.remove('open');
+        });
 
         const responses = {
             'register': 'To register, click the <strong>Register</strong> button in the navigation bar or on the hero section. Fill in your personal details including your SA ID number and you\'re good to go!',
             'results': 'After logging in, go to <strong>My Results</strong> in the sidebar of your patient dashboard. Results are visible once your doctor has released them.',
-            'password': 'On the login page, click <strong>Forgot Password</strong>. Enter your email address and we\'ll send you a reset link.',
+            'password': 'On the login page, click <strong>Forgot Password</strong> and enter your e-mail address. We\'ll e-mail you a temporary password, and you\'ll choose a new one when you log in.',
             'secure': 'Yes! All passwords are BCrypt encrypted, access is role-based, and every action is recorded in an audit trail.',
             'pdf': 'Yes! Once your results are released, click <strong>Download PDF</strong> on your results page.',
             'contact': 'You can email us at <strong>support@nmb-hlabsys.ac.za</strong> or keep chatting here!',
-            'doctor': 'Doctors are assigned to patients by the system administrator. Contact your clinic to be assigned to a doctor.',
-            'login': 'Click the <strong>Login</strong> button in the navigation bar and enter your username and password.',
+            'doctor': 'You decide which doctors can see your history. Go to <strong>Consent</strong> in your patient portal to grant or revoke a doctor\'s access.',
+            'login': 'Click <strong>Login</strong> at the top of the page and sign in with your e-mail address and password.',
+            'graph': 'Under <strong>My Results</strong> there\'s a graph that tracks a test, like haemoglobin or cholesterol, over time, with the normal range shaded.',
         };
 
         function getBotResponse(msg) {
             const m = msg.toLowerCase();
+            if (m.includes('graph') || m.includes('trend') || m.includes('over time')) return responses['graph'];
             if (m.includes('register') || m.includes('sign up') || m.includes('create')) return responses['register'];
             if (m.includes('result') || m.includes('test')) return responses['results'];
             if (m.includes('password') || m.includes('forgot') || m.includes('reset')) return responses['password'];
             if (m.includes('secure') || m.includes('safe') || m.includes('privacy') || m.includes('data')) return responses['secure'];
             if (m.includes('pdf') || m.includes('download') || m.includes('export')) return responses['pdf'];
             if (m.includes('contact') || m.includes('support') || m.includes('help') || m.includes('email')) return responses['contact'];
-            if (m.includes('doctor') || m.includes('assign') || m.includes('dr')) return responses['doctor'];
+            if (m.includes('graph') || m.includes('track') || m.includes('trend') || m.includes('over time')) return responses['graph'];
+            if (m.includes('doctor') || m.includes('consent') || m.includes('access') || m.includes('share')) return responses['doctor'];
             if (m.includes('login') || m.includes('sign in')) return responses['login'];
             return "I'm not sure about that. Please email us at <strong>support@nmb-hlabsys.ac.za</strong> or check the FAQ section above for more answers.";
+        }
+
+        // Visitor text is shown as plain text (never as HTML), so typing
+        // tags or scripts into the chat can't change the page.
+        function escapeHtml(t) {
+            const d = document.createElement('div');
+            d.textContent = t;
+            return d.innerHTML;
         }
 
         function addMessage(text, type) {
@@ -1589,7 +1640,7 @@
             div.className = `msg ${type}`;
             div.innerHTML = type === 'bot'
                 ? `<div class="msg-avatar">N</div><div class="msg-bubble">${text}</div>`
-                : `<div class="msg-bubble">${text}</div>`;
+                : `<div class="msg-bubble">${escapeHtml(text)}</div>`;
             msgs.appendChild(div);
             msgs.scrollTop = msgs.scrollHeight;
         }
