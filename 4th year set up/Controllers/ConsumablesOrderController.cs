@@ -1,10 +1,12 @@
-﻿using LabManager.Models;
+﻿using _4th_year_set_up.Models;
+using LabManager.Models;
 using LabManager.Repositories;
 using LabManager.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Text.Json;
 using static _4th_year_set_up.Models.Consumable;
+
 
 namespace LabManager.Controllers
 {
@@ -37,6 +39,8 @@ namespace LabManager.Controllers
             IEnumerable<Supplier> category = await _orderRepository.GetSuppliers();
             ViewBag.Supplier = category.Select(c => new SelectListItem { Value = c.SupplierID.ToString(), Text = c.SupplierName });
 
+            IEnumerable<Consumable> consumables = await _orderRepository.GetConsumables();
+            ViewBag.Consumable = consumables.Select(c => new SelectListItem { Value = c.ConsumableID.ToString(), Text = c.ConsumableName });
 
             ViewBag.StatusFilter = status;
           
@@ -58,7 +62,7 @@ namespace LabManager.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateOrder(
      int supplierId,
-     string items)
+     int consumableId)
         {
             if (supplierId <= 0)
             {
@@ -68,7 +72,7 @@ namespace LabManager.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            if (string.IsNullOrWhiteSpace(items))
+            if (consumableId <= 0)
             {
                 TempData["Error"] =
                     "Please enter the order items.";
@@ -100,7 +104,7 @@ namespace LabManager.Controllers
                 SupplierID = supplierId,
                 OrderDate = DateTime.Now,
                 Status = "Ordered",
-                Items = items.Trim()
+                ConsumableID = consumableId  
             };
 
             await _orderRepository.CreateOrder(order);
@@ -117,19 +121,13 @@ namespace LabManager.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ReceiveOrder(
-            [FromBody] ReceiveOrderRequest request)
-        {
-            if (request == null)
-            {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Invalid request."
-                });
-            }
 
-            if (request.OrderId <= 0)
+        [HttpPost]
+        public async Task<IActionResult> ReceiveOrder(
+    int orderId,
+    string receivedItemsJson)
+        {
+            if (orderId <= 0)
             {
                 return BadRequest(new
                 {
@@ -138,40 +136,55 @@ namespace LabManager.Controllers
                 });
             }
 
-            if (request.ReceivedItems == null ||
-                request.ReceivedItems.Count == 0)
+            if (string.IsNullOrWhiteSpace(receivedItemsJson))
             {
                 return BadRequest(new
                 {
                     success = false,
-                    message =
-                        "Please select at least one item as received."
+                    message = "Please select at least one item as received."
                 });
             }
 
             try
             {
-                string json =
-                    JsonSerializer.Serialize(
-                        request.ReceivedItems);
+                // Validate that the submitted JSON is valid.
+                var receivedItems =
+                    JsonSerializer.Deserialize<List<ReceivedOrderItem>>(
+                        receivedItemsJson);
 
-                await _orderRepository.ReceiveOrder(
-                    request.OrderId,
-                    json);
+                if (receivedItems == null || receivedItems.Count == 0)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Please select at least one item as received."
+                    });
+                }
+
+                string json = JsonSerializer.Serialize(receivedItems);
+
+                await _orderRepository.ReceiveOrder(orderId, json);
 
                 return Ok(new
                 {
                     success = true,
-                    message =
-                        "Order received and stock updated."
+                    message = "Order received and stock updated."
                 });
             }
-            catch (Exception ex)
+            catch (JsonException)
             {
                 return BadRequest(new
                 {
                     success = false,
-                    message = ex.Message
+                    message = "Invalid received items data."
+                });
+            }
+            catch (Exception)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Unable to receive the order. Please try again."
                 });
             }
         }

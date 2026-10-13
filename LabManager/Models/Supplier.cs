@@ -21,4 +21,11 @@ namespace LabManager.Models
             public bool IsActive { get; set; }
         
     }
+
+    public class SampleType
+    {
+        public int SampleTypeId { get; set; }
+        public string SampleName { get; set; }
+    }           
+
 }

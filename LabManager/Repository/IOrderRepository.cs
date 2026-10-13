@@ -1,9 +1,5 @@
-﻿using LabManager.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using _4th_year_set_up.Models;
+using LabManager.Models;
 
 
 namespace LabManager.Repository
@@ -29,6 +25,9 @@ namespace LabManager.Repository
             string cancellationReason);
 
         Task<IEnumerable<Supplier>> GetSuppliers();
+
+        Task<IEnumerable<Consumable>> GetConsumables();
+
     }
 }
 

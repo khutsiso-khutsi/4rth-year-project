@@ -1,4 +1,5 @@
-﻿using LabManager.DataAccess;
+﻿using _4th_year_set_up.Models;
+using LabManager.DataAccess;
 using LabManager.Models;
 using LabManager.Repository;
 
@@ -57,7 +58,7 @@ namespace LabManager.Repositories
                 {
                     OrderNumber = order.OrderNumber,
                     SupplierID = order.SupplierID,
-                    Items = order.Items
+                    ConsumableID = order.ConsumableID,
                 });
         }
 
@@ -105,8 +106,15 @@ namespace LabManager.Repositories
 
         public async Task<IEnumerable<Supplier>> GetSuppliers()
         {
-            return await _db.GetData<Supplier, object>(
+            return await _db.GetData<Supplier, dynamic>(
                 "sp_GetSuppliers",
+                new { });
+        }
+
+        public async Task<IEnumerable<Consumable>> GetConsumables()
+        {
+            return await _db.GetData<Consumable, dynamic>(
+                "sp_GetorderConsumables",
                 new { });
         }
     }

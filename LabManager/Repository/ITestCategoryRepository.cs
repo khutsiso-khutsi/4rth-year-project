@@ -27,7 +27,15 @@ namespace LabManager.Repository
 
         Task<IEnumerable<TestCategory>> GetCategory();
         Task<IEnumerable<TestType>> GetSampleType();
-       }
+
+        Task AddSampleTypeAsync(SampleType sampleType);
+
+        Task<IEnumerable<TestType>> GetDeletedTestTypesAsync();
+
+        Task DeleteTestTypeAsync(int testId);
+
+        Task RestoreTestTypeAsync(int testId);
+    }
 
 
 

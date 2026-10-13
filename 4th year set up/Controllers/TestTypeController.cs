@@ -40,7 +40,8 @@ namespace LabManager.Controllers
 
                 ViewBag.Email = HttpContext.Session.GetString("Email");
 
-                return View(tests);
+            ViewBag.DeletedTests = await _repository.GetDeletedTestTypesAsync();
+            return View(tests);
             
             
         }
@@ -282,67 +283,73 @@ namespace LabManager.Controllers
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteTest(int id)
+        public async Task<IActionResult> AddSampleType(SampleType sampleType)
         {
+            if (string.IsNullOrWhiteSpace(sampleType.SampleName))
+            {
+                TempData["Error"] = "Sample type name is required.";
+                return RedirectToAction(nameof(Index));
+            }
+
             try
             {
-                if (id <= 0)
-                {
-                    TempData["Error"] =
-                        "Invalid test type.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                var result =
-                    await _repository.DeleteTestType(id);
-
-                if (result)
-                {
-                    TempData["Success"] =
-                        "Test type deleted successfully.";
-                }
-                else
-                {
-                    TempData["Error"] =
-                        "Unable to delete the test type.";
-                }
+                await _repository.AddSampleTypeAsync(sampleType);
+                TempData["Success"] = "Sample type added successfully.";
             }
             catch (Exception)
             {
                 TempData["Error"] =
-                    "An error occurred while deleting the test type.";
+                    "Unable to add sample type. Check whether it already exists.";
             }
 
             return RedirectToAction(nameof(Index));
         }
 
-        // =========================================================
-        // DROPDOWNS
-        // =========================================================
-        //private async Task LoadDropdowns()
-        //{
-        //    var categories =
-        //        await _repository.GetAllCategories();
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteTest(int id)
+        {
+            if (id <= 0)
+            {
+                TempData["Error"] = "Invalid test type.";
+                return RedirectToAction(nameof(Index));
+            }
 
-        //    var sampleTypes =
-        //        await _repository.GetAllSampleTypes();
+            try
+            {
+                await _repository.DeleteTestTypeAsync(id);
+                TempData["Success"] =
+                    "Test type deleted. You can restore it later.";
+            }
+            catch (Exception)
+            {
+                TempData["Error"] = "Unable to delete the test type.";
+            }
 
-        //    ViewBag.Category = categories.Select(x =>
-        //        new SelectListItem
-        //        {
-        //            Value = x.CategoryId.ToString(),
-        //            Text = x.CategoryName
-        //        }).ToList();
+            return RedirectToAction(nameof(Index));
+        }
 
-        //    ViewBag.SampleType = sampleTypes.Select(x =>
-        //        new SelectListItem
-        //        {
-        //            Value = x.SampleName,
-        //            Text = x.SampleName
-        //        }).ToList();
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RestoreTest(int id)
+        {
+            if (id <= 0)
+            {
+                TempData["Error"] = "Invalid test type.";
+                return RedirectToAction(nameof(Index));
+            }
 
-        //    ViewBag.Categories = categories;
-        //}
+            try
+            {
+                await _repository.RestoreTestTypeAsync(id);
+                TempData["Success"] = "Test type restored successfully.";
+            }
+            catch (Exception)
+            {
+                TempData["Error"] = "Unable to restore the test type.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

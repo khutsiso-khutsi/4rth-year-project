@@ -1,4 +1,5 @@
-﻿using LabManager.DataAccess;
+﻿
+using LabManager.DataAccess;
 using LabManager.Models;
 using LabManager.Repository;
 
@@ -13,295 +14,124 @@ namespace LabManager.Repositories
             _db = db;
         }
 
-
-        // ============================================================
-        // ADD DOCTOR
-        // ============================================================
-
-        public async Task<bool> AddDoctor(Doctor doctor)
+        public async Task<int> CreateDoctorAccount(
+            Doctor doctor,
+            string passwordHash,
+            DateTime expiryUtc)
         {
-            try
-            {
-                await _db.SaveData(
-                    "sp_AddDoctor",
-                    new
-                    {
-                        doctor.FirstName,
-                        doctor.LastName,
-                        doctor.HCPSANumber,
-                        doctor.EmailAddress,
-                        doctor.ContactNumber
-                    });
+            var result = await _db.GetData<int, dynamic>(
+                "sp_CreateStaffUser",
+                new
+                {
+                    doctor.FirstName,
+                    doctor.LastName,
+                    doctor.EmailAddress,
+                    Role = "Doctor",
+                    PasswordHash = passwordHash,
+                    TemporaryPasswordExpiry = expiryUtc,
+                    doctor.HCPSANumber,
+                    doctor.ContactNumber,
+                    EmployeeNumber = (string?)null,
+                    TestTypeID = (int?)null
+                });
 
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return result.FirstOrDefault();
         }
 
+        public async Task<int> CreateTechnicianAccount(
+            Technician technician,
+            string passwordHash,
+            DateTime expiryUtc)
+        {
+            var result = await _db.GetData<int, dynamic>(
+                "sp_CreateStaffUser",
+                new
+                {
+                    technician.FirstName,
+                    technician.LastName,
+                    technician.EmailAddress,
+                    Role = "Technician",
+                    PasswordHash = passwordHash,
+                    TemporaryPasswordExpiry = expiryUtc,
+                    HCPSANumber = (string?)null,
+                    ContactNumber = (string?)null,
+                    technician.EmployeeNumber,
+                    technician.TestTypeID
+                });
 
-        // ============================================================
-        // UPDATE DOCTOR
-        // ============================================================
+            return result.FirstOrDefault();
+        }
 
         public async Task<bool> UpdateDoctor(Doctor doctor)
         {
-            try
+            await _db.SaveData("sp_UpdateDoctor", new
             {
-                await _db.SaveData(
-                    "sp_UpdateDoctor",
-                    new
-                    {
-                        doctor.Id,
-                        doctor.FirstName,
-                        doctor.LastName,
-                        doctor.HCPSANumber,
-                        doctor.EmailAddress,
-                        doctor.ContactNumber
-                    });
+                Id = doctor.Id,
+                doctor.FirstName,
+                doctor.LastName,
+                doctor.HCPSANumber,
+                doctor.EmailAddress,
+                doctor.ContactNumber
+            });
 
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return true;
         }
-
-
-        // ============================================================
-        // GET ALL DOCTORS
-        // ============================================================
 
         public async Task<IEnumerable<Doctor>> GetAllDoctor()
         {
-            return await _db.GetData<Doctor, object>(
-                "sp_GetDoctors",
-                new { });
+            return await _db.GetData<Doctor, dynamic>(
+                "sp_GetAllDoctors", new { });
         }
 
-
-        // ============================================================
-        // GET DOCTOR BY ID
-        // ============================================================
-
-        public async Task<Doctor> GetDoctorById(int id)
+        public async Task<Doctor?> GetDoctorById(int id)
         {
-            var result = await _db.GetData<Doctor, object>(
-                "sp_GetDoctorById",
-                new
-                {
-                    Id = id
-                });
+            var result = await _db.GetData<Doctor, dynamic>(
+                "sp_GetDoctorById", new { Id = id });
 
             return result.FirstOrDefault();
         }
 
-
-        // ============================================================
-        // ADD TECHNICIAN
-        // ============================================================
-
-        public async Task<bool> AddTechnician(Technician tech)
+        public async Task<IEnumerable<TestType>> GetTestType()
         {
-            try
-            {
-                await _db.SaveData(
-                    "sp_AddTechnician",
-                    new
-                    {
-                        tech.FirstName,
-                        tech.LastName,
-                        tech.EmployeeNumber,
-                        tech.EmailAddress,
-                        tech.TestTypeID
-                    });
-
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return await _db.GetData<TestType, dynamic>(
+                "sp_GetTestTypes", new { });
         }
 
-
-        // ============================================================
-        // UPDATE TECHNICIAN
-        // ============================================================
-
-        public async Task<bool> UpdateTechnician(Technician tech)
+        public async Task<bool> UpdateTechnician(Technician technician)
         {
-            try
+            await _db.SaveData("sp_UpdateTechnician", new
             {
-                await _db.SaveData(
-                    "sp_UpdateTechnician",
-                    new
-                    {
-                        tech.Id,
-                        tech.FirstName,
-                        tech.LastName,
-                        tech.EmployeeNumber,
-                        tech.EmailAddress,
-                        tech.TestTypeID
-                    });
+                Id = technician.Id,
+                technician.FirstName,
+                technician.LastName,
+                technician.EmployeeNumber,
+                technician.EmailAddress,
+                technician.TestTypeID
+            });
 
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return true;
         }
-
-
-        // ============================================================
-        // GET ALL TECHNICIANS
-        // ============================================================
 
         public async Task<IEnumerable<Technician>> GetTechnician()
         {
-            return await _db.GetData<Technician, object>(
-                "sp_GetTechnicians",
-                new { });
+            return await _db.GetData<Technician, dynamic>(
+                "sp_GetAllTechnicians", new { }); 
         }
 
-
-        // ============================================================
-        // GET TECHNICIAN BY ID
-        // ============================================================
-
-        public async Task<Technician> GetTechnicianById(int id)
+        public async Task<Technician?> GetTechnicianById(int id)
         {
             var result = await _db.GetData<Technician, object>(
-                "sp_GetTechnicianById",
-                new
-                {
-                    Id = id
-                });
+                "sp_GetTechnicianById", new { Id = id });
 
             return result.FirstOrDefault();
         }
-
-
-        // ============================================================
-        // GET TEST TYPES
-        // ============================================================
 
         public async Task<IEnumerable<TestType>> GetAllTestTypes()
         {
             return await _db.GetData<TestType, dynamic>(
-                "sp_GetTestTypes",
-                new { });
-        }
-
-
-    }
-
-
-    public class UserProfileRepository : IUserProfileRepository
-    {
-        private readonly ISqlDataAcess _dataAccess;
-
-        public UserProfileRepository(ISqlDataAcess dataAccess)
-        {
-            _dataAccess = dataAccess;
-        }
-
-        // =========================================================
-        // GET USER PROFILE
-        // =========================================================
-
-        public async Task<UserProfileViewModel?> GetProfileByEmail(string email)
-        {
-            var result = await _dataAccess.GetData<UserProfileViewModel, dynamic>(
-                "sp_GetUserProfileByEmail",
-                new
-                {
-                    Email = email
-                });
-
-            return result.FirstOrDefault();
-        }
-
-        // =========================================================
-        // UPDATE PROFILE
-        // =========================================================
-
-        public async Task<bool> UpdateProfile(UserProfileViewModel model)
-        {
-            try
-            {
-                await _dataAccess.SaveData(
-                    "sp_UpdateUserProfile",
-                    new
-                    {
-                        UserID = model.UserID,
-                        FirstName = model.FirstName,
-                        LastName = model.LastName,
-                        CellphoneNumber = model.CellphoneNumber,
-                        HomeAddress = model.HomeAddress
-                    });
-
-                return true;
-            }
-            catch
-            {
-                throw;
-            }
-        }
-
-
-        // =========================================================
-        // GET CURRENT PASSWORD HASH
-        // =========================================================
-
-        public async Task<string?> GetPasswordHash(string email)
-        {
-            try
-            {
-                var result = await _dataAccess.GetData<string, dynamic>(
-                    "sp_GetUserPasswordHash",
-                    new
-                    {
-                        Email = email
-                    });
-
-                return result.FirstOrDefault();
-            }
-            catch
-            {
-                throw;
-            }
-        }
-
-
-        // =========================================================
-        // UPDATE PASSWORD
-        // =========================================================
-
-        public async Task<bool> UpdatePassword(
-            string email,
-            string passwordHash)
-        {
-            try
-            {
-                await _dataAccess.SaveData(
-                    "sp_UpdateUserPassword",
-                    new
-                    {
-                        Email = email,
-                        PasswordHash = passwordHash
-                    });
-
-                return true;
-            }
-            catch
-            {
-                throw;
-            }
+                "sp_GetTestTypes", new { });
         }
     }
+
+    
 }

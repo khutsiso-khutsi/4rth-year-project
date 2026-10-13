@@ -4,6 +4,7 @@ using Patient.Repository;
 using Patient.Models;
 using _4th_year_set_up.Models;
 using _4th_year_set_up.Services;
+using LabManager.Repository;
 
 namespace _4th_year_set_up.Controllers
 {
@@ -11,9 +12,9 @@ namespace _4th_year_set_up.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly UserRepository _userRepo;
-        private readonly EmailService _emailService;
+        private readonly IEmailService _emailService;
 
-        public HomeController(ILogger<HomeController> logger, UserRepository userRepo, EmailService emailService)
+        public HomeController(ILogger<HomeController> logger, UserRepository userRepo, IEmailService emailService)
         {
             _logger = logger;
             _userRepo = userRepo;
@@ -196,7 +197,7 @@ namespace _4th_year_set_up.Controllers
         }
 
         [HttpPost]
-        public IActionResult ForgotPassword(string email)
+        public async Task<IActionResult> ForgotPassword(string email)
         {
             var newPassword = "NMB@" + Guid.NewGuid().ToString("N").Substring(0, 8);
             var loginLink = Url.Action("Login", "Home", null, Request.Scheme);
@@ -249,7 +250,7 @@ namespace _4th_year_set_up.Controllers
 </body>
 </html>";
 
-                _emailService.SendEmail(email, "Password Reset — NMB-HLabSys", body);
+                await _emailService.SendEmailAsync(email, "Password Reset — NMB-HLabSys", body);
                 TempData["Info"] = "A new temporary password has been sent to your email.";
             }
             else

@@ -174,5 +174,35 @@ namespace LabManager.Repositories
                 new { }
             );
         }
+
+        public async Task AddSampleTypeAsync(SampleType sampleType)
+        {
+            await _dataAccess.SaveData(
+                "dbo.sp_AddSampleType",
+                new {sampleType.SampleName }
+            )   ;
+        }
+
+        public async Task<IEnumerable<TestType>>
+            GetDeletedTestTypesAsync()
+        {
+            return await _dataAccess.GetData<TestType, dynamic>(
+                "dbo.sp_GetDeletedTestTypes",
+                new { });
+        }
+
+        public async Task DeleteTestTypeAsync(int testId)
+        {
+            await _dataAccess.SaveData(
+                "dbo.sp_SoftDeleteTestType",
+                new { TestId = testId });
+        }
+
+        public async Task RestoreTestTypeAsync(int testId)
+        {
+            await _dataAccess.SaveData(
+                "dbo.sp_RestoreTestType",
+                new { TestId = testId });
+        }
     }
 }

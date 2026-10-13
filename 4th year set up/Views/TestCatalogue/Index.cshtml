@@ -15,6 +15,9 @@
     // raw sample types list (optional). Controller may set ViewBag.SampleTypes for this.
     var sampleTypes = ViewBag.SampleTypes as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
 
+    // NEW: soft-deleted test types (controller sets ViewBag.DeletedTests)
+    var deletedTests = ViewBag.DeletedTests as IEnumerable<TestType> ?? Enumerable.Empty<TestType>();
+
     if (ViewBag.Category is IEnumerable<dynamic> supplier)
     {
         // Populate the dictionary with valid fridge data
@@ -369,6 +372,31 @@
                 .btn-danger:hover {
                     background: var(--red-dark);
                 }
+
+            /* NEW: restore button */
+            .btn-amber {
+                background: var(--amber-light);
+                color: var(--amber);
+                border: 1px solid rgba(217,119,6,.3);
+            }
+
+                .btn-amber:hover {
+                    background: var(--amber);
+                    color: var(--white);
+                }
+
+            .btn-badge {
+                background: var(--amber);
+                color: var(--white);
+                border-radius: 100px;
+                font-size: .68rem;
+                padding: 1px 7px;
+            }
+
+            .btn-amber:hover .btn-badge {
+                background: var(--white);
+                color: var(--amber);
+            }
 
             /* ── ALERTS ── */
             .alert {
@@ -741,6 +769,24 @@
                 margin-top: -2px;
             }
 
+            /* NEW: validation */
+            .form-control.is-invalid {
+                border-color: var(--red);
+                box-shadow: 0 0 0 3px var(--red-light);
+            }
+
+            .field-error {
+                display: none;
+                font-size: .7rem;
+                color: var(--red);
+                font-weight: 600;
+                margin-top: -2px;
+            }
+
+                .field-error.show {
+                    display: block;
+                }
+
             /* ── DELETE MODAL ── */
             .delete-content {
                 text-align: center;
@@ -777,6 +823,33 @@
 
                 .delete-message strong {
                     color: var(--navy);
+                }
+
+            /* NEW: restore list */
+            .restore-list {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .restore-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                padding: 12px 14px;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                background: var(--offwhite);
+            }
+
+                .restore-item .meta {
+                    font-size: .72rem;
+                    color: var(--muted);
+                }
+
+                .restore-item form {
+                    margin: 0;
                 }
 
             /* ── FOOTER ── */
@@ -988,6 +1061,18 @@
                 </div>
 
                 <div class="header-actions">
+                    <!-- NEW: restore soft-deleted tests -->
+                    <button type="button" class="btn btn-amber" onclick="openModal('restoreModal')">
+                        ↺ Restore Tests
+                        @if (deletedTests.Any())
+                        {
+                            <span class="btn-badge">@deletedTests.Count()</span>
+                        }
+                    </button>
+                    <!-- NEW: add sample type -->
+                    <button type="button" class="btn btn-secondary" onclick="openModal('addSampleTypeModal')">
+                        <span>＋</span> Add Sample Type
+                    </button>
                     <button type="button" class="btn btn-secondary" onclick="openAddCategoryModal()">
                         <span>＋</span> Add Category
                     </button>
@@ -1151,7 +1236,7 @@
     ====================================================== -->
     <div id="addModal" class="modal-overlay">
         <div class="modal">
-            <form asp-controller="TestCatalogue" asp-action="AddTestType" method="post">
+            <form asp-controller="TestCatalogue" asp-action="AddTestType" method="post" novalidate data-validate>
                 @Html.AntiForgeryToken()
 
                 <div class="modal-header">
@@ -1164,12 +1249,16 @@
 
                         <div class="form-group full">
                             <label class="form-label">Test Name<span class="required">*</span></label>
-                            <input type="text" name="TestName" class="form-control" placeholder="e.g. Full Blood Count" required />
+                            <input type="text" name="TestName" class="form-control" placeholder="e.g. Full Blood Count" required
+                                   data-required="Test name is required." data-minlength="2" data-maxlength="100"
+                                   data-pattern="^[A-Za-z0-9 ()/.,&%+\-]+$" data-pattern-msg="Test name contains invalid characters." />
+                            <span class="field-error"></span>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Category<span class="required">*</span></label>
-                            <select id="add-CategoryId" name="CategoryId" class="form-control" required>
+                            <select id="add-CategoryId" name="CategoryId" class="form-control" required
+                                    data-required="Please select a category.">
                                 <option value="">Select category</option>
                                 @if (ViewBag.Category != null)
                                 {
@@ -1179,11 +1268,13 @@
                                     }
                                 }
                             </select>
+                            <span class="field-error"></span>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Sample Type<span class="required">*</span></label>
-                            <select id="add-SampleTypeId" name="SampleTypeId" class="form-control" required>
+                            <select id="add-SampleTypeId" name="SampleTypeId" class="form-control" required
+                                    data-required="Please select a sample type.">
                                 <option value="">Select sample type</option>
                                 @if (ViewBag.SampleType != null)
                                 {
@@ -1193,6 +1284,7 @@
                                     }
                                 }
                             </select>
+                            <span class="field-error"></span>
                         </div>
 
                         <div class="form-group">
@@ -1211,23 +1303,34 @@
 
                         <div class="form-group">
                             <label class="form-label">Turnaround Time</label>
-                            <input type="number" name="TurnaroundTime" class="form-control" placeholder="e.g. 24" min="0" />
+                            <input type="number" name="TurnaroundTime" class="form-control" placeholder="e.g. 24" min="0" max="8760" step="1"
+                                   data-integer="Whole hours only." data-min="0" data-max="8760"
+                                   data-range-msg="TAT must be between 0 and 8760 hours." />
                             <span class="form-help">Enter TAT in hours.</span>
+                            <span class="field-error"></span>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Normal Range Minimum</label>
-                            <input type="number" name="NormalRangeMin" class="form-control" step="0.01" min="0" placeholder="e.g. 12.00" />
+                            <input type="number" name="NormalRangeMin" class="form-control" step="0.01" min="0" placeholder="e.g. 12.00"
+                                   data-min="0" data-max="100000" data-range-msg="Enter a value between 0 and 100000."
+                                   data-lte="NormalRangeMax" />
+                            <span class="field-error"></span>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Normal Range Maximum</label>
-                            <input type="number" name="NormalRangeMax" class="form-control" step="0.01" min="0" placeholder="e.g. 16.00" />
+                            <input type="number" name="NormalRangeMax" class="form-control" step="0.01" min="0" placeholder="e.g. 16.00"
+                                   data-min="0" data-max="100000" data-range-msg="Enter a value between 0 and 100000."
+                                   data-gte="NormalRangeMin" />
+                            <span class="field-error"></span>
                         </div>
 
                         <div class="form-group full">
                             <label class="form-label">Consumables Used</label>
-                            <textarea name="ConsumablesUsed" class="form-control" placeholder="e.g. EDTA Tube, Reagent A"></textarea>
+                            <textarea name="ConsumablesUsed" class="form-control" placeholder="e.g. EDTA Tube, Reagent A"
+                                      data-maxlength="500"></textarea>
+                            <span class="field-error"></span>
                         </div>
 
                     </div>
@@ -1247,7 +1350,7 @@
     ====================================================== -->
     <div id="addCategoryModal" class="modal-overlay">
         <div class="modal" style="max-width:480px;">
-            <form asp-controller="TestCatalogue" asp-action="AddCategory" method="post">
+            <form asp-controller="TestCatalogue" asp-action="AddCategory" method="post" novalidate data-validate>
                 @Html.AntiForgeryToken()
 
                 <div class="modal-header">
@@ -1259,11 +1362,15 @@
                     <div class="form-grid">
                         <div class="form-group full">
                             <label class="form-label">Category Name<span class="required">*</span></label>
-                            <input type="text" name="CategoryName" class="form-control" placeholder="e.g. Haematology" required />
+                            <input type="text" name="CategoryName" class="form-control" placeholder="e.g. Haematology" required
+                                   data-required="Category name is required." data-minlength="2" data-maxlength="50" />
+                            <span class="field-error"></span>
                         </div>
                         <div class="form-group full">
                             <label class="form-label">Description</label>
-                            <textarea name="Description" class="form-control" placeholder="Optional short description"></textarea>
+                            <textarea name="Description" class="form-control" placeholder="Optional short description"
+                                      data-maxlength="200"></textarea>
+                            <span class="field-error"></span>
                         </div>
                     </div>
                 </div>
@@ -1278,11 +1385,46 @@
     </div>
 
     <!-- =====================================================
+         NEW: ADD SAMPLE TYPE MODAL
+    ====================================================== -->
+    <div id="addSampleTypeModal" class="modal-overlay">
+        <div class="modal" style="max-width:480px;">
+            <form asp-controller="TestCatalogue" asp-action="AddSampleType" method="post" novalidate data-validate>
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header">
+                    <h2 class="modal-title">Add Sample Type</h2>
+                    <button type="button" class="close-btn" onclick="closeModal('addSampleTypeModal')">×</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label class="form-label">Sample Type Name<span class="required">*</span></label>
+                            <input type="text" name="SampleName" class="form-control" placeholder="e.g. Whole Blood (EDTA)" required
+                                   data-required="Sample type name is required." data-minlength="2" data-maxlength="50"
+                                   data-pattern="^[A-Za-z0-9 ()/.,\-]+$"
+                                   data-pattern-msg="Only letters, numbers, spaces and ( ) / . , - are allowed." />
+                            <span class="field-error"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addSampleTypeModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">✓ Save Sample Type</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- =====================================================
          EDIT TEST TYPE MODAL
     ====================================================== -->
     <div id="editModal" class="modal-overlay">
         <div class="modal">
-            <form asp-controller="TestCatalogue" asp-action="EditTestType" method="post">
+            <form asp-controller="TestCatalogue" asp-action="EditTestType" method="post" novalidate data-validate>
                 @Html.AntiForgeryToken()
 
                 <div class="modal-header">
@@ -1298,12 +1440,16 @@
 
                         <div class="form-group full">
                             <label class="form-label">Test Name<span class="required">*</span></label>
-                            <input type="text" id="edit-TestName" name="TestName" class="form-control" required />
+                            <input type="text" id="edit-TestName" name="TestName" class="form-control" required
+                                   data-required="Test name is required." data-minlength="2" data-maxlength="100"
+                                   data-pattern="^[A-Za-z0-9 ()/.,&%+\-]+$" data-pattern-msg="Test name contains invalid characters." />
+                            <span class="field-error"></span>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Category<span class="required">*</span></label>
-                            <select id="edit-CategoryId" name="CategoryId" class="form-control" required>
+                            <select id="edit-CategoryId" name="CategoryId" class="form-control" required
+                                    data-required="Please select a category.">
                                 <option value="">Select category</option>
                                 @if (ViewBag.Category != null)
                                 {
@@ -1313,11 +1459,13 @@
                                     }
                                 }
                             </select>
+                            <span class="field-error"></span>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Sample Type<span class="required">*</span></label>
-                            <select id="edit-SampleTypeId" name="SampleTypeId" class="form-control" required>
+                            <select id="edit-SampleTypeId" name="SampleTypeId" class="form-control" required
+                                    data-required="Please select a sample type.">
                                 <option value="">Select sample type</option>
                                 @if (ViewBag.SampleType != null)
                                 {
@@ -1327,31 +1475,45 @@
                                     }
                                 }
                             </select>
+                            <span class="field-error"></span>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Unit Measurement</label>
-                            <input type="text" id="edit-UnitMeasurement" name="UnitMeasurement" class="form-control" />
+                            <input type="text" id="edit-UnitMeasurement" name="UnitMeasurement" class="form-control"
+                                   data-maxlength="20" />
+                            <span class="field-error"></span>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Turnaround Time</label>
-                            <input type="number" id="edit-TurnaroundTime" name="TurnaroundTime" class="form-control" min="0" />
+                            <input type="number" id="edit-TurnaroundTime" name="TurnaroundTime" class="form-control" min="0" max="8760" step="1"
+                                   data-integer="Whole hours only." data-min="0" data-max="8760"
+                                   data-range-msg="TAT must be between 0 and 8760 hours." />
+                            <span class="field-error"></span>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Normal Range Minimum</label>
-                            <input type="number" id="edit-NormalRangeMin" name="NormalRangeMin" class="form-control" step="0.01" />
+                            <input type="number" id="edit-NormalRangeMin" name="NormalRangeMin" class="form-control" step="0.01"
+                                   data-min="0" data-max="100000" data-range-msg="Enter a value between 0 and 100000."
+                                   data-lte="NormalRangeMax" />
+                            <span class="field-error"></span>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Normal Range Maximum</label>
-                            <input type="number" id="edit-NormalRangeMax" name="NormalRangeMax" class="form-control" step="0.01" />
+                            <input type="number" id="edit-NormalRangeMax" name="NormalRangeMax" class="form-control" step="0.01"
+                                   data-min="0" data-max="100000" data-range-msg="Enter a value between 0 and 100000."
+                                   data-gte="NormalRangeMin" />
+                            <span class="field-error"></span>
                         </div>
 
                         <div class="form-group full">
                             <label class="form-label">Consumables Used</label>
-                            <textarea id="edit-ConsumablesUsed" name="ConsumablesUsed" class="form-control"></textarea>
+                            <textarea id="edit-ConsumablesUsed" name="ConsumablesUsed" class="form-control"
+                                      data-maxlength="500"></textarea>
+                            <span class="field-error"></span>
                         </div>
 
                     </div>
@@ -1388,7 +1550,7 @@
                         <p class="delete-message">
                             You are about to delete
                             <strong id="delete-TestName">this test</strong>.
-                            This action cannot be undone.
+                            This test type will be hidden from the active catalogue and can be restored later.
                         </p>
                     </div>
                 </div>
@@ -1399,6 +1561,51 @@
                 </div>
 
             </form>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         NEW: RESTORE DELETED TESTS MODAL
+    ====================================================== -->
+    <div id="restoreModal" class="modal-overlay">
+        <div class="modal" style="max-width:560px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Restore Deleted Tests</h2>
+                <button type="button" class="close-btn" onclick="closeModal('restoreModal')">×</button>
+            </div>
+
+            <div class="modal-body">
+                @if (deletedTests.Any())
+                {
+                    <div class="restore-list">
+                        @foreach (var d in deletedTests)
+                        {
+                            <div class="restore-item">
+                                <div>
+                                    <div class="test-name">@d.TestName</div>
+                                    <div class="meta">@d.NormalRangeDisplay · @d.TurnaroundTime hrs</div>
+                                </div>
+                                <form asp-controller="TestCatalogue" asp-action="RestoreTest" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@d.TestId" />
+                                    <button type="submit" class="btn btn-primary" style="padding:7px 12px;">↺ Restore</button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state" style="padding:30px 10px;">
+                        <div class="empty-title">Nothing to restore</div>
+                        <div>There are no deleted test types.</div>
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('restoreModal')">Close</button>
+            </div>
         </div>
     </div>
 
@@ -1434,6 +1641,12 @@
                 document.body.style.overflow = "hidden";
             }
 
+            // NEW: generic opener (used by Add Sample Type and Restore)
+            function openModal(modalId) {
+                document.getElementById(modalId).classList.add("show");
+                document.body.style.overflow = "hidden";
+            }
+
             function openEditModal(id, testName, categoryId, sampleType, unit, normalMin, normalMax, tat, consumables) {
                 document.getElementById("edit-TestId").value = id;
                 document.getElementById("edit-TestName").value = testName;
@@ -1457,8 +1670,16 @@
                 document.body.style.overflow = "hidden";
             }
 
+            // NEW: clear validation messages inside a modal
+            function clearErrors(modal) {
+                modal.querySelectorAll(".is-invalid").forEach(function (i) { i.classList.remove("is-invalid"); });
+                modal.querySelectorAll(".field-error").forEach(function (s) { s.classList.remove("show"); s.textContent = ""; });
+            }
+
             function closeModal(modalId) {
-                document.getElementById(modalId).classList.remove("show");
+                var modal = document.getElementById(modalId);
+                modal.classList.remove("show");
+                clearErrors(modal);
                 document.body.style.overflow = "";
             }
 
@@ -1485,6 +1706,7 @@
                 modal.addEventListener("click", function (event) {
                     if (event.target === modal) {
                         modal.classList.remove("show");
+                        clearErrors(modal);
                         document.body.style.overflow = "";
                     }
                 });
@@ -1496,6 +1718,7 @@
                 if (event.key === "Escape") {
                     document.querySelectorAll(".modal-overlay.show").forEach(function (modal) {
                         modal.classList.remove("show");
+                        clearErrors(modal);
                     });
                     document.body.style.overflow = "";
                 }
@@ -1508,6 +1731,86 @@
                     setTimeout(function () { alert.remove(); }, 400);
                 });
             }, 5000);
+
+            // NEW: form validation (forms marked with data-validate)
+            (function () {
+                function setError(input, msg) {
+                    var err = input.parentElement.querySelector(".field-error");
+                    input.classList.toggle("is-invalid", !!msg);
+                    if (err) {
+                        err.textContent = msg || "";
+                        err.classList.toggle("show", !!msg);
+                    }
+                    return !msg;
+                }
+
+                function validateField(input, form) {
+                    var d = input.dataset;
+                    var v = (input.value || "").trim();
+
+                    if (d.required !== undefined && v === "") return setError(input, d.required);
+                    if (v === "") return setError(input, "");   // optional + empty = OK
+
+                    if (d.minlength && v.length < +d.minlength)
+                        return setError(input, "Must be at least " + d.minlength + " characters.");
+                    if (d.maxlength && v.length > +d.maxlength)
+                        return setError(input, "Must be at most " + d.maxlength + " characters.");
+                    if (d.pattern && !new RegExp(d.pattern).test(v))
+                        return setError(input, d.patternMsg || "Invalid format.");
+
+                    if (input.type === "number") {
+                        var n = parseFloat(v);
+                        if (isNaN(n)) return setError(input, "Enter a valid number.");
+                        if (d.integer !== undefined && !Number.isInteger(n)) return setError(input, d.integer);
+                        if ((d.min !== undefined && n < +d.min) || (d.max !== undefined && n > +d.max))
+                            return setError(input, d.rangeMsg || "Value out of range.");
+
+                        if (d.lte) {
+                            var other = form.querySelector('[name="' + d.lte + '"]');
+                            if (other && other.value !== "" && n > parseFloat(other.value))
+                                return setError(input, "Minimum cannot exceed maximum.");
+                        }
+                        if (d.gte) {
+                            var other2 = form.querySelector('[name="' + d.gte + '"]');
+                            if (other2 && other2.value !== "" && n < parseFloat(other2.value))
+                                return setError(input, "Maximum cannot be less than minimum.");
+                        }
+                    }
+                    return setError(input, "");
+                }
+
+                document.querySelectorAll("form[data-validate]").forEach(function (form) {
+                    var fields = form.querySelectorAll("input[name], select[name], textarea[name]");
+
+                    fields.forEach(function (f) {
+                        if (f.type === "hidden") return;
+
+                        f.addEventListener("blur", function () { validateField(f, form); });
+                        f.addEventListener("change", function () { validateField(f, form); });
+                        f.addEventListener("input", function () {
+                            if (f.classList.contains("is-invalid")) validateField(f, form);
+                            // keep the paired min/max fields in sync
+                            var pair = f.dataset.lte || f.dataset.gte;
+                            if (pair) {
+                                var p = form.querySelector('[name="' + pair + '"]');
+                                if (p && p.classList.contains("is-invalid")) validateField(p, form);
+                            }
+                        });
+                    });
+
+                    form.addEventListener("submit", function (e) {
+                        var ok = true, first = null;
+                        fields.forEach(function (f) {
+                            if (f.type === "hidden") return;
+                            if (!validateField(f, form)) { ok = false; first = first || f; }
+                        });
+                        if (!ok) {
+                            e.preventDefault();
+                            first.focus();
+                        }
+                    });
+                });
+            })();
 
             (function () {
                 /* ── LOGOUT MODAL ── */

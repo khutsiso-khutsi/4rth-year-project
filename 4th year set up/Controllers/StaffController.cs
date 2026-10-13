@@ -1,45 +1,43 @@
-﻿using LabManager.Models;
+﻿using BCrypt.Net;
+using LabManager.Models;
 using LabManager.Repositories;
 using LabManager.Repository;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace LabManager.Controllers
 {
     public class StaffController : Controller
     {
         private readonly IStaffRepository _staffRepository;
+        private readonly IEmailService _emailService;
+        private readonly IConfiguration _configuration;
 
-        public StaffController(
-            IStaffRepository staffRepository)
+
+
+        public StaffController(IStaffRepository staffRepository,IEmailService emailService,IConfiguration configuration)
         {
             _staffRepository = staffRepository;
+            _emailService = emailService;
+            _configuration = configuration;
+
         }
-
-
-        // ============================================================
-        // STAFF PAGE
-        // ============================================================
 
         [HttpGet]
         public async Task<IActionResult> Index()
         {
             try
             {
-                var doctors =
-                    await _staffRepository.GetAllDoctor();
-
-                var technicians =
-                    await _staffRepository.GetTechnician();
-
-                var testTypes =
-                    await _staffRepository.GetAllTestTypes();
-
                 var model = new StaffViewModel
                 {
-                    Doctors = doctors,
-                    Technicians = technicians,
-                    TestTypes = testTypes
+                    Doctors = await _staffRepository.GetAllDoctor(),
+                    Technicians = await _staffRepository.GetTechnician(),
+
                 };
+
+
+                IEnumerable<TestType> category = await _staffRepository.GetTestType();
+                ViewBag.Supplier = category.Select(c => new SelectListItem { Value = c.TestId.ToString(), Text = c.TestName });
 
                 ViewBag.Email =
                     HttpContext.Session.GetString("Email")
@@ -48,20 +46,14 @@ namespace LabManager.Controllers
 
                 return View(model);
             }
-            catch (Exception ex)
+            catch
             {
                 TempData["Error"] =
-                    "Unable to load staff information: "
-                    + ex.Message;
+                    "Unable to load staff information.";
 
                 return View(new StaffViewModel());
             }
         }
-
-
-        // ============================================================
-        // ADD DOCTOR
-        // ============================================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -72,83 +64,67 @@ namespace LabManager.Controllers
             string email,
             string contactNumber)
         {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(firstName))
-                {
-                    TempData["Error"] =
-                        "First name is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (string.IsNullOrWhiteSpace(lastName))
-                {
-                    TempData["Error"] =
-                        "Last name is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (string.IsNullOrWhiteSpace(hpcsaNumber))
-                {
-                    TempData["Error"] =
-                        "HPCSA number is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (string.IsNullOrWhiteSpace(email))
-                {
-                    TempData["Error"] =
-                        "Email address is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-
-                var doctor = new Doctor
-                {
-                    FirstName = firstName.Trim(),
-                    LastName = lastName.Trim(),
-                    HCPSANumber = hpcsaNumber.Trim(),
-                    EmailAddress = email.Trim(),
-                    ContactNumber = contactNumber?.Trim(),
-                    IsActive = true,
-                    Status = "Active"
-                };
-
-
-                bool result =
-                    await _staffRepository.AddDoctor(doctor);
-
-
-                if (result)
-                {
-                    TempData["Success"] =
-                        "Doctor added successfully.";
-                }
-                else
-                {
-                    TempData["Error"] =
-                        "Unable to add doctor.";
-                }
-
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
+            if (string.IsNullOrWhiteSpace(firstName) ||
+                string.IsNullOrWhiteSpace(lastName) ||
+                string.IsNullOrWhiteSpace(hpcsaNumber) ||
+                string.IsNullOrWhiteSpace(email))
             {
                 TempData["Error"] =
-                    "Unable to add doctor: " + ex.Message;
+                    "First name, last name, HPCSA number and email are required.";
 
                 return RedirectToAction(nameof(Index));
             }
+
+            string temporaryPassword =
+                TemporaryPasswordGenerator.Generate();
+
+            string passwordHash =
+                BCrypt.Net.BCrypt.HashPassword(temporaryPassword);
+
+            DateTime expiryUtc =
+                DateTime.UtcNow.AddMinutes(30);
+
+            var doctor = new Doctor
+            {
+                FirstName = firstName.Trim(),
+                LastName = lastName.Trim(),
+                HCPSANumber = hpcsaNumber.Trim(),
+                EmailAddress = email.Trim(),
+                ContactNumber = contactNumber?.Trim(),
+                IsActive = true,
+                Status = "Active"
+            };
+
+            try
+            {
+                int userId =
+                    await _staffRepository.CreateDoctorAccount(
+                        doctor, passwordHash, expiryUtc);
+
+                if (userId <= 0)
+                    throw new InvalidOperationException(
+                        "The account could not be created.");
+
+                await SendInvitationEmail(
+                    doctor.EmailAddress,
+                    doctor.FullName,
+                    temporaryPassword,
+                    expiryUtc);
+
+                TempData["Success"] =
+                    "Doctor account created and invitation emailed.";
+            }
+            catch
+            {
+                // The account might already exist if email delivery failed.
+                // Do not retry account creation blindly.
+                TempData["Error"] =
+                    "The doctor account could not be fully processed. " +
+                    "Check the staff list before trying again.";
+            }
+
+            return RedirectToAction(nameof(Index));
         }
-
-
-        // ============================================================
-        // EDIT DOCTOR
-        // ============================================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -160,49 +136,18 @@ namespace LabManager.Controllers
             string email,
             string contactNumber)
         {
+            if (id <= 0 ||
+                string.IsNullOrWhiteSpace(firstName) ||
+                string.IsNullOrWhiteSpace(lastName) ||
+                string.IsNullOrWhiteSpace(hpcsaNumber) ||
+                string.IsNullOrWhiteSpace(email))
+            {
+                TempData["Error"] = "Please provide valid doctor details.";
+                return RedirectToAction(nameof(Index));
+            }
+
             try
             {
-                if (id <= 0)
-                {
-                    TempData["Error"] =
-                        "Invalid doctor.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (string.IsNullOrWhiteSpace(firstName))
-                {
-                    TempData["Error"] =
-                        "First name is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (string.IsNullOrWhiteSpace(lastName))
-                {
-                    TempData["Error"] =
-                        "Last name is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (string.IsNullOrWhiteSpace(hpcsaNumber))
-                {
-                    TempData["Error"] =
-                        "HPCSA number is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (string.IsNullOrWhiteSpace(email))
-                {
-                    TempData["Error"] =
-                        "Email address is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-
                 var doctor = new Doctor
                 {
                     Id = id,
@@ -213,37 +158,16 @@ namespace LabManager.Controllers
                     ContactNumber = contactNumber?.Trim()
                 };
 
-
-                bool result =
-                    await _staffRepository.UpdateDoctor(doctor);
-
-
-                if (result)
-                {
-                    TempData["Success"] =
-                        "Doctor updated successfully.";
-                }
-                else
-                {
-                    TempData["Error"] =
-                        "Unable to update doctor.";
-                }
-
-                return RedirectToAction(nameof(Index));
+                await _staffRepository.UpdateDoctor(doctor);
+                TempData["Success"] = "Doctor updated successfully.";
             }
-            catch (Exception ex)
+            catch
             {
-                TempData["Error"] =
-                    "Unable to update doctor: " + ex.Message;
-
-                return RedirectToAction(nameof(Index));
+                TempData["Error"] = "Unable to update doctor.";
             }
+
+            return RedirectToAction(nameof(Index));
         }
-
-
-        // ============================================================
-        // ADD TECHNICIAN
-        // ============================================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -254,92 +178,66 @@ namespace LabManager.Controllers
             string email,
             int testTypeID)
         {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(firstName))
-                {
-                    TempData["Error"] =
-                        "First name is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (string.IsNullOrWhiteSpace(lastName))
-                {
-                    TempData["Error"] =
-                        "Last name is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (string.IsNullOrWhiteSpace(employeeNumber))
-                {
-                    TempData["Error"] =
-                        "Employee number is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (string.IsNullOrWhiteSpace(email))
-                {
-                    TempData["Error"] =
-                        "Email address is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (testTypeID <= 0)
-                {
-                    TempData["Error"] =
-                        "Please select a test type.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-
-                var technician = new Technician
-                {
-                    FirstName = firstName.Trim(),
-                    LastName = lastName.Trim(),
-                    EmployeeNumber = employeeNumber.Trim(),
-                    EmailAddress = email.Trim(),
-                    TestTypeID = testTypeID,
-                    IsActive = true,
-                    Status = "Active"
-                };
-
-
-                bool result =
-                    await _staffRepository.AddTechnician(
-                        technician);
-
-
-                if (result)
-                {
-                    TempData["Success"] =
-                        "Laboratory technician added successfully.";
-                }
-                else
-                {
-                    TempData["Error"] =
-                        "Unable to add laboratory technician.";
-                }
-
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
+            if (string.IsNullOrWhiteSpace(firstName) ||
+                string.IsNullOrWhiteSpace(lastName) ||
+                string.IsNullOrWhiteSpace(employeeNumber) ||
+                string.IsNullOrWhiteSpace(email) ||
+                testTypeID <= 0)
             {
                 TempData["Error"] =
-                    "Unable to add technician: " + ex.Message;
+                    "Complete all required technician fields.";
 
                 return RedirectToAction(nameof(Index));
             }
+
+            string temporaryPassword =
+                TemporaryPasswordGenerator.Generate();
+
+            string passwordHash =
+                BCrypt.Net.BCrypt.HashPassword(temporaryPassword);
+
+            DateTime expiryUtc =
+                DateTime.UtcNow.AddMinutes(30);
+
+            var technician = new Technician
+            {
+                FirstName = firstName.Trim(),
+                LastName = lastName.Trim(),
+                EmployeeNumber = employeeNumber.Trim(),
+                EmailAddress = email.Trim(),
+                TestTypeID = testTypeID,
+                IsActive = true,
+                Status = "Active"
+            };
+
+            try
+            {
+                int userId =
+                    await _staffRepository.CreateTechnicianAccount(
+                        technician, passwordHash, expiryUtc);
+
+                if (userId <= 0)
+                    throw new InvalidOperationException(
+                        "The account could not be created.");
+
+                await SendInvitationEmail(
+                    technician.EmailAddress,
+                    technician.FullName,
+                    temporaryPassword,
+                    expiryUtc);
+
+                TempData["Success"] =
+                    "Technician account created and invitation emailed.";
+            }
+            catch
+            {
+                TempData["Error"] =
+                    "The technician account could not be fully processed. " +
+                    "Check the staff list before trying again.";
+            }
+
+            return RedirectToAction(nameof(Index));
         }
-
-
-        // ============================================================
-        // EDIT TECHNICIAN
-        // ============================================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -351,57 +249,21 @@ namespace LabManager.Controllers
             string email,
             int testTypeID)
         {
+            if (id <= 0 ||
+                string.IsNullOrWhiteSpace(firstName) ||
+                string.IsNullOrWhiteSpace(lastName) ||
+                string.IsNullOrWhiteSpace(employeeNumber) ||
+                string.IsNullOrWhiteSpace(email) ||
+                testTypeID <= 0)
+            {
+                TempData["Error"] =
+                    "Please provide valid technician details.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
             try
             {
-                if (id <= 0)
-                {
-                    TempData["Error"] =
-                        "Invalid technician.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (string.IsNullOrWhiteSpace(firstName))
-                {
-                    TempData["Error"] =
-                        "First name is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (string.IsNullOrWhiteSpace(lastName))
-                {
-                    TempData["Error"] =
-                        "Last name is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (string.IsNullOrWhiteSpace(employeeNumber))
-                {
-                    TempData["Error"] =
-                        "Employee number is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (string.IsNullOrWhiteSpace(email))
-                {
-                    TempData["Error"] =
-                        "Email address is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (testTypeID <= 0)
-                {
-                    TempData["Error"] =
-                        "Please select a test type.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-
                 var technician = new Technician
                 {
                     Id = id,
@@ -412,32 +274,90 @@ namespace LabManager.Controllers
                     TestTypeID = testTypeID
                 };
 
-
-                bool result =
-                    await _staffRepository.UpdateTechnician(
-                        technician);
-
-
-                if (result)
-                {
-                    TempData["Success"] =
-                        "Laboratory technician updated successfully.";
-                }
-                else
-                {
-                    TempData["Error"] =
-                        "Unable to update technician.";
-                }
-
-                return RedirectToAction(nameof(Index));
+                await _staffRepository.UpdateTechnician(technician);
+                TempData["Success"] =
+                    "Technician updated successfully.";
             }
-            catch (Exception ex)
+            catch
             {
                 TempData["Error"] =
-                    "Unable to update technician: " + ex.Message;
-
-                return RedirectToAction(nameof(Index));
+                    "Unable to update technician.";
             }
+
+            return RedirectToAction(nameof(Index));
         }
+
+
+        private async Task SendInvitationEmail(
+            string email,
+            string fullName,
+            string temporaryPassword,
+            DateTime expiryUtc)
+        {
+            string loginUrl =
+                _configuration["AppSettings:LoginUrl"]
+                ?? throw new InvalidOperationException(
+                    "The login URL has not been configured.");
+
+            string safeName =
+                System.Net.WebUtility.HtmlEncode(fullName);
+
+            string safeEmail =
+                System.Net.WebUtility.HtmlEncode(email);
+
+            string safePassword =
+                System.Net.WebUtility.HtmlEncode(temporaryPassword);
+
+            string safeLoginUrl =
+                System.Net.WebUtility.HtmlEncode(loginUrl);
+
+            string subject = "Your NMB-HLabSys account";
+
+            string body = $"""
+        <html>
+        <body style="font-family: Arial, sans-serif; color: #333;">
+            <h2>Welcome to NMB-HLabSys</h2>
+
+            <p>Hello {safeName},</p>
+
+            <p>Your staff account has been created successfully.</p>
+
+            <p><strong>Username:</strong> {safeEmail}</p>
+            <p><strong>Temporary password:</strong> {safePassword}</p>
+
+            <p>
+                <a href="{safeLoginUrl}"
+                   style="background-color: #0d9488; color: white;
+                          padding: 10px 16px; text-decoration: none;
+                          border-radius: 5px;">
+                    Sign in to NMB-HLabSys
+                </a>
+            </p>
+
+            <p>
+                This temporary password expires at
+                {expiryUtc:yyyy-MM-dd HH:mm} UTC.
+            </p>
+
+            <p>
+                Change your password after signing in.
+            </p>
+
+            <p>
+                If you did not expect this account, contact your
+                system administrator.
+            </p>
+
+            <p>Regards,<br/>NMB-HLabSys Administration</p>
+        </body>
+        </html>
+        """;
+
+            await _emailService.SendEmailAsync(
+                email,
+                subject,
+                body);
+        }
+
     }
 }

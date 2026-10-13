@@ -13,23 +13,31 @@
     var suppliers = ViewBag.Suppliers as IEnumerable<Supplier>
                     ?? Enumerable.Empty<Supplier>();
 
-    // Consumables for the dropdown. Accepts either a list of Consumable
-    // or a list of SelectListItem so the dropdown is never silently empty.
-    var consumableItems = new List<(int Id, string Name)>();
+    // Use one consistent SelectListItem collection for the view and JavaScript.
+    var consumableItems =
+        ViewBag.Consumables as IEnumerable<SelectListItem>
+        ?? ViewBag.Consumable as IEnumerable<SelectListItem>
+        ?? Enumerable.Empty<SelectListItem>();
 
-    if (ViewBag.Consumables is IEnumerable<Consumable> consumableList)
+
+     var supplierDictionary = new Dictionary<string, string>();
+
+    if (ViewBag.Supplier is IEnumerable<dynamic> supplier)
     {
-        consumableItems = consumableList
-            .Select(c => (Convert.ToInt32(c.ConsumableID), c.ConsumableName ?? ""))
-            .ToList();
+        // Populate the dictionary with valid fridge data
+        supplierDictionary = supplier.ToDictionary(supplier => (string)supplier.Value, supplier => (string)supplier.Text);
     }
-    else if (ViewBag.Consumables is IEnumerable<SelectListItem> consumableSelectList)
+
+
+    var consumableDictionary = new Dictionary<string, string>();
+
+    if (ViewBag.Consumables is IEnumerable<dynamic> consumable)
     {
-        consumableItems = consumableSelectList
-            .Where(s => int.TryParse(s.Value, out _))
-            .Select(s => (int.Parse(s.Value), s.Text ?? ""))
-            .ToList();
+        // Populate the dictionary with valid fridge data
+        consumableDictionary = consumable.ToDictionary(consumable => (string)consumable.Value, consumable => (string)consumable .Text);
     }
+
+
 
     var email = ViewBag.Email as string ?? "";
 
@@ -37,6 +45,9 @@
     var errorMessage = TempData["Error"] as string;
 
     var orders = Model ?? Enumerable.Empty<ConsumableOrder>();
+
+
+
 }
 
 <!DOCTYPE html>
@@ -971,7 +982,7 @@
                         <input type="text"
                                id="order-search"
                                class="form-input search-box"
-                               placeholder="Search order, supplier or item..."
+                               placeholder="Search order, supplier or consumable..."
                                autocomplete="off" />
                     </div>
 
@@ -993,7 +1004,7 @@
                             <tr>
                                 <th>Order Number</th>
                                 <th>Supplier</th>
-                                <th>Items</th>
+                                <th>Consumable</th>
                                 <th>Order Date</th>
                                 <th>Status</th>
                                 <th>Actions</th>
@@ -1029,8 +1040,20 @@
                                         data-items="@order.Items">
 
                                         <td><div class="order-number">@order.OrderNumber</div></td>
-                                        <td><div class="supplier-name">@supplierName</div></td>
-                                        <td><div class="items">@order.Items</div></td>
+                                        <td><div class="supplier-name">
+                                             @{
+                                                var supplierItem = ((IEnumerable<SelectListItem>)ViewBag.Supplier)
+                                                    .FirstOrDefault(s => s.Value == order.SupplierID.ToString());
+                                            }
+                                            @(supplierItem?.Text ?? "No supplier")
+                                        </div></td>
+                                        <td><div class="items">
+                                             @{
+                                                var consumableItem = consumableItems
+                                                    .FirstOrDefault(s => s.Value == order.ConsumableID.ToString());
+                                            }
+                                            @(consumableItem?.Text ?? "No consumable")
+                                        </div></td>
                                         <td><div class="date">@order.OrderDate.ToString("dd MMM yyyy HH:mm")</div></td>
                                         <td><span class="status @statusClass">@order.Status</span></td>
 
@@ -1153,7 +1176,7 @@
                     <div class="modal-form-group">
 
                         <label class="form-label">
-                            Order Items <span class="required">*</span>
+                            Consumables <span class="required">*</span>
                         </label>
 
                         <div id="order-items-container">
@@ -1166,7 +1189,7 @@
                                         <option value="">Select Consumable</option>
                                         @foreach (var c in consumableItems)
                                         {
-                                            <option value="@c.Id">@c.Name</option>
+                                            <option value="@c.Value">@c.Text</option>
                                         }
                                     </select>
                                 </div>
@@ -1360,17 +1383,21 @@
          JAVASCRIPT
          ============================================================ -->
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
+       document.addEventListener("DOMContentLoaded", function () {
 
-            /* =========================================================
-               DATA FROM RAZOR
-            ========================================================= */
+    /* =========================================================
+       DATA FROM RAZOR
+    ========================================================= */
 
-            const consumableOptions = @Html.Raw(
-                JsonSerializer.Serialize(
-                    consumableItems.Select(c => new { id = c.Id, name = c.Name })
-                )
-            );
+    const consumableOptions = @Html.Raw(
+        JsonSerializer.Serialize(
+            consumableItems.Select(c => new
+            {
+                id = c.Value,
+                name = c.Text
+            })
+        )
+    );
 
             /* =========================================================
                HELPERS

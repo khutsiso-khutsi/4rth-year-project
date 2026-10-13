@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,8 @@ namespace LabManager.Models
         public int Id { get; set; }
         public string OrderNumber { get; set; }
         public int  SupplierID { get; set; }
+
+        public int ConsumableID { get; set; }
         public string Items { get; set; }
         public DateTime OrderDate { get; set; }
         public string Status { get; set; }

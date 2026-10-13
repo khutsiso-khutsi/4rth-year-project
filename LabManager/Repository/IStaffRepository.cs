@@ -1,53 +1,37 @@
 ﻿using LabManager.Models;
 
-namespace LabManager.Repositories
+
+public interface IStaffRepository
 {
-    public interface IStaffRepository
-    {
-        // ============================================================
-        // DOCTOR
-        // ============================================================
+    Task<int> CreateDoctorAccount(
+        Doctor doctor,
+        string passwordHash,
+        DateTime expiryUtc);
 
-        Task<bool> AddDoctor(Doctor doctor);
+    Task<int> CreateTechnicianAccount(
+        Technician technician,
+        string passwordHash,
+        DateTime expiryUtc);
 
-        Task<bool> UpdateDoctor(Doctor doctor);
+    Task<bool> UpdateDoctor(Doctor doctor);
+    Task<IEnumerable<Doctor>> GetAllDoctor();
+    Task<Doctor?> GetDoctorById(int id);
 
-        Task<IEnumerable<Doctor>> GetAllDoctor();
+    Task<bool> UpdateTechnician(Technician technician);
+    Task<IEnumerable<Technician>> GetTechnician();
+    Task<Technician?> GetTechnicianById(int id);
 
-        Task<Doctor> GetDoctorById(int id);
+    Task<IEnumerable<TestType>> GetAllTestTypes();
 
-
-        // ============================================================
-        // TECHNICIAN
-        // ============================================================
-
-        Task<bool> AddTechnician(Technician tech);
-
-        Task<bool> UpdateTechnician(Technician tech);
-
-        Task<IEnumerable<Technician>> GetTechnician();
-
-        Task<Technician> GetTechnicianById(int id);
+    Task<IEnumerable<TestType>> GetTestType();
 
 
-        // ============================================================
-        // TEST TYPE
-        // ============================================================
+}
 
-        Task<IEnumerable<TestType>> GetAllTestTypes();
-
-
-    }
-
-   public interface IUserProfileRepository
-    {
-            Task<UserProfileViewModel?> GetProfileByEmail(string email);
-
-            Task<bool> UpdateProfile(UserProfileViewModel model);
-
-            Task<string?> GetPasswordHash(string email);
-
-            Task<bool> UpdatePassword(string email, string passwordHash);
-   }
-    
+public interface IUserProfileRepository
+{
+    Task<UserProfileViewModel?> GetProfileByEmail(string email);
+    Task<bool> UpdateProfile(UserProfileViewModel model);
+    Task<string?> GetPasswordHash(string email);
+    Task<bool> UpdatePassword(string email, string passwordHash);
 }
