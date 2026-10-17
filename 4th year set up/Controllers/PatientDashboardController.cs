@@ -46,10 +46,17 @@ namespace _4th_year_set_up.Controllers
             {
                 var requests = _userRepo.GetPatientTestRequests(patientId.Value);
                 var history = _userRepo.GetMedicalHistory(patientId.Value);
-
-                ViewBag.TestResultCount = requests?.Count ?? 0;
+                var safeRequests = requests ?? new List<Patient.Models.TestRequest>();
+                foreach (var request in safeRequests)
+                    request.Items = _userRepo.GetTestRequestItems(request.RequestID);
+                ViewBag.TestResultCount = safeRequests.Count(r => string.Equals(r.RequestStatus, "Completed", StringComparison.OrdinalIgnoreCase));
                 ViewBag.ActiveConditionCount = history?.Conditions?.Count ?? 0;
                 ViewBag.ActiveMedicationCount = history?.Medications?.Count ?? 0;
+                ViewBag.HasAbnormalResults = safeRequests.Any(r =>
+                    (r.Items ?? new List<TestRequestItem>()).Any(i => i.IsAbnormal));
+                ViewData["Requests"] = safeRequests.OrderByDescending(r => r.RequestDate).Take(5).ToList();
+                var profile = _userRepo.GetPatientProfile(patientId.Value);
+                ViewBag.PatientName = profile == null ? null : $"{profile.FirstName} {profile.LastName}";
             }
             else
             {
@@ -319,6 +326,7 @@ namespace _4th_year_set_up.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult UpdateProfile(ProfileViewModel model)
         {
             if (!IsPatient())
@@ -327,11 +335,38 @@ namespace _4th_year_set_up.Controllers
             var patientId = GetCurrentPatientId();
             if (patientId == null) return RedirectToAction("Index");
 
-            _userRepo.UpdatePatientProfile(patientId.Value, model.FirstName, model.LastName,
-        model.DateOfBirth, model.CellphoneNumber, model.HomeAddress, model.Email);
+            var current = _userRepo.GetPatientProfile(patientId.Value);
+            if (current == null) return RedirectToAction("Index");
+            _userRepo.UpdatePatientProfile(patientId.Value, current.FirstName, current.LastName,
+                current.DateOfBirth, model.CellphoneNumber, model.HomeAddress,
+                HttpContext.Session.GetString("Email") ?? current.Email);
 
             Log("Updated profile");
             TempData["Success"] = "Profile updated successfully.";
+            return RedirectToAction("Profile");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult UpdateAccountInfo(ProfileViewModel model)
+        {
+            if (!IsPatient()) return RedirectToAction("Login", "Home");
+            var patientId = GetCurrentPatientId();
+            if (patientId == null) return RedirectToAction("Index");
+
+            var current = _userRepo.GetPatientProfile(patientId.Value);
+            if (current == null) return RedirectToAction("Index");
+            if (string.IsNullOrWhiteSpace(model.FirstName) || string.IsNullOrWhiteSpace(model.LastName))
+            {
+                TempData["Error"] = "First name and last name are required.";
+                return RedirectToAction("Profile");
+            }
+
+            _userRepo.UpdatePatientProfile(patientId.Value, model.FirstName.Trim(), model.LastName.Trim(),
+                model.DateOfBirth, current.CellphoneNumber, current.HomeAddress,
+                HttpContext.Session.GetString("Email") ?? current.Email);
+            TempData["Success"] = "Account details updated successfully.";
+            Log("Updated profile");
             return RedirectToAction("Profile");
         }
 

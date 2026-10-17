@@ -37,9 +37,10 @@ namespace _4th_year_set_up.Controllers
 
         private void SetSession()
         {
-            ViewBag.Email =
-                HttpContext.Session.GetString("Email")
-                ?? "manager@nmbhdl.co.za";
+            ViewBag.Email = HttpContext.Session.GetString("Email") ?? "";
+            ViewBag.DisplayName = HttpContext.Session.GetString("Username")
+                ?? ViewBag.Email?.ToString()?.Split('@').FirstOrDefault()
+                ?? "Manager";
         }
 
 
@@ -134,10 +135,9 @@ namespace _4th_year_set_up.Controllers
             // =====================================================
 
             var openOrders = orders
-                .Where(x =>
-                    x.Status == "Ordered" ||
-                    x.Status == "Partially complete" ||
-                    x.Status == "Partially Complete")
+                .Where(x => x.Status != null &&
+                    (x.Status.Equals("Ordered", StringComparison.OrdinalIgnoreCase) ||
+                     x.Status.Equals("Partially complete", StringComparison.OrdinalIgnoreCase)))
                 .ToList();
 
 
@@ -187,6 +187,10 @@ namespace _4th_year_set_up.Controllers
 
                 TechnicianCount = technicians.Count,
 
+                Doctors = doctors,
+
+                Technicians = technicians,
+
 
                 // -------------------------------------------------
                 // Orders
@@ -215,81 +219,81 @@ namespace _4th_year_set_up.Controllers
         // REPORT
         // =========================================================
 
-        public IActionResult Report()
-        {
-            return RedirectToAction(nameof(TestsByCategory));
-        }
+        //public IActionResult Report()
+        //{
+        //    return RedirectToAction(nameof(TestsByCategory));
+        //}
 
 
-        // =========================================================
-        // TESTS BY CATEGORY REPORT
-        // =========================================================
+        //// =========================================================
+        //// TESTS BY CATEGORY REPORT
+        //// =========================================================
 
-        [HttpGet]
-        public IActionResult TestsByCategory(
-            DateTime? from,
-            DateTime? to)
-        {
-            SetSession();
+        //[HttpGet]
+        //public IActionResult TestsByCategory(
+        //    DateTime? from,
+        //    DateTime? to)
+        //{
+        //    SetSession();
 
-            DateTime fromDate =
-                from ?? new DateTime(2026, 8, 1);
+        //    DateTime fromDate =
+        //        from ?? new DateTime(2026, 8, 1);
 
-            DateTime toDate =
-                to ?? new DateTime(2026, 8, 30);
-
-
-            var categories =
-                new List<CategoryReportItemViewModel>
-                {
-                    new CategoryReportItemViewModel
-                    {
-                        CategoryName = "Full Blood Count",
-                        TestCount = 120
-                    },
-
-                    new CategoryReportItemViewModel
-                    {
-                        CategoryName = "Coagulation",
-                        TestCount = 70
-                    },
-
-                    new CategoryReportItemViewModel
-                    {
-                        CategoryName = "Blood Chemistry",
-                        TestCount = 60
-                    }
-                };
+        //    DateTime toDate =
+        //        to ?? new DateTime(2026, 8, 30);
 
 
-            int totalTests =
-                categories.Sum(x => x.TestCount);
+        //    var categories =
+        //        new List<CategoryReportItemViewModel>
+        //        {
+        //            new CategoryReportItemViewModel
+        //            {
+        //                CategoryName = "Full Blood Count",
+        //                TestCount = 120
+        //            },
+
+        //            new CategoryReportItemViewModel
+        //            {
+        //                CategoryName = "Coagulation",
+        //                TestCount = 70
+        //            },
+
+        //            new CategoryReportItemViewModel
+        //            {
+        //                CategoryName = "Blood Chemistry",
+        //                TestCount = 60
+        //            }
+        //        };
 
 
-            foreach (var category in categories)
-            {
-                category.Percentage =
-                    totalTests > 0
-                        ? ((decimal)category.TestCount /
-                           totalTests) * 100
-                        : 0;
-            }
+        //    int totalTests =
+        //        categories.Sum(x => x.TestCount);
 
 
-            var report =
-                new TestsByCategoryReportViewModel
-                {
-                    FromDate = fromDate,
-                    ToDate = toDate,
-                    TotalTests = totalTests,
-                    Categories = categories
-                };
+        //    foreach (var category in categories)
+        //    {
+        //        category.Percentage =
+        //            totalTests > 0
+        //                ? ((decimal)category.TestCount /
+        //                   totalTests) * 100
+        //                : 0;
+        //    }
 
 
-            return View(
-                "~/Views/ManagerDashboard/TestsByCategory.cshtml",
-                report);
-        }
+        //    var report =
+        //        new TestsByCategoryReportViewModel
+        //        {
+        //            FromDate = fromDate,
+        //            EndDate = toDate,
+        //            TotalTests = totalTests,
+        //            Categories = categories
+        //        };
+
+
+        //    return View(
+        //        "~/Views/ManagerDashboard/TestsByCategory.cshtml",
+        //        report);
+        //}
 
 
         // =========================================================

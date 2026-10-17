@@ -5,7 +5,7 @@ using LabManager.Repository;
 
 namespace LabManager.Repositories
 {
-    public class ConsumableOrderRepository: IOrderRepository
+    public class ConsumableOrderRepository : IOrderRepository
     {
         private readonly ISqlDataAcess _db;
 
@@ -37,11 +37,11 @@ namespace LabManager.Repositories
         public async Task<IEnumerable<ConsumableOrder>> GetOrderById(
             int id)
         {
-            return await _db.GetData<ConsumableOrder, object>(
+            return await _db.GetData<ConsumableOrder, dynamic>(
                 "sp_GetConsumableOrderById",
                 new
                 {
-                    Id = id
+                    OrderId = id
                 });
         }
 
@@ -50,7 +50,10 @@ namespace LabManager.Repositories
         // CREATE ORDER
         // =========================================================
 
-        public async Task CreateOrder(ConsumableOrder order)
+
+        public async Task CreateOrder(
+            ConsumableOrder order,
+            string orderItemsJson)
         {
             await _db.SaveData(
                 "sp_CreateConsumableOrder",
@@ -58,7 +61,8 @@ namespace LabManager.Repositories
                 {
                     OrderNumber = order.OrderNumber,
                     SupplierID = order.SupplierID,
-                    ConsumableID = order.ConsumableID,
+                    OrderDate = order.OrderDate,
+                    OrderItemsJson = orderItemsJson
                 });
         }
 
@@ -117,5 +121,23 @@ namespace LabManager.Repositories
                 "sp_GetorderConsumables",
                 new { });
         }
+
+
+
+      
+
+public async Task<IEnumerable<Consumable>> GetConsumablesBySupplier(int supplierId)
+    {
+        if (supplierId <= 0)
+            return Enumerable.Empty<Consumable>();
+
+        return await _db.GetData<Consumable, dynamic>(
+            "dbo.sp_GetConsumablesBySupplier",
+            new { SupplierID = supplierId });
+    }
+
+
+
+
     }
 }

@@ -1,4 +1,5 @@
 ﻿@using LabManager.Models
+@using System.Text.Json
 @model IEnumerable<TestType>
 
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
@@ -1012,7 +1013,7 @@
                     Test Catalogue
                 </a>
 
-                <a asp-controller="Consumable" asp-action="Index" class="nav-item">
+                <a asp-controller="Consumables" asp-action="Index" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                         <polyline points="14 2 14 8 20 8" />
@@ -1112,8 +1113,9 @@
                                     <th>Unit</th>
                                     <th>Normal Range</th>
                                     <th>TAT</th>
-                                    <th>Consumables</th>
-                                    <th>Actions</th>
+                            <th>Consumables</th>
+                            <th>Assigned Technician</th>
+                            <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1157,6 +1159,13 @@
                                             {
                                                 <span style="color:#94a3b8;">None</span>
                                             }
+                                        </td>
+                                        <td>
+                                            @{ 
+                                                var techMap = ViewBag.TechnicianMap as IDictionary<int, string> ?? new Dictionary<int, string>();
+                                                var assigned = techMap.ContainsKey(test.TestId) ? techMap[test.TestId] : "—";
+                                            }
+                                            <div>@assigned</div>
                                         </td>
                                         <td>
                                             <div class="actions">
@@ -1328,8 +1337,11 @@
 
                         <div class="form-group full">
                             <label class="form-label">Consumables Used</label>
-                            <textarea name="ConsumablesUsed" class="form-control" placeholder="e.g. EDTA Tube, Reagent A"
-                                      data-maxlength="500"></textarea>
+                            <div id="consumables-list">
+                                <!-- rows will be added here -->
+                            </div>
+                            <button type="button" class="btn" onclick="addConsumableRow()">+ Add Consumable</button>
+                            <input type="hidden" id="ConsumablesJson" name="ConsumablesJson" />
                             <span class="field-error"></span>
                         </div>
 
@@ -1338,12 +1350,92 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">Cancel</button>
+
+                    <!-- Removed Create Orders button: order creation moved to Consumable Orders page -->
+                    <!-- <button type="button" class="btn btn-warning" onclick="createOrdersFromModal()">Create Orders</button> -->
                     <button type="submit" class="btn btn-primary">✓ Save Test Type</button>
                 </div>
 
             </form>
         </div>
     </div>
+
+    <script>
+        // Removed supplier/consumable selection from TestCatalogue -- orders are created from Consumable Orders page
+        function addConsumableRow() {
+            const container = document.getElementById('consumables-list');
+            const idx = container.children.length;
+
+            const row = document.createElement('div');
+            row.className = 'consumable-row';
+            row.innerHTML = `
+                <div class="row-grid">
+                    <input type="text" name="consumableName" class="form-control" placeholder="Consumable name" />
+                    <input type="number" name="quantityUsed" class="form-control" min="1" value="1" />
+                    <button type="button" class="btn btn-danger" onclick="this.closest('.consumable-row').remove()">Remove</button>
+                </div>`;
+
+            container.appendChild(row);
+        }
+
+        // Before submitting the Add Test Type form, collect consumable name/qty into hidden field
+        (function attachFormHandler() {
+            const form = document.querySelector('form[asp-controller="TestCatalogue"][asp-action="AddTestType"]') || document.querySelector('#addModal form');
+            if (!form) return;
+            form.addEventListener('submit', function (e) {
+                const rows = document.querySelectorAll('#consumables-list .consumable-row');
+                const items = [];
+                rows.forEach(r => {
+                    const consumableName = r.querySelector('input[name="consumableName"]').value;
+                    const qty = r.querySelector('input[name="quantityUsed"]').value;
+                    if (consumableName) {
+                        items.push({ name: consumableName, quantity: parseInt(qty || 0) });
+                    }
+                });
+
+                // allow saving a test without consumables
+                document.getElementById('ConsumablesJson').value = JSON.stringify(items);
+            });
+        })();
+
+        // Trigger creating orders for selected consumables (posts to ConsumableOrder/CreateOrdersBulk)
+        async function createOrdersFromModal() {
+            const tokenInput = document.querySelector('#addModal input[name="__RequestVerificationToken"]');
+            const token = tokenInput ? tokenInput.value : '';
+            const rows = document.querySelectorAll('#consumables-list .consumable-row');
+            const items = [];
+            rows.forEach(r => {
+                const supplierId = r.querySelector('.supplier-select').value;
+                const consumableId = r.querySelector('.consumable-select').value;
+                const qty = r.querySelector('input[name="quantityOrdered"]').value;
+                if (consumableId) {
+                    items.push({ supplierId: parseInt(supplierId || 0), consumableId: parseInt(consumableId), quantityOrdered: parseInt(qty || 0) });
+                }
+            });
+
+            if (!items.length) { alert('Please add at least one consumable'); return; }
+
+            try {
+                const resp = await fetch('/ConsumableOrder/CreateOrdersBulk', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `consumablesJson=${encodeURIComponent(JSON.stringify(items))}&__RequestVerificationToken=${encodeURIComponent(token)}`
+                });
+
+                if (resp.ok) {
+                    // reload to show orders and any messages
+                    window.location.reload();
+                } else {
+                    alert('Failed to create orders');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Failed to create orders');
+            }
+        }
+    </script>
 
     <!-- =====================================================
          ADD CATEGORY MODAL

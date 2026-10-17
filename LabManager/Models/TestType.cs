@@ -121,6 +121,10 @@ namespace LabManager.Models
             /// </summary>
             public int TechnicianCount { get; set; }
 
+            public IEnumerable<Doctor> Doctors { get; set; } = new List<Doctor>();
+
+            public IEnumerable<Technician> Technicians { get; set; } = new List<Technician>();
+
 
             // ============================================================
             // CONSUMABLE ORDERS

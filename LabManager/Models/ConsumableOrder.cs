@@ -15,6 +15,8 @@ namespace LabManager.Models
 
         public int ConsumableID { get; set; }
         public string Items { get; set; }
+
+        public int QuantityOrdered { get; set; }
         public DateTime OrderDate { get; set; }
         public string Status { get; set; }
         public DateTime? CompletedDate { get; set; }

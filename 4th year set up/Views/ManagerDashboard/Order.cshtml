@@ -27,7 +27,7 @@
           content="width=device-width, initial-scale=1.0" />
 
     <title>
-        Consumable Orders — NMB-HLabSys
+        Consumable Orders � NMB-HLabSys
     </title>
 
     <style>
@@ -779,43 +779,43 @@
             <a href="@Url.Action("Index", "ManagerDashboard")"
                class="nav-link">
 
-                <span class="nav-icon">▦</span>
+                <span class="nav-icon">?</span>
 
                 Dashboard
 
             </a>
 
-            <a href="@Url.Action("TestCatalogue", "ManagerDashboard")"
+            <a href="@Url.Action("Index", "TestCatalogue")"
                class="nav-link">
 
-                <span class="nav-icon">🧪</span>
+                <span class="nav-icon">??</span>
 
                 Test Catalogue
 
             </a>
 
-            <a href="@Url.Action("Consumables", "ManagerDashboard")"
+            <a href="@Url.Action("Index", "Consumables")"
                class="nav-link">
 
-                <span class="nav-icon">📦</span>
+                <span class="nav-icon">??</span>
 
                 Consumables
 
             </a>
 
-            <a href="@Url.Action("Staff", "ManagerDashboard")"
+            <a href="@Url.Action("Index", "Staff")"
                class="nav-link">
 
-                <span class="nav-icon">👥</span>
+                <span class="nav-icon">??</span>
 
                 Staff
 
             </a>
 
-            <a href="@Url.Action("Orders", "ManagerDashboard")"
+            <a href="@Url.Action("Index", "ConsumableOrder")"
                class="nav-link active">
 
-                <span class="nav-icon">🛒</span>
+                <span class="nav-icon">??</span>
 
                 Orders
 
@@ -825,10 +825,10 @@
                 Reports
             </div>
 
-            <a href="@Url.Action("ReportIndex", "ManagerDashboard")"
+            <a href="@Url.Action("Index", "TestsByCategory")"
                class="nav-link">
 
-                <span class="nav-icon">📊</span>
+                <span class="nav-icon">??</span>
 
                 Reports
 
@@ -837,7 +837,7 @@
             <a href="@Url.Action("AuditLog", "ManagerDashboard")"
                class="nav-link">
 
-                <span class="nav-icon">📋</span>
+                <span class="nav-icon">??</span>
 
                 Audit Log
 
@@ -847,10 +847,10 @@
                 Account
             </div>
 
-            <a href="@Url.Action("Profile", "ManagerDashboard")"
+            <a href="@Url.Action("Profile", "User")"
                class="nav-link">
 
-                <span class="nav-icon">👤</span>
+                <span class="nav-icon">??</span>
 
                 Profile
 
@@ -940,14 +940,14 @@
                      id="success-alert">
 
                     <span>
-                        ✓ @successMessage
+                        ? @successMessage
                     </span>
 
                     <button type="button"
                             class="alert-close"
                             onclick="closeAlert('success-alert')">
 
-                        ×
+                        �
 
                     </button>
 
@@ -960,14 +960,14 @@
                      id="error-alert">
 
                     <span>
-                        ⚠ @errorMessage
+                        ? @errorMessage
                     </span>
 
                     <button type="button"
                             class="alert-close"
                             onclick="closeAlert('error-alert')">
 
-                        ×
+                        �
 
                     </button>
 
@@ -982,7 +982,7 @@
             <div class="filter-card">
 
                 <form method="get"
-                      action="@Url.Action("Orders", "ManagerDashboard")"
+                      action="@Url.Action("Index", "ConsumableOrder")"
                       class="filter-form">
 
                     <div class="form-group">
@@ -1210,7 +1210,7 @@
                                                 @if (order.Status == "Complete")
                                                 {
                                                     <span style="font-size:12px;color:var(--green);">
-                                                        ✓ Completed
+                                                        ? Completed
                                                     </span>
                                                 }
 
@@ -1237,7 +1237,7 @@
                                         <div class="empty-state">
 
                                             <div class="empty-icon">
-                                                📦
+                                                ??
                                             </div>
 
                                             <h3>
@@ -1299,7 +1299,7 @@
                         class="modal-close"
                         onclick="closeModal('m-create-order')">
 
-                    ×
+                    �
 
                 </button>
 
@@ -1445,7 +1445,7 @@
                         class="modal-close"
                         onclick="closeModal('m-receive-order')">
 
-                    ×
+                    �
 
                 </button>
 
@@ -1554,7 +1554,7 @@
                         class="modal-close"
                         onclick="closeModal('m-cancel-order')">
 
-                    ×
+                    �
 
                 </button>
 
@@ -1833,7 +1833,7 @@
                 document.getElementById(
                     'recv-sub'
                 ).textContent =
-                    orderNumber + ' — ' + supplier;
+                    orderNumber + ' � ' + supplier;
 
 
                 var container =
@@ -2230,7 +2230,7 @@
                     'cancel-sub'
                 ).textContent =
                     orderNumber +
-                    ' — ' +
+                    ' � ' +
                     supplier;
 
 

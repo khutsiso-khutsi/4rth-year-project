@@ -56,16 +56,11 @@ namespace _4th_year_set_up.Controllers
             HttpContext.Session.SetInt32("RoleID", user.RoleID);
             HttpContext.Session.SetString("RoleName", user.RoleName);
             HttpContext.Session.SetString("Username", Username.Trim());
+            HttpContext.Session.SetString("Email", user.Email);
 
             _userRepo.UpdateLastLogin(user.UserID);
 
-            return user.RoleID switch
-            {
-                1 => RedirectToAction("Dashboard", "Admin"),
-                2 => RedirectToAction("DoctorDashboard", "Doctor"),
-                5 => RedirectToAction("Index", "PatientDashboard"),
-                _ => RedirectToAction("Index", "Home")
-            };
+            return RedirectToDashboard(user.RoleName);
         }
 
         // ── DEV SHORTCUT LOGIN (bypasses password for dev/testing) ──

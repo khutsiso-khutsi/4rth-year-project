@@ -28,17 +28,21 @@ namespace LabManager.Controllers
         {
             try
             {
+                var doctors = await _staffRepository.GetAllDoctor();
+                var technicians = await _staffRepository.GetTechnician();
+              
+
                 var model = new StaffViewModel
                 {
-                    Doctors = await _staffRepository.GetAllDoctor(),
-                    Technicians = await _staffRepository.GetTechnician(),
-
+                    Doctors = doctors?.ToList() ?? new List<Doctor>(),
+                    Technicians = technicians?.ToList() ?? new List<Technician>(),
+                  
                 };
 
 
-                IEnumerable<TestType> category = await _staffRepository.GetTestType();
-                ViewBag.Supplier = category.Select(c => new SelectListItem { Value = c.TestId.ToString(), Text = c.TestName });
-
+                // Reuse the already-fetched testTypes for the ViewBag
+                IEnumerable<TestType> test = await _staffRepository.GetTestType ();
+                ViewBag.TestType = test.Select(c => new SelectListItem { Value = c.TestId.ToString(), Text = c.TestName });
                 ViewBag.Email =
                     HttpContext.Session.GetString("Email")
                     ?? User.Identity?.Name
@@ -46,15 +50,21 @@ namespace LabManager.Controllers
 
                 return View(model);
             }
-            catch
+            catch (Exception ex)
             {
-                TempData["Error"] =
-                    "Unable to load staff information.";
+                // Log the real error while preserving the existing page.
+                Console.WriteLine($"Error loading staff tables: {ex}");
 
-                return View(new StaffViewModel());
+                TempData["Error"] = "Unable to load staff information.";
+
+                return View(new StaffViewModel
+                {
+                    Doctors = new List<Doctor>(),
+                    Technicians = new List<Technician>(),
+                    TestTypes = new List<TestType>()
+                });
             }
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddDoctor(
@@ -109,7 +119,8 @@ namespace LabManager.Controllers
                     doctor.EmailAddress,
                     doctor.FullName,
                     temporaryPassword,
-                    expiryUtc);
+                    expiryUtc,
+                    "Doctor");
 
                 TempData["Success"] =
                     "Doctor account created and invitation emailed.";
@@ -224,7 +235,8 @@ namespace LabManager.Controllers
                     technician.EmailAddress,
                     technician.FullName,
                     temporaryPassword,
-                    expiryUtc);
+                    expiryUtc,
+                    "Technician");
 
                 TempData["Success"] =
                     "Technician account created and invitation emailed.";
@@ -292,7 +304,8 @@ namespace LabManager.Controllers
             string email,
             string fullName,
             string temporaryPassword,
-            DateTime expiryUtc)
+            DateTime expiryUtc,
+            string role)
         {
             string loginUrl =
                 _configuration["AppSettings:LoginUrl"]
@@ -313,6 +326,8 @@ namespace LabManager.Controllers
 
             string subject = "Your NMB-HLabSys account";
 
+            string safeRole = System.Net.WebUtility.HtmlEncode(role);
+
             string body = $"""
         <html>
         <body style="font-family: Arial, sans-serif; color: #333;">
@@ -320,7 +335,7 @@ namespace LabManager.Controllers
 
             <p>Hello {safeName},</p>
 
-            <p>Your staff account has been created successfully.</p>
+            <p>Your staff account ({safeRole}) has been created successfully.</p>
 
             <p><strong>Username:</strong> {safeEmail}</p>
             <p><strong>Temporary password:</strong> {safePassword}</p>

@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <Folder Include="DataAccess\" />
+    <Folder Include="Repositories\" />
   </ItemGroup>
 
   <ItemGroup>

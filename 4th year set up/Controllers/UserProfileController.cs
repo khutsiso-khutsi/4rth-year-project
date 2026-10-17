@@ -1,6 +1,6 @@
 ﻿using BCrypt.Net;
 using LabManager.Models;
-using LabManager.Repositories;
+using LabManager.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -23,8 +23,9 @@ namespace LabManager.Controllers
         [HttpGet]
         public async Task<IActionResult> Profile()
         {
-            // Temporary email for testing
-            string email = "john.doe@example.com";
+            var email = HttpContext.Session.GetString("Email");
+            if (string.IsNullOrWhiteSpace(email))
+                return RedirectToAction("Login", "Home");
 
             var profile =
                 await _userProfileRepository
@@ -41,8 +42,45 @@ namespace LabManager.Controllers
             }
 
             ViewBag.Email = profile.Email;
+            ViewBag.Success = TempData["Success"];
+            ViewBag.Error = TempData["Error"];
 
             return View(profile);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateAccountInfo(UserProfileViewModel model)
+        {
+            var email = HttpContext.Session.GetString("Email");
+            if (string.IsNullOrWhiteSpace(email))
+                return RedirectToAction("Login", "Home");
+
+            var profile = await _userProfileRepository.GetProfileByEmail(email);
+            if (profile == null)
+            {
+                TempData["Error"] = "Your signed-in account could not be found.";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            if (string.IsNullOrWhiteSpace(model.FirstName) || string.IsNullOrWhiteSpace(model.LastName))
+            {
+                TempData["Error"] = "First name and last name are required.";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            // Keep account identity and contact details tied to the authenticated user.
+            model.UserID = profile.UserID;
+            model.Email = profile.Email;
+            model.IDNumber = profile.IDNumber;
+            model.CellphoneNumber = profile.CellphoneNumber;
+            model.HomeAddress = profile.HomeAddress;
+
+            var updated = await _userProfileRepository.UpdateProfile(model);
+            TempData[updated ? "Success" : "Error"] = updated
+                ? "Account information updated successfully."
+                : "Your account information could not be updated.";
+            return RedirectToAction(nameof(Profile));
         }
 
 
@@ -127,6 +165,11 @@ namespace LabManager.Controllers
                 }
 
                 model.UserID = existingProfile.UserID;
+                model.Email = existingProfile.Email;
+                model.FirstName = existingProfile.FirstName;
+                model.LastName = existingProfile.LastName;
+                model.IDNumber = existingProfile.IDNumber;
+                model.DateOfBirth = existingProfile.DateOfBirth;
 
                 bool updated =
                     await _userProfileRepository

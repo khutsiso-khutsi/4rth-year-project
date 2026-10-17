@@ -18,7 +18,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Consumables Management — NMB-HLabSys</title>
+    <title>Consumables Management � NMB-HLabSys</title>
 
     <style>
 
@@ -1057,7 +1057,7 @@
         <div class="brand">
 
             <div class="brand-icon">
-                🧪
+                ??
             </div>
 
             <div class="brand-text">
@@ -1114,39 +1114,39 @@
             <a href="@Url.Action("Index", "ManagerDashboard")"
                class="nav-item">
 
-                <span class="nav-icon">▦</span>
+                <span class="nav-icon">?</span>
                 <span>Dashboard</span>
 
             </a>
 
-            <a href="@Url.Action("TestCatalogue", "ManagerDashboard")"
+            <a href="@Url.Action("Index", "TestCatalogue")"
                class="nav-item">
 
-                <span class="nav-icon">🧪</span>
+                <span class="nav-icon">??</span>
                 <span>Test Catalogue</span>
 
             </a>
 
-            <a href="@Url.Action("Consumables", "ManagerDashboard")"
+            <a href="@Url.Action("Index", "Consumables")"
                class="nav-item active">
 
-                <span class="nav-icon">📦</span>
+                <span class="nav-icon">??</span>
                 <span>Consumables</span>
 
             </a>
 
-            <a href="@Url.Action("Staff", "ManagerDashboard")"
+            <a href="@Url.Action("Index", "Staff")"
                class="nav-item">
 
-                <span class="nav-icon">👥</span>
+                <span class="nav-icon">??</span>
                 <span>Staff</span>
 
             </a>
 
-            <a href="@Url.Action("Orders", "ManagerDashboard")"
+            <a href="@Url.Action("Index", "ConsumableOrder")"
                class="nav-item">
 
-                <span class="nav-icon">📋</span>
+                <span class="nav-icon">??</span>
                 <span>Orders</span>
 
             </a>
@@ -1160,10 +1160,10 @@
                 Reports
             </div>
 
-            <a href="@Url.Action("Report", "ManagerDashboard")"
+            <a href="@Url.Action("Index", "TestsByCategory")"
                class="nav-item">
 
-                <span class="nav-icon">📊</span>
+                <span class="nav-icon">??</span>
                 <span>Reports</span>
 
             </a>
@@ -1171,7 +1171,7 @@
             <a href="@Url.Action("AuditLog", "ManagerDashboard")"
                class="nav-item">
 
-                <span class="nav-icon">🕘</span>
+                <span class="nav-icon">??</span>
                 <span>Audit Log</span>
 
             </a>
@@ -1185,10 +1185,10 @@
                 Account
             </div>
 
-            <a href="@Url.Action("Profile", "ManagerDashboard")"
+            <a href="@Url.Action("Profile", "User")"
                class="nav-item">
 
-                <span class="nav-icon">⚙</span>
+                <span class="nav-icon">?</span>
                 <span>Profile</span>
 
             </a>
@@ -1250,14 +1250,14 @@
         @if (TempData["Success"] != null)
         {
             <div class="alert alert-success">
-                ✓ @TempData["Success"]
+                ? @TempData["Success"]
             </div>
         }
 
         @if (TempData["Error"] != null)
         {
             <div class="alert alert-error">
-                ⚠ @TempData["Error"]
+                ? @TempData["Error"]
             </div>
         }
 
@@ -1384,7 +1384,7 @@
                 <div class="search-box">
 
                     <span class="search-icon">
-                        🔍
+                        ??
                     </span>
 
                     <input type="text"
@@ -1581,7 +1581,7 @@
                                     <div class="empty-state">
 
                                         <div class="empty-icon">
-                                            📦
+                                            ??
                                         </div>
 
                                         No consumables found.
@@ -1623,7 +1623,7 @@
                         class="modal-close"
                         onclick="closeModal('m-add-consumable')">
 
-                    ×
+                    �
 
                 </button>
 
@@ -1761,7 +1761,7 @@
                         class="modal-close"
                         onclick="closeModal('m-add-supplier')">
 
-                    ×
+                    �
 
                 </button>
 
@@ -1881,7 +1881,7 @@
                         class="modal-close"
                         onclick="closeModal('m-adjust-stock')">
 
-                    ×
+                    �
 
                 </button>
 
@@ -2005,7 +2005,7 @@
                         class="modal-close"
                         onclick="closeModal('m-view-consumable')">
 
-                    ×
+                    �
 
                 </button>
 
@@ -2146,7 +2146,7 @@
                         class="modal-close"
                         onclick="closeModal('m-edit-consumable')">
 
-                    ×
+                    �
 
                 </button>
 
@@ -2270,7 +2270,7 @@
                         class="modal-close"
                         onclick="closeModal('m-delete-consumable')">
 
-                    ×
+                    �
 
                 </button>
 
@@ -2547,7 +2547,7 @@
                 .textContent =
                 "Current: " +
                 onHand +
-                " units · Reorder level: " +
+                " units � Reorder level: " +
                 reorderLevel;
 
             document.getElementById("stock-adj-val")

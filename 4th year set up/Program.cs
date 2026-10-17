@@ -44,10 +44,14 @@ builder.Services.AddTransient<IConsumablesRepository, ConsumablesRepository>();
 builder.Services.AddTransient<IOrderRepository, ConsumableOrderRepository>();
 builder.Services.AddTransient<ITestCatalogueRepository, TestCatalogueRepository>();
 builder.Services.AddTransient<IStaffRepository, StaffRepository>();
+builder.Services.AddScoped<IUserProfileRepository, UserProfileRepository>();
 builder.Services.AddTransient<IEmailService, LabManager.Repository.EmailService>();
 // Register the concrete EmailService used by HomeController so the DI container can resolve it
 builder.Services.AddTransient<_4th_year_set_up.Services.EmailService>();
-
+builder.Services.AddTransient<
+    ITestsByCategoryRepository,
+    TestsByCategoryRepository>();
+builder.Services.AddLogging();
 
 
 

@@ -10,7 +10,7 @@
     var reportDate = DateTime.Now.ToString("dd MMMM yyyy");
 
     var fromDate = Model.FromDate.ToString("dd MMMM yyyy");
-    var toDate = Model.ToDate.ToString("dd MMMM yyyy");
+    var toDate = Model.EndDate.ToString("dd MMMM yyyy");
 }
 
 <!DOCTYPE html>
@@ -652,7 +652,7 @@
                 </a>
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="TestCatalogue"
+                   asp-controller="TestCatalogue" asp-action="Index"
                    class="nav-item">
 
                     <svg viewBox="0 0 24 24"
@@ -673,7 +673,7 @@
                 </a>
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="Consumables"
+                   asp-controller="Consumables" asp-action="Index"
                    class="nav-item">
 
                     <svg viewBox="0 0 24 24"
@@ -693,7 +693,7 @@
                 </a>
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="Staff"
+                   asp-controller="Staff" asp-action="Index"
                    class="nav-item">
 
                     <svg viewBox="0 0 24 24"
@@ -713,7 +713,7 @@
                 </a>
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="Orders"
+                   asp-controller="ConsumableOrder" asp-action="Index"
                    class="nav-item">
 
                     <svg viewBox="0 0 24 24"
@@ -732,7 +732,7 @@
                 </a>
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="TestsByCategory"
+                   asp-controller="TestsByCategory" asp-action="Index"
                    class="nav-item active">
 
                     <svg viewBox="0 0 24 24"
@@ -764,7 +764,7 @@
                 </div>
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="Profile"
+                   asp-controller="User" asp-action="Profile"
                    class="nav-item">
 
                     <svg viewBox="0 0 24 24"
@@ -824,7 +824,7 @@
 
                 <form method="get"
                       asp-controller="ManagerDashboard"
-                      asp-action="TestsByCategory"
+                      asp-controller="TestsByCategory" asp-action="Index"
                       class="filter-bar">
 
                     <div class="field">
@@ -850,7 +850,7 @@
                         <input type="date"
                                id="to"
                                name="to"
-                               value="@Model.ToDate.ToString("yyyy-MM-dd")" />
+                               value="@Model.EndDate.ToString("yyyy-MM-dd")" />
 
                     </div>
 
@@ -1074,11 +1074,11 @@
                 <div class="footer">
 
                     <span>
-                        NMB-HLabSys · Haematology Laboratory System
+                        NMB-HLabSys � Haematology Laboratory System
                     </span>
 
                     <span>
-                        Internal management report ·
+                        Internal management report �
                         @DateTime.Now.ToString("yyyy")
                     </span>
 

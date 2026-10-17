@@ -10,11 +10,17 @@ namespace LabManager.Controllers
     public class TestCatalogueController : Controller
     {
         private readonly ITestCatalogueRepository _repository;
+        private readonly LabManager.Repository.IOrderRepository _orderRepository;
+        private readonly LabManager.Repository.IStaffRepository _staffRepository;
 
         public TestCatalogueController(
-            ITestCatalogueRepository repository)
+            ITestCatalogueRepository repository,
+            LabManager.Repository.IOrderRepository orderRepository,
+            LabManager.Repository.IStaffRepository staffRepository)
         {
             _repository = repository;
+            _orderRepository = orderRepository;
+            _staffRepository = staffRepository;
         }
 
         // =========================================================
@@ -37,6 +43,22 @@ namespace LabManager.Controllers
                     .ToList();
 
                 var tests = await _repository.GetAllTestTypes();
+
+                // Provide a simple map of TestTypeId -> assigned technician name (first assigned)
+                try
+                {
+                    var technicians = await _staffRepository.GetTechnician();
+                    var techMap = technicians
+                        .Where(t => t.TestTypeID > 0)
+                        .GroupBy(t => t.TestTypeID)
+                        .ToDictionary(g => g.Key, g => g.First().FullName);
+
+                    ViewBag.TechnicianMap = techMap;
+                }
+                catch
+                {
+                    ViewBag.TechnicianMap = new Dictionary<int, string>();
+                }
 
                 ViewBag.Email = HttpContext.Session.GetString("Email");
 
@@ -115,6 +137,13 @@ namespace LabManager.Controllers
                         "Normal range minimum cannot be greater than maximum.";
 
                     return RedirectToAction(nameof(Index));
+                }
+
+                // capture consumables JSON from form and assign so repository can persist it
+                var consumablesJson = Request.Form["ConsumablesJson"].FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(consumablesJson))
+                {
+                    test.ConsumablesUsed = consumablesJson;
                 }
 
                 var result =

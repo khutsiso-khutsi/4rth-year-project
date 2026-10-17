@@ -1,4 +1,5 @@
-@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model LabManager.Models.DashboardViewModel
 @{
     ViewData["Title"] = "Manager Dashboard";
     Layout = null;
@@ -730,7 +731,7 @@
                     </svg>
                     Orders
                 </a>
-                <a asp-controller="ManagerDashboard" asp-action="TestsByCategory" class="nav-item">
+                <a asp-controller="TestsByCategory" asp-action="Index" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                         <polyline points="14 2 14 8 20 8" />
@@ -765,7 +766,7 @@
             <div class="welcome-banner">
                 <div class="welcome-inner">
                     <div class="welcome-tag">Lab Manager Portal</div>
-                    <h1>Welcome back, <em>Manager</em></h1>
+                    <h1>Welcome back, <em>@(ViewBag.DisplayName ?? "Manager")</em></h1>
                     <p>Here's an overview of lab operations for today — @DateTime.Now.ToString("dddd, dd MMMM yyyy")</p>
                 </div>
             </div>
@@ -777,10 +778,10 @@
                         <div class="stat-icon" style="background:var(--teal-light)">
                             <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
                         </div>
-                        <span class="stat-trend trend-up">+12%</span>
+                        <span class="stat-trend trend-neutral">Catalogue</span>
                     </div>
-                    <div class="stat-value">148</div>
-                    <div class="stat-label">Total Test Requests</div>
+                    <div class="stat-value">@Model.TestTypeCount</div>
+                    <div class="stat-label">Test Catalogue Items</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-top">
@@ -789,18 +790,18 @@
                         </div>
                         <span class="stat-trend trend-neutral">Pending</span>
                     </div>
-                    <div class="stat-value">23</div>
-                    <div class="stat-label">Awaiting Processing</div>
+                    <div class="stat-value">@Model.LowStockCount</div>
+                    <div class="stat-label">Stock Items Needing Attention</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-top">
                         <div class="stat-icon" style="background:var(--green-light)">
                             <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
                         </div>
-                        <span class="stat-trend trend-up">+8%</span>
+                        <span class="stat-trend trend-neutral">Suppliers</span>
                     </div>
-                    <div class="stat-value">112</div>
-                    <div class="stat-label">Completed Today</div>
+                    <div class="stat-value">@Model.SupplierCount</div>
+                    <div class="stat-label">Suppliers</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-top">
@@ -809,8 +810,8 @@
                         </div>
                         <span class="stat-trend trend-down">Urgent</span>
                     </div>
-                    <div class="stat-value">5</div>
-                    <div class="stat-label">Urgent Requests</div>
+                    <div class="stat-value">@Model.OpenOrderCount</div>
+                    <div class="stat-label">Open Consumable Orders</div>
                 </div>
             </div>
 
@@ -824,54 +825,37 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
                             Recent Test Requests
                         </div>
-                        <a href="#" class="card-action">View all</a>
+                        <a asp-controller="ConsumableOrder" asp-action="Index" class="card-action">View all</a>
                     </div>
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>Request #</th>
-                                <th>Patient</th>
-                                <th>Doctor</th>
+                                <th>Order #</th>
+                                <th>Items</th>
+                                <th>Quantity</th>
                                 <th>Status</th>
                                 <th>Date</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td><strong>REQ-0148</strong></td>
-                                <td>Thabo Nkosi</td>
-                                <td>Dr. Smith</td>
-                                <td><span class="badge badge-urgent">Urgent</span></td>
-                                <td style="color:var(--muted)">Today</td>
-                            </tr>
-                            <tr>
-                                <td><strong>REQ-0147</strong></td>
-                                <td>Zanele Dlamini</td>
-                                <td>Dr. Mokoena</td>
-                                <td><span class="badge badge-inprogress">In Progress</span></td>
-                                <td style="color:var(--muted)">Today</td>
-                            </tr>
-                            <tr>
-                                <td><strong>REQ-0146</strong></td>
-                                <td>Sipho Khumalo</td>
-                                <td>Dr. Smith</td>
-                                <td><span class="badge badge-completed">Completed</span></td>
-                                <td style="color:var(--muted)">Yesterday</td>
-                            </tr>
-                            <tr>
-                                <td><strong>REQ-0145</strong></td>
-                                <td>Nomsa Ndlovu</td>
-                                <td>Dr. Patel</td>
-                                <td><span class="badge badge-pending">Pending</span></td>
-                                <td style="color:var(--muted)">Yesterday</td>
-                            </tr>
-                            <tr>
-                                <td><strong>REQ-0144</strong></td>
-                                <td>Bongani Zulu</td>
-                                <td>Dr. Mokoena</td>
-                                <td><span class="badge badge-completed">Completed</span></td>
-                                <td style="color:var(--muted)">2 days ago</td>
-                            </tr>
+                            @if (Model.RecentOrders.Any())
+                            {
+                                @foreach (var order in Model.RecentOrders)
+                                {
+                                    var orderBadge = order.Status?.Contains("complete", StringComparison.OrdinalIgnoreCase) == true ? "badge-completed" : "badge-pending";
+                                    <tr>
+                                        <td><strong>@order.OrderNumber</strong></td>
+                                        <td>@order.Items</td>
+                                        <td>@order.QuantityOrdered</td>
+                                        <td><span class="badge @orderBadge">@order.Status</span></td>
+                                        <td style="color:var(--muted)">@order.OrderDate.ToString("dd MMM yyyy")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr><td colspan="5" class="text-muted">No consumable orders yet.</td></tr>
+                            }
                         </tbody>
                     </table>
                 </div>
@@ -888,21 +872,21 @@
                             </div>
                         </div>
                         <div class="quick-actions">
-                            <a href="#" class="action-btn">
+                            <a asp-controller="TestCatalogue" asp-action="Index" class="action-btn">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                                New Request
+                                Test Catalogue
                             </a>
-                            <a href="#" class="action-btn">
+                            <a asp-controller="Staff" asp-action="Index" class="action-btn">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                                Add Staff
+                                Manage Staff
                             </a>
-                            <a href="#" class="action-btn">
+                            <a asp-controller="TestsByCategory" asp-action="Index" class="action-btn">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-                                Export Report
-                            </a>
-                            <a href="#" class="action-btn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
                                 View Reports
+                            </a>
+                            <a asp-controller="Consumables" asp-action="Index" class="action-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                                Manage Consumables
                             </a>
                         </div>
                     </div>
@@ -914,40 +898,24 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                                 Staff on Duty
                             </div>
-                            <a href="#" class="card-action">All staff</a>
+                            <a asp-controller="Staff" asp-action="Index" class="card-action">All staff</a>
                         </div>
-                        <div class="staff-item">
-                            <div class="staff-avatar" style="background:#2563eb">JS</div>
-                            <div class="staff-info">
-                                <div class="staff-name">Dr. John Smith</div>
-                                <div class="staff-role">Doctor</div>
+                        @foreach (var person in Model.Doctors.Select(d => new { Name = $"Dr. {d.FirstName} {d.LastName}", Role = "Doctor" })
+                            .Concat(Model.Technicians.Select(t => new { Name = $"{t.FirstName} {t.LastName}", Role = "Lab Technician" })).Take(4))
+                        {
+                            <div class="staff-item">
+                                <div class="staff-avatar" style="background:var(--teal)">@string.Concat(person.Name.Split(' ').Where(n => n.Length > 0).Take(2).Select(n => n[0]))</div>
+                                <div class="staff-info">
+                                    <div class="staff-name">@person.Name</div>
+                                    <div class="staff-role">@person.Role</div>
+                                </div>
+                                <div class="staff-status status-online" title="Active account"></div>
                             </div>
-                            <div class="staff-status status-online" title="Online"></div>
-                        </div>
-                        <div class="staff-item">
-                            <div class="staff-avatar" style="background:#0d9488">SM</div>
-                            <div class="staff-info">
-                                <div class="staff-name">Dr. Sarah Mokoena</div>
-                                <div class="staff-role">Doctor</div>
-                            </div>
-                            <div class="staff-status status-online" title="Online"></div>
-                        </div>
-                        <div class="staff-item">
-                            <div class="staff-avatar" style="background:#ea580c">KD</div>
-                            <div class="staff-info">
-                                <div class="staff-name">Kagiso Dlamini</div>
-                                <div class="staff-role">Lab Technician</div>
-                            </div>
-                            <div class="staff-status status-online" title="Online"></div>
-                        </div>
-                        <div class="staff-item">
-                            <div class="staff-avatar" style="background:#6b7a99">NP</div>
-                            <div class="staff-info">
-                                <div class="staff-name">Nandi Patel</div>
-                                <div class="staff-role">Lab Technician</div>
-                            </div>
-                            <div class="staff-status status-offline" title="Offline"></div>
-                        </div>
+                        }
+                        @if (!Model.Doctors.Any() && !Model.Technicians.Any())
+                        {
+                            <p class="text-muted">No staff records are available.</p>
+                        }
                     </div>
 
                 </div>
@@ -963,7 +931,7 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                             Recent Activity
                         </div>
-                        <a href="#" class="card-action">Full log</a>
+                        <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="card-action">Full log</a>
                     </div>
                     <div class="activity-item">
                         <div class="activity-dot" style="background:var(--red)"></div>
@@ -1075,7 +1043,7 @@
             <p style="font-size:0.85rem;color:var(--muted);margin-bottom:24px;line-height:1.6;">You'll be returned to the login screen. Any unsaved changes will be lost.</p>
             <div style="display:flex;gap:10px;">
                 <button id="logout-cancel" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:white;color:var(--navy);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancel</button>
-                <a id="logout-confirm" href="#" style="flex:1;padding:10px;border:none;border-radius:10px;background:#dc2626;color:white;font-size:0.85rem;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;font-family:'DM Sans',sans-serif;">Sign Out</a>
+                <a id="logout-confirm" asp-controller="Home" asp-action="Logout" style="flex:1;padding:10px;border:none;border-radius:10px;background:#dc2626;color:white;font-size:0.85rem;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;font-family:'DM Sans',sans-serif;">Sign Out</a>
             </div>
         </div>
     </div>

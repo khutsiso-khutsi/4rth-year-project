@@ -3,7 +3,7 @@ using LabManager.DataAccess;
 using LabManager.Models;
 using LabManager.Repository;
 
-namespace LabManager.Repositories
+namespace LabManager.Repository
 {
     public class StaffRepository : IStaffRepository
     {
