@@ -1,0 +1,257 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model _4th_year_set_up.Models.TestListViewModel
+@using _4th_year_set_up.Models
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = null;
+    var email = ViewBag.Email?.ToString();
+    var initial = string.IsNullOrEmpty(email) ? "T" : email.Substring(0, 1).ToUpper();
+
+    // Which sidebar item is highlighted: queue/awaiting/verified -> Testing Queue, mine -> My Tests
+    var queueActive = (Model.Mode == "queue" || Model.Mode == "awaiting" || Model.Mode == "verified") ? "active" : "";
+    var mineActive = Model.Mode == "mine" ? "active" : "";
+    var sampleActive = Model.Mode == "samples" ? "active" : "";
+    var resultActive = Model.Mode == "results" ? "active" : "";
+
+    // Counts for the filter chips reflect the rows on THIS screen
+    int cAll = Model.Items.Count;
+    int cUrgent = Model.Items.Count(t => t.IsUrgent);
+    int cOverdue = Model.Items.Count(t => t.Tat == TatStatus.Overdue);
+    int cNearing = Model.Items.Count(t => t.Tat == TatStatus.NearingTat);
+
+    var flash = TempData["Flash"] as string;
+    var flashType = TempData["FlashType"] as string ?? "ok";
+    var showTat = Model.Mode != "verified";   // TAT filters make no sense for verified tests
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@Model.Title — NMB-HLabSys</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/technician.css" />
+</head>
+<body>
+
+    @* ===== TOPBAR + SIDEBAR: identical to Index.cshtml. Only the "active" class moves. ===== *@
+    <div class="topbar">
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
+            </div>
+            <div class="brand-name">NMB-HLabSys<span>Haematology Lab System</span></div>
+        </a>
+        <div class="topbar-right">
+            <div class="user-chip">
+                <div class="user-avatar">@initial</div>
+                <span class="user-email">@email</span>
+            </div>
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Sign Out
+            </a>
+        </div>
+    </div>
+
+    <div class="page">
+        <aside class="sidebar">
+            <a asp-controller="TechnicianDashboard" asp-action="Index" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /><path d="M9 21v-6h6v6" /></svg>
+                Dashboard
+            </a>
+
+            <div class="nav-label">Samples and Requests</div>
+            <a asp-controller="TechnicianDashboard" asp-action="ReceiveSamples" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6" /><polyline points="16 6 12 10 8 6" /><line x1="12" y1="10" x2="12" y2="2" /></svg>
+                Receive Samples
+            </a>
+
+            <a asp-controller="TechnicianDashboard" asp-action="SampleVerification" class="nav-item @sampleActive">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" /><polyline points="9 14 11 16 15 12" /></svg>
+                Sample Verification
+            </a>
+
+            <div class="nav-label">Tests</div>
+            <a asp-controller="TechnicianDashboard" asp-action="TestQueue" class="nav-item @queueActive">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" /><line x1="9" y1="2" x2="15" y2="2" /></svg>
+                Testing Queue
+            </a>
+            <a asp-controller="TechnicianDashboard" asp-action="MyTests" class="nav-item @mineActive">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                My Tests
+            </a>
+
+            <div class="nav-label">Results</div>
+            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2" /><line x1="8" y1="8" x2="16" y2="8" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="8" y1="16" x2="13" y2="16" /></svg>
+                Capture Results
+            </a>
+            <a asp-controller="TechnicianDashboard" asp-action="Verification" class="nav-item @resultActive">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
+                Result Verification
+            </a>
+
+            <div class="nav-label">Reports</div>
+            <a asp-controller="TechnicianDashboard" asp-action="Reports" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="19" x2="20" y2="19" /><rect x="5" y="10" width="3" height="7" /><rect x="10.5" y="6" width="3" height="11" /><rect x="16" y="3" width="3" height="14" /></svg>
+                Reporting
+            </a>
+
+            <div class="nav-label">System</div>
+            <a asp-controller="TechnicianDashboard" asp-action="Profile" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                Profile
+            </a>
+        </aside>
+        @* ===== END shared topbar + sidebar ===== *@
+
+        <main class="main">
+
+            @if (!string.IsNullOrEmpty(flash))
+            {
+                <div class="flash flash-@flashType" role="status">@flash</div>
+            }
+
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">@Model.Title</div>
+                        <div class="card-sub">@Model.Subtitle</div>
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        @if (Model.Mode != "mine")
+                        {
+                            <a class="chip chip-mine" asp-controller="TechnicianDashboard" asp-action="MyTests">My Tests <span class="chip-count">@Model.Counts.MineCount</span></a>
+                        }
+                        <a class="btn btn-ghost" asp-controller="TechnicianDashboard" asp-action="Index">← Dashboard</a>
+                    </div>
+                </div>
+
+                <!-- FILTER BAR -->
+                <div class="filter-bar">
+                    <input type="text" id="filterReqNum" class="form-control form-control--search" placeholder="Search request # or patient" oninput="filterList()" aria-label="Search" />
+
+                    <button type="button" class="chip" data-filter="all" onclick="setFilter('all')">All <span class="chip-count">@cAll</span></button>
+                    <button type="button" class="chip chip-urgent" data-filter="urgent" onclick="setFilter('urgent')">Urgent <span class="chip-count">@cUrgent</span></button>
+                    @if (showTat)
+                    {
+                        <button type="button" class="chip chip-overdue" data-filter="overdue" onclick="setFilter('overdue')">Overdue <span class="chip-count">@cOverdue</span></button>
+                        <button type="button" class="chip chip-nearing" data-filter="nearing" onclick="setFilter('nearing')">Nearing TAT <span class="chip-count">@cNearing</span></button>
+                    }
+                    <button type="button" onclick="setFilter('all', true)" class="btn btn-ghost">Reset</button>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="table" id="testTable">
+                        <thead>
+                            <tr>
+                                <th>Request #</th>
+                                <th>Patient</th>
+                                <th>Test</th>
+                                <th>Priority</th>
+                                <th>Turnaround</th>
+                                <th>Stage</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var t in Model.Items)
+                            {
+                                var stageCss = t.StageCss;
+                                var tatCss = t.Tat switch
+                                {
+                                    TatStatus.Overdue => "badge-overdue",
+                                    TatStatus.NearingTat => "badge-nearing",
+                                    _ => "badge-ontrack"
+                                };
+                                <tr class="@(t.Tat == TatStatus.Overdue && t.IsActive ? "row-overdue" : "")"
+                                    data-search="@((t.ReqNum + " " + t.Patient).ToLower())"
+                                    data-urgent="@(t.IsUrgent ? "1" : "0")"
+                                    data-tat="@(t.Tat == TatStatus.Overdue ? "overdue" : t.Tat == TatStatus.NearingTat ? "nearing" : "ontrack")">
+                                    <td><partial name="_ReqLink" model="t" /></td>
+                                    <td>@t.Patient</td>
+                                    <td>@t.Test</td>
+                                    <td>
+                                        @if (t.IsUrgent)
+                                        {
+                                            <span class="badge badge-urgent">Urgent</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-routine">Routine</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (t.IsActive)
+                                        {
+                                            <span class="badge @tatCss">@t.TatLabel</span>
+                                        }
+                                        <span class="due-text">@t.DueText</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @stageCss">@t.StageLabel</span>
+                                        @if (t.Stage == TestStage.ToBeReviewed && !string.IsNullOrEmpty(t.ReviewNote))
+                                        {
+                                            <span class="due-text" title="@t.ReviewNote">Note: @t.ReviewNote</span>
+                                        }
+                                        @if (t.AssignedToMe && t.IsInQueue)
+                                        {
+                                            <span class="badge badge-mine">Mine</span>
+                                        }
+                                    </td>
+                                    <td class="actions-cell"><partial name="_TestActions" model="t" /></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="noResultsMsg" class="empty-state" style="display:none;">No matching tests found.</div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        var currentFilter = '@Model.InitialFilter';
+        if (['all', 'urgent', 'overdue', 'nearing'].indexOf(currentFilter) === -1) currentFilter = 'all';
+
+        function setFilter(f, clearSearch) {
+            currentFilter = f;
+            if (clearSearch) document.getElementById('filterReqNum').value = '';
+            filterList();
+        }
+
+        function filterList() {
+            var q = document.getElementById('filterReqNum').value.trim().toLowerCase();
+            var rows = document.querySelectorAll('#testTable tbody tr');
+            var visible = 0;
+
+            rows.forEach(function (row) {
+                var matchFilter =
+                    currentFilter === 'all' ||
+                    (currentFilter === 'urgent' && row.dataset.urgent === '1') ||
+                    (currentFilter === row.dataset.tat);
+                var matchSearch = !q || row.dataset.search.indexOf(q) !== -1;
+                var show = matchFilter && matchSearch;
+                row.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+
+            document.querySelectorAll('.filter-bar .chip[data-filter]').forEach(function (c) {
+                c.classList.toggle('active', c.dataset.filter === currentFilter);
+            });
+            document.getElementById('noResultsMsg').style.display = visible === 0 ? 'block' : 'none';
+        }
+
+        filterList();
+    </script>
+</body>
+</html>

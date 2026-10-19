@@ -1,0 +1,927 @@
+﻿@using _4th_year_set_up.Models
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@{
+    ViewData["Title"] = "Laboratory Test Processing Report";
+    Layout = null;
+
+    var generatedDate = DateTime.Now;
+
+    // Temporary report data for UI development.
+    // This will later come from the database.
+    var reportData = new List<LabTestReportViewModel>
+    {
+        new LabTestReportViewModel
+        {
+            RequestNumber = "REQ-2026-00124",
+            TestName = "Full Blood Count",
+            SampleType = "Whole Blood",
+            Priority = "STAT",
+            Technician = "Lab Technician",
+            Received = "08:15",
+            Started = "09:02",
+            Completed = "09:42",
+            Status = "Completed"
+        },
+
+        new LabTestReportViewModel
+        {
+            RequestNumber = "REQ-2026-00125",
+            TestName = "Haemoglobin",
+            SampleType = "Whole Blood",
+            Priority = "Urgent",
+            Technician = "Lab Technician",
+            Received = "08:40",
+            Started = "09:20",
+            Completed = "10:05",
+            Status = "Completed"
+        },
+
+        new LabTestReportViewModel
+        {
+            RequestNumber = "REQ-2026-00125",
+            TestName = "Platelet Count",
+            SampleType = "Whole Blood",
+            Priority = "Urgent",
+            Technician = "Lab Technician",
+            Received = "08:40",
+            Started = "09:30",
+            Completed = "10:20",
+            Status = "To Be Reviewed"
+        },
+
+        new LabTestReportViewModel
+        {
+            RequestNumber = "REQ-2026-00126",
+            TestName = "Blood Grouping",
+            SampleType = "Serum",
+            Priority = "Routine",
+            Technician = "Lab Technician",
+            Received = "10:10",
+            Started = "10:35",
+            Completed = "11:10",
+            Status = "Completed"
+        },
+
+        new LabTestReportViewModel
+        {
+            RequestNumber = "REQ-2026-00127",
+            TestName = "Serum Potassium",
+            SampleType = "Serum",
+            Priority = "Routine",
+            Technician = "Lab Technician",
+            Received = "11:15",
+            Started = "11:35",
+            Completed = "—",
+            Status = "In Progress"
+        }
+    };
+
+    var completedCount = reportData.Count(x => x.Status == "Completed");
+    var inProgressCount = reportData.Count(x => x.Status == "In Progress");
+    var reviewCount = reportData.Count(x => x.Status == "To Be Reviewed");
+    var totalTests = reportData.Count;
+
+    // Calculate average processing time using the temporary
+    // Start and Completed time values.
+    var processingTimes = reportData
+        .Where(x => x.Status == "Completed")
+        .Select(x =>
+        {
+            TimeSpan started = DateTime.Parse(x.Started).TimeOfDay;
+            TimeSpan completed = DateTime.Parse(x.Completed).TimeOfDay;
+
+            return (completed - started).TotalMinutes;
+        })
+        .ToList();
+
+    var averageMinutes = processingTimes.Any()
+        ? processingTimes.Average()
+        : 0;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Laboratory Test Processing Report — NMB-HLabSys
+    </title>
+
+    <style>
+
+        @@page {
+            size: A4;
+            margin: 18mm 16mm 18mm 16mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #e9ecef;
+            color: #172b3a;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10px;
+        }
+
+
+        /* =====================================================
+                   REPORT PAGE
+                   ===================================================== */
+
+        .report-page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 25px auto;
+            padding: 18mm 16mm;
+            background: #ffffff;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+        }
+
+
+        /* =====================================================
+                   REPORT HEADER
+                   ===================================================== */
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #0b1f33;
+            padding-bottom: 14px;
+            margin-bottom: 18px;
+        }
+
+        .organisation {
+            font-size: 9px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #087f8c;
+            margin-bottom: 6px;
+        }
+
+        .report-title {
+            margin: 0;
+            font-size: 23px;
+            font-weight: 700;
+            color: #0b1f33;
+        }
+
+        .report-subtitle {
+            margin-top: 5px;
+            font-size: 10px;
+            color: #64748b;
+        }
+
+        .report-logo {
+            width: 58px;
+            height: 58px;
+            background: #0b1f33;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 15px;
+            letter-spacing: 1px;
+        }
+
+
+        /* =====================================================
+                   REPORT INFORMATION
+                   ===================================================== */
+
+        .report-information {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border: 1px solid #d9e0e5;
+            margin-bottom: 20px;
+        }
+
+        .information-item {
+            padding: 9px 11px;
+            border-right: 1px solid #d9e0e5;
+        }
+
+            .information-item:last-child {
+                border-right: none;
+            }
+
+        .information-label {
+            font-size: 8px;
+            color: #71808e;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            margin-bottom: 4px;
+        }
+
+        .information-value {
+            font-size: 10px;
+            font-weight: 600;
+            color: #172b3a;
+        }
+
+
+        /* =====================================================
+                   SECTION HEADINGS
+                   ===================================================== */
+
+        .section {
+            margin-top: 20px;
+            break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0b1f33;
+            border-bottom: 1px solid #d9e0e5;
+            padding-bottom: 7px;
+            margin-bottom: 10px;
+        }
+
+
+        /* =====================================================
+                   SUMMARY
+                   ===================================================== */
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .summary-card {
+            border: 1px solid #d9e0e5;
+            padding: 10px;
+            min-height: 62px;
+        }
+
+        .summary-label {
+            font-size: 8px;
+            color: #71808e;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .summary-value {
+            margin-top: 7px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #0b1f33;
+        }
+
+
+        /* =====================================================
+                   TABLE
+                   ===================================================== */
+
+        .table-container {
+            width: 100%;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        thead {
+            display: table-header-group;
+        }
+
+        tr {
+            break-inside: avoid;
+        }
+
+        th {
+            background: #0b1f33;
+            color: #ffffff;
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            padding: 8px 6px;
+            text-align: left;
+            font-weight: 700;
+        }
+
+        td {
+            border-bottom: 1px solid #e1e6ea;
+            padding: 8px 6px;
+            font-size: 8.5px;
+            color: #33485a;
+            vertical-align: top;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f8fafb;
+        }
+
+        .request-number {
+            font-weight: 700;
+            color: #0b1f33;
+        }
+
+
+        /* =====================================================
+                   STATUS
+                   ===================================================== */
+
+        .status {
+            font-weight: 700;
+        }
+
+        .status-completed {
+            color: #27804d;
+        }
+
+        .status-progress {
+            color: #3269a8;
+        }
+
+        .status-review {
+            color: #e67e22;
+        }
+
+
+        /* =====================================================
+                   PRIORITY
+                   ===================================================== */
+
+        .priority {
+            font-weight: 700;
+        }
+
+        .priority-stat {
+            color: #c0392b;
+        }
+
+        .priority-urgent {
+            color: #d99a00;
+        }
+
+        .priority-routine {
+            color: #64748b;
+        }
+
+
+        /* =====================================================
+                   TURNAROUND
+                   ===================================================== */
+
+        .turnaround-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .turnaround-box {
+            border: 1px solid #d9e0e5;
+            padding: 12px;
+        }
+
+        .turnaround-label {
+            font-size: 8px;
+            color: #71808e;
+            text-transform: uppercase;
+        }
+
+        .turnaround-value {
+            margin-top: 5px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #087f8c;
+        }
+
+
+        /* =====================================================
+                   EMPTY STATE
+                   ===================================================== */
+
+        .empty-report {
+            border: 1px solid #d9e0e5;
+            padding: 25px;
+            text-align: center;
+            color: #64748b;
+        }
+
+            .empty-report strong {
+                display: block;
+                color: #0b1f33;
+                font-size: 12px;
+                margin-bottom: 5px;
+            }
+
+
+        /* =====================================================
+                   REPORT FOOTER
+                   ===================================================== */
+
+        .report-footer {
+            margin-top: 25px;
+            padding-top: 9px;
+            border-top: 1px solid #d9e0e5;
+            display: flex;
+            justify-content: space-between;
+            color: #71808e;
+            font-size: 8px;
+        }
+
+
+        /* =====================================================
+                   SCREEN-ONLY CONTROLS
+                   ===================================================== */
+
+        .report-controls {
+            width: 210mm;
+            margin: 20px auto 0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .report-button {
+            border: none;
+            padding: 9px 15px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .button-primary {
+            background: #087f8c;
+            color: #ffffff;
+        }
+
+        .button-secondary {
+            background: #0b1f33;
+            color: #ffffff;
+        }
+
+
+        /* =====================================================
+                   PRINT
+                   ===================================================== */
+
+        @@media print {
+
+            body {
+                background: #ffffff;
+            }
+
+            .report-page {
+                width: 100%;
+                min-height: auto;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+            }
+
+            .report-controls {
+                display: none;
+            }
+
+            .report-footer {
+                margin-top: 20px;
+            }
+        }
+
+
+        /* =====================================================
+                   SCREEN RESPONSIVE
+                   ===================================================== */
+
+        @@media screen and (max-width: 900px) {
+
+            .report-page {
+                width: 95%;
+                padding: 30px;
+            }
+
+            .report-controls {
+                width: 95%;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- SCREEN-ONLY CONTROLS -->
+
+    <div class="report-controls">
+
+        <button type="button"
+                class="report-button button-secondary"
+                onclick="window.print()">
+
+            Print Report
+
+        </button>
+
+        <button type="button"
+                class="report-button button-primary"
+                onclick="window.print()">
+
+            Export / Save PDF
+
+        </button>
+
+    </div>
+
+
+    <!-- REPORT DOCUMENT -->
+
+    <div class="report-page">
+
+
+        <!-- =====================================================
+             HEADER
+             ===================================================== -->
+
+        <header class="report-header">
+
+            <div>
+
+                <div class="organisation">
+                    NMB-HLabSys
+                </div>
+
+                <h1 class="report-title">
+                    Laboratory Test Processing Report
+                </h1>
+
+                <div class="report-subtitle">
+                    Summary of laboratory tests received, processed
+                    and completed by the testing department.
+                </div>
+
+            </div>
+
+            <div class="report-logo">
+                HL
+            </div>
+
+        </header>
+
+
+        <!-- =====================================================
+             REPORT INFORMATION
+             ===================================================== -->
+
+        <section class="report-information">
+
+            <div class="information-item">
+
+                <div class="information-label">
+                    Reporting Period
+                </div>
+
+                <div class="information-value">
+                    22 September 2026
+                </div>
+
+            </div>
+
+
+            <div class="information-item">
+
+                <div class="information-label">
+                    Generated
+                </div>
+
+                <div class="information-value">
+                    @generatedDate.ToString("dd MMMM yyyy, HH:mm")
+                </div>
+
+            </div>
+
+
+            <div class="information-item">
+
+                <div class="information-label">
+                    Technician
+                </div>
+
+                <div class="information-value">
+                    Lab Technician
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             SUMMARY
+             ===================================================== -->
+
+        <section class="section">
+
+            <h2 class="section-title">
+                Processing Summary
+            </h2>
+
+            <div class="summary-grid">
+
+                <div class="summary-card">
+
+                    <div class="summary-label">
+                        Total Tests
+                    </div>
+
+                    <div class="summary-value">
+                        @totalTests
+                    </div>
+
+                </div>
+
+
+                <div class="summary-card">
+
+                    <div class="summary-label">
+                        Completed
+                    </div>
+
+                    <div class="summary-value">
+                        @completedCount
+                    </div>
+
+                </div>
+
+
+                <div class="summary-card">
+
+                    <div class="summary-label">
+                        In Progress
+                    </div>
+
+                    <div class="summary-value">
+                        @inProgressCount
+                    </div>
+
+                </div>
+
+
+                <div class="summary-card">
+
+                    <div class="summary-label">
+                        Awaiting Review
+                    </div>
+
+                    <div class="summary-value">
+                        @reviewCount
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             TEST PROCESSING DETAILS
+             ===================================================== -->
+
+        <section class="section">
+
+            <h2 class="section-title">
+                Test Processing Details
+            </h2>
+
+
+            @if (!reportData.Any())
+            {
+                <div class="empty-report">
+
+                    <strong>
+                        No records found
+                    </strong>
+
+                    No laboratory tests were found for the
+                    selected reporting period.
+
+                </div>
+            }
+            else
+            {
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th style="width: 15%;">
+                                    Request Number
+                                </th>
+
+                                <th style="width: 17%;">
+                                    Test
+                                </th>
+
+                                <th style="width: 13%;">
+                                    Sample Type
+                                </th>
+
+                                <th style="width: 11%;">
+                                    Priority
+                                </th>
+
+                                <th style="width: 14%;">
+                                    Received
+                                </th>
+
+                                <th style="width: 14%;">
+                                    Completed
+                                </th>
+
+                                <th style="width: 16%;">
+                                    Status
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @foreach (var test in reportData
+                                                    .OrderByDescending(x => x.Priority == "STAT")
+                                                    .ThenBy(x => x.Received))
+                            {
+                                <tr>
+
+                                    <td class="request-number">
+                                        @test.RequestNumber
+                                    </td>
+
+                                    <td>
+                                        @test.TestName
+                                    </td>
+
+                                    <td>
+                                        @test.SampleType
+                                    </td>
+
+                                    <td>
+
+                                        @if (test.Priority == "STAT")
+                                        {
+                                            <span class="priority priority-stat">
+                                                STAT
+                                            </span>
+                                        }
+                                        else if (test.Priority == "Urgent")
+                                        {
+                                            <span class="priority priority-urgent">
+                                                Urgent
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="priority priority-routine">
+                                                Routine
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                    <td>
+                                        @test.Received
+                                    </td>
+
+                                    <td>
+
+                                        @if (test.Completed != "—")
+                                        {
+                                            @test.Completed
+                                        }
+                                        else
+                                        {
+                                            <span>—</span>
+                                        }
+
+                                    </td>
+
+                                    <td>
+
+                                        @if (test.Status == "Completed")
+                                        {
+                                            <span class="status status-completed">
+                                                Completed
+                                            </span>
+                                        }
+                                        else if (test.Status == "In Progress")
+                                        {
+                                            <span class="status status-progress">
+                                                In Progress
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status status-review">
+                                                To Be Reviewed
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+            }
+
+        </section>
+
+
+        <!-- =====================================================
+             TURNAROUND TIME
+             ===================================================== -->
+
+        <section class="section">
+
+            <h2 class="section-title">
+                Turnaround Time Summary
+            </h2>
+
+
+            <div class="turnaround-summary">
+
+                <div class="turnaround-box">
+
+                    <div class="turnaround-label">
+                        Average Processing Time
+                    </div>
+
+                    <div class="turnaround-value">
+                        @Math.Round(averageMinutes) minutes
+                    </div>
+
+                </div>
+
+
+                <div class="turnaround-box">
+
+                    <div class="turnaround-label">
+                        Completed Tests
+                    </div>
+
+                    <div class="turnaround-value">
+                        @completedCount
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             FOOTER
+             ===================================================== -->
+
+        <footer class="report-footer">
+
+            <span>
+                NMB-HLabSys · Laboratory Information System
+            </span>
+
+            <span>
+                Generated @generatedDate.ToString("dd/MM/yyyy HH:mm")
+            </span>
+
+        </footer>
+
+
+    </div>
+
+
+</body>
+
+</html>

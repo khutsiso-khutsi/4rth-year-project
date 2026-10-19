@@ -1,0 +1,766 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model _4th_year_set_up.Models.CaptureResultsViewModel
+@{
+    ViewData["Title"] = "Capture Results";
+    Layout = null;
+    var email = ViewBag.Email?.ToString();
+    var initial = string.IsNullOrEmpty(email) ? "T" : email.Substring(0, 1).ToUpper();
+    var flash = TempData["Flash"] as string;
+    var flashType = TempData["FlashType"] as string ?? "ok";
+    var item = Model.Item;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Capture Results — NMB-HLabSys</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --navy: #0b1f3a;
+            --navy2: #122848;
+            --teal: #0d9488;
+            --teal-light: rgba(13,148,136,0.1);
+            --orange: #ea580c;
+            --orange-light: rgba(234,88,12,0.1);
+            --amber: #d97706;
+            --amber-light: rgba(217,119,6,0.12);
+            --red: #dc2626;
+            --red-light: rgba(220,38,38,0.1);
+            --green: #16a34a;
+            --green-light: rgba(22,163,74,0.1);
+            --blue: #2563eb;
+            --blue-light: rgba(37,99,235,0.1);
+            --slate: #475569;
+            --slate-light: rgba(71,85,105,0.1);
+            --white: #ffffff;
+            --offwhite: #f4f7fb;
+            --muted: #6b7a99;
+            --border: #dde4f0;
+        }
+
+        body { font-family: 'DM Sans', sans-serif; background: var(--offwhite); color: var(--navy); min-height: 100vh; }
+
+        /* ---------- shared topbar + sidebar ---------- */
+        .topbar { background: var(--navy); padding: 0 40px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.15); }
+        .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .brand-logo { width: 34px; height: 34px; background: var(--teal); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .brand-logo svg { width: 18px; height: 18px; fill: white; }
+        .brand-name { font-family: 'DM Serif Display', serif; color: white; font-size: 1.1rem; line-height: 1.1; }
+        .brand-name span { display: block; font-family: 'DM Sans', sans-serif; font-size: 0.6rem; font-weight: 300; color: rgba(255,255,255,0.4); letter-spacing: 0.1em; text-transform: uppercase; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .user-chip { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; padding: 6px 14px 6px 8px; }
+        .user-avatar { width: 28px; height: 28px; background: var(--orange); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; color: white; }
+        .user-email { font-size: 0.8rem; color: rgba(255,255,255,0.75); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .logout-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 0.82rem; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        .logout-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+        .logout-btn svg { width: 14px; height: 14px; }
+
+        .page { display: flex; min-height: calc(100vh - 64px); }
+        .sidebar { width: 220px; background: white; border-right: 1px solid var(--border); padding: 24px 0; flex-shrink: 0; position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto; }
+        .nav-label { font-size: 0.65rem; font-weight: 600; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; padding: 0 20px; margin-bottom: 4px; margin-top: 16px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; border-left: 3px solid transparent; transition: all 0.15s; }
+        .nav-item:hover { background: var(--offwhite); color: var(--navy); }
+        .nav-item.active { background: var(--orange-light); color: var(--orange); border-left-color: var(--orange); }
+        .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+        .main { flex: 1; padding: 32px 40px; min-width: 0; }
+
+        /* ---------- banner ---------- */
+        .welcome-banner { background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%); border-radius: 20px; padding: 32px 36px; margin-bottom: 24px; position: relative; overflow: hidden; }
+        .welcome-banner::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 80% at 90% 50%, rgba(234,88,12,0.2) 0%, transparent 60%); }
+        .welcome-inner { position: relative; z-index: 2; }
+        .welcome-tag { display: inline-flex; align-items: center; gap: 6px; background: rgba(234,88,12,0.2); border: 1px solid rgba(234,88,12,0.3); color: #fdba74; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 10px; border-radius: 100px; margin-bottom: 12px; }
+        .welcome-banner h1 { font-family: 'DM Serif Display', serif; font-size: 1.8rem; color: white; margin-bottom: 6px; font-weight: 400; }
+        .welcome-banner h1 em { font-style: italic; color: #fdba74; }
+        .welcome-banner p { color: rgba(255,255,255,0.55); font-size: 0.875rem; }
+        .tag { display: inline-block; padding: 4px 10px; border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: 0.65rem; font-weight: 700; margin-left: 10px; vertical-align: middle; letter-spacing: 0.04em; text-transform: uppercase; }
+        .tag-progress { background: rgba(37,99,235,0.25); color: #bfdbfe; }
+        .tag-review { background: rgba(234,88,12,0.3); color: #fed7aa; }
+
+        .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--muted); text-decoration: none; margin-bottom: 20px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 7px; background: var(--white); transition: all 0.15s; }
+        .back-link:hover { color: var(--navy); border-color: var(--teal); background: var(--teal-light); }
+        .back-link svg { width: 14px; height: 14px; }
+
+        .flash { padding: 12px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 500; margin-bottom: 20px; border: 1px solid var(--border); background: white; }
+        .flash-ok { border-color: rgba(22,163,74,0.35); background: var(--green-light); color: #166534; }
+        .flash-warn { border-color: rgba(217,119,6,0.4); background: var(--amber-light); color: #92400e; }
+
+        .review-note { background: var(--orange-light); border: 1px solid rgba(234,88,12,0.3); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; font-size: 0.85rem; }
+        .review-note strong { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--orange); margin-bottom: 4px; }
+
+        /* ---------- cards ---------- */
+        .card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 24px; box-shadow: 0 2px 8px rgba(11,31,58,0.04); margin-bottom: 20px; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+        .card-title { font-family: 'DM Serif Display', serif; font-size: 1.05rem; color: var(--navy); }
+        .card-sub { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+
+        dl.detail-list { display: grid; grid-template-columns: 150px 1fr; row-gap: 10px; font-size: 0.85rem; }
+        dl.detail-list dt { color: var(--muted); font-weight: 600; }
+        dl.detail-list dd { color: var(--navy); }
+
+        .progress-wrap { min-width: 220px; }
+        .progress-text { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-bottom: 6px; text-align: right; }
+        .progress-bar { height: 6px; background: var(--offwhite); border-radius: 100px; overflow: hidden; border: 1px solid var(--border); }
+        .progress-fill { height: 100%; width: 0; background: var(--teal); transition: width 0.25s; }
+
+        .table-wrap { overflow-x: auto; }
+        .table { width: 100%; border-collapse: collapse; }
+        .table th { font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 0 12px 10px 0; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        .table td { padding: 12px 12px 12px 0; font-size: 0.83rem; color: var(--navy); border-bottom: 1px solid var(--offwhite); vertical-align: middle; }
+        .table tr:last-child td { border-bottom: none; }
+        .cell-value { font-weight: 600; white-space: pre-wrap; max-width: 260px; word-break: break-word; }
+        .cell-comment { color: var(--muted); max-width: 200px; word-break: break-word; }
+        .muted { color: var(--muted); font-weight: 400; }
+        .range { white-space: nowrap; color: var(--slate); }
+        .actions-cell { text-align: right; white-space: nowrap; padding-right: 0 !important; }
+
+        .badge { display: inline-block; padding: 3px 9px; border-radius: 100px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
+        .badge-urgent { background: var(--amber-light); color: var(--amber); }
+        .badge-routine { background: var(--slate-light); color: var(--slate); }
+        .badge-ok { background: var(--green-light); color: var(--green); }
+        .badge-warn { background: var(--amber-light); color: var(--amber); }
+        .badge-crit { background: var(--red-light); color: var(--red); }
+
+        .btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 0.8rem; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 600; transition: all 0.15s; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-sm { padding: 6px 12px; font-size: 0.75rem; }
+        .btn-primary { background: var(--teal); color: white; }
+        .btn-primary:hover:not(:disabled) { background: #0b7a70; }
+        .btn-danger { background: var(--red); color: white; }
+        .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+        .btn-ghost { background: var(--offwhite); border: 1px solid var(--border); color: var(--navy); }
+        .btn-ghost:hover:not(:disabled) { border-color: var(--teal); color: var(--teal); }
+
+        .card-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+
+        /* ---------- modals ---------- */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(11,31,58,0.5); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+        .modal-overlay.open { display: flex; }
+        .modal { background: white; border-radius: 20px; padding: 32px; width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .modal-wide { max-width: 640px; }
+        .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .modal-title { font-family: 'DM Serif Display', serif; font-size: 1.2rem; color: var(--navy); }
+        .modal-close { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 1.2rem; padding: 4px; }
+        .modal-close:hover { color: var(--navy); }
+        .modal-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 16px; }
+        .modal-actions { display: flex; gap: 10px; align-items: center; margin-top: 18px; }
+        .spacer { flex: 1; }
+
+        .field { margin-bottom: 14px; }
+        .field label { display: block; font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+        .field textarea, .field input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; font-family: 'DM Sans', sans-serif; color: var(--navy); resize: vertical; }
+        .field textarea:focus, .field input:focus { outline: none; border-color: var(--teal); }
+        .field-error { font-size: 0.75rem; color: var(--red); margin-top: 6px; display: none; }
+        .field-error.show { display: block; }
+
+        .flag-preview { min-height: 24px; margin-bottom: 12px; font-size: 0.78rem; color: var(--muted); }
+        .critical-box { display: none; background: var(--red-light); border: 1px solid rgba(220,38,38,0.35); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; font-size: 0.8rem; color: #991b1b; }
+        .critical-box.show { display: block; }
+        .critical-box label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; font-weight: 600; }
+        .critical-box input { margin-top: 3px; }
+
+        .summary-counts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+        .summary-warn { background: var(--red-light); border: 1px solid rgba(220,38,38,0.35); color: #991b1b; border-radius: 10px; padding: 10px 14px; font-size: 0.8rem; margin-bottom: 14px; display: none; }
+        .summary-warn.show { display: block; }
+        .summary-note { font-size: 0.78rem; color: var(--muted); margin-top: 12px; }
+        .modal .table td, .modal .table th { padding-top: 8px; padding-bottom: 8px; }
+
+        @@media (max-width: 768px) {
+            .topbar { padding: 0 20px; }
+            .user-email { display: none; }
+            .sidebar { display: none; }
+            .main { padding: 20px 16px; }
+            dl.detail-list { grid-template-columns: 1fr; row-gap: 2px; }
+            dl.detail-list dd { margin-bottom: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    @* ===== TOPBAR + SIDEBAR: identical to the dashboard. Only the "active" class moves. ===== *@
+    <div class="topbar">
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <div class="brand-logo"><svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg></div>
+            <div class="brand-name">NMB-HLabSys<span>Haematology Lab System</span></div>
+        </a>
+        <div class="topbar-right">
+            <div class="user-chip">
+                <div class="user-avatar">@initial</div>
+                <span class="user-email">@email</span>
+            </div>
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                Sign Out
+            </a>
+        </div>
+    </div>
+
+    <div class="page">
+
+        <aside class="sidebar">
+            <a asp-controller="TechnicianDashboard" asp-action="Index" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /><path d="M9 21v-6h6v6" /></svg>
+                Dashboard
+            </a>
+
+            <div class="nav-label">Samples and Requests</div>
+            <a asp-controller="TechnicianDashboard" asp-action="ReceiveSamples" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6" /><polyline points="16 6 12 10 8 6" /><line x1="12" y1="10" x2="12" y2="2" /></svg>
+                Receive Samples
+            </a>
+            <a asp-controller="TechnicianDashboard" asp-action="SampleVerification" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" /><polyline points="9 14 11 16 15 12" /></svg>
+                Sample Verification
+            </a>
+
+            <div class="nav-label">Tests</div>
+            <a asp-controller="TechnicianDashboard" asp-action="TestQueue" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" /><line x1="9" y1="2" x2="15" y2="2" /></svg>
+                Testing Queue
+            </a>
+            <a asp-controller="TechnicianDashboard" asp-action="MyTests" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                My Tests
+            </a>
+
+            <div class="nav-label">Results</div>
+            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2" /><line x1="8" y1="8" x2="16" y2="8" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="8" y1="16" x2="13" y2="16" /></svg>
+                Capture Results
+            </a>
+            <a asp-controller="TechnicianDashboard" asp-action="Verification" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
+                Result Verification
+            </a>
+
+            <div class="nav-label">Reports</div>
+            <a asp-controller="TechnicianDashboard" asp-action="Reports" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="19" x2="20" y2="19" /><rect x="5" y="10" width="3" height="7" /><rect x="10.5" y="6" width="3" height="11" /><rect x="16" y="3" width="3" height="14" /></svg>
+                Reporting
+            </a>
+
+            <div class="nav-label">System</div>
+            <a asp-controller="TechnicianDashboard" asp-action="Profile" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                Profile
+            </a>
+        </aside>
+        @* ===== END shared topbar + sidebar ===== *@
+
+        <main class="main">
+
+            <a asp-controller="TechnicianDashboard" asp-action="MyTests" class="back-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
+                Back to My Tests
+            </a>
+
+            @if (!string.IsNullOrEmpty(flash))
+            {
+                <div class="flash flash-@flashType" role="status">@flash</div>
+            }
+
+            <div class="welcome-banner">
+                <div class="welcome-inner">
+                    <div class="welcome-tag">Capture Results</div>
+                    <h1>
+                        Processing <em>@item.Test</em>
+                        @if (Model.IsReview)
+                        {
+                            <span class="tag tag-review">To Be Reviewed</span>
+                        }
+                        else
+                        {
+                            <span class="tag tag-progress">In Progress</span>
+                        }
+                    </h1>
+                    <p>Request @item.ReqNum — @item.Patient</p>
+                </div>
+            </div>
+
+            @if (Model.IsReview && !string.IsNullOrEmpty(item.ReviewNote))
+            {
+                <div class="review-note">
+                    <strong>Returned by verification</strong>
+                    @item.ReviewNote
+                </div>
+            }
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Test details</div>
+                    </div>
+                </div>
+                <dl class="detail-list">
+                    <dt>Request #</dt>
+                    <dd>@item.ReqNum</dd>
+                    <dt>Patient</dt>
+                    <dd>@item.Patient</dd>
+                    <dt>Test</dt>
+                    <dd>@item.Test</dd>
+                    <dt>Sample</dt>
+                    <dd>@item.SampleType</dd>
+                    <dt>Priority</dt>
+                    <dd><span class="badge @(item.IsUrgent ? "badge-urgent" : "badge-routine")">@(item.IsUrgent ? "Urgent" : "Routine")</span></dd>
+                    <dt>Ward</dt>
+                    <dd>@item.Ward</dd>
+                </dl>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Results</div>
+                        <div class="card-sub">Open each parameter to enter its value. Flags are worked out automatically from the reference range.</div>
+                    </div>
+                    <div class="progress-wrap">
+                        <div class="progress-text" id="progressText">0 of @Model.Parameters.Count captured</div>
+                        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Result</th>
+                                <th>Unit</th>
+                                <th>Reference range</th>
+                                <th>Flag</th>
+                                <th>Comment</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model.Parameters)
+                            {
+                                <tr data-key="@p.Key">
+                                    <td><strong>@p.Name</strong></td>
+                                    <td class="cell-value"></td>
+                                    <td>@p.Unit</td>
+                                    <td class="range">@p.RangeText</td>
+                                    <td class="cell-flag"></td>
+                                    <td class="cell-comment"></td>
+                                    <td class="actions-cell">
+                                        <button type="button" class="btn btn-primary btn-sm row-btn" onclick="openEntry('@p.Key')">Enter</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer">
+                    <button type="button" class="btn btn-ghost" id="draftBtn" onclick="submitForm(false)" disabled>Save draft</button>
+                    <button type="button" class="btn btn-primary" id="reviewBtn" onclick="openSubmit()" disabled>Review &amp; submit</button>
+                </div>
+            </div>
+
+            <form id="saveForm" method="post" asp-controller="TechnicianDashboard" asp-action="SaveResults">
+                <input type="hidden" name="id" value="@item.ReqNum" />
+                <input type="hidden" name="resultsJson" id="resultsJson" />
+                <input type="hidden" name="finalise" id="finaliseFlag" value="false" />
+            </form>
+
+        </main>
+    </div>
+
+    <!-- ===== Result entry modal ===== -->
+    <div class="modal-overlay" id="entryModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title" id="entryTitle">Enter result</div>
+                <button type="button" class="modal-close" onclick="closeEntry()">✕</button>
+            </div>
+            <p class="modal-sub" id="entryRange"></p>
+
+            <div class="field" id="entryNumberField">
+                <label for="entryValue">Result <span id="entryUnit"></span></label>
+                <input type="text" id="entryValue" inputmode="decimal" autocomplete="off" placeholder="e.g. 12.5" oninput="updatePreview()" />
+            </div>
+            <div class="field" id="entryTextField" style="display:none;">
+                <label for="entryText">Result</label>
+                <textarea id="entryText" rows="4" placeholder="Enter your findings" oninput="updatePreview()"></textarea>
+            </div>
+
+            <div class="flag-preview" id="entryFlag"></div>
+
+            <div class="critical-box" id="entryCritical">
+                <label>
+                    <input type="checkbox" id="entryConfirm" />
+                    This is a critical value. I have re-checked it and will follow the critical result procedure.
+                </label>
+            </div>
+
+            <div class="field">
+                <label for="entryComment">Comment (optional)</label>
+                <textarea id="entryComment" rows="2" placeholder="e.g. repeated, sample slightly clotted"></textarea>
+            </div>
+
+            <div class="field-error" id="entryError"></div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-ghost" id="entryClearBtn" onclick="clearEntry()">Clear value</button>
+                <span class="spacer"></span>
+                <button type="button" class="btn btn-ghost" onclick="closeEntry()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveEntry()">Save result</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Submit confirmation modal ===== -->
+    <div class="modal-overlay" id="submitModal">
+        <div class="modal modal-wide">
+            <div class="modal-header">
+                <div class="modal-title">Submit results for verification</div>
+                <button type="button" class="modal-close" onclick="closeModal('submitModal')">✕</button>
+            </div>
+            <p class="modal-sub">Check the values below. Once submitted, a senior technician must verify them before release.</p>
+
+            <div class="summary-counts" id="summaryCounts"></div>
+            <div class="summary-warn" id="summaryWarn"></div>
+
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Parameter</th><th>Result</th><th>Flag</th></tr></thead>
+                    <tbody id="summaryBody"></tbody>
+                </table>
+            </div>
+
+            <div class="modal-actions">
+                <span class="spacer"></span>
+                <button type="button" class="btn btn-ghost" onclick="closeModal('submitModal')">Go back</button>
+                <button type="button" class="btn btn-primary" id="confirmSubmitBtn" onclick="submitForm(true)">Confirm &amp; submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Discard changes modal ===== -->
+    <div class="modal-overlay" id="discardModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Discard unsaved changes?</div>
+                <button type="button" class="modal-close" onclick="closeModal('discardModal')">✕</button>
+            </div>
+            <p class="modal-sub">You have results that haven't been saved. If you leave now they will be lost.</p>
+            <div class="modal-actions">
+                <span class="spacer"></span>
+                <button type="button" class="btn btn-ghost" onclick="closeModal('discardModal')">Keep editing</button>
+                <button type="button" class="btn btn-danger" onclick="discardAndLeave()">Discard &amp; leave</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const parameters = @Json.Serialize(Model.Parameters);
+        const existing = @Json.Serialize(Model.Existing);
+
+        const paramMap = {};
+        parameters.forEach(function (p) { paramMap[p.key] = p; });
+
+        // results[key] = { value, comment, confirmed }
+        const results = {};
+        existing.forEach(function (r) {
+            if (paramMap[r.key] && r.value) {
+                results[r.key] = { value: r.value, comment: r.comment || '', confirmed: true };
+            }
+        });
+
+        let dirty = false;
+        let activeKey = null;
+        let pendingUrl = null;
+
+        const FLAG_INFO = {
+            'normal': ['Normal', 'badge-ok'],
+            'low': ['Low', 'badge-warn'],
+            'high': ['High', 'badge-warn'],
+            'critical-low': ['Critical low', 'badge-crit'],
+            'critical-high': ['Critical high', 'badge-crit']
+        };
+
+        // ---------- helpers ----------
+        function normalise(raw) { return (raw || '').trim().replace(',', '.'); }
+        function isNumber(s) { return /^-?\d+(\.\d+)?$/.test(s); }
+        function isCritical(flag) { return flag === 'critical-low' || flag === 'critical-high'; }
+
+        function computeFlag(p, raw) {
+            if (p.isText) return '';
+            const s = normalise(raw);
+            if (!isNumber(s)) return 'invalid';
+            const v = parseFloat(s);
+            if (p.critLow != null && v < p.critLow) return 'critical-low';
+            if (p.critHigh != null && v > p.critHigh) return 'critical-high';
+            if (p.low != null && v < p.low) return 'low';
+            if (p.high != null && v > p.high) return 'high';
+            return 'normal';
+        }
+
+        function flagBadge(flag) {
+            const info = FLAG_INFO[flag];
+            if (!info) return null;
+            const span = document.createElement('span');
+            span.className = 'badge ' + info[1];
+            span.textContent = info[0];
+            return span;
+        }
+
+        function openModal(id) { document.getElementById(id).classList.add('open'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+        // ---------- table rendering ----------
+        function renderRow(key) {
+            const row = document.querySelector('tr[data-key="' + key + '"]');
+            if (!row) return;
+            const r = results[key];
+            const p = paramMap[key];
+            const valueCell = row.querySelector('.cell-value');
+            const flagCell = row.querySelector('.cell-flag');
+            const commentCell = row.querySelector('.cell-comment');
+            const btn = row.querySelector('.row-btn');
+
+            flagCell.textContent = '';
+            if (r && r.value) {
+                valueCell.textContent = r.value;
+                valueCell.classList.remove('muted');
+                const badge = flagBadge(computeFlag(p, r.value));
+                if (badge) flagCell.appendChild(badge);
+                commentCell.textContent = r.comment || '';
+                btn.textContent = 'Edit';
+                btn.className = 'btn btn-ghost btn-sm row-btn';
+            } else {
+                valueCell.textContent = 'Not captured';
+                valueCell.classList.add('muted');
+                commentCell.textContent = '';
+                btn.textContent = 'Enter';
+                btn.className = 'btn btn-primary btn-sm row-btn';
+            }
+        }
+
+        function capturedCount() {
+            return parameters.filter(function (p) { return results[p.key] && results[p.key].value; }).length;
+        }
+
+        function updateProgress() {
+            const done = capturedCount();
+            const total = parameters.length;
+            document.getElementById('progressText').textContent = done + ' of ' + total + ' captured';
+            document.getElementById('progressFill').style.width = (total ? (done / total * 100) : 0) + '%';
+            document.getElementById('reviewBtn').disabled = done < total;
+            document.getElementById('draftBtn').disabled = !dirty;
+        }
+
+        // ---------- entry modal ----------
+        function openEntry(key) {
+            const p = paramMap[key];
+            const cur = results[key];
+            activeKey = key;
+
+            document.getElementById('entryTitle').textContent = 'Enter result — ' + p.name;
+            document.getElementById('entryRange').textContent = p.isText
+                ? 'Free-text finding.'
+                : 'Reference range: ' + p.rangeText + (p.unit ? ' ' + p.unit : '');
+            document.getElementById('entryUnit').textContent = p.unit ? '(' + p.unit + ')' : '';
+
+            document.getElementById('entryNumberField').style.display = p.isText ? 'none' : '';
+            document.getElementById('entryTextField').style.display = p.isText ? '' : 'none';
+
+            document.getElementById('entryValue').value = (!p.isText && cur) ? cur.value : '';
+            document.getElementById('entryText').value = (p.isText && cur) ? cur.value : '';
+            document.getElementById('entryComment').value = cur ? cur.comment : '';
+            document.getElementById('entryConfirm').checked = !!(cur && cur.confirmed);
+            document.getElementById('entryError').classList.remove('show');
+            document.getElementById('entryClearBtn').style.display = cur ? '' : 'none';
+
+            updatePreview();
+            openModal('entryModal');
+            setTimeout(function () {
+                document.getElementById(p.isText ? 'entryText' : 'entryValue').focus();
+            }, 50);
+        }
+
+        function closeEntry() {
+            closeModal('entryModal');
+            activeKey = null;
+        }
+
+        function updatePreview() {
+            const p = paramMap[activeKey];
+            const slot = document.getElementById('entryFlag');
+            const critBox = document.getElementById('entryCritical');
+            slot.textContent = '';
+            critBox.classList.remove('show');
+            if (!p || p.isText) return;
+
+            const raw = document.getElementById('entryValue').value;
+            if (!raw.trim()) return;
+
+            const flag = computeFlag(p, raw);
+            if (flag === 'invalid') {
+                slot.textContent = 'Enter a number, for example 12.5';
+                return;
+            }
+            const badge = flagBadge(flag);
+            if (badge) slot.appendChild(badge);
+            if (isCritical(flag)) critBox.classList.add('show');
+        }
+
+        function showEntryError(msg) {
+            const el = document.getElementById('entryError');
+            el.textContent = msg;
+            el.classList.add('show');
+        }
+
+        function saveEntry() {
+            const p = paramMap[activeKey];
+            if (!p) return;
+            const raw = (p.isText ? document.getElementById('entryText').value : document.getElementById('entryValue').value).trim();
+
+            if (!raw) { showEntryError('Enter a result, or use Cancel.'); return; }
+
+            let value = raw;
+            let flag = '';
+            if (!p.isText) {
+                value = normalise(raw);
+                flag = computeFlag(p, value);
+                if (flag === 'invalid') { showEntryError('The result must be a number, for example 12.5.'); return; }
+                if (isCritical(flag) && !document.getElementById('entryConfirm').checked) {
+                    showEntryError('Confirm that you have re-checked this critical value.');
+                    return;
+                }
+            }
+
+            results[activeKey] = {
+                value: value,
+                comment: document.getElementById('entryComment').value.trim(),
+                confirmed: isCritical(flag)
+            };
+            dirty = true;
+            renderRow(activeKey);
+            updateProgress();
+            closeEntry();
+        }
+
+        function clearEntry() {
+            if (activeKey && results[activeKey]) {
+                delete results[activeKey];
+                dirty = true;
+                renderRow(activeKey);
+                updateProgress();
+            }
+            closeEntry();
+        }
+
+        // ---------- submit modal ----------
+        function openSubmit() {
+            const body = document.getElementById('summaryBody');
+            body.textContent = '';
+            let normal = 0, abnormal = 0, critical = 0;
+
+            parameters.forEach(function (p) {
+                const r = results[p.key];
+                const flag = computeFlag(p, r.value);
+                if (isCritical(flag)) critical++;
+                else if (flag === 'low' || flag === 'high') abnormal++;
+                else normal++;
+
+                const tr = document.createElement('tr');
+                const tdName = document.createElement('td');
+                tdName.textContent = p.name;
+                const tdVal = document.createElement('td');
+                tdVal.className = 'cell-value';
+                tdVal.textContent = r.value + (p.unit ? ' ' + p.unit : '');
+                const tdFlag = document.createElement('td');
+                const badge = flagBadge(flag);
+                if (badge) tdFlag.appendChild(badge);
+                tr.appendChild(tdName); tr.appendChild(tdVal); tr.appendChild(tdFlag);
+                body.appendChild(tr);
+            });
+
+            const counts = document.getElementById('summaryCounts');
+            counts.textContent = '';
+            [['Normal', 'badge-ok', normal], ['Abnormal', 'badge-warn', abnormal], ['Critical', 'badge-crit', critical]].forEach(function (c) {
+                const s = document.createElement('span');
+                s.className = 'badge ' + c[1];
+                s.textContent = c[0] + ': ' + c[2];
+                counts.appendChild(s);
+            });
+
+            const warn = document.getElementById('summaryWarn');
+            if (critical > 0) {
+                warn.textContent = critical + ' critical value' + (critical > 1 ? 's' : '') + ' in this result set. Make sure the critical result procedure has been followed.';
+                warn.classList.add('show');
+            } else {
+                warn.classList.remove('show');
+            }
+
+            openModal('submitModal');
+        }
+
+        // ---------- save / submit ----------
+        function submitForm(finalise) {
+            const payload = parameters
+                .filter(function (p) { return results[p.key] && results[p.key].value; })
+                .map(function (p) {
+                    return { key: p.key, value: results[p.key].value, comment: results[p.key].comment };
+                });
+
+            document.getElementById('resultsJson').value = JSON.stringify(payload);
+            document.getElementById('finaliseFlag').value = finalise ? 'true' : 'false';
+            document.getElementById('confirmSubmitBtn').disabled = true;
+            document.getElementById('draftBtn').disabled = true;
+            dirty = false;
+            document.getElementById('saveForm').submit();
+        }
+
+        // ---------- leaving the page with unsaved changes ----------
+        document.addEventListener('click', function (e) {
+            const a = e.target.closest('a[href]');
+            if (!a || !dirty) return;
+            e.preventDefault();
+            pendingUrl = a.href;
+            openModal('discardModal');
+        });
+
+        function discardAndLeave() {
+            dirty = false;
+            if (pendingUrl) window.location.href = pendingUrl;
+        }
+
+        window.addEventListener('beforeunload', function (e) {
+            if (dirty) { e.preventDefault(); e.returnValue = ''; }
+        });
+
+        // ---------- modal behaviour ----------
+        ['entryModal', 'submitModal', 'discardModal'].forEach(function (id) {
+            document.getElementById(id).addEventListener('click', function (e) {
+                if (e.target === this) {
+                    if (id === 'entryModal') closeEntry(); else closeModal(id);
+                }
+            });
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                if (document.getElementById('entryModal').classList.contains('open')) closeEntry();
+                closeModal('submitModal');
+                closeModal('discardModal');
+            }
+            if (e.key === 'Enter' && document.getElementById('entryModal').classList.contains('open') && e.target.tagName === 'INPUT' && e.target.type === 'text') {
+                e.preventDefault();
+                saveEntry();
+            }
+        });
+
+        // ---------- initial render ----------
+        parameters.forEach(function (p) { renderRow(p.key); });
+        updateProgress();
+    </script>
+
+</body>
+</html>

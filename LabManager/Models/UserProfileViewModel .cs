@@ -29,5 +29,7 @@ namespace LabManager.Models
 
         public string Role { get; set; }
 
+        public string EmployeeNumber { get; set; }
+
     }
 }

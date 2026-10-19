@@ -1,0 +1,233 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model _4th_year_set_up.Models.TestItem
+@using _4th_year_set_up.Models
+@{
+    ViewData["Title"] = "Verify result";
+    Layout = null;
+    var email = ViewBag.Email?.ToString();
+    var initial = string.IsNullOrEmpty(email) ? "T" : email.Substring(0, 1).ToUpper();
+    var flash = TempData["Flash"] as string;
+    var flashType = TempData["FlashType"] as string ?? "ok";
+    var p = Model.PatientDetails;
+    var tatCss = Model.Tat switch
+    {
+        TatStatus.Overdue => "badge-overdue",
+        TatStatus.NearingTat => "badge-nearing",
+        _ => "badge-ontrack"
+    };
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verify result — @Model.ReqNum — NMB-HLabSys</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/technician.css" />
+</head>
+<body>
+
+    @* ===== TOPBAR + SIDEBAR: identical to Index.cshtml. Only the "active" class moves. ===== *@
+    <div class="topbar">
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
+            </div>
+            <div class="brand-name">NMB-HLabSys<span>Haematology Lab System</span></div>
+        </a>
+        <div class="topbar-right">
+            <div class="user-chip">
+                <div class="user-avatar">@initial</div>
+                <span class="user-email">@email</span>
+            </div>
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Sign Out
+            </a>
+        </div>
+    </div>
+
+    <div class="page">
+        <aside class="sidebar">
+            <a asp-controller="TechnicianDashboard" asp-action="Index" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /><path d="M9 21v-6h6v6" /></svg>
+                Dashboard
+            </a>
+
+            <div class="nav-label">Samples and Requests</div>
+            <a asp-controller="TechnicianDashboard" asp-action="ReceiveSamples" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6" /><polyline points="16 6 12 10 8 6" /><line x1="12" y1="10" x2="12" y2="2" /></svg>
+                Receive Samples
+            </a>
+
+            <a asp-controller="TechnicianDashboard" asp-action="SampleVerification" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" /><polyline points="9 14 11 16 15 12" /></svg>
+                Sample Verification
+            </a>
+
+            <div class="nav-label">Tests</div>
+            <a asp-controller="TechnicianDashboard" asp-action="TestQueue" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" /><line x1="9" y1="2" x2="15" y2="2" /></svg>
+                Testing Queue
+            </a>
+            <a asp-controller="TechnicianDashboard" asp-action="MyTests" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                My Tests
+            </a>
+
+            <div class="nav-label">Results</div>
+            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2" /><line x1="8" y1="8" x2="16" y2="8" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="8" y1="16" x2="13" y2="16" /></svg>
+                Capture Results
+            </a>
+            <a asp-controller="TechnicianDashboard" asp-action="Verification" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
+                Result Verification
+            </a>
+
+            <div class="nav-label">Reports</div>
+            <a asp-controller="TechnicianDashboard" asp-action="Reports" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="19" x2="20" y2="19" /><rect x="5" y="10" width="3" height="7" /><rect x="10.5" y="6" width="3" height="11" /><rect x="16" y="3" width="3" height="14" /></svg>
+                Reporting
+            </a>
+
+            <div class="nav-label">System</div>
+            <a asp-controller="TechnicianDashboard" asp-action="Profile" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                Profile
+            </a>
+        </aside>
+        @* ===== END shared topbar + sidebar ===== *@
+
+        <main class="main">
+
+            @if (!string.IsNullOrEmpty(flash))
+            {
+                <div class="flash flash-@flashType" role="status">@flash</div>
+            }
+
+            <div class="detail-head">
+                <div>
+                    <h1>@Model.ReqNum — @Model.Test</h1>
+                    <div class="detail-badges">
+                        <span class="badge @(Model.IsUrgent ? "badge-urgent" : "badge-routine")">@(Model.IsUrgent ? "Urgent" : "Routine")</span>
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge @tatCss">@Model.TatLabel</span>
+                        }
+                        <span class="badge @Model.StageCss">@Model.StageLabel</span>
+                        <span class="due-text" style="align-self:center">@Model.DueText</span>
+                    </div>
+                </div>
+                <div class="detail-actions">
+                    <a class="btn btn-ghost" asp-controller="TechnicianDashboard" asp-action="Verification">← Back to list</a>
+                    <a class="btn btn-ghost" asp-controller="TechnicianDashboard" asp-action="TestDetails" asp-route-id="@Model.ReqNum">Full patient data</a>
+                </div>
+            </div>
+
+            <div class="confidential">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                Confidential patient information — use only for processing this request.
+            </div>
+
+            @{
+                var why = CurrentUser.WhyCannotVerifyResult(Model);
+            }
+            @if (why != null)
+            {
+                <div class="alert-box"><strong>You can't verify this result</strong>@why</div>
+            }
+
+            <div class="detail-grid">
+
+                <div class="card span-2">
+                    <div class="detail-card-title">Captured result</div>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead><tr><th>Parameter</th><th>Result</th><th>Unit</th><th>Reference range</th><th>Flag</th></tr></thead>
+                            <tbody>
+                                @foreach (var r in Model.Results)
+                                {
+                                    <tr>
+                                        <td>@r.Parameter</td>
+                                        <td><strong>@r.Value</strong></td>
+                                        <td>@r.Unit</td>
+                                        <td>@r.Range</td>
+                                        <td><span class="badge @(r.IsAbnormal ? "badge-overdue" : "badge-ontrack")">@r.Flag</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <dl class="info-list" style="margin-top:16px;">
+                        <dt>Previous result</dt><dd>@(string.IsNullOrWhiteSpace(Model.PreviousResult) ? "None on record" : Model.PreviousResult)</dd>
+                        <dt>Captured by</dt><dd>Technician @Model.CapturedBy on @Model.CapturedAt?.ToString("dd MMM yyyy, HH:mm")</dd>
+                        <dt>Sample</dt><dd>@Model.SampleCondition (verified by @Model.SampleVerifiedBy)</dd>
+                    </dl>
+                </div>
+
+                <div class="card">
+                    <div class="detail-card-title">Patient context</div>
+                    <dl class="info-list">
+                        <dt>Patient</dt><dd>@p.FullName (@p.Age years, @p.Sex)</dd>
+                        <dt>Condition</dt><dd>@p.Conditions</dd>
+                        <dt>Allergies</dt><dd>@p.Allergies</dd>
+                        <dt>Clinical notes</dt><dd>@Model.ClinicalNotes</dd>
+                    </dl>
+                </div>
+
+                <div class="card">
+                    <div class="detail-card-title">Medication</div>
+                    @if (p.Medications.Count == 0)
+                    {
+                        <p class="muted-note">No medication recorded.</p>
+                    }
+                    else
+                    {
+                        <ul class="med-list">
+                            @foreach (var m in p.Medications)
+                            {
+                                <li>
+                                    <strong>@m.Name</strong> <span class="med-dose">— @m.Dose</span>
+                                    @if (!string.IsNullOrWhiteSpace(m.LabNote))
+                                    {
+                                        <span class="med-note">@m.LabNote</span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+
+                <div class="card span-2">
+                    <div class="detail-card-title">Decision</div>
+                    @if (why == null)
+                    {
+                        <form method="post" asp-controller="TechnicianDashboard" asp-action="ApproveResult">
+                            <input type="hidden" name="id" value="@Model.ReqNum" />
+                            <div class="result-field">
+                                <label for="note" class="field-label">Note to the technician (required to return the result)</label>
+                                <textarea id="note" name="note" class="form-control form-textarea" rows="3" placeholder="Explain what needs to be checked or repeated"></textarea>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" asp-controller="TechnicianDashboard" asp-action="ReturnResult" class="btn btn-ghost btn-danger-outline">Return for review</button>
+                                <button type="submit" asp-controller="TechnicianDashboard" asp-action="ApproveResult" class="btn btn-primary">Verify and release</button>
+                            </div>
+                        </form>
+                    }
+                    else
+                    {
+                        <p class="muted-note">Verification actions are not available for you on this result.</p>
+                    }
+                </div>
+            </div>
+
+        </main>
+    </div>
+</body>
+</html>
