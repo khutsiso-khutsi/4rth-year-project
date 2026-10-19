@@ -131,7 +131,51 @@ namespace LabManager.Repository
             return await _db.GetData<TestType, dynamic>(
                 "sp_GetTestTypes", new { });
         }
+
+        // Returns a mapping of TechnicianId -> List of TestTypeIds. The stored procedure
+        // should return rows with columns TechnicianId and TestTypeId.
+        public async Task<Dictionary<int, List<int>>> GetTechnicianTestTypeMap()
+        {
+            // Local DTO to match expected columns from the query
+            var rows = await _db.GetData<TechnicianTestTypeRow, dynamic>(
+                "sp_GetTechnicianTestTypeMap", new { });
+
+            var map = new Dictionary<int, List<int>>();
+
+            foreach (var r in rows)
+            {
+                if (!map.TryGetValue(r.TechnicianId, out var list))
+                {
+                    list = new List<int>();
+                    map[r.TechnicianId] = list;
+                }
+
+                if (r.TestTypeId > 0 && !list.Contains(r.TestTypeId)) list.Add(r.TestTypeId);
+            }
+
+            return map;
+        }
+
+        // Replaces the technician's assigned test types. Deletes existing mappings then inserts each provided id.
+        public async Task SetTechnicianTestTypes(int technicianId, IEnumerable<int> testTypeIds)
+        {
+            // Remove existing mappings first. Stored procedure name assumed; adjust to match DB.
+            await _db.SaveData("sp_DeleteTechnicianTestTypes", new { TechnicianId = technicianId });
+
+            if (testTypeIds == null) return;
+
+            foreach (var tid in testTypeIds.Distinct())
+            {
+                if (tid <= 0) continue;
+                await _db.SaveData("sp_AddTechnicianTestType", new { TechnicianId = technicianId, TestTypeId = tid });
+            }
+        }
     }
 
-    
+    // Private DTO used to read rows from sp_GetTechnicianTestTypeMap
+    internal class TechnicianTestTypeRow
+    {
+        public int TechnicianId { get; set; }
+        public int TestTypeId { get; set; }
+    }
 }

@@ -1,6 +1,7 @@
 @using LabManager.Models
 @using System.Text.Json
 @using Microsoft.AspNetCore.Mvc.Rendering
+@using Microsoft.AspNetCore.Http
 @model IEnumerable<ConsumableOrder>
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
@@ -8,58 +9,47 @@
     ViewData["Title"] = "Consumable Orders";
     Layout = null;
 
-    var statusFilter = ViewBag.StatusFilter as string ?? "All Statuses";
-
+    var orders = Model ?? Enumerable.Empty<ConsumableOrder>();
     var suppliers = ViewBag.Suppliers as IEnumerable<Supplier>
                     ?? Enumerable.Empty<Supplier>();
 
-    // Use one consistent SelectListItem collection for the view and JavaScript.
-    var consumableItems =
-        ViewBag.Consumables as IEnumerable<SelectListItem>
-        ?? ViewBag.Consumable as IEnumerable<SelectListItem>
-        ?? Enumerable.Empty<SelectListItem>();
+    var supplierOptions = ViewBag.Supplier as IEnumerable<SelectListItem>
+                          ?? Enumerable.Empty<SelectListItem>();
 
-    var consumableDetails = ViewBag.ConsumableDetails;
+    var consumableItems = ViewBag.Consumables as IEnumerable<SelectListItem>
+                          ?? ViewBag.Consumable as IEnumerable<SelectListItem>
+                          ?? Enumerable.Empty<SelectListItem>();
 
+    var consumableDetails = ViewBag.ConsumableDetails ?? Enumerable.Empty<object>();
 
-     var supplierDictionary = new Dictionary<string, string>();
+    var statusFilter = ViewBag.StatusFilter as string
+                       ?? Context.Request.Query["status"].ToString();
 
-    if (ViewBag.Supplier is IEnumerable<dynamic> supplier)
+    if (string.IsNullOrWhiteSpace(statusFilter))
     {
-        // Populate the dictionary with valid fridge data
-        supplierDictionary = supplier.ToDictionary(supplier => (string)supplier.Value, supplier => (string)supplier.Text);
+        statusFilter = "All Statuses";
     }
 
-
-    var consumableDictionary = new Dictionary<string, string>();
-
-    if (ViewBag.Consumable is IEnumerable<dynamic> consumable)
-    {
-        // Populate the dictionary with valid fridge data
-        consumableDictionary = consumable.ToDictionary(consumable => (string)consumable.Value, consumable => (string)consumable .Text);
-    }
-
-
-
+    var supplierFilter = Context.Request.Query["supplierId"].ToString();
     var email = ViewBag.Email as string ?? "";
-
     var successMessage = TempData["Success"] as string;
     var errorMessage = TempData["Error"] as string;
 
-    var orders = Model ?? Enumerable.Empty<ConsumableOrder>();
-
-
-
+    // Summary figures for the stat cards
+    var totalOrders = orders.Count();
+    var awaitingOrders = orders.Count(o => o.Status == "Ordered" || o.Status == "Partially Complete");
+    var completedOrders = orders.Count(o => o.Status == "Complete");
 }
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Consumable Orders — NMB-HLabSys</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap"
           rel="stylesheet" />
 
@@ -90,9 +80,16 @@
             --amber-light: rgba(217,119,6,0.1);
             --purple: #4f46e5;
             --purple-light: rgba(79,70,229,0.1);
+            --radius-sm: 8px;
             --radius: 16px;
+            --shadow-sm: 0 2px 8px rgba(11,31,58,.05);
             --shadow: 0 2px 8px rgba(11,31,58,.04);
             --shadow-lg: 0 20px 60px rgba(11,31,58,.20);
+            --topbar-h: 64px;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
         }
 
         body {
@@ -101,19 +98,40 @@
             color: var(--navy);
             min-height: 100vh;
             line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
 
         button, input, select, textarea {
             font-family: inherit;
+            font-size: inherit;
+            color: inherit;
         }
 
+        button {
+            cursor: pointer;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--teal);
+            outline-offset: 2px;
+        }
+
+        .form-input:focus-visible, .form-select:focus-visible, .form-textarea:focus-visible {
+            outline: none;
+        }
+
+        /* ── TOPBAR ── */
         .topbar {
             background: var(--navy);
             padding: 0 40px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            height: 64px;
+            height: var(--topbar-h);
             position: sticky;
             top: 0;
             z-index: 100;
@@ -127,7 +145,7 @@
             text-decoration: none;
         }
 
-        .brand-icon {
+        .brand-logo {
             width: 34px;
             height: 34px;
             background: var(--teal);
@@ -137,7 +155,7 @@
             justify-content: center;
         }
 
-            .brand-icon svg {
+            .brand-logo svg {
                 width: 18px;
                 height: 18px;
                 fill: white;
@@ -181,6 +199,7 @@
             height: 28px;
             background: var(--teal);
             border-radius: 50%;
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -212,6 +231,7 @@
             gap: 6px;
             transition: all 0.2s;
             cursor: pointer;
+            white-space: nowrap;
         }
 
             .logout-btn:hover {
@@ -222,13 +242,16 @@
             .logout-btn svg {
                 width: 14px;
                 height: 14px;
+                flex-shrink: 0;
             }
 
+        /* ── LAYOUT ── */
         .page {
             display: flex;
-            min-height: calc(100vh - 64px);
+            min-height: calc(100vh - var(--topbar-h));
         }
 
+        /* ── SIDEBAR ── */
         .sidebar {
             width: 220px;
             background: white;
@@ -236,9 +259,10 @@
             padding: 24px 0;
             flex-shrink: 0;
             position: sticky;
-            top: 64px;
-            height: calc(100vh - 64px);
+            top: var(--topbar-h);
+            height: calc(100vh - var(--topbar-h));
             overflow-y: auto;
+            align-self: flex-start;
         }
 
         .nav-section {
@@ -291,47 +315,71 @@
                 outline-offset: -2px;
             }
 
+        /* ── MAIN ── */
         .main {
             flex: 1;
+            min-width: 0;
             padding: clamp(24px, 3vw, 40px);
             overflow-y: auto;
         }
 
-        .header-row {
+        /* ── PAGE HEADER ── */
+        .page-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 24px;
-            gap: 20px;
+            gap: 25px;
+            margin-bottom: 25px;
             flex-wrap: wrap;
         }
 
-        .heading h1 {
+        .page-title {
             font-family: 'DM Serif Display', serif;
             font-size: 1.8rem;
             font-weight: 400;
             color: var(--navy);
+            letter-spacing: -.4px;
+            line-height: 1.15;
         }
 
-        .heading p {
-            margin: 6px 0 0;
-            color: var(--muted);
+        .page-description {
+            margin-top: 6px;
             font-size: 0.85rem;
+            color: var(--muted);
             font-weight: 300;
+            max-width: 650px;
         }
 
+        .header-actions {
+            display: flex;
+            gap: 9px;
+            flex-wrap: wrap;
+        }
+
+        /* ── BUTTONS ── */
         .btn {
-            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            border: 1px solid transparent;
             border-radius: 10px;
             padding: 10px 16px;
             cursor: pointer;
             font-size: 0.82rem;
             font-weight: 600;
+            line-height: 1.2;
+            text-decoration: none;
+            white-space: nowrap;
             transition: all .18s ease;
         }
 
             .btn:hover {
                 transform: translateY(-1px);
+            }
+
+            .btn:active {
+                transform: translateY(0);
             }
 
             .btn:disabled {
@@ -340,20 +388,25 @@
                 transform: none;
             }
 
+            .btn svg {
+                width: 15px;
+                height: 15px;
+            }
+
         .btn-primary {
             background: var(--teal);
-            color: white;
+            color: var(--white);
             box-shadow: 0 2px 8px rgba(13,148,136,0.25);
         }
 
             .btn-primary:hover {
                 background: var(--teal-dark);
+                box-shadow: 0 4px 12px rgba(13,148,136,0.3);
             }
 
         .btn-success {
             background: var(--green);
             color: white;
-            box-shadow: 0 2px 8px rgba(22,163,74,0.2);
         }
 
             .btn-success:hover {
@@ -363,7 +416,6 @@
         .btn-danger {
             background: var(--red);
             color: white;
-            box-shadow: 0 2px 8px rgba(220,38,38,0.2);
         }
 
             .btn-danger:hover {
@@ -371,41 +423,46 @@
             }
 
         .btn-outline {
-            background: white;
+            background: var(--offwhite);
             color: var(--navy);
-            border: 1px solid var(--border);
+            border-color: var(--border);
         }
 
             .btn-outline:hover {
+                background: var(--white);
                 border-color: var(--teal);
                 color: var(--teal);
+                box-shadow: 0 2px 8px rgba(13,148,136,0.1);
             }
 
         .btn-small {
             padding: 7px 11px;
-            font-size: 0.72rem;
+            font-size: .72rem;
         }
 
+        /* ── ALERTS ── */
         .alert {
             border-radius: 10px;
             padding: 13px 16px;
             margin-bottom: 20px;
-            font-size: 0.82rem;
+            font-size: .82rem;
             font-weight: 600;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 12px;
+            box-shadow: var(--shadow-sm);
         }
 
         .alert-success {
             background: var(--green-light);
-            color: var(--green);
+            color: var(--green-dark);
             border: 1px solid rgba(22,163,74,0.25);
         }
 
         .alert-error {
             background: var(--red-light);
-            color: var(--red);
+            color: var(--red-dark);
             border: 1px solid rgba(220,38,38,0.25);
         }
 
@@ -414,84 +471,38 @@
             border: none;
             cursor: pointer;
             font-size: 18px;
+            line-height: 1;
             color: inherit;
+            padding: 2px 6px;
         }
 
-        .filter-card {
+        /* ── CARD ── */
+        .card {
             background: white;
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 18px;
-            margin-bottom: 20px;
             box-shadow: var(--shadow);
-        }
-
-        .filter-form {
-            display: flex;
-            gap: 15px;
-            align-items: end;
-            flex-wrap: wrap;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 7px;
-        }
-
-        .form-label {
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: var(--navy);
-        }
-
-        .form-input,
-        .form-select,
-        .form-textarea {
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px 12px;
-            background: white;
-            color: var(--navy);
-            outline: none;
-            font-size: 0.82rem;
-        }
-
-            .form-input:focus,
-            .form-select:focus,
-            .form-textarea:focus {
-                border-color: var(--teal);
-                box-shadow: 0 0 0 3px var(--teal-light);
-            }
-
-        .search-box {
-            min-width: 260px;
-        }
-
-        .table-card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
             overflow: hidden;
-            box-shadow: var(--shadow);
         }
 
-        .table-header {
-            padding: 17px 22px;
+        .card-header {
+            min-height: 66px;
+            padding: 17px 24px;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
+            background: #ffffff;
         }
 
-            .table-header h2 {
-                font-family: 'DM Serif Display', serif;
-                font-size: 1.05rem;
-                font-weight: 400;
-                color: var(--navy);
-            }
+        .card-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.05rem;
+            color: var(--navy);
+        }
 
-        .table-count {
+        .record-count {
             font-size: 0.72rem;
             font-weight: 600;
             color: var(--muted);
@@ -499,11 +510,139 @@
             border: 1px solid var(--border);
             padding: 5px 10px;
             border-radius: 100px;
+            white-space: nowrap;
         }
 
+        /* ── FILTER ── */
+        .filter-card {
+            margin-bottom: 20px;
+        }
+
+        .filter-body {
+            padding: 18px 24px 20px;
+        }
+
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 14px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            min-width: 170px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        .form-input, .form-select, .form-textarea {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            background: var(--white);
+            color: var(--navy);
+            outline: none;
+            font-size: 0.82rem;
+            transition: border-color .18s ease, box-shadow .18s ease;
+        }
+
+            .form-input:hover, .form-select:hover, .form-textarea:hover {
+                border-color: #b9c5d3;
+            }
+
+            .form-input:focus, .form-select:focus, .form-textarea:focus {
+                border-color: var(--teal);
+                box-shadow: 0 0 0 3px var(--teal-light);
+            }
+
+            .form-input[readonly] {
+                background: var(--offwhite);
+                color: var(--muted);
+            }
+
+            .form-select:disabled {
+                background: var(--offwhite);
+                color: var(--muted);
+                cursor: wait;
+            }
+
+        .form-textarea {
+            resize: vertical;
+        }
+
+        .search-box {
+            min-width: 260px;
+        }
+
+        /* ── STAT CARDS ── */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 20px 22px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .stat-icon {
+            width: 46px;
+            height: 46px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: var(--tint);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .stat-icon svg {
+                width: 21px;
+                height: 21px;
+            }
+
+        .stat-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.8rem;
+            color: var(--navy);
+            line-height: 1.15;
+        }
+
+        .stat-caption {
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+
+        /* ── TABLE ── */
         .table-wrapper {
             width: 100%;
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         table {
@@ -518,13 +657,15 @@
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: .08em;
+            font-weight: 600;
+            padding: 12px 15px;
             text-align: left;
-            padding: 12px 18px;
             border-bottom: 1px solid var(--border);
+            white-space: nowrap;
         }
 
         td {
-            padding: 15px 18px;
+            padding: 14px 15px;
             border-bottom: 1px solid var(--offwhite);
             font-size: 0.83rem;
             vertical-align: middle;
@@ -535,23 +676,23 @@
             border-bottom: none;
         }
 
-        tbody tr:hover {
-            background: var(--offwhite);
+        tbody tr {
+            transition: background .18s ease;
         }
 
-        .order-number {
+            tbody tr:hover {
+                background: var(--offwhite);
+            }
+
+        .order-number, .supplier-name {
             font-weight: 700;
-            color: var(--navy);
-        }
-
-        .supplier-name {
-            font-weight: 600;
         }
 
         .items {
             color: var(--muted);
             max-width: 320px;
             line-height: 1.5;
+            overflow-wrap: anywhere;
         }
 
         .date {
@@ -562,9 +703,9 @@
         .status {
             display: inline-flex;
             align-items: center;
-            padding: 4px 10px;
+            padding: 4px 12px;
             border-radius: 100px;
-            font-size: 0.7rem;
+            font-size: 0.74rem;
             font-weight: 700;
             white-space: nowrap;
         }
@@ -580,12 +721,12 @@
         }
 
         .status-complete {
-            color: var(--green);
+            color: var(--green-dark);
             background: var(--green-light);
         }
 
         .status-cancelled {
-            color: var(--red);
+            color: var(--red-dark);
             background: var(--red-light);
         }
 
@@ -593,11 +734,42 @@
             display: flex;
             gap: 7px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
+        .action-note {
+            font-size: .75rem;
+            font-weight: 600;
+        }
+
+        .action-note-complete {
+            color: var(--green-dark);
+        }
+
+        .action-note-cancelled {
+            color: var(--red-dark);
+        }
+
+        .table-footer {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 14px 24px;
+            border-top: 1px solid var(--border);
+            background: var(--offwhite);
+            color: var(--muted);
+            font-size: 0.75rem;
+        }
+
+            .table-footer strong {
+                color: var(--navy);
+            }
+
+        /* ── EMPTY STATE ── */
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
+            padding: 55px 20px;
             color: var(--muted);
         }
 
@@ -624,10 +796,40 @@
             font-size: 0.8rem;
         }
 
+        /* ── PAGE FOOTER ── */
+        .footer {
+            margin-top: 28px;
+            padding: 0 2px;
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 0.7rem;
+        }
+
+        /* ── SCROLLBAR ── */
+        .sidebar::-webkit-scrollbar,
+        .table-wrapper::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+
+        .sidebar::-webkit-scrollbar-track,
+        .table-wrapper::-webkit-scrollbar-track {
+            background: var(--offwhite);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb,
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 20px;
+        }
+
+        /* ── MODALS ── */
         .modal-overlay {
             position: fixed;
             inset: 0;
             background: rgba(11,31,58,.45);
+            -webkit-backdrop-filter: blur(3px);
             backdrop-filter: blur(3px);
             display: none;
             align-items: center;
@@ -651,10 +853,14 @@
             animation: modalIn .18s ease;
         }
 
+        .modal-large {
+            max-width: 700px;
+        }
+
         @@keyframes modalIn {
             from {
                 opacity: 0;
-                transform: scale(0.96) translateY(8px);
+                transform: scale(.96) translateY(8px);
             }
 
             to {
@@ -663,23 +869,19 @@
             }
         }
 
-        .modal-large {
-            max-width: 700px;
-        }
-
         .modal-header {
             padding: 19px 22px;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
         }
 
         .modal-title {
             font-family: 'DM Serif Display', serif;
             font-size: 1.2rem;
             font-weight: 400;
-            color: var(--navy);
         }
 
         .modal-close {
@@ -687,11 +889,13 @@
             height: 32px;
             border: none;
             background: var(--offwhite);
+            flex-shrink: 0;
             border-radius: 8px;
             font-size: 20px;
+            line-height: 1;
             color: var(--muted);
             cursor: pointer;
-            transition: background .18s ease, color .18s ease;
+            transition: background .15s, color .15s;
         }
 
             .modal-close:hover {
@@ -710,20 +914,68 @@
             justify-content: flex-end;
             gap: 10px;
             background: var(--offwhite);
+            border-radius: 0 0 var(--radius) var(--radius);
+            flex-wrap: wrap;
         }
 
         .modal-subtitle {
             color: var(--muted);
-            font-size: 0.82rem;
+            font-size: .82rem;
             margin: 5px 0 20px;
         }
+
+            .modal-subtitle.flush {
+                margin: 0;
+            }
+
+            .modal-subtitle.tight {
+                margin: 0 0 12px;
+            }
 
         .modal-form-group {
             margin-bottom: 17px;
         }
 
+            .modal-form-group .form-label {
+                margin-bottom: 7px;
+            }
+
+            .modal-form-group .form-input,
+            .modal-form-group .form-select,
+            .modal-form-group .form-textarea {
+                width: 100%;
+            }
+
+        .field-hint {
+            display: block;
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: .72rem;
+        }
+
         .required {
             color: var(--red);
+        }
+
+        .cancel-warning {
+            background: var(--red-light);
+            color: var(--red-dark);
+            border: 1px solid rgba(220,38,38,.25);
+            padding: 13px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            font-size: .82rem;
+        }
+
+            .cancel-warning strong {
+                display: block;
+                margin-top: 5px;
+            }
+
+        .receive-intro {
+            font-size: .82rem;
+            color: var(--muted);
+            margin-bottom: 15px;
         }
 
         .receive-info {
@@ -738,19 +990,21 @@
             border: 1px solid var(--border);
             padding: 12px;
             border-radius: 10px;
+            min-width: 0;
         }
 
         .info-label {
-            font-size: 0.65rem;
+            font-size: .65rem;
             text-transform: uppercase;
+            letter-spacing: .06em;
             color: var(--muted);
             margin-bottom: 4px;
         }
 
         .info-value {
-            font-size: 0.83rem;
+            font-size: .83rem;
             font-weight: 700;
-            color: var(--navy);
+            overflow-wrap: anywhere;
         }
 
         .receive-item {
@@ -759,20 +1013,280 @@
             padding: 13px;
             margin-bottom: 10px;
             display: grid;
-            grid-template-columns: 1fr 120px 140px;
+            grid-template-columns: 1fr 140px;
             gap: 15px;
             align-items: center;
         }
 
+            .receive-item > div:empty {
+                display: none;
+            }
+
+            .receive-item .receive-quantity {
+                width: 100%;
+            }
+
         .receive-item-name {
             font-weight: 700;
-            font-size: 0.83rem;
-            color: var(--navy);
+            font-size: .83rem;
         }
 
         .receive-item-qty {
-            font-size: 0.75rem;
+            font-size: .75rem;
             color: var(--muted);
+        }
+
+        .receive-item-qty, .receive-item-name {
+            overflow-wrap: anywhere;
+        }
+
+        .receive-item .form-label {
+            margin-bottom: 6px;
+        }
+
+        .form-input:disabled {
+            background: var(--offwhite);
+            color: var(--muted);
+            cursor: not-allowed;
+        }
+
+        .receive-status {
+            padding: 15px;
+            font-size: .82rem;
+        }
+
+            .receive-status.error {
+                color: var(--red-dark);
+            }
+
+        /* ── CREATE-ORDER ITEM ROWS ── */
+        .section-title {
+            font-size: 1.02rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .order-section {
+            border-top: 1px solid var(--border);
+            margin-top: 22px;
+            padding-top: 22px;
+        }
+
+            .order-section > .modal-subtitle {
+                margin: 0 0 14px;
+            }
+
+        .order-items-count {
+            color: var(--muted);
+            font-size: .76rem;
+            white-space: nowrap;
+        }
+
+            .order-items-count strong {
+                color: var(--navy);
+            }
+
+        #order-items-container {
+            display: grid;
+            gap: 14px;
+        }
+
+        .order-item-row {
+            display: grid !important;
+            grid-template-columns: minmax(0,1fr) 150px 36px;
+            align-items: end !important;
+            column-gap: 16px !important;
+            row-gap: 8px !important;
+            margin: 0 !important;
+            padding: 16px 18px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            transition: border-color .15s, box-shadow .15s;
+        }
+
+        .modal-form-group > .form-select,
+        .modal-form-group > .form-input[readonly] {
+            border-radius: 999px;
+            padding: 11px 18px;
+        }
+
+        .order-item-row .form-select,
+        .order-item-row .quantity-input {
+            border-radius: 999px;
+            padding: 11px 18px;
+        }
+
+        .order-item-row .form-select {
+            width: 100%;
+        }
+
+        .item-label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        .order-item-row:focus-within {
+            border-color: rgba(13,148,136,.65);
+            box-shadow: 0 0 0 3px rgba(13,148,136,.08);
+        }
+
+        .order-item-main {
+            min-width: 0;
+            grid-column: 1;
+        }
+
+        .order-item-number, .order-item-hint {
+            display: none;
+        }
+
+        .order-item-fields {
+            min-width: 0;
+            flex: 1;
+        }
+
+            .order-item-fields .form-select {
+                width: 100%;
+                min-width: 0;
+                text-overflow: ellipsis;
+            }
+
+        .order-item-hint {
+            display: block;
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: .72rem;
+            line-height: 1.4;
+        }
+
+            .order-item-hint.has-selection {
+                color: var(--teal-dark);
+            }
+
+        .quantity-cell label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: .78rem;
+            font-weight: 700;
+        }
+
+        .quantity-stepper {
+            display: block;
+        }
+
+        .quantity-input {
+            width: 100%;
+            min-width: 0;
+            font-weight: 500;
+        }
+
+        .quantity-cell {
+            grid-column: 2;
+        }
+
+        .remove-item-btn {
+            grid-column: 3;
+            width: 36px;
+            height: 36px;
+            padding: 0 !important;
+            margin-bottom: 2px;
+            border-radius: 50%;
+            color: var(--navy);
+            border-color: transparent;
+            background: transparent;
+        }
+
+            .remove-item-btn:hover {
+                background: var(--red-light);
+                border-color: transparent;
+                color: var(--red-dark);
+                transform: none;
+                box-shadow: none;
+            }
+
+            .remove-item-btn svg {
+                width: 18px;
+                height: 18px;
+            }
+
+        .add-item-btn {
+            width: 100%;
+            border-radius: 100px;
+            padding: 12px 16px;
+            margin-top: 14px;
+        }
+
+        .order-items-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 8px;
+        }
+
+        .order-supplier-note {
+            display: flex;
+            gap: 9px;
+            align-items: flex-start;
+            padding: 11px 12px;
+            margin-top: 10px;
+            border-radius: 10px;
+            background: var(--teal-light);
+            color: var(--navy2);
+            font-size: .77rem;
+        }
+
+        /* ── LOGOUT MODAL ── */
+        #logout-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1100;
+            padding: 20px;
+            background: rgba(11,31,58,.45);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logout-dialog {
+            background: white;
+            border-radius: 20px;
+            padding: 32px 28px;
+            max-width: 380px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(11,31,58,.2);
+        }
+
+            .logout-dialog h3 {
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.2rem;
+                font-weight: 400;
+                color: var(--navy);
+                margin-bottom: 8px;
+            }
+
+            .logout-dialog p {
+                font-size: .85rem;
+                color: var(--muted);
+                margin-bottom: 24px;
+                line-height: 1.6;
+            }
+
+        .logout-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+            .logout-actions .btn {
+                flex: 1;
+            }
+
+        /* ── RESPONSIVE ── */
+        @@media (max-width: 1000px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
         }
 
         @@media (max-width: 768px) {
@@ -784,6 +1298,10 @@
                 display: none;
             }
 
+            .user-chip {
+                padding: 6px;
+            }
+
             .sidebar {
                 display: none;
             }
@@ -792,9 +1310,38 @@
                 padding: 20px 16px;
             }
 
-            .header-row {
+            .page-header {
                 flex-direction: column;
-                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .header-actions {
+                width: 100%;
+            }
+
+                .header-actions .btn {
+                    flex: 1;
+                }
+
+            .filter-body {
+                padding: 16px;
+            }
+
+            .filter-form .form-group {
+                flex: 1 1 100%;
+            }
+
+            .filter-form .btn {
+                flex: 1 1 auto;
+            }
+
+            .table-footer {
+                padding-left: 16px;
+                padding-right: 16px;
             }
 
             .receive-item {
@@ -804,93 +1351,57 @@
             .receive-info {
                 grid-template-columns: 1fr;
             }
+
+            .modal-body {
+                padding: 18px;
+            }
+
+            .footer {
+                flex-direction: column;
+                gap: 6px;
+                line-height: 1.5;
+            }
         }
 
-        /* Clear, card-based consumable ordering */
-        .order-items-panel {
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            overflow: hidden;
-            background: #fbfcff;
-        }
-        .order-items-heading {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 125px 84px;
-            gap: 12px;
-            padding: 10px 14px;
-            background: #f0f4fa;
-            border-bottom: 1px solid var(--border);
-            color: var(--muted);
-            font-size: .69rem;
-            font-weight: 700;
-            letter-spacing: .07em;
-            text-transform: uppercase;
-        }
-        #order-items-container { display: grid; gap: 10px; padding: 12px; }
-        .order-item-row {
-            display: grid !important;
-            grid-template-columns: minmax(0, 1fr) 125px 84px;
-            align-items: center !important;
-            gap: 12px !important;
-            margin: 0 !important;
-            padding: 12px;
-            background: var(--white);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            box-shadow: 0 2px 5px rgba(11,31,58,.025);
-            transition: border-color .18s ease, box-shadow .18s ease;
-        }
-        .order-item-row:focus-within {
-            border-color: rgba(13,148,136,.65);
-            box-shadow: 0 0 0 3px rgba(13,148,136,.08);
-        }
-        .order-item-main { min-width: 0; display: flex; align-items: flex-start; gap: 10px; }
-        .order-item-number {
-            display: inline-flex; flex: 0 0 30px; width: 30px; height: 30px;
-            align-items: center; justify-content: center; border-radius: 9px;
-            color: var(--teal-dark); background: var(--teal-light); font-size: .78rem; font-weight: 700;
-        }
-        .order-item-fields { min-width: 0; flex: 1; }
-        .order-item-fields .form-select { width: 100%; min-width: 0; }
-        .order-item-hint { display: block; margin-top: 5px; color: var(--muted); font-size: .72rem; line-height: 1.4; }
-        .order-item-hint.has-selection { color: var(--teal-dark); }
-        .quantity-cell label { display: block; margin-bottom: 7px; color: var(--navy2); font-size: .72rem; font-weight: 700; }
-        .quantity-stepper { display: grid; grid-template-columns: 34px minmax(40px, 1fr) 34px; align-items: stretch; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--white); }
-        .quantity-input { width: 100%; min-width: 0; text-align: center; font-weight: 700; border: 0 !important; border-radius: 0 !important; padding: 9px 2px !important; box-shadow: none !important; -moz-appearance: textfield; }
-        .quantity-input::-webkit-outer-spin-button, .quantity-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .quantity-step-btn { border: 0; background: #f0f7f7; color: var(--teal-dark); font-size: 1.1rem; font-weight: 700; cursor: pointer; }
-        .quantity-step-btn:hover { background: var(--teal-light); }
-        .remove-item-btn { width: 100%; min-width: 0; padding-left: 8px !important; padding-right: 8px !important; }
-        .order-items-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 14px 14px; }
-        .order-items-count { color: var(--muted); font-size: .76rem; }
-        .order-items-count strong { color: var(--navy); }
-        #add-item-btn { display: inline-flex; align-items: center; gap: 7px; border-color: rgba(13,148,136,.45); color: var(--teal-dark); font-weight: 700; }
-        #add-item-btn:hover { background: var(--teal-light); }
-        .order-supplier-note { display: flex; gap: 9px; align-items: flex-start; padding: 11px 12px; margin-top: 10px; border-radius: 10px; background: var(--teal-light); color: var(--navy2); font-size: .77rem; }
-        .order-supplier-note strong { color: var(--teal-dark); }
         @@media (max-width: 600px) {
-            .order-items-heading { display: none; }
-            .order-item-row { grid-template-columns: minmax(0, 1fr) 84px !important; gap: 10px !important; }
-            .order-item-main { grid-column: 1 / -1; }
-            .quantity-cell { grid-column: 1; }
-            .remove-item-btn { grid-column: 2; }
-            .order-items-footer { align-items: flex-start; flex-direction: column; }
+            .order-item-row {
+                grid-template-columns: minmax(0,1fr) 90px 34px;
+                column-gap: 10px !important;
+                padding: 14px;
+            }
+
+            .search-box {
+                min-width: 0;
+                width: 100%;
+            }
+
+            .logout-actions {
+                flex-direction: column-reverse;
+            }
+        }
+
+        @@media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation: none !important;
+                transition: none !important;
+            }
+
+            .btn:hover {
+                transform: none;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <!-- ============================================================
-         TOPBAR
-         ============================================================ -->
+    <!-- TOPBAR -->
     <div class="topbar">
-
         <a class="brand" asp-controller="Home" asp-action="Index">
-            <div class="brand-icon">
-                <svg viewBox="0 0 24 24">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" />
-                    <circle cx="12" cy="17" r="4" opacity="0.6" />
+                    <circle cx="12" cy="17" r="4" opacity=".6" />
                 </svg>
             </div>
             <div class="brand-name">
@@ -901,14 +1412,11 @@
 
         <div class="topbar-right">
             <div class="user-chip">
-                <div class="user-avatar">
-                    @(string.IsNullOrWhiteSpace(email) ? "M" : email.Substring(0, 1).ToUpper())
-                </div>
+                <div class="user-avatar">@(string.IsNullOrWhiteSpace(email) ? "M" : email.Substring(0, 1).ToUpper())</div>
                 <span class="user-email">@email</span>
             </div>
-
             <a asp-controller="Home" asp-action="Logout" class="logout-btn" id="logout-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                     <polyline points="16 17 21 12 16 7" />
                     <line x1="21" y1="12" x2="9" y2="12" />
@@ -916,266 +1424,321 @@
                 Sign Out
             </a>
         </div>
-
     </div>
 
     <div class="page">
 
-        <!-- ============================================================
-             SIDEBAR
-             ============================================================ -->
+        <!-- SIDEBAR -->
         <aside class="sidebar">
+            <nav aria-label="Main navigation">
+                <div class="nav-section">
+                    <div class="nav-label">Main</div>
 
-            <div class="nav-section">
-                <div class="nav-label">Main</div>
+                    <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                        </svg>
+                        Dashboard
+                    </a>
 
-                <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <rect x="3" y="3" width="7" height="7" />
-                        <rect x="14" y="3" width="7" height="7" />
-                        <rect x="3" y="14" width="7" height="7" />
-                        <rect x="14" y="14" width="7" height="7" />
-                    </svg>
-                    Dashboard
-                </a>
+                    <a asp-controller="TestCatalogue" asp-action="Index" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <path d="M9 3v11a3 3 0 006 0V3" />
+                            <line x1="6" y1="3" x2="18" y2="3" />
+                        </svg>
+                        Test Catalogue
+                    </a>
 
-                <a asp-controller="TestCatalogue" asp-action="Index" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M9 3v11a3 3 0 006 0V3" />
-                        <line x1="6" y1="3" x2="18" y2="3" />
-                    </svg>
-                    Test Catalogue
-                </a>
+                    <a asp-controller="Consumable" asp-action="Index" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        Consumables
+                    </a>
 
-                <a asp-controller="Consumable" asp-action="Index" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                    </svg>
-                    Consumables
-                </a>
+                    <a asp-controller="Staff" asp-action="Index" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        Staff
+                    </a>
 
-                <a asp-controller="Staff" asp-action="Index" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                    </svg>
-                    Staff
-                </a>
+                    <a asp-controller="ConsumableOrder" asp-action="Index" class="nav-item active" aria-current="page">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                        </svg>
+                        Orders
+                    </a>
 
-                <a asp-controller="ConsumableOrder" asp-action="Index" class="nav-item active">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                    </svg>
-                    Orders
-                </a>
+                    <a asp-controller="TestsByCategory" asp-action="Index" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                        </svg>
+                        Reports
+                    </a>
+                </div>
 
-                <a asp-controller="ManagerDashboard" asp-action="TestsByCategory" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                        <line x1="16" y1="13" x2="8" y2="13" />
-                        <line x1="16" y1="17" x2="8" y2="17" />
-                    </svg>
-                    Reports
-                </a>
-            </div>
+                <div class="nav-section">
+                    <div class="nav-label">System</div>
 
-            <div class="nav-section">
-                <div class="nav-label">System</div>
+                    <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        Profile
+                    </a>
 
-                <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                    </svg>
-                    Profile
-                </a>
-
-                <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    </svg>
-                    Audit Log
-                </a>
-            </div>
-
+                    <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        </svg>
+                        Audit Log
+                    </a>
+                </div>
+            </nav>
         </aside>
 
-        <!-- ============================================================
-             MAIN
-             ============================================================ -->
+        <!-- MAIN -->
         <main class="main">
 
-            <div class="header-row">
-                <div class="heading">
-                    <h1>Orders</h1>
-                    <p>Create, receive and manage consumable orders.</p>
+            <!-- PAGE HEADER -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Orders</h1>
+                    <p class="page-description">
+                        Create, receive and manage consumable orders placed with your suppliers.
+                    </p>
                 </div>
 
-                <button type="button" class="btn btn-primary" onclick="openModal('m-create-order')">
-                    + Create Order
-                </button>
+                <div class="header-actions">
+                    <button type="button" class="btn btn-primary" onclick="openModal('m-create-order')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        Create Order
+                    </button>
+                </div>
             </div>
 
-            <!-- ALERTS -->
             @if (!string.IsNullOrWhiteSpace(successMessage))
             {
-                <div class="alert alert-success" id="success-alert">
+                <div class="alert alert-success" id="success-alert" role="status">
                     <span>✓ @successMessage</span>
-                    <button type="button" class="alert-close" onclick="closeAlert('success-alert')">×</button>
+                    <button type="button" class="alert-close" aria-label="Dismiss" onclick="closeAlert('success-alert')">×</button>
                 </div>
             }
-
             @if (!string.IsNullOrWhiteSpace(errorMessage))
             {
-                <div class="alert alert-error" id="error-alert">
+                <div class="alert alert-error" id="error-alert" role="alert">
                     <span>⚠ @errorMessage</span>
-                    <button type="button" class="alert-close" onclick="closeAlert('error-alert')">×</button>
+                    <button type="button" class="alert-close" aria-label="Dismiss" onclick="closeAlert('error-alert')">×</button>
                 </div>
             }
 
-            <!-- FILTER -->
-            <div class="filter-card">
-                <form method="get" action="@Url.Action("Index", "ConsumableOrder")" class="filter-form">
+            <!-- FILTERS -->
+            <div class="card filter-card">
+                <div class="card-header">
+                    <div class="card-title">Filter Orders</div>
+                </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Order Status</label>
-                        <select class="form-select" name="status" onchange="this.form.submit()">
-                            <option value="All Statuses" selected="@(statusFilter == "All Statuses")">All Statuses</option>
-                            <option value="Ordered" selected="@(statusFilter == "Ordered")">Ordered</option>
-                            <option value="Partially Complete" selected="@(statusFilter == "Partially Complete")">Partially Complete</option>
-                            <option value="Complete" selected="@(statusFilter == "Complete")">Complete</option>
-                            <option value="Cancelled" selected="@(statusFilter == "Cancelled")">Cancelled</option>
-                        </select>
+                <div class="filter-body">
+                    <form method="get" action="@Url.Action("Index", "ConsumableOrder")" class="filter-form" id="order-filter-form">
+                        <div class="form-group">
+                            <label class="form-label" for="supplier-filter">Supplier</label>
+                            <select class="form-select" id="supplier-filter" name="supplierId">
+                                <option value="">All Suppliers</option>
+                                @foreach (var supplier in supplierOptions)
+                                {
+                                    <option value="@supplier.Value" selected="@(supplier.Value == supplierFilter)">
+                                        @supplier.Text
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="status-filter">Order Status</label>
+                            <select class="form-select" id="status-filter" name="status">
+                                <option value="All Statuses" selected="@(statusFilter == "All Statuses")">All Statuses</option>
+                                <option value="Ordered" selected="@(statusFilter == "Ordered")">Ordered</option>
+                                <option value="Partially Complete" selected="@(statusFilter == "Partially Complete")">Partially Complete</option>
+                                <option value="Complete" selected="@(statusFilter == "Complete")">Complete</option>
+                                <option value="Cancelled" selected="@(statusFilter == "Cancelled")">Cancelled</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="order-search">Search</label>
+                            <input type="text" id="order-search" class="form-input search-box"
+                                   placeholder="Search order, supplier or consumable..." autocomplete="off" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                        <a asp-controller="ConsumableOrder" asp-action="Index" class="btn btn-outline">Clear Filters</a>
+                    </form>
+                </div>
+            </div>
+
+            <!-- SUMMARY -->
+            <div class="stats">
+                <div class="stat-card" style="--accent:#0d9488;--tint:rgba(13,148,136,0.1);">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                        </svg>
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Search</label>
-                        <input type="text"
-                               id="order-search"
-                               class="form-input search-box"
-                               placeholder="Search order, supplier or consumable..."
-                               autocomplete="off" />
+                    <div>
+                        <div class="stat-label">Total Orders</div>
+                        <div class="stat-value">@totalOrders.ToString("N0")</div>
+                        <div class="stat-caption">Loaded on this page</div>
                     </div>
+                </div>
 
-                </form>
+                <div class="stat-card" style="--accent:#d97706;--tint:rgba(217,119,6,0.1);">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9" />
+                            <polyline points="12 7 12 12 15 14" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="stat-label">Awaiting Receipt</div>
+                        <div class="stat-value">@awaitingOrders.ToString("N0")</div>
+                        <div class="stat-caption">Ordered or partially complete</div>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="--accent:#16a34a;--tint:rgba(22,163,74,0.1);">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <polyline points="22 4 12 14.01 9 11.01" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="stat-label">Completed</div>
+                        <div class="stat-value">@completedOrders.ToString("N0")</div>
+                        <div class="stat-caption">Fully received orders</div>
+                    </div>
+                </div>
             </div>
 
             <!-- ORDERS TABLE -->
-            <div class="table-card">
-
-                <div class="table-header">
-                    <h2>Consumable Orders</h2>
-                    <span class="table-count" id="table-count">@orders.Count() order(s)</span>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Consumable Orders</div>
+                    <span class="record-count" id="table-count" aria-live="polite">@orders.Count() order(s)</span>
                 </div>
 
                 <div class="table-wrapper">
                     <table id="orders-table">
-
                         <thead>
                             <tr>
-                                <th>Order Number</th>
-                                <th>Supplier</th>
-                                <th>Consumable</th>
-                                <th>Order Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <th scope="col">Order Number</th>
+                                <th scope="col">Supplier</th>
+                                <th scope="col">Consumables &amp; Quantity</th>
+                                <th scope="col">Order Date</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Actions</th>
                             </tr>
                         </thead>
-
                         <tbody>
                             @if (orders.Any())
                             {
                                 foreach (var order in orders)
                                 {
-                                    var statusClass =
-                                        order.Status == "Ordered"
-                                            ? "status-ordered"
-                                            : order.Status == "Partially Complete"
-                                                ? "status-partial"
-                                                : order.Status == "Complete"
-                                                    ? "status-complete"
-                                                    : "status-cancelled";
+                                    var statusClass = order.Status == "Ordered" ? "status-ordered"
+                                        : order.Status == "Partially Complete" ? "status-partial"
+                                        : order.Status == "Complete" ? "status-complete" : "status-cancelled";
 
-                                    var supplierName =
-                                        suppliers
-                                            .FirstOrDefault(s => s.SupplierID == order.SupplierID)
-                                            ?.SupplierName
-                                        ?? $"Supplier #{order.SupplierID}";
+                                    var supplierName = suppliers
+                                        .FirstOrDefault(s => s.SupplierID == order.SupplierID)?.SupplierName;
+
+                                    if (string.IsNullOrWhiteSpace(supplierName))
+                                    {
+                                        supplierName = supplierOptions
+                                            .FirstOrDefault(s => s.Value == order.SupplierID.ToString())?.Text;
+                                    }
+
+                                    if (string.IsNullOrWhiteSpace(supplierName))
+                                    {
+                                        supplierName = $"Supplier #{order.SupplierID}";
+                                    }
+
+                                    var consumableName = consumableItems
+                                        .FirstOrDefault(c => c.Value == order.ConsumableID.ToString())?.Text
+                                        ?? $"Consumable #{order.ConsumableID}";
+
+                                    // Items comes from sp_GetConsumableOrders, e.g. "Tubes × 100, Gloves × 50".
+                                    // Orders created before item rows existed fall back to the single consumable name.
+                                    var itemsText = Convert.ToString(order.Items);
+                                    if (string.IsNullOrWhiteSpace(itemsText))
+                                    {
+                                        itemsText = consumableName;
+                                    }
 
                                     <tr class="order-row"
-                                        data-search="@($"{order.OrderNumber} {supplierName} {order.Items} {order.Status}")"
+                                        data-search="@($"{order.OrderNumber} {supplierName} {order.Items} {consumableName} {order.Status}")"
                                         data-order-id="@order.Id"
                                         data-order-number="@order.OrderNumber"
                                         data-supplier="@supplierName"
+                                        data-supplier-id="@order.SupplierID"
                                         data-order-date="@order.OrderDate.ToString("dd MMM yyyy HH:mm")"
-                                        data-items="@order.Items">
+                                        data-items="@order.Items"
+                                        data-status="@order.Status">
 
                                         <td><div class="order-number">@order.OrderNumber</div></td>
-                                        <td><div class="supplier-name">
-                                             @{
-                                                var supplierItem = ((IEnumerable<SelectListItem>)ViewBag.Supplier)
-                                                    .FirstOrDefault(s => s.Value == order.SupplierID.ToString());
-                                            }
-                                            @(supplierItem?.Text ?? "No supplier")
-                                        </div></td>
-                                        <td><div class="items">
-                                             @{
-                                                var consumableItem = consumableItems
-                                                    .FirstOrDefault(s => s.Value == order.ConsumableID.ToString());
-                                            }
-                                            @(consumableItem?.Text ?? "No consumable")
-                                        </div></td>
+                                        <td><div class="supplier-name">@supplierName</div></td>
+                                        <td><div class="items">@itemsText</div></td>
                                         <td><div class="date">@order.OrderDate.ToString("dd MMM yyyy HH:mm")</div></td>
                                         <td><span class="status @statusClass">@order.Status</span></td>
-
                                         <td>
                                             <div class="actions">
-
                                                 @if (order.Status == "Ordered" || order.Status == "Partially Complete")
                                                 {
-                                                    <button type="button"
-                                                            class="btn btn-success btn-small receive-order-btn"
+                                                    <button type="button" class="btn btn-success btn-small receive-order-btn"
                                                             data-order-id="@order.Id"
                                                             data-order-number="@order.OrderNumber"
                                                             data-supplier="@supplierName"
-                                                            data-order-date="@order.OrderDate.ToString("dd MMM yyyy HH:mm")"
-                                                            data-items="@order.Items">
+                                                            data-order-date="@order.OrderDate.ToString("dd MMM yyyy HH:mm")">
                                                         Receive
                                                     </button>
                                                 }
-
                                                 @if (order.Status == "Ordered")
                                                 {
-                                                    <button type="button"
-                                                            class="btn btn-danger btn-small cancel-order-btn"
+                                                    <button type="button" class="btn btn-danger btn-small cancel-order-btn"
                                                             data-order-id="@order.Id"
                                                             data-order-number="@order.OrderNumber"
                                                             data-supplier="@supplierName">
                                                         Cancel
                                                     </button>
                                                 }
-
                                                 @if (order.Status == "Complete")
                                                 {
-                                                    <span style="font-size:12px;color:var(--green);">✓ Completed</span>
+                                                    <span class="action-note action-note-complete">✓ Completed</span>
                                                 }
-
                                                 @if (order.Status == "Cancelled")
                                                 {
-                                                    <span style="font-size:12px;color:var(--red);">Cancelled</span>
+                                                    <span class="action-note action-note-cancelled">Cancelled</span>
                                                 }
-
                                             </div>
                                         </td>
-
                                     </tr>
                                 }
                             }
                             else
                             {
-                                <tr>
+                                <tr id="server-empty-row">
                                     <td colspan="6">
                                         <div class="empty-state">
                                             <div class="empty-icon">📦</div>
@@ -1185,476 +1748,376 @@
                                     </td>
                                 </tr>
                             }
+                            <tr id="filter-empty-row" style="display:none;">
+                                <td colspan="6">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">🔎</div>
+                                        <h3>No matching orders</h3>
+                                        <p>Try another supplier, status or search term.</p>
+                                    </div>
+                                </td>
+                            </tr>
                         </tbody>
-
                     </table>
                 </div>
 
+                <div class="table-footer">
+                    <span>Showing <strong id="footer-count">@orders.Count()</strong> order(s)</span>
+                    <span>Generated: <strong>@DateTime.Now.ToString("dd MMMM yyyy, HH:mm")</strong></span>
+                </div>
+            </div>
+
+            <!-- PAGE FOOTER -->
+            <div class="footer">
+                <span>NMB-HLabSys · Haematology Laboratory System</span>
+                <span>Internal management report · @DateTime.Now.ToString("yyyy")</span>
             </div>
 
         </main>
-
     </div>
 
-    <!-- ANTIFORGERY TOKEN -->
     <form id="antiForgeryForm" style="display:none;">
         @Html.AntiForgeryToken()
     </form>
 
-    <!-- ============================================================
-         CREATE ORDER MODAL
-         ============================================================ -->
+    <!-- CREATE ORDER MODAL -->
     <div class="modal-overlay" id="m-create-order">
-        <div class="modal">
-
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="create-order-title">
             <div class="modal-header">
-                <h2 class="modal-title">Create Consumable Order</h2>
-                <button type="button" class="modal-close" onclick="closeModal('m-create-order')">×</button>
+                <h2 class="modal-title" id="create-order-title">Create Consumable Order</h2>
+                <button type="button" class="modal-close" aria-label="Close" onclick="closeModal('m-create-order')">×</button>
             </div>
 
             <form method="post" action="@Url.Action("CreateOrder", "ConsumableOrder")" id="create-order-form">
-
                 @Html.AntiForgeryToken()
-
                 <div class="modal-body">
-
                     <p class="modal-subtitle">Create a new order for laboratory consumables.</p>
 
-                    <!-- ORDER NUMBER -->
                     <div class="modal-form-group">
-                        <label class="form-label">Order Number</label>
-                        <input type="text" class="form-input" value="Automatically generated" readonly />
-                        <small style="display:block; margin-top:5px; color:var(--muted);">
-                            The order number will be generated automatically.
-                        </small>
-                    </div>
-
-                    <!-- SUPPLIER -->
-                    @* <div class="modal-form-group">
-                        <label class="form-label">
-                            Supplier <span class="required">*</span>
-                        </label>
-
+                        <label class="section-title" for="order-supplier" style="display:block;">1. Supplier <span class="required">*</span></label>
                         <select class="form-select" name="supplierId" id="order-supplier" required>
-                            <option value="">Select Supplier</option>
-
-                            @foreach (var supplier in ViewBag.Supplier)
+                            <option value="">Select a supplier</option>
+                            @foreach (var supplier in supplierOptions)
                             {
                                 <option value="@supplier.Value">@supplier.Text</option>
                             }
                         </select>
+                        <small class="field-hint">Choose a supplier to see the consumables they supply.</small>
                     </div>
- *@
-                    <!-- ORDER ITEMS -->
+
                     <div class="modal-form-group">
-                        <label class="form-label">Order items <span class="required">*</span></label>
-                        <p class="modal-subtitle" style="margin:0 0 12px;">Choose items supplied by the selected supplier and enter the quantity needed for each.</p>
+                        <label class="section-title" for="order-number-display" style="display:block;">Order Number</label>
+                        <input type="text" id="order-number-display" class="form-input" value="Automatically generated" readonly />
+                        <small class="field-hint">The order number will be generated automatically.</small>
+                    </div>
+
+                    <div class="modal-form-group order-section">
+                        <h3 class="section-title" style="margin-bottom:14px;">2. Order items</h3>
 
                         <div class="order-items-panel">
-                            <div class="order-items-heading">
-                                <span>Consumable / stock</span><span>Quantity</span><span>Action</span>
-                            </div>
                             <div id="order-items-container">
                                 <div class="order-item-row">
                                     <div class="order-item-main">
                                         <span class="order-item-number">01</span>
                                         <div class="order-item-fields">
-                                            <select name="consumableId" class="form-select consumable-select" required>
-                                                <option value="">Select a consumable</option>
-
-                                                
-                            @foreach (var supplier in ViewBag.Supplier)
-                            {
-                                <option value="@supplier.Value">@supplier.Text</option>
-                            }
+                                            <label class="item-label">Consumable</label>
+                                            <select name="consumableId" class="form-select consumable-select" aria-label="Consumable" required>
+                                                <option value="">Select a supplier first</option>
                                             </select>
                                             <small class="order-item-hint">Select a supplier first to see its available consumables.</small>
                                         </div>
                                     </div>
                                     <div class="quantity-cell">
-                                        <label>Quantity ordered</label>
+                                        <label>Quantity</label>
                                         <div class="quantity-stepper">
-                                            <button type="button" class="quantity-step-btn quantity-decrease" aria-label="Decrease quantity">−</button>
-                                            <input type="number" name="QuantityOrdered" class="form-input quantity-input" min="1" step="1" value="1" required aria-label="Quantity ordered" />
-                                            <button type="button" class="quantity-step-btn quantity-increase" aria-label="Increase quantity">+</button>
+                                            <input type="number" name="QuantityOrdered" class="form-input quantity-input"
+                                                   min="1" step="1" value="1" required aria-label="Quantity ordered" />
                                         </div>
                                     </div>
-                                    <button type="button" class="btn btn-outline remove-item-btn" aria-label="Remove this consumable">Remove</button>
+                                    <button type="button" class="btn btn-outline remove-item-btn" aria-label="Remove item" title="Remove item">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <polyline points="3 6 5 6 21 6" />
+                                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                            <path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
-                            <div class="order-items-footer">
-                                <button type="button" class="btn btn-outline" id="add-item-btn"><span aria-hidden="true">＋</span> Add another item</button>
-                                <span class="order-items-count"><strong id="order-item-count">1</strong> item row</span>
+
+                            <button type="button" class="btn btn-outline add-item-btn" id="add-item-btn">＋ Add another item</button>
+                            <div class="order-items-actions">
+                                <span class="order-items-count"><strong id="order-item-count">1</strong> item(s)</span>
                             </div>
                         </div>
-                        <div class="order-supplier-note"><span aria-hidden="true">ⓘ</span><span id="supplier-items-note">Select a supplier to load only the consumables associated with that supplier.</span></div>
+
+                        <div class="order-supplier-note">
+                            <span aria-hidden="true">ⓘ</span>
+                            <span id="supplier-items-note">Select a supplier to load only the consumables associated with that supplier.</span>
+                        </div>
                         <input type="hidden" name="items" id="order-items-json" />
                     </div>
-
                 </div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline" onclick="closeModal('m-create-order')">Cancel</button>
                     <button type="submit" class="btn btn-primary">Create Order</button>
                 </div>
-
             </form>
-
         </div>
     </div>
 
-    <!-- ============================================================
-         RECEIVE ORDER MODAL
-         ============================================================ -->
+    <!-- RECEIVE ORDER MODAL -->
     <div class="modal-overlay" id="m-receive-order">
-        <div class="modal modal-large">
-
+        <div class="modal modal-large" role="dialog" aria-modal="true" aria-labelledby="receive-order-title">
             <div class="modal-header">
                 <div>
-                    <h2 class="modal-title">Receive Order</h2>
-                    <div class="modal-subtitle" id="recv-sub" style="margin-bottom:0;"></div>
+                    <h2 class="modal-title" id="receive-order-title">Receive Order</h2>
+                    <div class="modal-subtitle flush" id="recv-sub"></div>
                 </div>
-                <button type="button" class="modal-close" onclick="closeModal('m-receive-order')">×</button>
+                <button type="button" class="modal-close" aria-label="Close" onclick="closeModal('m-receive-order')">×</button>
             </div>
-
             <div class="modal-body">
-
                 <div class="receive-info">
-                    <div class="info-box">
-                        <div class="info-label">Order</div>
-                        <div class="info-value" id="recv-order-number"></div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-label">Supplier</div>
-                        <div class="info-value" id="recv-supplier"></div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-label">Order Date</div>
-                        <div class="info-value" id="recv-date"></div>
-                    </div>
+                    <div class="info-box"><div class="info-label">Order</div><div class="info-value" id="recv-order-number"></div></div>
+                    <div class="info-box"><div class="info-label">Supplier</div><div class="info-value" id="recv-supplier"></div></div>
+                    <div class="info-box"><div class="info-label">Order Date</div><div class="info-value" id="recv-date"></div></div>
                 </div>
-
-                <p style="font-size:13px; color:var(--muted); margin-bottom:15px;">
-                    Enter the quantity received for each item.
-                    Only received quantities will be added to stock.
+                <p class="receive-intro">
+                    Enter the quantity received for each item. Only received quantities will be added to stock.
                 </p>
-
                 <div id="recv-items-list"></div>
-
             </div>
-
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeModal('m-receive-order')">Cancel</button>
-                <button type="button" id="recv-confirm-btn" class="btn btn-success">
-                    Confirm Receipt &amp; Update Stock
-                </button>
+                <button type="button" id="recv-confirm-btn" class="btn btn-success">Confirm Receipt &amp; Update Stock</button>
             </div>
-
         </div>
     </div>
 
-    <!-- ============================================================
-         CANCEL ORDER MODAL
-         ============================================================ -->
+    <!-- CANCEL ORDER MODAL -->
     <div class="modal-overlay" id="m-cancel-order">
-        <div class="modal">
-
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cancel-order-title">
             <div class="modal-header">
-                <h2 class="modal-title">Cancel Order</h2>
-                <button type="button" class="modal-close" onclick="closeModal('m-cancel-order')">×</button>
+                <h2 class="modal-title" id="cancel-order-title">Cancel Order</h2>
+                <button type="button" class="modal-close" aria-label="Close" onclick="closeModal('m-cancel-order')">×</button>
             </div>
-
             <form id="cancel-order-form" method="post" action="@Url.Action("CancelOrder", "ConsumableOrder")">
-
                 @Html.AntiForgeryToken()
-
                 <div class="modal-body">
-
-                    <div style="background:var(--red-light); color:var(--red); border:1px solid rgba(220,38,38,.25); padding:13px; border-radius:10px; margin-bottom:18px; font-size:13px;">
+                    <div class="cancel-warning">
                         You are about to cancel the following order:
-                        <strong id="cancel-sub" style="display:block;margin-top:5px;"></strong>
+                        <strong id="cancel-sub"></strong>
                     </div>
-
                     <input type="hidden" id="cancel-order-id" name="orderId" />
-
                     <div class="modal-form-group">
-                        <label class="form-label">
-                            Cancellation Reason <span class="required">*</span>
-                        </label>
-
-                        <textarea id="cancel-reason"
-                                  class="form-textarea"
-                                  name="cancellationReason"
+                        <label class="form-label" for="cancel-reason">Cancellation Reason <span class="required">*</span></label>
+                        <textarea id="cancel-reason" class="form-textarea" name="cancellationReason"
                                   rows="5"
-                                  style="width:100%;"
-                                  placeholder="Enter the reason for cancelling this order..."
-                                  required></textarea>
+                                  placeholder="Enter the reason for cancelling this order..." required></textarea>
                     </div>
-
                 </div>
-
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline" onclick="closeModal('m-cancel-order')">Go Back</button>
                     <button type="submit" class="btn btn-danger">Cancel Order &amp; Notify Supplier</button>
                 </div>
-
             </form>
-
         </div>
     </div>
 
-    <!-- ============================================================
-         LOGOUT MODAL
-         ============================================================ -->
-    <div id="logout-modal"
-         role="dialog"
-         aria-modal="true"
-         aria-labelledby="logout-modal-title"
-         style="display:none; position:fixed; inset:0; z-index:1100; background:rgba(11,31,58,0.45); align-items:center; justify-content:center;">
-
-        <div style="background:white; border-radius:20px; padding:32px 28px; max-width:380px; width:90%; box-shadow:0 20px 60px rgba(11,31,58,0.2); animation:modalIn 0.18s ease;">
-
-            <div style="width:52px; height:52px; background:#fee2e2; border-radius:14px; display:flex; align-items:center; justify-content:center; margin-bottom:18px;">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
+    <!-- LOGOUT MODAL -->
+    <div id="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
+        <div class="logout-dialog">
+            <h3 id="logout-modal-title">Sign out?</h3>
+            <p>You'll be returned to the login screen. Any unsaved changes will be lost.</p>
+            <div class="logout-actions">
+                <button type="button" id="logout-cancel" class="btn btn-outline">Cancel</button>
+                <a id="logout-confirm" href="@Url.Action("Logout", "Home")" class="btn btn-danger">Sign Out</a>
             </div>
-
-            <h3 id="logout-modal-title"
-                style="font-family:'DM Serif Display',serif; font-size:1.2rem; color:var(--navy); margin-bottom:8px;">
-                Sign out?
-            </h3>
-
-            <p style="font-size:0.85rem; color:var(--muted); margin-bottom:24px; line-height:1.6;">
-                You'll be returned to the login screen. Any unsaved changes will be lost.
-            </p>
-
-            <div style="display:flex;gap:10px;">
-                <button id="logout-cancel"
-                        style="flex:1; padding:10px; border:1px solid var(--border); border-radius:10px; background:white; color:var(--navy); font-size:0.85rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif;">
-                    Cancel
-                </button>
-
-                <a id="logout-confirm"
-                   href="@Url.Action("Logout", "Home")"
-                   style="flex:1; padding:10px; border:none; border-radius:10px; background:#dc2626; color:white; font-size:0.85rem; font-weight:600; cursor:pointer; text-align:center; text-decoration:none; font-family:'DM Sans',sans-serif;">
-                    Sign Out
-                </a>
-            </div>
-
         </div>
     </div>
 
-    <!-- ============================================================
-         JAVASCRIPT
-         ============================================================ -->
     <script>
-       document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function () {
+            "use strict";
 
-    /* =========================================================
-       DATA FROM RAZOR
-    ========================================================= */
+            const consumableOptions = @Html.Raw(JsonSerializer.Serialize(consumableDetails));
+            const supplierConsumablesUrl = '@Url.Action("GetConsumablesBySupplier", "ConsumableOrder")';
+            const getOrderItemsUrl = '@Url.Action("GetOrderItems", "ConsumableOrder")';
+            const receiveOrderUrl = '@Url.Action("ReceiveOrder", "ConsumableOrder")';
 
-    // Consumables are linked to suppliers through Consumable.SupplierID.
-    // The supplier selection filters every consumable dropdown in this form.
-    const consumableOptions = @Html.Raw(
-        JsonSerializer.Serialize(
-            consumableDetails ?? Enumerable.Empty<object>()
-        )
-    );
+            const consumablesBySupplier = {};
+            let currentReceiveOrderId = 0;
 
-            /* =========================================================
-               HELPERS
-            ========================================================= */
-
-            function normalizeName(value) {
-                return (value || "")
-                    .toString()
-                    .trim()
-                    .toLowerCase()
-                    .replace(/\s+/g, " ");
-            }
-
-            function findConsumable(searchText) {
-                const search = normalizeName(searchText);
-                if (!search) return null;
-
-                const exact = consumableOptions.find(function (item) {
-                    return normalizeName(item.name) === search;
-                });
-                if (exact) return exact;
-
-                const partial = consumableOptions.find(function (item) {
-                    return normalizeName(item.name).includes(search);
-                });
-                return partial || null;
+            function normalize(value) {
+                return (value || "").toString().trim().toLowerCase().replace(/\s+/g, " ");
             }
 
             function escapeHtml(value) {
-                return (value || "")
-                    .toString()
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;")
+                return (value ?? "").toString()
+                    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
                     .replace(/'/g, "&#039;");
             }
 
             function getAntiForgeryToken() {
-                const token = document.querySelector(
-                    '#antiForgeryForm input[name="__RequestVerificationToken"]'
-                );
-                return token ? token.value : "";
+                return document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]')?.value || "";
             }
-
-            /* =========================================================
-               MODAL + ALERT FUNCTIONS
-            ========================================================= */
 
             window.openModal = function (id) {
                 const modal = document.getElementById(id);
-                if (!modal) return;
-                modal.classList.add("show");
-                modal.style.display = "flex";
+                if (modal) {
+                    modal.classList.add("show");
+                    modal.style.display = "flex";
+                }
             };
 
             window.closeModal = function (id) {
                 const modal = document.getElementById(id);
-                if (!modal) return;
-                modal.classList.remove("show");
-                modal.style.display = "none";
+                if (modal) {
+                    modal.classList.remove("show");
+                    modal.style.display = "none";
+                }
             };
 
             window.closeAlert = function (id) {
-                const el = document.getElementById(id);
-                if (el) el.remove();
+                document.getElementById(id)?.remove();
             };
 
-            /* =========================================================
-               ORDER ITEM ROWS (DROPDOWN)
-            ========================================================= */
-
+            /* Supplier-specific consumables in the create-order modal. */
             function selectedSupplierId() {
-                const supplierSelect = document.getElementById("order-supplier");
-                return supplierSelect ? parseInt(supplierSelect.value || "0", 10) : 0;
+                return parseInt(document.getElementById("order-supplier")?.value || "0", 10);
             }
-
-            const consumablesBySupplier = {};
-            const supplierConsumablesUrl = '@Url.Action("GetConsumablesBySupplier", "ConsumableOrder")';
 
             async function loadConsumablesForSupplier(supplierId) {
                 if (!supplierId) return [];
+
                 if (Object.prototype.hasOwnProperty.call(consumablesBySupplier, supplierId)) {
                     return consumablesBySupplier[supplierId];
                 }
 
-                const response = await fetch(supplierConsumablesUrl + '?supplierId=' + encodeURIComponent(supplierId), {
-                    method: 'GET',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                if (!response.ok) throw new Error('Unable to load consumables for the selected supplier.');
-                const result = await response.json();
-                if (!result || result.success !== true || !Array.isArray(result.data)) {
-                    throw new Error(result && result.message ? result.message : 'No consumables were returned.');
+                const response = await fetch(
+                    supplierConsumablesUrl + "?supplierId=" + encodeURIComponent(supplierId),
+                    { headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" } }
+                );
+
+                if (!response.ok) {
+                    throw new Error("Unable to load consumables (server returned " + response.status + " from " + supplierConsumablesUrl + ").");
                 }
 
-                consumablesBySupplier[supplierId] = result.data.map(function (item) {
-                    return {
-                        id: item.id ?? item.ConsumableID,
-                        name: item.name ?? item.ConsumableName,
-                        supplierId: supplierId,
-                        quantityOnHand: item.quantityOnHand ?? item.QuantityOnHand
-                    };
-                });
+                let result;
+                try {
+                    result = await response.json();
+                } catch (parseError) {
+                    throw new Error("The server did not return JSON for " + supplierConsumablesUrl + ". Check that the action exists and you are still signed in.");
+                }
+
+                // Accept either a bare array or an object wrapping the array.
+                const list = Array.isArray(result)
+                    ? result
+                    : (result?.data ?? result?.Data ?? result?.consumables ?? result?.Consumables ?? result?.items ?? result?.Items);
+
+                if (!Array.isArray(list) || result?.success === false) {
+                    throw new Error(result?.message || result?.Message || "No consumables were returned.");
+                }
+
+                consumablesBySupplier[supplierId] = list.map(item => ({
+                    id: item.id ?? item.Id ?? item.ConsumableID ?? item.consumableID ?? item.consumableId,
+                    name: item.name ?? item.Name ?? item.ConsumableName ?? item.consumableName,
+                    quantityOnHand: item.quantityOnHand ?? item.QuantityOnHand
+                }));
+
                 return consumablesBySupplier[supplierId];
             }
 
-            async function populateConsumableSelect(select, preserveSelection) {
-                if (!select) return;
-                const previousValue = preserveSelection ? select.value : '';
-                const supplierId = selectedSupplierId();
-                select.innerHTML = '<option value="">Loading consumables...</option>';
-                select.disabled = true;
-
-                if (!supplierId) {
-                    select.innerHTML = '<option value="">Select a supplier first</option>';
-                    select.disabled = false;
-                    return;
-                }
-
-                try {
-                    const supplierConsumables = await loadConsumablesForSupplier(supplierId);
-                    select.innerHTML = '<option value="">Select a consumable</option>';
-                    supplierConsumables.forEach(function (item) {
-                        const option = document.createElement('option');
-                        option.value = item.id;
-                        option.textContent = item.name + (item.quantityOnHand !== undefined && item.quantityOnHand !== null
-                            ? ' (In stock: ' + item.quantityOnHand + ')' : '');
-                        select.appendChild(option);
-                    });
-                    if (previousValue && supplierConsumables.some(function (item) {
-                        return String(item.id) === String(previousValue);
-                    })) select.value = previousValue;
-                    if (supplierConsumables.length === 0) {
-                        select.innerHTML = '<option value="">No consumables linked to this supplier</option>';
-                    }
-                } catch (error) {
-                    console.error(error);
-                    select.innerHTML = '<option value="">Could not load consumables</option>';
-                    const note = document.getElementById('supplier-items-note');
-                    if (note) note.textContent = error.message || 'Unable to load consumables. Please try again.';
-                } finally {
-                    select.disabled = false;
-                    updateOrderItemPresentation();
-                }
-            }
-
             function updateOrderItemPresentation() {
-                const container = document.getElementById("order-items-container");
-                if (!container) return;
-                const rows = Array.from(container.querySelectorAll(".order-item-row"));
-                rows.forEach(function (row, index) {
+                const rows = Array.from(document.querySelectorAll("#order-items-container .order-item-row"));
+
+                rows.forEach((row, index) => {
                     const number = row.querySelector(".order-item-number");
                     const select = row.querySelector(".consumable-select");
                     const hint = row.querySelector(".order-item-hint");
+
                     if (number) number.textContent = String(index + 1).padStart(2, "0");
+
                     if (hint && select) {
-                        if (select.value) {
-                            const item = (consumablesBySupplier[selectedSupplierId()] || []).find(function (x) {
-                                return String(x.id ?? x.ConsumableID) === String(select.value);
-                            }) || consumableOptions.find(function (x) {
-                                return String(x.id ?? x.ConsumableID) === String(select.value);
-                            });
-                            const stock = item ? (item.quantityOnHand ?? item.QuantityOnHand) : null;
-                            hint.textContent = item ? ("Selected: " + (item.name ?? item.ConsumableName) +
-                                (stock !== null && stock !== undefined ? " · Current stock: " + stock : "")) : "Choose a consumable from this supplier.";
+                        const options = consumablesBySupplier[selectedSupplierId()] || [];
+                        const item = options.find(x => String(x.id) === String(select.value));
+
+                        if (item) {
+                            const stock = item.quantityOnHand;
+                            hint.textContent = "Selected: " + item.name +
+                                (stock !== null && stock !== undefined ? " · Current stock: " + stock : "");
                             hint.classList.add("has-selection");
                         } else {
-                            hint.textContent = selectedSupplierId() > 0
+                            hint.textContent = selectedSupplierId()
                                 ? "Choose a consumable from the selected supplier."
                                 : "Select a supplier first to see its available consumables.";
                             hint.classList.remove("has-selection");
                         }
                     }
                 });
+
                 const count = document.getElementById("order-item-count");
                 if (count) count.textContent = rows.length;
+
+                const supplier = document.getElementById("order-supplier");
                 const note = document.getElementById("supplier-items-note");
                 if (note) {
-                    const supplier = document.getElementById("order-supplier");
-                    note.textContent = supplier && supplier.value
-                        ? "The list is filtered to consumables supplied by " + supplier.options[supplier.selectedIndex].text + ". Current stock is shown after you select an item."
+                    note.textContent = supplier?.value
+                        ? "Consumables are filtered to " + supplier.options[supplier.selectedIndex].text +
+                          ". Current stock is shown after you select an item."
                         : "Select a supplier to load only the consumables associated with that supplier.";
+                }
+            }
+
+            async function populateConsumableSelect(select, preserveSelection) {
+                const oldValue = preserveSelection ? select.value : "";
+                const supplierId = selectedSupplierId();
+
+                select.innerHTML = '<option value="">Loading consumables...</option>';
+                select.disabled = true;
+
+                if (!supplierId) {
+                    select.innerHTML = '<option value="">Select a supplier first</option>';
+                    select.disabled = false;
+                    updateOrderItemPresentation();
+                    return;
+                }
+
+                try {
+                    const items = await loadConsumablesForSupplier(supplierId);
+                    select.innerHTML = '<option value="">Select a consumable</option>';
+
+                    items.forEach(item => {
+                        const option = document.createElement("option");
+                        option.value = item.id;
+                        option.textContent = item.name +
+                            (item.quantityOnHand !== undefined && item.quantityOnHand !== null
+                                ? " (In stock: " + item.quantityOnHand + ")" : "");
+                        select.appendChild(option);
+                    });
+
+                    if (oldValue && items.some(x => String(x.id) === String(oldValue))) {
+                        select.value = oldValue;
+                    }
+
+                    if (items.length === 0) {
+                        select.innerHTML = '<option value="">No consumables linked to this supplier</option>';
+                    }
+                } catch (error) {
+                    console.error(error);
+                    select.innerHTML = '<option value="">Could not load consumables</option>';
+                    const note = document.getElementById("supplier-items-note");
+                    if (note) note.textContent = error.message;
+                } finally {
+                    select.disabled = false;
+                    updateOrderItemPresentation();
                 }
             }
 
             async function populateAllConsumableSelects(clearSelections) {
                 const selects = Array.from(document.querySelectorAll("#order-items-container .consumable-select"));
-                await Promise.all(selects.map(function (select) {
-                    return populateConsumableSelect(select, !clearSelections);
-                }));
+                await Promise.all(selects.map(select => populateConsumableSelect(select, !clearSelections)));
                 updateOrderItemPresentation();
             }
 
@@ -1666,36 +2129,27 @@
                     populateConsumableSelect(select, false);
                 }
                 if (quantity) quantity.value = "1";
+            }
+
+            document.getElementById("order-supplier")?.addEventListener("change", function () {
+                populateAllConsumableSelects(true);
+            });
+
+            document.getElementById("add-item-btn")?.addEventListener("click", function () {
+                const container = document.getElementById("order-items-container");
+                const firstRow = container?.querySelector(".order-item-row");
+                if (!container || !firstRow) return;
+
+                const row = firstRow.cloneNode(true);
+                container.appendChild(row);
+                resetRow(row);
                 updateOrderItemPresentation();
-            }
-
-            const supplierSelect = document.getElementById("order-supplier");
-            if (supplierSelect) {
-                supplierSelect.addEventListener("change", function () {
-                    // Clear old selections and query SQL-backed supplier-specific results.
-                    populateAllConsumableSelects(true);
-                });
-                if (supplierSelect.value) populateAllConsumableSelects(true);
-            }
-
-            const addItemButton = document.getElementById("add-item-btn");
-            if (addItemButton) {
-                addItemButton.addEventListener("click", function () {
-                    const container = document.getElementById("order-items-container");
-                    if (!container) return;
-                    const firstRow = container.querySelector(".order-item-row");
-                    if (!firstRow) return;
-                    const newRow = firstRow.cloneNode(true);
-                    resetRow(newRow);
-                    container.appendChild(newRow);
-                    updateOrderItemPresentation();
-                    const newSelect = newRow.querySelector(".consumable-select");
-                    if (newSelect) newSelect.focus();
-                });
-            }
+                row.querySelector(".consumable-select")?.focus();
+            });
 
             document.getElementById("order-items-container")?.addEventListener("change", function (event) {
                 if (event.target.matches(".consumable-select")) updateOrderItemPresentation();
+
                 if (event.target.matches(".quantity-input")) {
                     const input = event.target;
                     const value = parseInt(input.value || "1", 10);
@@ -1704,535 +2158,347 @@
             });
 
             document.getElementById("order-items-container")?.addEventListener("click", function (event) {
-                const decrease = event.target.closest(".quantity-decrease");
-                const increase = event.target.closest(".quantity-increase");
-                if (!decrease && !increase) return;
-                const row = event.target.closest(".order-item-row");
+                const button = event.target.closest(".quantity-decrease, .quantity-increase");
+                if (!button) return;
+
+                const row = button.closest(".order-item-row");
                 const input = row?.querySelector(".quantity-input");
                 if (!input) return;
-                const current = Math.max(1, parseInt(input.value || "1", 10) || 1);
-                input.value = decrease ? Math.max(1, current - 1) : current + 1;
+
+                const value = Math.max(1, parseInt(input.value || "1", 10) || 1);
+                input.value = button.classList.contains("quantity-decrease")
+                    ? Math.max(1, value - 1) : value + 1;
                 input.dispatchEvent(new Event("change", { bubbles: true }));
             });
 
-            // Populate the first row on initial load (normally no supplier is selected yet).
-            populateAllConsumableSelects(true);
-
             document.addEventListener("click", function (event) {
-                const removeButton = event.target.closest(".remove-item-btn");
-                if (!removeButton) return;
+                const button = event.target.closest(".remove-item-btn");
+                if (!button) return;
 
                 const container = document.getElementById("order-items-container");
-                if (!container) return;
+                const rows = container?.querySelectorAll(".order-item-row");
+                if (!container || !rows) return;
 
-                const rows = container.querySelectorAll(".order-item-row");
-
-                // Always keep at least one row; just clear it.
                 if (rows.length <= 1) {
-                    if (rows[0]) resetRow(rows[0]);
+                    resetRow(rows[0]);
                     return;
                 }
 
-                const row = removeButton.closest(".order-item-row");
-                if (row) row.remove();
+                button.closest(".order-item-row")?.remove();
                 updateOrderItemPresentation();
             });
 
-            /* =========================================================
-               CREATE ORDER FORM
-            ========================================================= */
+            populateAllConsumableSelects(true);
 
-            const createOrderForm = document.getElementById("create-order-form");
+            /* Submit the multiple order items as JSON to the existing CreateOrder action. */
+            document.getElementById("create-order-form")?.addEventListener("submit", function (event) {
+                event.preventDefault();
 
-            if (createOrderForm) {
-                createOrderForm.addEventListener("submit", function (event) {
-                    event.preventDefault();
-
-                    const supplierElement = document.getElementById("order-supplier");
-
-                    if (!supplierElement || !supplierElement.value) {
-                        alert("Please select a supplier.");
-                        if (supplierElement) supplierElement.focus();
-                        return;
-                    }
-
-                    const container = document.getElementById("order-items-container");
-
-                    if (!container) {
-                        alert("Unable to find the consumable items section.");
-                        return;
-                    }
-
-                    const rows = container.querySelectorAll(".order-item-row");
-                    const orderItems = [];
-                    const usedConsumables = new Set();
-
-                    for (const row of rows) {
-                        const select = row.querySelector(".consumable-select");
-                        const quantityInput = row.querySelector(".quantity-input");
-
-                        const consumableId = select ? parseInt(select.value, 10) : 0;
-                        const quantity = quantityInput ? parseInt(quantityInput.value, 10) : 0;
-                        const name = select && select.selectedIndex > 0
-                            ? select.options[select.selectedIndex].text
-                            : "";
-
-                        // Ignore completely empty rows
-                        if (!consumableId && !quantity) continue;
-
-                        if (!consumableId) {
-                            alert("Please select a consumable.");
-                            if (select) select.focus();
-                            return;
-                        }
-
-                        if (!Number.isInteger(quantity) || quantity <= 0) {
-                            alert(`Please enter a valid quantity for "${name}".`);
-                            if (quantityInput) quantityInput.focus();
-                            return;
-                        }
-
-                        if (usedConsumables.has(consumableId)) {
-                            alert(`"${name}" has already been added to this order.`);
-                            if (select) select.focus();
-                            return;
-                        }
-
-                        usedConsumables.add(consumableId);
-
-                        orderItems.push({
-                            ConsumableID: consumableId,
-                            QuantityOrdered: quantity
-                        });
-                    }
-
-                    if (orderItems.length === 0) {
-                        alert("Please add at least one consumable with a valid quantity.");
-                        return;
-                    }
-
-                    const jsonInput = document.getElementById("order-items-json");
-
-                    if (!jsonInput) {
-                        alert("Unable to prepare the order items.");
-                        return;
-                    }
-
-                    jsonInput.value = JSON.stringify(orderItems);
-
-                    createOrderForm.submit();
-                });
-            }
-
-            /* =========================================================
-               RECEIVE ORDER
-            ========================================================= */
-
-            let currentReceiveOrderId = 0;
-
-            function parseOrderItems(itemsText) {
-
-                if (!itemsText) return [];
-
-                // 1) JSON format
-                try {
-                    const parsed = JSON.parse(itemsText);
-
-                    if (Array.isArray(parsed)) {
-                        return parsed.map(function (item) {
-
-                            const id = parseInt(
-                                item.ConsumableID ?? item.consumableID ?? item.ConsumableId ?? item.consumableId ?? item.Id ?? item.id ?? 0,
-                                10
-                            );
-                            const orderItemId = parseInt(
-                                item.OrderItemID ?? item.orderItemID ?? item.orderItemId ?? 0,
-                                10
-                            );
-                            const quantity = parseInt(
-                                item.QuantityOrdered ?? item.quantityOrdered ?? item.Quantity ?? item.quantity ?? 0,
-                                10
-                            );
-                            const quantityReceived = parseInt(
-                                item.QuantityReceived ?? item.quantityReceived ?? 0,
-                                10
-                            );
-
-                            let name =
-                                item.ConsumableName ?? item.consumableName ?? item.Name ?? item.name ?? "";
-
-                            if (!name && id) {
-                                const c = consumableOptions.find(function (o) {
-                                    return parseInt(o.id, 10) === id;
-                                });
-                                if (c) name = c.name;
-                            }
-
-                            return {
-                                id: id,
-                                orderItemId: orderItemId,
-                                name: name || "Unknown Consumable",
-                                quantity: quantity,
-                                quantityReceived: quantityReceived,
-                                outstanding: Math.max(0, quantity - quantityReceived)
-                            };
-                        });
-                    }
-                } catch (error) {
-                    // Not JSON - fall through to legacy text parsing
+                const supplier = document.getElementById("order-supplier");
+                if (!supplier?.value) {
+                    alert("Please select a supplier.");
+                    supplier?.focus();
+                    return;
                 }
 
-                // 2) Legacy format: "EDTA Tubes (20), Gloves (50)"
-                const result = [];
+                const rows = document.querySelectorAll("#order-items-container .order-item-row");
+                const items = [];
+                const usedIds = new Set();
 
-                itemsText.split(",").forEach(function (part) {
-                    const text = part.trim();
-                    if (!text) return;
+                for (const row of rows) {
+                    const select = row.querySelector(".consumable-select");
+                    const quantityInput = row.querySelector(".quantity-input");
+                    const id = parseInt(select?.value || "0", 10);
+                    const quantity = parseInt(quantityInput?.value || "0", 10);
+                    const name = select?.selectedOptions[0]?.text || "consumable";
 
-                    const match = text.match(/^(.+?)\s*\((\d+)\)\s*$/);
-
-                    if (match) {
-                        const name = match[1].trim();
-                        const quantity = parseInt(match[2], 10);
-                        const consumable = findConsumable(name);
-
-                        result.push({
-                            id: consumable ? parseInt(consumable.id, 10) : 0,
-                            name: consumable ? consumable.name : name,
-                            quantity: quantity
-                        });
-                    } else {
-                        const consumable = findConsumable(text);
-
-                        result.push({
-                            id: consumable ? parseInt(consumable.id, 10) : 0,
-                            name: consumable ? consumable.name : text,
-                            quantity: 0
-                        });
+                    if (!id) {
+                        alert("Please select a consumable for every item row.");
+                        select?.focus();
+                        return;
                     }
+
+                    if (!Number.isInteger(quantity) || quantity <= 0) {
+                        alert('Please enter a valid quantity for "' + name + '".');
+                        quantityInput?.focus();
+                        return;
+                    }
+
+                    if (usedIds.has(id)) {
+                        alert('"' + name + '" has already been added to this order.');
+                        select?.focus();
+                        return;
+                    }
+
+                    usedIds.add(id);
+                    items.push({ ConsumableID: id, QuantityOrdered: quantity });
+                }
+
+                if (!items.length) {
+                    alert("Please add at least one consumable.");
+                    return;
+                }
+
+                document.getElementById("order-items-json").value = JSON.stringify(items);
+                this.submit();
+            });
+
+            /* Supplier filter, status filter and search work together on visible rows. */
+            const supplierFilter = document.getElementById("supplier-filter");
+            const statusFilter = document.getElementById("status-filter");
+            const searchInput = document.getElementById("order-search");
+            const filterForm = document.getElementById("order-filter-form");
+
+            function filterOrders() {
+                const selectedSupplier = supplierFilter?.value || "";
+                const selectedStatus = statusFilter?.value || "All Statuses";
+                const search = normalize(searchInput?.value || "");
+                const rows = document.querySelectorAll("#orders-table tbody .order-row");
+                let visible = 0;
+
+                rows.forEach(row => {
+                    const supplierMatches = !selectedSupplier ||
+                        row.dataset.supplierId === selectedSupplier;
+
+                    const statusMatches = selectedStatus === "All Statuses" ||
+                        normalize(row.dataset.status) === normalize(selectedStatus);
+
+                    const searchMatches = !search ||
+                        normalize(row.dataset.search || row.textContent).includes(search);
+
+                    const show = supplierMatches && statusMatches && searchMatches;
+                    row.style.display = show ? "" : "none";
+                    if (show) visible++;
                 });
 
-                return result;
+                const count = document.getElementById("table-count");
+                if (count) count.textContent = visible + " order(s)";
+
+                const footerCount = document.getElementById("footer-count");
+                if (footerCount) footerCount.textContent = visible;
+
+                const emptyRow = document.getElementById("filter-empty-row");
+                if (emptyRow) emptyRow.style.display = visible === 0 ? "" : "none";
             }
 
+            supplierFilter?.addEventListener("change", filterOrders);
+            statusFilter?.addEventListener("change", filterOrders);
+            searchInput?.addEventListener("input", filterOrders);
+
+            filterForm?.addEventListener("submit", function (event) {
+                // Apply these filters to the orders already loaded on this page.
+                // Do not reload and lose the supplier/search selections.
+                event.preventDefault();
+                filterOrders();
+            });
+
+            filterOrders();
+
+            /* Receive order: load its individual order items from the controller. */
             function createReceiveItem(item) {
                 const wrapper = document.createElement("div");
                 wrapper.className = "receive-item";
-                wrapper.dataset.consumableId = item.id || "0";
-                wrapper.dataset.orderItemId = item.orderItemId || "0";
-                wrapper.dataset.consumableName = item.name || "";
-                const outstanding = Number.isInteger(item.outstanding)
-                    ? item.outstanding
-                    : Math.max(0, (item.quantity || 0) - (item.quantityReceived || 0));
+
+                const outstanding = Math.max(0, item.quantity - item.quantityReceived);
 
                 wrapper.innerHTML = `
-                    <div class="receive-item-name">${escapeHtml(item.name)}</div>
-                    <div class="receive-item-qty">Ordered: ${item.quantity || 0} · Already received: ${item.quantityReceived || 0} · Remaining: ${outstanding}</div>
                     <div>
-                        <input type="number"
-                               class="form-input receive-quantity"
-                               min="0"
-                               max="${outstanding}"
-                               step="1"
-                               value="0"
-                               data-order-item-id="${item.orderItemId || 0}"
-                               data-consumable-id="${item.id || 0}"
-                               style="width:100%;" />
+                        <div class="receive-item-name">${escapeHtml(item.name)}</div>
+                        <div class="receive-item-qty">
+                            Ordered: ${item.quantity} · Already received: ${item.quantityReceived} · Remaining: ${outstanding}
+                        </div>
                     </div>
-                `;
+                    <div></div>
+                    <div>
+                        <label class="form-label">Quantity received</label>
+                        <input type="number" class="form-input receive-quantity"
+                               min="0" max="${outstanding}" step="1" value="0"
+                               data-order-item-id="${item.orderItemId}" />
+                    </div>`;
+
                 if (!item.orderItemId || outstanding <= 0) {
-                    const input = wrapper.querySelector(".receive-quantity");
-                    if (input) input.disabled = true;
+                    wrapper.querySelector(".receive-quantity").disabled = true;
                 }
                 return wrapper;
             }
 
             document.addEventListener("click", async function (event) {
+                const button = event.target.closest(".receive-order-btn");
+                if (!button) return;
 
-                const receiveButton = event.target.closest(".receive-order-btn");
-                if (!receiveButton) return;
+                const orderId = parseInt(button.dataset.orderId || "0", 10);
+                if (!orderId) {
+                    alert("Invalid order.");
+                    return;
+                }
 
-                const orderRow = receiveButton.closest(".order-row");
-                if (!orderRow) return;
+                currentReceiveOrderId = orderId;
+                document.getElementById("recv-order-number").textContent = button.dataset.orderNumber || "";
+                document.getElementById("recv-supplier").textContent = button.dataset.supplier || "";
+                document.getElementById("recv-date").textContent = button.dataset.orderDate || "";
+                document.getElementById("recv-sub").textContent = "Receive items for order " + (button.dataset.orderNumber || "");
 
-                currentReceiveOrderId = parseInt(
-                    receiveButton.dataset.orderId || orderRow.dataset.orderId || "0",
-                    10
-                );
+                const container = document.getElementById("recv-items-list");
+                container.innerHTML = '<div class="receive-status">Loading consumable items...</div>';
+                openModal("m-receive-order");
 
+                try {
+                    const response = await fetch(getOrderItemsUrl + "?orderId=" + encodeURIComponent(orderId), {
+                        headers: { "Accept": "application/json" },
+                        cache: "no-store"
+                    });
+
+                    if (!response.ok) throw new Error("Unable to load the order items.");
+
+                    const result = await response.json();
+                    const rawItems = Array.isArray(result) ? result : (result.items ?? result.Items ?? []);
+
+                    if (currentReceiveOrderId !== orderId) return;
+
+                    const items = rawItems.map(item => ({
+                        orderItemId: parseInt(item.OrderItemID ?? item.orderItemID ?? item.orderItemId ?? "0", 10),
+                        name: item.ConsumableName ?? item.consumableName ?? item.Name ?? item.name ?? "Unknown Consumable",
+                        quantity: parseInt(item.QuantityOrdered ?? item.quantityOrdered ?? item.Quantity ?? item.quantity ?? "0", 10),
+                        quantityReceived: parseInt(item.QuantityReceived ?? item.quantityReceived ?? "0", 10)
+                    })).filter(item => item.orderItemId > 0 && item.quantity >= 0);
+
+                    container.innerHTML = "";
+
+                    if (!items.length) {
+                        container.innerHTML = '<div class="receive-status">No consumable items were found for this order.</div>';
+                    } else {
+                        items.forEach(item => container.appendChild(createReceiveItem(item)));
+                    }
+                } catch (error) {
+                    console.error(error);
+                    container.innerHTML = '<div class="receive-status error">Unable to load the order items. Please close the modal and try again.</div>';
+                }
+            });
+
+            document.getElementById("recv-confirm-btn")?.addEventListener("click", async function () {
                 if (!currentReceiveOrderId) {
                     alert("Invalid order.");
                     return;
                 }
 
-                const requestedOrderId = currentReceiveOrderId;
-                const orderNumber = receiveButton.dataset.orderNumber || orderRow.dataset.orderNumber || "";
-                const supplier = receiveButton.dataset.supplier || orderRow.dataset.supplier || "";
-                const orderDate = receiveButton.dataset.orderDate || orderRow.dataset.orderDate || "";
+                const inputs = document.querySelectorAll("#recv-items-list .receive-quantity");
+                const receivedItems = [];
 
-                document.getElementById("recv-order-number").textContent = orderNumber;
-                document.getElementById("recv-supplier").textContent = supplier;
-                document.getElementById("recv-date").textContent = orderDate;
-                document.getElementById("recv-sub").textContent = `Receive items for order ${orderNumber}`;
+                for (const input of inputs) {
+                    const quantity = parseInt(input.value || "0", 10);
+                    const maxQuantity = parseInt(input.max || "0", 10);
+                    const orderItemId = parseInt(input.dataset.orderItemId || "0", 10);
 
-                const itemsContainer = document.getElementById("recv-items-list");
-                if (!itemsContainer) return;
+                    if (!Number.isInteger(quantity) || quantity < 0) {
+                        alert("Please enter valid received quantities.");
+                        input.focus();
+                        return;
+                    }
 
-                itemsContainer.innerHTML = '<div style="padding:15px;">Loading consumable items...</div>';
-                openModal("m-receive-order");
+                    if (quantity > maxQuantity) {
+                        alert("The received quantity cannot exceed the remaining quantity (" + maxQuantity + ").");
+                        input.focus();
+                        return;
+                    }
+
+                    if (quantity > 0) {
+                        if (!orderItemId) {
+                            alert("An order item could not be identified. Please reload the page.");
+                            return;
+                        }
+                        receivedItems.push({ OrderItemID: orderItemId, QuantityReceived: quantity });
+                    }
+                }
+
+                if (!receivedItems.length) {
+                    alert("Please enter at least one received quantity.");
+                    return;
+                }
+
+                const button = this;
+                const originalText = button.textContent;
+                button.disabled = true;
+                button.textContent = "Processing...";
 
                 try {
-                    const response = await fetch(
-                        '@Url.Action("GetOrderItems", "ConsumableOrder")' + '?orderId=' + encodeURIComponent(requestedOrderId),
-                        { method: "GET", headers: { "Accept": "application/json" }, cache: "no-store" }
-                    );
+                    const formData = new URLSearchParams();
+                    formData.append("orderId", currentReceiveOrderId.toString());
+                    formData.append("receivedItemsJson", JSON.stringify(receivedItems));
 
-                    if (!response.ok) {
-                        throw new Error("Unable to load the order items.");
-                    }
-
-                    const result = await response.json();
-                    const rawItems = Array.isArray(result) ? result : (result.items ?? result.Items ?? []);
-
-                    // Ignore a late response if the user opened another order meanwhile.
-                    if (currentReceiveOrderId !== requestedOrderId) return;
-
-                    const items = rawItems.map(function (item) {
-                        const id = parseInt(
-                            item.ConsumableID ?? item.consumableID ?? item.ConsumableId ?? item.consumableId ?? item.Id ?? item.id ?? 0,
-                            10
-                        );
-                        const quantity = parseInt(
-                            item.QuantityOrdered ?? item.quantityOrdered ?? item.Quantity ?? item.quantity ?? 0,
-                            10
-                        );
-                        let name = item.ConsumableName ?? item.consumableName ?? item.Name ?? item.name ?? "";
-
-                        if (!name && id) {
-                            const consumable = consumableOptions.find(function (option) {
-                                return parseInt(option.id, 10) === id;
-                            });
-                            if (consumable) name = consumable.name;
-                        }
-
-                        const orderItemId = parseInt(item.OrderItemID ?? item.orderItemID ?? item.orderItemId ?? 0, 10);
-                        const quantityReceived = parseInt(item.QuantityReceived ?? item.quantityReceived ?? 0, 10);
-                        return {
-                            id: id,
-                            orderItemId: orderItemId,
-                            name: name || "Unknown Consumable",
-                            quantity: quantity,
-                            quantityReceived: quantityReceived,
-                            outstanding: Math.max(0, quantity - quantityReceived)
-                        };
-                    }).filter(function (item) {
-                        return item.id > 0 && item.orderItemId > 0 && item.quantity >= 0;
+                    const response = await fetch(receiveOrderUrl, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                            "RequestVerificationToken": getAntiForgeryToken()
+                        },
+                        body: formData.toString()
                     });
 
-                    itemsContainer.innerHTML = "";
+                    if (!response.ok) throw new Error("Unable to receive order.");
 
-                    if (items.length === 0) {
-                        itemsContainer.innerHTML =
-                            '<div style="padding:15px;">No consumable items were found for this order.</div>';
-                    } else {
-                        items.forEach(function (item) {
-                            itemsContainer.appendChild(createReceiveItem(item));
-                        });
+                    if ((response.headers.get("content-type") || "").includes("application/json")) {
+                        const result = await response.json();
+                        if (result?.success === false) throw new Error(result.message || "Unable to receive order.");
                     }
+
+                    closeModal("m-receive-order");
+                    window.location.reload();
                 } catch (error) {
-                    console.error("Unable to load order items:", error);
-                    if (currentReceiveOrderId === requestedOrderId) {
-                        itemsContainer.innerHTML =
-                            '<div style="padding:15px;color:var(--red);">Unable to load the order items. Please close the modal and try again.</div>';
-                    }
+                    alert(error.message || "An error occurred while receiving the order.");
+                } finally {
+                    button.disabled = false;
+                    button.textContent = originalText;
                 }
             });
 
-            /* =========================================================
-               CONFIRM RECEIVE ORDER
-            ========================================================= */
-
-            const receiveConfirmButton = document.getElementById("recv-confirm-btn");
-
-            if (receiveConfirmButton) {
-
-                receiveConfirmButton.addEventListener("click", async function () {
-
-                    if (!currentReceiveOrderId) {
-                        alert("Invalid order.");
-                        return;
-                    }
-
-                    const receiveInputs = document.querySelectorAll(
-                        "#recv-items-list .receive-quantity"
-                    );
-
-                    const receivedItems = [];
-
-                    for (const input of receiveInputs) {
-
-                        const quantity = parseInt(input.value || "0", 10);
-                        const orderItemId = parseInt(input.dataset.orderItemId || "0", 10);
-                        const maxQuantity = parseInt(input.max || "0", 10);
-
-                        if (!Number.isInteger(quantity) || quantity < 0) {
-                            alert("Please enter valid received quantities.");
-                            input.focus();
-                            return;
-                        }
-
-                        // Only send items with quantity > 0
-                        if (quantity > 0) {
-                            if (!orderItemId) {
-                                alert("An order item could not be identified. Reload the page and try again.");
-                                return;
-                            }
-                            if (quantity > maxQuantity) {
-                                alert(`The quantity received cannot exceed the remaining quantity (${maxQuantity}).`);
-                                input.focus();
-                                return;
-                            }
-                            receivedItems.push({
-                                OrderItemID: orderItemId,
-                                QuantityReceived: quantity
-                            });
-                        }
-                    }
-
-                    if (receivedItems.length === 0) {
-                        alert("Please enter at least one received quantity.");
-                        return;
-                    }
-
-                    const originalText = receiveConfirmButton.textContent;
-                    receiveConfirmButton.disabled = true;
-                    receiveConfirmButton.textContent = "Processing...";
-
-                    try {
-
-                        const formData = new URLSearchParams();
-                        formData.append("orderId", currentReceiveOrderId.toString());
-                        formData.append("receivedItemsJson", JSON.stringify(receivedItems));
-
-                        const response = await fetch(
-                            '@Url.Action("ReceiveOrder", "ConsumableOrder")',
-                            {
-                                method: "POST",
-                                headers: {
-                                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                                    "RequestVerificationToken": getAntiForgeryToken()
-                                },
-                                body: formData.toString()
-                            }
-                        );
-
-                        if (!response.ok) {
-                            throw new Error("Unable to receive order.");
-                        }
-
-                        const contentType = response.headers.get("content-type") || "";
-
-                        if (contentType.includes("application/json")) {
-                            const result = await response.json();
-
-                            if (result && result.success === false) {
-                                throw new Error(result.message || "Unable to receive order.");
-                            }
-                        }
-
-                        closeModal("m-receive-order");
-                        window.location.reload();
-
-                    } catch (error) {
-
-                        alert(error.message || "An error occurred while receiving the order.");
-
-                    } finally {
-
-                        receiveConfirmButton.disabled = false;
-                        receiveConfirmButton.textContent = originalText;
-                    }
-                });
-            }
-
-            /* =========================================================
-               CANCEL ORDER
-            ========================================================= */
-
+            /* Cancel order. */
             document.addEventListener("click", function (event) {
+                const button = event.target.closest(".cancel-order-btn");
+                if (!button) return;
 
-                const cancelButton = event.target.closest(".cancel-order-btn");
-                if (!cancelButton) return;
-
-                const orderId = cancelButton.dataset.orderId || "";
-                const orderNumber = cancelButton.dataset.orderNumber || "";
-                const supplier = cancelButton.dataset.supplier || "";
-
-                const orderIdInput = document.getElementById("cancel-order-id");
-                const reasonInput = document.getElementById("cancel-reason");
-                const subElement = document.getElementById("cancel-sub");
-
-                if (orderIdInput) orderIdInput.value = orderId;
-                if (reasonInput) reasonInput.value = "";
-                if (subElement) subElement.textContent = `Order ${orderNumber} — ${supplier}`;
+                document.getElementById("cancel-order-id").value = button.dataset.orderId || "";
+                document.getElementById("cancel-reason").value = "";
+                document.getElementById("cancel-sub").textContent =
+                    "Order " + (button.dataset.orderNumber || "") + " — " + (button.dataset.supplier || "");
 
                 openModal("m-cancel-order");
             });
 
-            const cancelOrderForm = document.getElementById("cancel-order-form");
+            document.getElementById("cancel-order-form")?.addEventListener("submit", function (event) {
+                const id = parseInt(document.getElementById("cancel-order-id")?.value || "0", 10);
+                const reason = document.getElementById("cancel-reason");
 
-            if (cancelOrderForm) {
-                cancelOrderForm.addEventListener("submit", function (event) {
+                if (!id) {
+                    event.preventDefault();
+                    alert("Invalid order.");
+                    return;
+                }
 
-                    const orderId = document.getElementById("cancel-order-id");
-                    const reason = document.getElementById("cancel-reason");
+                if (!reason?.value.trim()) {
+                    event.preventDefault();
+                    alert("Please enter a cancellation reason.");
+                    reason?.focus();
+                }
+            });
 
-                    if (!orderId || !orderId.value || parseInt(orderId.value, 10) <= 0) {
-                        event.preventDefault();
-                        alert("Invalid order.");
-                        return;
-                    }
-
-                    if (!reason || !reason.value.trim()) {
-                        event.preventDefault();
-                        alert("Please enter a cancellation reason.");
-                        if (reason) reason.focus();
-                        return;
-                    }
-                });
-            }
-
-            /* =========================================================
-               LOGOUT MODAL
-            ========================================================= */
-
+            /* Logout confirmation. */
             const logoutButton = document.getElementById("logout-btn");
             const logoutModal = document.getElementById("logout-modal");
-            const logoutConfirm = document.getElementById("logout-confirm");
-            const logoutCancel = document.getElementById("logout-cancel");
 
-            if (logoutButton && logoutModal) {
-                logoutButton.addEventListener("click", function (event) {
-                    event.preventDefault();
-                    if (logoutConfirm) logoutConfirm.href = logoutButton.href;
-                    logoutModal.style.display = "flex";
-                });
-            }
+            logoutButton?.addEventListener("click", function (event) {
+                event.preventDefault();
+                document.getElementById("logout-confirm").href = logoutButton.href;
+                logoutModal.style.display = "flex";
+            });
 
-            if (logoutCancel && logoutModal) {
-                logoutCancel.addEventListener("click", function () {
-                    logoutModal.style.display = "none";
-                });
-            }
-
-            /* =========================================================
-               ESC KEY + CLICK OUTSIDE MODAL
-            ========================================================= */
+            document.getElementById("logout-cancel")?.addEventListener("click", function () {
+                logoutModal.style.display = "none";
+            });
 
             document.addEventListener("keydown", function (event) {
                 if (event.key !== "Escape") return;
 
-                document.querySelectorAll(".modal-overlay.show").forEach(function (modal) {
+                document.querySelectorAll(".modal-overlay.show").forEach(modal => {
                     modal.classList.remove("show");
                     modal.style.display = "none";
                 });
@@ -2246,39 +2512,7 @@
                     event.target.style.display = "none";
                 }
             });
-
-            /* =========================================================
-               SEARCH ORDERS
-            ========================================================= */
-
-            const searchInput = document.getElementById("order-search");
-
-            if (searchInput) {
-                searchInput.addEventListener("input", function () {
-
-                    const search = normalizeName(this.value);
-                    const rows = document.querySelectorAll("#orders-table tbody .order-row");
-                    let visible = 0;
-
-                    rows.forEach(function (row) {
-                        const rowText = normalizeName(row.dataset.search || row.textContent);
-
-                        if (!search || rowText.includes(search)) {
-                            row.style.display = "";
-                            visible++;
-                        } else {
-                            row.style.display = "none";
-                        }
-                    });
-
-                    const count = document.getElementById("table-count");
-                    if (count) count.textContent = `${visible} order(s)`;
-                });
-            }
-
         });
     </script>
-
 </body>
-
 </html>

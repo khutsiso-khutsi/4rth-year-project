@@ -3,6 +3,48 @@
 @{
     ViewData["Title"] = "Manager Dashboard";
     Layout = null;
+
+    var email = ViewBag.Email?.ToString() ?? "";
+    var initial = string.IsNullOrWhiteSpace(email) ? "M" : email.Substring(0, 1).ToUpperInvariant();
+
+    var displayName = ViewBag.DisplayName?.ToString();
+    if (string.IsNullOrWhiteSpace(displayName))
+    {
+        displayName = "Manager";
+    }
+
+    string BadgeClass(string status)
+    {
+        switch (status)
+        {
+            case "Ordered": return "badge-ordered";
+            case "Partially Complete": return "badge-pending";
+            case "Complete": return "badge-completed";
+            case "Cancelled": return "badge-cancelled";
+            default: return "badge-pending";
+        }
+    }
+
+    // Staff list built from the real doctor and technician records
+    var staffList = Model.Doctors
+        .Select(d => new
+        {
+            Name = $"Dr. {d.FirstName} {d.LastName}",
+            Role = "Doctor",
+            Initials = $"{d.FirstName?.FirstOrDefault()}{d.LastName?.FirstOrDefault()}".ToUpperInvariant(),
+            Colour = "var(--teal)"
+        })
+        .Concat(Model.Technicians.Select(t => new
+        {
+            Name = $"{t.FirstName} {t.LastName}",
+            Role = "Lab Technician",
+            Initials = $"{t.FirstName?.FirstOrDefault()}{t.LastName?.FirstOrDefault()}".ToUpperInvariant(),
+            Colour = "var(--purple)"
+        }))
+        .ToList();
+
+    var doctorCount = Model.Doctors.Count();
+    var technicianCount = Model.Technicians.Count();
 }
 
 <!DOCTYPE html>
@@ -14,651 +56,820 @@
     <title>Manager Dashboard — NMB-HLabSys</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
-            *, *::before, *::after {
-                box-sizing: border-box;
-                margin: 0;
-                padding: 0;
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --navy: #0b1f3a;
+            --navy2: #122848;
+            --teal: #0d9488;
+            --teal-dark: #0b7c72;
+            --teal-light: rgba(13,148,136,0.1);
+            --white: #ffffff;
+            --offwhite: #f4f7fb;
+            --muted: #6b7a99;
+            --border: #dde4f0;
+            --red: #dc2626;
+            --red-dark: #b91c1c;
+            --red-light: rgba(220,38,38,0.1);
+            --green: #16a34a;
+            --green-dark: #128a3e;
+            --green-light: rgba(22,163,74,0.1);
+            --amber: #d97706;
+            --amber-light: rgba(217,119,6,0.1);
+            --purple: #4f46e5;
+            --purple-light: rgba(79,70,229,0.1);
+            --shadow: 0 2px 8px rgba(11,31,58,0.04);
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--offwhite);
+            color: var(--navy);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            background: var(--navy);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .brand-logo {
+            width: 34px;
+            height: 34px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .brand-logo svg {
+                width: 18px;
+                height: 18px;
+                fill: white;
             }
 
-            :root {
-                --navy: #0b1f3a;
-                --navy2: #122848;
-                --teal: #0d9488;
-                --teal-light: rgba(13,148,136,0.1);
-                --white: #ffffff;
-                --offwhite: #f4f7fb;
-                --muted: #6b7a99;
-                --border: #dde4f0;
-                --red: #dc2626;
-                --red-light: rgba(220,38,38,0.1);
-                --green: #16a34a;
-                --green-light: rgba(22,163,74,0.1);
-                --amber: #d97706;
-                --amber-light: rgba(217,119,6,0.1);
-                --purple: #4f46e5;
-                --purple-light: rgba(79,70,229,0.1);
-            }
+        .brand-name {
+            font-family: 'DM Serif Display', serif;
+            color: white;
+            font-size: 1.1rem;
+            line-height: 1.1;
+        }
 
-            body {
+            .brand-name span {
+                display: block;
                 font-family: 'DM Sans', sans-serif;
+                font-size: 0.6rem;
+                font-weight: 300;
+                color: rgba(255,255,255,0.4);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 100px;
+            padding: 6px 14px 6px 8px;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            background: var(--teal);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .user-email {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.75);
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.8);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+            .logout-btn:hover {
+                background: rgba(255,255,255,0.15);
+                color: white;
+            }
+
+            .logout-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+
+        /* ── LAYOUT ── */
+        .page {
+            display: flex;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            flex-shrink: 0;
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+            align-self: flex-start;
+        }
+
+        .nav-section {
+            margin-bottom: 8px;
+        }
+
+        .nav-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0 20px;
+            margin-bottom: 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.15s;
+            border-left: 3px solid transparent;
+        }
+
+            .nav-item:hover {
                 background: var(--offwhite);
                 color: var(--navy);
-                min-height: 100vh;
             }
 
-            /* ── TOPBAR ── */
-            .topbar {
-                background: var(--navy);
-                padding: 0 40px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                height: 64px;
-                position: sticky;
-                top: 0;
-                z-index: 100;
-                box-shadow: 0 2px 20px rgba(0,0,0,0.15);
-            }
-
-            .brand {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                text-decoration: none;
-            }
-
-            .brand-logo {
-                width: 34px;
-                height: 34px;
-                background: var(--teal);
-                border-radius: 8px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-                .brand-logo svg {
-                    width: 18px;
-                    height: 18px;
-                    fill: white;
-                }
-
-            .brand-name {
-                font-family: 'DM Serif Display', serif;
-                color: white;
-                font-size: 1.1rem;
-                line-height: 1.1;
-            }
-
-                .brand-name span {
-                    display: block;
-                    font-family: 'DM Sans', sans-serif;
-                    font-size: 0.6rem;
-                    font-weight: 300;
-                    color: rgba(255,255,255,0.4);
-                    letter-spacing: 0.1em;
-                    text-transform: uppercase;
-                }
-
-            .topbar-right {
-                display: flex;
-                align-items: center;
-                gap: 16px;
-            }
-
-            .user-chip {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                background: rgba(255,255,255,0.07);
-                border: 1px solid rgba(255,255,255,0.1);
-                border-radius: 100px;
-                padding: 6px 14px 6px 8px;
-            }
-
-            .user-avatar {
-                width: 28px;
-                height: 28px;
-                background: var(--teal);
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 0.75rem;
+            .nav-item.active {
+                background: var(--teal-light);
+                color: var(--teal);
+                border-left-color: var(--teal);
                 font-weight: 600;
-                color: white;
             }
 
-            .user-email {
-                font-size: 0.8rem;
-                color: rgba(255,255,255,0.75);
-                max-width: 160px;
-                overflow: hidden;
-                text-overflow: ellipsis;
+            .nav-item svg {
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+            }
+
+            .nav-item:focus-visible {
+                outline: 2px solid var(--teal);
+                outline-offset: -2px;
+            }
+
+        /* ── MAIN ── */
+        .main {
+            flex: 1;
+            min-width: 0;
+            padding: clamp(24px, 3vw, 40px);
+            overflow-y: auto;
+        }
+
+        /* ── WELCOME BANNER ── */
+        .welcome-banner {
+            background: var(--navy);
+            border-radius: 20px;
+            padding: 32px 36px;
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .welcome-banner::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: radial-gradient(ellipse 60% 80% at 90% 50%, rgba(13,148,136,0.2) 0%, transparent 60%);
+            }
+
+            .welcome-banner::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+                background-size: 40px 40px;
+            }
+
+        .welcome-inner {
+            position: relative;
+            z-index: 2;
+        }
+
+        .welcome-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(13,148,136,0.15);
+            border: 1px solid rgba(13,148,136,0.3);
+            color: #5eead4;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 100px;
+            margin-bottom: 12px;
+        }
+
+            .welcome-tag::before {
+                content: '';
+                width: 5px;
+                height: 5px;
+                background: #5eead4;
+                border-radius: 50%;
+            }
+
+        .welcome-banner h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.8rem;
+            font-weight: 400;
+            color: white;
+            margin-bottom: 6px;
+        }
+
+            .welcome-banner h1 em {
+                font-style: italic;
+                color: #5eead4;
+            }
+
+        .welcome-banner p {
+            color: rgba(255,255,255,0.55);
+            font-size: 0.875rem;
+            font-weight: 300;
+        }
+
+        /* ── STAT CARDS ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            display: block;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            text-decoration: none;
+            color: inherit;
+            transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+        }
+
+        a.stat-card:hover {
+            border-color: var(--teal);
+            box-shadow: 0 4px 14px rgba(13,148,136,0.12);
+            transform: translateY(-1px);
+        }
+
+        a.stat-card:focus-visible {
+            outline: 2px solid var(--teal);
+            outline-offset: 2px;
+        }
+
+        .stat-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .stat-icon svg {
+                width: 18px;
+                height: 18px;
+            }
+
+        .stat-trend {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 100px;
+        }
+
+        .trend-up {
+            background: var(--green-light);
+            color: var(--green-dark);
+        }
+
+        .trend-down {
+            background: var(--red-light);
+            color: var(--red-dark);
+        }
+
+        .trend-neutral {
+            background: var(--amber-light);
+            color: var(--amber);
+        }
+
+        .trend-info {
+            background: var(--purple-light);
+            color: var(--purple);
+        }
+
+        .trend-plain {
+            background: var(--offwhite);
+            color: var(--muted);
+        }
+
+        .stat-value {
+            font-family: 'DM Serif Display', serif;
+            font-size: 2rem;
+            color: var(--navy);
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        /* ── SECTION GRID ── */
+        .section-grid {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: start;
+        }
+
+        .stack {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ── CARDS ── */
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.05rem;
+            color: var(--navy);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .card-title svg {
+                width: 17px;
+                height: 17px;
+                stroke: var(--teal);
+            }
+
+        .card-action {
+            font-size: 0.78rem;
+            color: var(--teal);
+            text-decoration: none;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+            .card-action:hover {
+                text-decoration: underline;
+            }
+
+        .empty-note {
+            font-size: 0.82rem;
+            color: var(--muted);
+            padding: 8px 0;
+        }
+
+        /* ── TABLE ── */
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .table th {
+                font-size: 0.7rem;
+                font-weight: 600;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                padding: 0 12px 10px 0;
+                text-align: left;
+                border-bottom: 1px solid var(--border);
                 white-space: nowrap;
             }
 
-            .logout-btn {
-                background: rgba(255,255,255,0.08);
-                border: 1px solid rgba(255,255,255,0.12);
-                color: rgba(255,255,255,0.8);
-                padding: 8px 16px;
-                border-radius: 8px;
-                text-decoration: none;
-                font-size: 0.82rem;
-                font-weight: 500;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                transition: all 0.2s;
+            .table td {
+                padding: 12px 12px 12px 0;
+                font-size: 0.83rem;
+                color: var(--navy);
+                border-bottom: 1px solid var(--offwhite);
+                vertical-align: middle;
             }
 
-                .logout-btn:hover {
-                    background: rgba(255,255,255,0.15);
-                    color: white;
-                }
-
-                .logout-btn svg {
-                    width: 14px;
-                    height: 14px;
-                }
-
-            /* ── LAYOUT ── */
-            .page {
-                display: flex;
-                min-height: calc(100vh - 64px);
+            .table tr:last-child td {
+                border-bottom: none;
             }
 
-            /* ── SIDEBAR ── */
-            .sidebar {
-                width: 220px;
+        .items-cell {
+            color: var(--muted);
+            max-width: 260px;
+            overflow-wrap: anywhere;
+        }
+
+        .date-cell {
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        /* ── BADGES ── */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .badge-ordered {
+            background: var(--purple-light);
+            color: var(--purple);
+        }
+
+        .badge-pending {
+            background: var(--amber-light);
+            color: var(--amber);
+        }
+
+        .badge-completed {
+            background: var(--green-light);
+            color: var(--green-dark);
+        }
+
+        .badge-cancelled {
+            background: var(--red-light);
+            color: var(--red-dark);
+        }
+
+        /* ── NEEDS ATTENTION ── */
+        .attention-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+
+            .attention-item:last-child {
+                margin-bottom: 0;
+            }
+
+        .attention-warn {
+            background: var(--amber-light);
+            border-color: rgba(217,119,6,0.25);
+        }
+
+        .attention-info {
+            background: var(--purple-light);
+            border-color: rgba(79,70,229,0.25);
+        }
+
+        .attention-ok {
+            background: var(--green-light);
+            border-color: rgba(22,163,74,0.25);
+        }
+
+        .attention-text {
+            flex: 1;
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+
+            .attention-text strong {
+                font-weight: 700;
+            }
+
+        .attention-link {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--teal);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+            .attention-link:hover {
+                text-decoration: underline;
+            }
+
+        /* ── QUICK ACTIONS ── */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            background: var(--offwhite);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            text-decoration: none;
+            color: var(--navy);
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: all 0.15s;
+            cursor: pointer;
+        }
+
+            .action-btn:hover {
                 background: white;
-                border-right: 1px solid var(--border);
-                padding: 24px 0;
-                flex-shrink: 0;
-                position: sticky;
-                top: 64px;
-                height: calc(100vh - 64px);
-                overflow-y: auto;
-            }
-
-            .nav-section {
-                margin-bottom: 8px;
-            }
-
-            .nav-label {
-                font-size: 0.65rem;
-                font-weight: 600;
-                color: var(--muted);
-                letter-spacing: 0.1em;
-                text-transform: uppercase;
-                padding: 0 20px;
-                margin-bottom: 4px;
-            }
-
-            .nav-item {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 10px 20px;
-                color: var(--muted);
-                text-decoration: none;
-                font-size: 0.85rem;
-                font-weight: 500;
-                transition: all 0.15s;
-                border-left: 3px solid transparent;
-            }
-
-                .nav-item:hover {
-                    background: var(--offwhite);
-                    color: var(--navy);
-                }
-
-                .nav-item.active {
-                    background: var(--teal-light);
-                    color: var(--teal);
-                    border-left-color: var(--teal);
-                }
-
-                .nav-item svg {
-                    width: 16px;
-                    height: 16px;
-                    flex-shrink: 0;
-                }
-
-                .nav-item:focus-visible {
-                    outline: 2px solid var(--teal);
-                    outline-offset: -2px;
-                }
-
-            /* ── MAIN ── */
-            .main {
-                flex: 1;
-                padding: clamp(24px, 3vw, 40px);
-                overflow-y: auto;
-            }
-
-            /* ── WELCOME BANNER ── */
-            .welcome-banner {
-                background: var(--navy);
-                border-radius: 20px;
-                padding: 32px 36px;
-                margin-bottom: 28px;
-                position: relative;
-                overflow: hidden;
-            }
-
-                .welcome-banner::before {
-                    content: '';
-                    position: absolute;
-                    inset: 0;
-                    background: radial-gradient(ellipse 60% 80% at 90% 50%, rgba(13,148,136,0.2) 0%, transparent 60%);
-                }
-
-                .welcome-banner::after {
-                    content: '';
-                    position: absolute;
-                    inset: 0;
-                    background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-                    background-size: 40px 40px;
-                }
-
-            .welcome-inner {
-                position: relative;
-                z-index: 2;
-            }
-
-            .welcome-tag {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                background: rgba(13,148,136,0.15);
-                border: 1px solid rgba(13,148,136,0.3);
-                color: #5eead4;
-                font-size: 0.7rem;
-                font-weight: 600;
-                letter-spacing: 0.1em;
-                text-transform: uppercase;
-                padding: 4px 10px;
-                border-radius: 100px;
-                margin-bottom: 12px;
-            }
-
-                .welcome-tag::before {
-                    content: '';
-                    width: 5px;
-                    height: 5px;
-                    background: #5eead4;
-                    border-radius: 50%;
-                }
-
-            .welcome-banner h1 {
-                font-family: 'DM Serif Display', serif;
-                font-size: 1.8rem;
-                color: white;
-                margin-bottom: 6px;
-            }
-
-                .welcome-banner h1 em {
-                    font-style: italic;
-                    color: #5eead4;
-                }
-
-            .welcome-banner p {
-                color: rgba(255,255,255,0.5);
-                font-size: 0.875rem;
-                font-weight: 300;
-            }
-
-            /* ── STAT CARDS ── */
-            .stats-grid {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 16px;
-                margin-bottom: 28px;
-            }
-
-            .stat-card {
-                background: white;
-                border: 1px solid var(--border);
-                border-radius: 16px;
-                padding: 20px;
-                box-shadow: 0 2px 8px rgba(11,31,58,0.04);
-            }
-
-            .stat-top {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                margin-bottom: 14px;
-            }
-
-            .stat-icon {
-                width: 40px;
-                height: 40px;
-                border-radius: 10px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-                .stat-icon svg {
-                    width: 18px;
-                    height: 18px;
-                }
-
-            .stat-trend {
-                font-size: 0.72rem;
-                font-weight: 600;
-                padding: 3px 8px;
-                border-radius: 100px;
-            }
-
-            .trend-up {
-                background: var(--green-light);
-                color: var(--green);
-            }
-
-            .trend-down {
-                background: var(--red-light);
-                color: var(--red);
-            }
-
-            .trend-neutral {
-                background: var(--amber-light);
-                color: var(--amber);
-            }
-
-            .stat-value {
-                font-family: 'DM Serif Display', serif;
-                font-size: 2rem;
-                color: black;
-                line-height: 1;
-                margin-bottom: 4px;
-            }
-
-            .stat-label {
-                font-size: 0.78rem;
-                color: var(--muted);
-                font-weight: 500;
-            }
-
-            /* ── SECTION GRID ── */
-            .section-grid {
-                display: grid;
-                grid-template-columns: 1.6fr 1fr;
-                gap: 20px;
-                margin-bottom: 20px;
-            }
-
-            .section-grid-3 {
-                display: grid;
-                grid-template-columns: 1fr 1fr 1fr;
-                gap: 20px;
-            }
-
-            /* ── CARDS ── */
-            .card {
-                background: white;
-                border: 1px solid var(--border);
-                border-radius: 16px;
-                padding: 24px;
-                box-shadow: 0 2px 8px rgba(11,31,58,0.04);
-            }
-
-            .card-header {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                margin-bottom: 20px;
-            }
-
-            .card-title {
-                font-family: 'DM Serif Display', serif;
-                font-size: 1.05rem;
-                color: black;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-
-                .card-title svg {
-                    width: 17px;
-                    height: 17px;
-                    stroke: var(--teal);
-                }
-
-            .card-action {
-                font-size: 0.78rem;
+                border-color: var(--teal);
                 color: var(--teal);
-                text-decoration: none;
-                font-weight: 500;
+                box-shadow: 0 2px 8px rgba(13,148,136,0.1);
             }
 
-                .card-action:hover {
-                    text-decoration: underline;
-                }
-
-            /* ── TABLE ── */
-            .table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-
-                .table th {
-                    font-size: 0.7rem;
-                    font-weight: 600;
-                    color: var(--muted);
-                    text-transform: uppercase;
-                    letter-spacing: 0.08em;
-                    padding: 0 0 10px;
-                    text-align: left;
-                    border-bottom: 1px solid var(--border);
-                }
-
-                .table td {
-                    padding: 12px 0;
-                    font-size: 0.83rem;
-                    color: black;
-                    border-bottom: 1px solid var(--offwhite);
-                    vertical-align: middle;
-                }
-
-                .table tr:last-child td {
-                    border-bottom: none;
-                }
-
-            /* ── BADGES ── */
-            .badge {
-                display: inline-block;
-                padding: 3px 9px;
-                border-radius: 100px;
-                font-size: 0.7rem;
-                font-weight: 600;
-            }
-
-            .badge-completed {
-                background: var(--green-light);
-                color: var(--green);
-            }
-
-            .badge-pending {
-                background: var(--amber-light);
-                color: var(--amber);
-            }
-
-            .badge-urgent {
-                background: var(--red-light);
-                color: var(--red);
-            }
-
-            .badge-inprogress {
-                background: var(--purple-light);
-                color: var(--purple);
-            }
-
-            /* ── STAFF LIST ── */
-            .staff-item {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 10px 0;
-                border-bottom: 1px solid var(--offwhite);
-            }
-
-                .staff-item:last-child {
-                    border-bottom: none;
-                }
-
-            .staff-avatar {
-                width: 36px;
-                height: 36px;
-                border-radius: 10px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 0.8rem;
-                font-weight: 600;
-                color: white;
+            .action-btn svg {
+                width: 16px;
+                height: 16px;
                 flex-shrink: 0;
             }
 
-            .staff-info {
-                flex: 1;
-            }
+        /* ── STAFF LIST ── */
+        .staff-summary {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
 
-            .staff-name {
-                font-size: 0.85rem;
-                font-weight: 600;
+        .staff-pill {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--muted);
+            background: var(--offwhite);
+            border: 1px solid var(--border);
+            padding: 5px 10px;
+            border-radius: 100px;
+        }
+
+            .staff-pill strong {
                 color: var(--navy);
             }
 
-            .staff-role {
-                font-size: 0.72rem;
-                color: var(--muted);
-                margin-top: 1px;
+        .staff-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--offwhite);
+        }
+
+            .staff-item:last-child {
+                border-bottom: none;
             }
 
-            .staff-status {
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                flex-shrink: 0;
+        .staff-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .staff-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .staff-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--navy);
+        }
+
+        .staff-role {
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-top: 1px;
+        }
+
+        /* ── REPORTS CARD ── */
+        .report-card-text {
+            font-size: 0.83rem;
+            color: var(--muted);
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all .18s ease;
+        }
+
+            .btn:hover {
+                transform: translateY(-1px);
             }
 
-            .status-online {
-                background: var(--green);
+        .btn-primary {
+            background: var(--teal);
+            color: white;
+            box-shadow: 0 2px 8px rgba(13,148,136,0.25);
+        }
+
+            .btn-primary:hover {
+                background: var(--teal-dark);
+                box-shadow: 0 4px 12px rgba(13,148,136,0.3);
             }
 
-            .status-offline {
-                background: var(--border);
+            .btn-primary svg {
+                width: 15px;
+                height: 15px;
             }
 
-            /* ── ACTIVITY LOG ── */
-            .activity-item {
-                display: flex;
-                gap: 12px;
-                padding: 10px 0;
-                border-bottom: 1px solid var(--offwhite);
+        /* ── FOOTER ── */
+        .footer {
+            margin-top: 28px;
+            padding: 0 2px;
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 0.7rem;
+        }
+
+        @@keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.96) translateY(8px);
             }
 
-                .activity-item:last-child {
-                    border-bottom: none;
-                }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
 
-            .activity-dot {
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                margin-top: 6px;
-                flex-shrink: 0;
+        /* ── RESPONSIVE ── */
+        @@media (max-width: 1100px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
 
-            .activity-text {
-                font-size: 0.82rem;
-                color: var(--navy);
-                line-height: 1.5;
+            .section-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .topbar {
+                padding: 0 20px;
             }
 
-            .activity-time {
-                font-size: 0.72rem;
-                color: var(--muted);
-                margin-top: 2px;
+            .user-email {
+                display: none;
             }
 
-            /* ── QUICK ACTIONS ── */
-            .quick-actions {
-                display: grid;
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                padding: 20px 16px;
+            }
+
+            .welcome-banner {
+                padding: 24px 22px;
+            }
+
+            .stats-grid {
                 grid-template-columns: 1fr 1fr;
-                gap: 10px;
             }
 
-            .action-btn {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 12px 14px;
-                background: var(--offwhite);
-                border: 1px solid var(--border);
-                border-radius: 10px;
-                text-decoration: none;
-                color: var(--navy);
-                font-size: 0.82rem;
-                font-weight: 500;
-                transition: all 0.15s;
-                cursor: pointer;
+            .quick-actions {
+                grid-template-columns: 1fr;
             }
 
-                .action-btn:hover {
-                    background: white;
-                    border-color: var(--teal);
-                    color: var(--teal);
-                    box-shadow: 0 2px 8px rgba(13,148,136,0.1);
-                }
-
-                .action-btn svg {
-                    width: 16px;
-                    height: 16px;
-                    flex-shrink: 0;
-                }
-
-            @@media (max-width: 1100px) {
-                .stats-grid {
-                    grid-template-columns: repeat(2, 1fr);
-                }
-
-                .section-grid {
-                    grid-template-columns: 1fr;
-                }
-
-                .section-grid-3 {
-                    grid-template-columns: 1fr;
-                }
+            .footer {
+                flex-direction: column;
+                gap: 6px;
             }
+        }
 
-            @@media (max-width: 768px) {
-                .topbar {
-                    padding: 0 20px;
-                }
-
-                .user-email {
-                    display: none;
-                }
-
-                .sidebar {
-                    display: none;
-                }
-
-                .main {
-                    padding: 20px 16px;
-                }
-
-                .stats-grid {
-                    grid-template-columns: 1fr 1fr;
-                }
+        @@media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
             }
+        }
     </style>
-
 </head>
 <body>
 
@@ -675,8 +886,8 @@
         </a>
         <div class="topbar-right">
             <div class="user-chip">
-                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "M")</div>
-                <span class="user-email">@ViewBag.Email</span>
+                <div class="user-avatar">@initial</div>
+                <span class="user-email">@email</span>
             </div>
             <a asp-controller="Home" asp-action="Logout" class="logout-btn" id="logout-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -766,102 +977,161 @@
             <div class="welcome-banner">
                 <div class="welcome-inner">
                     <div class="welcome-tag">Lab Manager Portal</div>
-                    <h1>Welcome back, <em>@(ViewBag.DisplayName ?? "Manager")</em></h1>
-                    <p>Here's an overview of lab operations for today — @DateTime.Now.ToString("dddd, dd MMMM yyyy")</p>
+                    <h1>Welcome back, <em>@displayName</em></h1>
+                    <p>Here's an overview of your laboratory's stock, orders and staff — @DateTime.Now.ToString("dddd, dd MMMM yyyy")</p>
                 </div>
             </div>
 
             <!-- STATS -->
             <div class="stats-grid">
-                <div class="stat-card">
+
+                <a asp-controller="TestCatalogue" asp-action="Index" class="stat-card">
                     <div class="stat-top">
                         <div class="stat-icon" style="background:var(--teal-light)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"><path d="M9 3v11a3 3 0 006 0V3" /><line x1="6" y1="3" x2="18" y2="3" /></svg>
                         </div>
-                        <span class="stat-trend trend-neutral">Catalogue</span>
+                        <span class="stat-trend trend-plain">View</span>
                     </div>
                     <div class="stat-value">@Model.TestTypeCount</div>
-                    <div class="stat-label">Test Catalogue Items</div>
-                </div>
-                <div class="stat-card">
+                    <div class="stat-label">Tests in Catalogue</div>
+                </a>
+
+                <a asp-controller="Consumables" asp-action="Index" class="stat-card">
                     <div class="stat-top">
                         <div class="stat-icon" style="background:var(--amber-light)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
                         </div>
-                        <span class="stat-trend trend-neutral">Pending</span>
+                        @if (Model.LowStockCount > 0)
+                        {
+                            <span class="stat-trend trend-neutral">Needs attention</span>
+                        }
+                        else
+                        {
+                            <span class="stat-trend trend-up">Stock healthy</span>
+                        }
                     </div>
                     <div class="stat-value">@Model.LowStockCount</div>
-                    <div class="stat-label">Stock Items Needing Attention</div>
-                </div>
+                    <div class="stat-label">Low Stock Items</div>
+                </a>
+
                 <div class="stat-card">
                     <div class="stat-top">
                         <div class="stat-icon" style="background:var(--green-light)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
                         </div>
-                        <span class="stat-trend trend-neutral">Suppliers</span>
+                        <span class="stat-trend trend-plain">Active</span>
                     </div>
                     <div class="stat-value">@Model.SupplierCount</div>
                     <div class="stat-label">Suppliers</div>
                 </div>
-                <div class="stat-card">
+
+                <a asp-controller="ConsumableOrder" asp-action="Index" class="stat-card">
                     <div class="stat-top">
-                        <div class="stat-icon" style="background:var(--red-light)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                        <div class="stat-icon" style="background:var(--purple-light)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
                         </div>
-                        <span class="stat-trend trend-down">Urgent</span>
+                        @if (Model.OpenOrderCount > 0)
+                        {
+                            <span class="stat-trend trend-info">Awaiting delivery</span>
+                        }
+                        else
+                        {
+                            <span class="stat-trend trend-up">None open</span>
+                        }
                     </div>
                     <div class="stat-value">@Model.OpenOrderCount</div>
                     <div class="stat-label">Open Consumable Orders</div>
-                </div>
+                </a>
+
             </div>
 
-            <!-- TEST REQUESTS + QUICK ACTIONS -->
+            <!-- RECENT ORDERS + ATTENTION / QUICK ACTIONS -->
             <div class="section-grid">
 
-                <!-- TEST REQUESTS TABLE -->
+                <!-- RECENT CONSUMABLE ORDERS -->
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                            Recent Test Requests
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                            Recent Consumable Orders
                         </div>
                         <a asp-controller="ConsumableOrder" asp-action="Index" class="card-action">View all</a>
                     </div>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Order #</th>
-                                <th>Items</th>
-                                <th>Quantity</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (Model.RecentOrders.Any())
-                            {
-                                @foreach (var order in Model.RecentOrders)
-                                {
-                                    var orderBadge = order.Status?.Contains("complete", StringComparison.OrdinalIgnoreCase) == true ? "badge-completed" : "badge-pending";
+
+                    @if (Model.RecentOrders != null && Model.RecentOrders.Any())
+                    {
+                        <div class="table-wrap">
+                            <table class="table">
+                                <thead>
                                     <tr>
-                                        <td><strong>@order.OrderNumber</strong></td>
-                                        <td>@order.Items</td>
-                                        <td>@order.QuantityOrdered</td>
-                                        <td><span class="badge @orderBadge">@order.Status</span></td>
-                                        <td style="color:var(--muted)">@order.OrderDate.ToString("dd MMM yyyy")</td>
+                                        <th>Order #</th>
+                                        <th>Consumables</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
                                     </tr>
-                                }
-                            }
-                            else
-                            {
-                                <tr><td colspan="5" class="text-muted">No consumable orders yet.</td></tr>
-                            }
-                        </tbody>
-                    </table>
+                                </thead>
+                                <tbody>
+                                    @foreach (var order in Model.RecentOrders)
+                                    {
+                                        var itemsText = Convert.ToString(order.Items);
+                                        <tr>
+                                            <td><strong>@order.OrderNumber</strong></td>
+                                            <td class="items-cell">@(string.IsNullOrWhiteSpace(itemsText) ? "—" : itemsText)</td>
+                                            <td><span class="badge @BadgeClass(order.Status)">@order.Status</span></td>
+                                            <td class="date-cell">@order.OrderDate.ToString("dd MMM yyyy")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="empty-note">No consumable orders have been placed yet.</p>
+                    }
                 </div>
 
                 <!-- RIGHT COLUMN -->
-                <div style="display:flex;flex-direction:column;gap:20px;">
+                <div class="stack">
+
+                    <!-- NEEDS ATTENTION -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+                                Needs Attention
+                            </div>
+                        </div>
+
+                        @if (Model.LowStockCount > 0)
+                        {
+                            <div class="attention-item attention-warn">
+                                <div class="attention-text">
+                                    <strong>@Model.LowStockCount</strong> consumable @(Model.LowStockCount == 1 ? "item is" : "items are") running low on stock.
+                                </div>
+                                <a asp-controller="Consumables" asp-action="Index" class="attention-link">Review stock</a>
+                            </div>
+                        }
+
+                        @if (Model.OpenOrderCount > 0)
+                        {
+                            <div class="attention-item attention-info">
+                                <div class="attention-text">
+                                    <strong>@Model.OpenOrderCount</strong> consumable @(Model.OpenOrderCount == 1 ? "order is" : "orders are") waiting to be received.
+                                </div>
+                                <a asp-controller="ConsumableOrder" asp-action="Index" class="attention-link">Receive</a>
+                            </div>
+                        }
+
+                        @if (Model.LowStockCount == 0 && Model.OpenOrderCount == 0)
+                        {
+                            <div class="attention-item attention-ok">
+                                <div class="attention-text">
+                                    All clear. Stock levels are healthy and there are no open orders.
+                                </div>
+                            </div>
+                        }
+                    </div>
 
                     <!-- QUICK ACTIONS -->
                     <div class="card">
@@ -872,157 +1142,87 @@
                             </div>
                         </div>
                         <div class="quick-actions">
-                            <a asp-controller="TestCatalogue" asp-action="Index" class="action-btn">
+                            <a asp-controller="ConsumableOrder" asp-action="Index" class="action-btn">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                Place Order
+                            </a>
+                            <a asp-controller="Consumables" asp-action="Index" class="action-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                                Manage Consumables
+                            </a>
+                            <a asp-controller="TestCatalogue" asp-action="Index" class="action-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3v11a3 3 0 006 0V3" /><line x1="6" y1="3" x2="18" y2="3" /></svg>
                                 Test Catalogue
                             </a>
                             <a asp-controller="Staff" asp-action="Index" class="action-btn">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                                 Manage Staff
                             </a>
-                            <a asp-controller="TestsByCategory" asp-action="Index" class="action-btn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-                                View Reports
-                            </a>
-                            <a asp-controller="Consumables" asp-action="Index" class="action-btn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
-                                Manage Consumables
-                            </a>
                         </div>
-                    </div>
-
-                    <!-- STAFF ON DUTY -->
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                                Staff on Duty
-                            </div>
-                            <a asp-controller="Staff" asp-action="Index" class="card-action">All staff</a>
-                        </div>
-                        @foreach (var person in Model.Doctors.Select(d => new { Name = $"Dr. {d.FirstName} {d.LastName}", Role = "Doctor" })
-                            .Concat(Model.Technicians.Select(t => new { Name = $"{t.FirstName} {t.LastName}", Role = "Lab Technician" })).Take(4))
-                        {
-                            <div class="staff-item">
-                                <div class="staff-avatar" style="background:var(--teal)">@string.Concat(person.Name.Split(' ').Where(n => n.Length > 0).Take(2).Select(n => n[0]))</div>
-                                <div class="staff-info">
-                                    <div class="staff-name">@person.Name</div>
-                                    <div class="staff-role">@person.Role</div>
-                                </div>
-                                <div class="staff-status status-online" title="Active account"></div>
-                            </div>
-                        }
-                        @if (!Model.Doctors.Any() && !Model.Technicians.Any())
-                        {
-                            <p class="text-muted">No staff records are available.</p>
-                        }
                     </div>
 
                 </div>
             </div>
 
-            <!-- ACTIVITY LOG + LAB SUMMARY -->
-            <div class="section-grid-3">
+            <!-- STAFF + REPORTS -->
+            <div class="section-grid">
 
-                <!-- ACTIVITY LOG -->
-                <div class="card" style="grid-column: span 2;">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                            Recent Activity
-                        </div>
-                        <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="card-action">Full log</a>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-dot" style="background:var(--red)"></div>
-                        <div>
-                            <div class="activity-text">Urgent test request <strong>REQ-0148</strong> submitted for patient Thabo Nkosi</div>
-                            <div class="activity-time">2 minutes ago · Dr. Smith</div>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-dot" style="background:var(--green)"></div>
-                        <div>
-                            <div class="activity-text">Test results for <strong>REQ-0146</strong> verified and released</div>
-                            <div class="activity-time">45 minutes ago · Kagiso Dlamini</div>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-dot" style="background:var(--purple)"></div>
-                        <div>
-                            <div class="activity-text">New staff member <strong>Nandi Patel</strong> added to the system</div>
-                            <div class="activity-time">2 hours ago · Admin</div>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-dot" style="background:var(--teal)"></div>
-                        <div>
-                            <div class="activity-text">Monthly haematology report generated and exported</div>
-                            <div class="activity-time">3 hours ago · Manager</div>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-dot" style="background:var(--amber)"></div>
-                        <div>
-                            <div class="activity-text">Patient Zanele Dlamini granted consent to Dr. Mokoena for REQ-0147</div>
-                            <div class="activity-time">4 hours ago · Patient Portal</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- LAB SUMMARY -->
+                <!-- LABORATORY STAFF -->
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
-                            Lab Summary
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                            Laboratory Staff
                         </div>
+                        <a asp-controller="Staff" asp-action="Index" class="card-action">All staff</a>
                     </div>
-                    <div style="display:flex;flex-direction:column;gap:14px;">
-                        <div>
-                            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-                                <span style="font-size:0.78rem;color:var(--muted)">Tests completed</span>
-                                <span style="font-size:0.78rem;font-weight:600;color:var(--green)">75%</span>
-                            </div>
-                            <div style="background:var(--border);border-radius:100px;height:6px;">
-                                <div style="background:var(--green);width:75%;height:100%;border-radius:100px;"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-                                <span style="font-size:0.78rem;color:var(--muted)">In progress</span>
-                                <span style="font-size:0.78rem;font-weight:600;color:var(--purple)">16%</span>
-                            </div>
-                            <div style="background:var(--border);border-radius:100px;height:6px;">
-                                <div style="background:var(--purple);width:16%;height:100%;border-radius:100px;"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-                                <span style="font-size:0.78rem;color:var(--muted)">Pending</span>
-                                <span style="font-size:0.78rem;font-weight:600;color:var(--amber)">9%</span>
-                            </div>
-                            <div style="background:var(--border);border-radius:100px;height:6px;">
-                                <div style="background:var(--amber);width:9%;height:100%;border-radius:100px;"></div>
-                            </div>
-                        </div>
-                        <div style="margin-top:8px;padding-top:14px;border-top:1px solid var(--border);">
-                            <div style="display:flex;justify-content:space-between;align-items:center;">
-                                <span style="font-size:0.78rem;color:var(--muted)">Active doctors</span>
-                                <span style="font-size:0.9rem;font-weight:600;color:var(--navy)">3</span>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-                                <span style="font-size:0.78rem;color:var(--muted)">Active technicians</span>
-                                <span style="font-size:0.9rem;font-weight:600;color:var(--navy)">4</span>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-                                <span style="font-size:0.78rem;color:var(--muted)">Registered patients</span>
-                                <span style="font-size:0.9rem;font-weight:600;color:var(--navy)">217</span>
-                            </div>
-                        </div>
+
+                    <div class="staff-summary">
+                        <span class="staff-pill"><strong>@doctorCount</strong> @(doctorCount == 1 ? "doctor" : "doctors")</span>
+                        <span class="staff-pill"><strong>@technicianCount</strong> @(technicianCount == 1 ? "lab technician" : "lab technicians")</span>
                     </div>
+
+                    @foreach (var person in staffList.Take(6))
+                    {
+                        <div class="staff-item">
+                            <div class="staff-avatar" style="background:@person.Colour">@(string.IsNullOrWhiteSpace(person.Initials) ? "?" : person.Initials)</div>
+                            <div class="staff-info">
+                                <div class="staff-name">@person.Name</div>
+                                <div class="staff-role">@person.Role</div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!staffList.Any())
+                    {
+                        <p class="empty-note">No staff records are available.</p>
+                    }
                 </div>
 
+                <!-- REPORTS -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
+                            Reports
+                        </div>
+                    </div>
+                    <p class="report-card-text">
+                        Choose a date range to see the total tests performed, grouped by category,
+                        then print the report or save it as a PDF.
+                    </p>
+                    <a asp-controller="TestsByCategory" asp-action="Index" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                        Tests by Category report
+                    </a>
+                </div>
+
+            </div>
+
+            <!-- FOOTER -->
+            <div class="footer">
+                <span>NMB-HLabSys · Haematology Laboratory System</span>
+                <span>Internal management portal · @DateTime.Now.ToString("yyyy")</span>
             </div>
 
         </main>
@@ -1039,7 +1239,7 @@
                     <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
             </div>
-            <h3 id="logout-modal-title" style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--navy);margin-bottom:8px;">Sign out?</h3>
+            <h3 id="logout-modal-title" style="font-family:'DM Serif Display',serif;font-size:1.2rem;font-weight:400;color:var(--navy);margin-bottom:8px;">Sign out?</h3>
             <p style="font-size:0.85rem;color:var(--muted);margin-bottom:24px;line-height:1.6;">You'll be returned to the login screen. Any unsaved changes will be lost.</p>
             <div style="display:flex;gap:10px;">
                 <button id="logout-cancel" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:white;color:var(--navy);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancel</button>
@@ -1048,51 +1248,37 @@
         </div>
     </div>
 
-    <style>
-            @@keyframes modalIn {
-                from {
-                    opacity: 0;
-                    transform: scale(0.96) translateY(8px);
-                }
-
-                to {
-                    opacity: 1;
-                    transform: scale(1) translateY(0);
-                }
-            }
-    </style>
-
     <script>
-            (function () {
-                /* ── LOGOUT MODAL ── */
-                var logoutBtn     = document.getElementById('logout-btn');
-                var logoutModal   = document.getElementById('logout-modal');
-                var logoutCancel  = document.getElementById('logout-cancel');
-                var logoutConfirm = document.getElementById('logout-confirm');
+        (function () {
+            /* ── LOGOUT MODAL ── */
+            var logoutBtn     = document.getElementById('logout-btn');
+            var logoutModal   = document.getElementById('logout-modal');
+            var logoutCancel  = document.getElementById('logout-cancel');
+            var logoutConfirm = document.getElementById('logout-confirm');
 
-                if (logoutBtn && logoutModal) {
-                    logoutConfirm.href = logoutBtn.href;
+            if (logoutBtn && logoutModal) {
+                logoutConfirm.href = logoutBtn.href;
 
-                    logoutBtn.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        logoutModal.style.display = 'flex';
-                        logoutCancel.focus();
-                    });
+                logoutBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    logoutModal.style.display = 'flex';
+                    logoutCancel.focus();
+                });
 
-                    function closeModal() {
-                        logoutModal.style.display = 'none';
-                        logoutBtn.focus();
-                    }
-
-                    logoutCancel.addEventListener('click', closeModal);
-                    logoutModal.addEventListener('click', function (e) {
-                        if (e.target === logoutModal) closeModal();
-                    });
-                    document.addEventListener('keydown', function (e) {
-                        if (e.key === 'Escape' && logoutModal.style.display === 'flex') closeModal();
-                    });
+                function closeModal() {
+                    logoutModal.style.display = 'none';
+                    logoutBtn.focus();
                 }
-            })();
+
+                logoutCancel.addEventListener('click', closeModal);
+                logoutModal.addEventListener('click', function (e) {
+                    if (e.target === logoutModal) closeModal();
+                });
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape' && logoutModal.style.display === 'flex') closeModal();
+                });
+            }
+        })();
     </script>
 
 </body>

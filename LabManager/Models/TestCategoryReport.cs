@@ -32,15 +32,17 @@ namespace LabManager.Models
 
     public class TestsByCategoryReportItem
     {
-        public string CategoryName { get; set; } = string.Empty;
-
-        public string TestTypeName { get; set; } = string.Empty;
-
-        public int TestCount { get; set; }
+        public string CategoryName { get; set; } = "";
+        public string TestTypeName { get; set; } = "";
+        public DateTime PerformedDate { get; set; }
+        public long TestCount { get; set; }
     }
 
     public class TotalTestsPerformedResult
     {
         public int TotalTests { get; set; }
     }
+
+
+    
 }

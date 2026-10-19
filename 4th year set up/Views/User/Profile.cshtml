@@ -57,9 +57,7 @@
             .topbar {
                 background: var(--navy);
                 padding: 0 40px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
+                display: flex;align-items: center;justify-content: space-between;
                 height: 64px;
                 position: sticky;
                 top: 0;
@@ -1538,7 +1536,9 @@
                                     <input type="password"
                                            id="CurrentPassword"
                                            name="CurrentPassword"
-                                           autocomplete="current-password" />
+                                           autocomplete="new-password"
+                                           readonly
+                                           onfocus="this.removeAttribute('readonly');" />
 
                                     <button type="button"
                                             class="toggle-pw"
@@ -1785,6 +1785,28 @@
 
 
     <script>
+
+            /* ── Current password: user must type it (no browser autofill) ── */
+
+            (function () {
+
+                var cur = document.getElementById('CurrentPassword');
+
+                if (!cur) return;
+
+                function clearAutofill() {
+                    if (document.activeElement !== cur) {
+                        cur.value = '';
+                    }
+                }
+
+                clearAutofill();
+                setTimeout(clearAutofill, 150);
+                setTimeout(clearAutofill, 600);
+                window.addEventListener('pageshow', clearAutofill);
+
+            })();
+
 
             /* ── Show/Hide password toggle ── */
 

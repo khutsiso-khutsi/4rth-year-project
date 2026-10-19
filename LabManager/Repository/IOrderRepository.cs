@@ -27,6 +27,11 @@ namespace LabManager.Repository
         Task<IEnumerable<Consumable>> GetConsumables();
 
         Task<IEnumerable<Consumable>> GetConsumablesBySupplier(int supplierId);
+
+        Task<IEnumerable<OrderItemRow>> GetOrderItems(int orderId);
+
+        // ConsumableOrderRepository: add
+       
     }
 }
 

@@ -1,4 +1,5 @@
-﻿using LabManager.Models;
+﻿using _4th_year_set_up.Models;
+using LabManager.Models;
 using LabManager.Repositories;
 using LabManager.Repository;
 using Microsoft.AspNetCore.Mvc;
@@ -37,12 +38,16 @@ namespace LabManager.Controllers
                 IEnumerable<TestType> sample = await _repository.GetSampleType();
                 // expose raw sample types for views that expect them
                 ViewBag.SampleTypes = sample;
-                // build a SelectListItem list for dropdowns; ensure Text falls back to the id when name is missing
-                ViewBag.SampleType = sample
-                    .Select(c => new SelectListItem { Value = c.SampleTypeId.ToString(), Text = c.SampleName ?? c.SampleTypeId.ToString() })
-                    .ToList();
+            // build a SelectListItem list for dropdowns; ensure Text falls back to the id when name is missing
+            ViewBag.SampleType = sample
+                .Select(c => new SelectListItem { Value = c.SampleTypeId.ToString(), Text = c.SampleName ?? c.SampleTypeId.ToString() })
+                .ToList();
 
-                var tests = await _repository.GetAllTestTypes();
+            IEnumerable<Consumable> consumables = await _repository.GetConsumables();
+            ViewBag.Consumables = consumables.Select(c => new SelectListItem { Value = c.ConsumableID.ToString(), Text = c.ConsumableName });
+
+
+            var tests = await _repository.GetAllTestTypes();
 
                 // Provide a simple map of TestTypeId -> assigned technician name (first assigned)
                 try

@@ -115,6 +115,9 @@ namespace LabManager.Repositories
                 new { });
         }
 
+      
+
+
         public async Task<IEnumerable<Consumable>> GetConsumables()
         {
             return await _db.GetData<Consumable, dynamic>(
@@ -124,17 +127,25 @@ namespace LabManager.Repositories
 
 
 
-      
 
-public async Task<IEnumerable<Consumable>> GetConsumablesBySupplier(int supplierId)
-    {
-        if (supplierId <= 0)
-            return Enumerable.Empty<Consumable>();
 
-        return await _db.GetData<Consumable, dynamic>(
-            "dbo.sp_GetConsumablesBySupplier",
-            new { SupplierID = supplierId });
-    }
+        public async Task<IEnumerable<Consumable>> GetConsumablesBySupplier(int supplierId)
+        {
+            if (supplierId <= 0)
+                return Enumerable.Empty<Consumable>();
+
+            return await _db.GetData<Consumable, dynamic>(
+                "dbo.sp_GetConsumablesBySupplier",
+                new { SupplierID = supplierId });
+        }
+
+
+        public async Task<IEnumerable<OrderItemRow>> GetOrderItems(int orderId)
+        {
+            return await _db.GetData<OrderItemRow, dynamic>(
+                "dbo.sp_GetConsumableOrderItems",
+                new { OrderID = orderId });
+        }
 
 
 

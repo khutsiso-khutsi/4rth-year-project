@@ -1,8 +1,11 @@
 ﻿using _4th_year_set_up.Models;
 using LabManager.Models;
 using LabManager.Repository;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace LabManager.Controllers
 {
@@ -25,10 +28,9 @@ namespace LabManager.Controllers
             var consumables =
                 await _consumablesRepository.GetAllConsumables();
 
-
-            IEnumerable<Supplier> category = await _consumablesRepository.GetAllSuppliers();
-            ViewBag.Supplier = category.Select(c => new SelectListItem { Value = c.SupplierID.ToString(), Text = c.SupplierName });
-
+            // Full supplier records for the dropdowns and the Manage Suppliers modal
+            IEnumerable<Supplier> suppliers = await _consumablesRepository.GetAllSuppliers();
+            ViewBag.SupplierList = suppliers.OrderBy(s => s.SupplierName).ToList();
 
             ViewBag.Email =
                 HttpContext.Session.GetString("Email");
@@ -47,8 +49,6 @@ namespace LabManager.Controllers
             int ReorderLevel,
             int SupplierID)
         {
-    
-
             if (string.IsNullOrWhiteSpace(ConsumableName))
             {
                 TempData["Error"] =
@@ -103,50 +103,6 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Unable to add consumable.";
             }
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        // =====================================================
-        // ADD SUPPLIER
-        // =====================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddSupplier(string SupplierName,string ContactPerson,string Email )
-        {
-            if (!ModelState.IsValid) {
-
-                TempData["Error"] = "Please provide valid supplier information.";
-                return RedirectToAction(nameof(Index));
-
-            }
-
-            var supplier = new Supplier
-            {
-                SupplierName = SupplierName,
-                ContactPerson = ContactPerson,
-                EmailAddress = Email
-            };
-
-            bool result =
-                await _consumablesRepository
-                    .AddSupplier(supplier);
-
-            if (result)
-            {
-                TempData["Success"] =
-                    "Supplier added successfully.";
-            }
-            else
-            {
-                TempData["Error"] =
-                    "Unable to add supplier.";
-            }
-
-
-            TempData[result ? "Success" : "Error"] = result
-               ? "Supplier  added successfully."
-               : "Unable to add supplier.";
 
             return RedirectToAction(nameof(Index));
         }
@@ -335,6 +291,109 @@ namespace LabManager.Controllers
             }
 
             return Json(consumable);
+        }
+
+        // =====================================================
+        // ADD SUPPLIER
+        // =====================================================
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddSupplier(
+            [Bind("SupplierName,ContactPerson,EmailAddress")] Supplier model)
+        {
+            if (string.IsNullOrWhiteSpace(model.SupplierName) ||
+                string.IsNullOrWhiteSpace(model.EmailAddress))
+            {
+                TempData["Error"] = "Supplier name and email are required.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (await _consumablesRepository.SupplierNameExists(model.SupplierName))
+            {
+                TempData["Error"] =
+                    $"A supplier named \"{model.SupplierName.Trim()}\" already exists.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            model.SupplierName = model.SupplierName.Trim();
+
+            bool result = await _consumablesRepository.AddSupplier(model);
+
+            if (result)
+                TempData["Success"] = $"{model.SupplierName} added.";
+            else
+                TempData["Error"] = "Unable to add supplier.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // =====================================================
+        // UPDATE SUPPLIER
+        // =====================================================
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateSupplier(
+            [Bind("SupplierID,SupplierName,ContactPerson,EmailAddress")] Supplier model)
+        {
+            var existing = await _consumablesRepository.GetSupplierById(model.SupplierID);
+            if (existing == null)
+            {
+                TempData["Error"] = "Supplier not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (string.IsNullOrWhiteSpace(model.SupplierName) ||
+                string.IsNullOrWhiteSpace(model.EmailAddress))
+            {
+                TempData["Error"] = "Supplier name and email are required.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (await _consumablesRepository.SupplierNameExists(model.SupplierName, model.SupplierID))
+            {
+                TempData["Error"] =
+                    $"A supplier named \"{model.SupplierName.Trim()}\" already exists.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            model.SupplierName = model.SupplierName.Trim();
+
+            bool result = await _consumablesRepository.UpdateSupplier(model);
+
+            if (result)
+                TempData["Success"] = $"{model.SupplierName} updated.";
+            else
+                TempData["Error"] = "Unable to update supplier.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // =====================================================
+        // DELETE SUPPLIER
+        // =====================================================
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteSupplier(int supplierId)
+        {
+            var supplier = await _consumablesRepository.GetSupplierById(supplierId);
+            if (supplier == null)
+            {
+                TempData["Error"] = "Supplier not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (await _consumablesRepository.SupplierHasConsumables(supplierId))
+            {
+                TempData["Error"] =
+                    $"{supplier.SupplierName} still has consumables assigned. Reassign them first.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            bool result = await _consumablesRepository.DeleteSupplier(supplierId);
+
+            if (result)
+                TempData["Success"] = $"{supplier.SupplierName} deleted.";
+            else
+                TempData["Error"] = "Unable to delete supplier.";
+
+            return RedirectToAction(nameof(Index));
         }
     }
 }

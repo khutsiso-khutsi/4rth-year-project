@@ -29,6 +29,11 @@ namespace LabManager.Repository
 
         Task<IEnumerable<TestType>> GetTestType();
 
+        // Map of TechnicianId -> List of assigned TestTypeIds (used by controller/view)
+        Task<Dictionary<int, List<int>>> GetTechnicianTestTypeMap();
+
+        // Assigns the given test type ids to the technician (replaces existing mappings)
+        Task SetTechnicianTestTypes(int technicianId, IEnumerable<int> testTypeIds);
 
     }
 

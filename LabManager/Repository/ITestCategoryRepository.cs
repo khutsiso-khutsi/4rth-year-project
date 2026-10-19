@@ -1,4 +1,5 @@
-﻿using LabManager.Models;
+﻿using _4th_year_set_up.Models;
+using LabManager.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,22 +8,22 @@ using System.Threading.Tasks;
 
 namespace LabManager.Repository
 {
- 
-        public interface ITestCatalogueRepository
-        {
-            Task<IEnumerable<TestType>> GetAllTestTypes();
 
-            Task<IEnumerable<TestCategory>> GetAllCategories();
+    public interface ITestCatalogueRepository
+    {
+        Task<IEnumerable<TestType>> GetAllTestTypes();
 
-            Task<bool> AddTestType(TestType test);
+        Task<IEnumerable<TestCategory>> GetAllCategories();
 
-            Task<bool> UpdateTestType(TestType test);
+        Task<bool> AddTestType(TestType test);
 
-            Task<bool> DeleteTestType(int testId);
+        Task<bool> UpdateTestType(TestType test);
 
-            Task<bool> AddCategory(TestCategory category);
-        
-           Task<TestType> GetTestTypeById(int testId);
+        Task<bool> DeleteTestType(int testId);
+
+        Task<bool> AddCategory(TestCategory category);
+
+        Task<TestType> GetTestTypeById(int testId);
 
 
         Task<IEnumerable<TestCategory>> GetCategory();
@@ -35,6 +36,11 @@ namespace LabManager.Repository
         Task DeleteTestTypeAsync(int testId);
 
         Task RestoreTestTypeAsync(int testId);
+
+        Task<IEnumerable<Consumable>> GetConsumables();
+
+
+
     }
 
 
@@ -47,7 +53,7 @@ namespace LabManager.Repository
 
 
 
-   
 
 
-} 
+
+}

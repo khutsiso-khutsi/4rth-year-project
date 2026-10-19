@@ -1,4 +1,5 @@
-﻿using LabManager.DataAccess;
+﻿using _4th_year_set_up.Models;
+using LabManager.DataAccess;
 using LabManager.Models;
 using LabManager.Repository;
 
@@ -35,7 +36,7 @@ namespace LabManager.Repositories
             );
         }
 
-        
+
 
         // ---------------------------------------------------------
         // ADD TEST TYPE
@@ -56,7 +57,7 @@ namespace LabManager.Repositories
                         NormalRangeMax = test.NormalRangeMax,
                         TurnaroundTime = test.TurnaroundTime,
                         ConsumablesUsed = test.ConsumablesUsed,
-                       
+
                     }
                 );
 
@@ -145,7 +146,7 @@ namespace LabManager.Repositories
                 return false;
             }
         }
-        
+
 
         public async Task<TestType> GetTestTypeById(int testId)
         {
@@ -179,8 +180,8 @@ namespace LabManager.Repositories
         {
             await _dataAccess.SaveData(
                 "dbo.sp_AddSampleType",
-                new {sampleType.SampleName }
-            )   ;
+                new { sampleType.SampleName }
+            );
         }
 
         public async Task<IEnumerable<TestType>>
@@ -204,5 +205,16 @@ namespace LabManager.Repositories
                 "dbo.sp_RestoreTestType",
                 new { TestId = testId });
         }
+
+     
+
+
+        public async Task<IEnumerable<Consumable>> GetConsumables()
+        {
+            return await _dataAccess.GetData<Consumable, dynamic>(
+                "sp_GetorderConsumables",
+                new { });
+        }
+
     }
 }
