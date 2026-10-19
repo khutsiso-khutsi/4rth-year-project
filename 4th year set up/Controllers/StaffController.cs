@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 ﻿using System.Text;
+=======
+using System.Text;
+>>>>>>> Stashed changes
 using System.Text.RegularExpressions;
 using BCrypt.Net;
 using LabManager.Models;
