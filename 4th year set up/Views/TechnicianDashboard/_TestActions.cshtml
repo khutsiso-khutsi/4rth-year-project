@@ -1,0 +1,75 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model _4th_year_set_up.Models.TestItem
+@using _4th_year_set_up.Models
+@* The action buttons for a test, based on its stage. Used by the list rows and the details page. *@
+@{
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+    var inDetails = (ViewContext.RouteData.Values["action"] as string) == "TestDetails";
+    var enterCss = Model.IsUrgent ? "btn-orange" : "btn-ghost";
+}
+
+@switch (Model.Stage)
+{
+    case TestStage.AwaitingSampleVerification:
+        if (CurrentUser.CanVerifySample)
+        {
+            <a asp-controller="TechnicianDashboard" asp-action="VerifySample" asp-route-id="@Model.ReqNum" class="btn btn-primary">Verify sample</a>
+        }
+        else
+        {
+            <span class="muted-note">Waiting for a senior technician</span>
+        }
+        break;
+
+    case TestStage.SampleRejected:
+        <span class="muted-note">Recollection requested</span>
+        break;
+
+    case TestStage.AwaitingAssignment:
+        <form method="post" asp-controller="TechnicianDashboard" asp-action="SelectTest" class="inline-form">
+            <input type="hidden" name="id" value="@Model.ReqNum" />
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+            <button type="submit" class="btn btn-primary">Select test</button>
+        </form>
+        break;
+
+    case TestStage.Assigned:
+    case TestStage.InProgress:
+    case TestStage.ToBeReviewed:
+        if (Model.AssignedToMe)
+        {
+            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" asp-route-id="@Model.ReqNum"
+               class="btn @enterCss">@(Model.Stage == TestStage.ToBeReviewed ? "Review & re-enter" : "Enter Results")</a>
+            if (Model.Stage == TestStage.Assigned)
+            {
+                <form method="post" asp-controller="TechnicianDashboard" asp-action="ReleaseTest" class="inline-form">
+                    <input type="hidden" name="id" value="@Model.ReqNum" />
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    <button type="submit" class="btn btn-ghost">Release</button>
+                </form>
+            }
+        }
+        else
+        {
+            <span class="muted-note">Assigned to another technician</span>
+        }
+        break;
+
+    case TestStage.Complete:
+        if (CurrentUser.CanVerifyResult(Model))
+        {
+            <a asp-controller="TechnicianDashboard" asp-action="VerifyResult" asp-route-id="@Model.ReqNum" class="btn btn-orange">Verify result</a>
+        }
+        else
+        {
+            <span class="muted-note">Awaiting verification</span>
+        }
+        break;
+
+    case TestStage.Verified:
+        if (!inDetails)
+        {
+            <a asp-controller="TechnicianDashboard" asp-action="TestDetails" asp-route-id="@Model.ReqNum" class="btn btn-ghost">View</a>
+        }
+        break;
+}

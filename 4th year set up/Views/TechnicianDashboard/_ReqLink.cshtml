@@ -1,0 +1,18 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model _4th_year_set_up.Models.TestItem
+@{
+    var p = Model.PatientDetails;
+    var meds = string.Join("||", p.Medications.Select(m => $"{m.Name} {m.Dose}"));
+}
+@* Request number link. Opens the quick-view modal; without JavaScript it simply goes to the full details page. *@
+<a asp-controller="TechnicianDashboard" asp-action="TestDetails" asp-route-id="@Model.ReqNum"
+   class="req-link js-test-modal"
+   data-req="@Model.ReqNum"
+   data-urgent="@(Model.IsUrgent ? "Urgent" : "Routine")"
+   data-stage="@Model.StageLabel"
+   data-stage-css="@Model.StageCss"
+   data-patient="@($"{p.FullName} ({p.Age} y, {p.Sex})")"
+   data-test="@Model.Test"
+   data-condition="@p.Conditions"
+   data-meds="@meds"
+   data-notes="@Model.ClinicalNotes">@Model.ReqNum</a>
