@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Allergies";
     Layout = null;
 }
@@ -398,6 +398,13 @@
             color: var(--red);
         }
 
+        /* Inactive row badge (was used in the view but not defined) */
+        .pill-inactive {
+            background: #f1f5f9;
+            color: var(--muted);
+            margin-left: 6px;
+        }
+
         .action-btns {
             display: flex;
             gap: 8px;
@@ -572,6 +579,13 @@
             color: var(--red);
             border: 1px solid #fecaca;
         }
+    
+        .dup-warn { margin-top:6px; font-size:12.5px; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:6px 10px; }
+        .existing-count { font-weight:400; color:var(--muted); font-size:12px; }
+        .existing-list { max-height:170px; overflow:auto; border:1px solid var(--border, #e2e8f0); border-radius:10px; padding:8px; display:flex; flex-wrap:wrap; gap:6px; background:#f8fafc; }
+        .existing-chip { font-size:12px; padding:3px 9px; border-radius:999px; background:#e0f2f1; color:#0f766e; }
+        .existing-chip.gone { background:#f1f5f9; color:#94a3b8; text-decoration:line-through; }
+        .existing-empty { font-size:12.5px; color:var(--muted); }
     </style>
 </head>
 <body>
@@ -675,6 +689,8 @@
             <div class="card">
                 <div class="search-bar">
                     <input class="search-input" type="text" id="searchInput" placeholder="Search allergies..." onkeyup="filterTable()" />
+                    <button type="button" class="btn-sm" id="searchBtn" onclick="filterTable()">Search</button>
+                    <button type="button" class="btn-sm" id="clearBtn" onclick="clearSearch()">Clear</button>
                     <select class="filter-select" id="categoryFilter" onchange="filterTable()">
                         <option value="">All categories</option>
                         @foreach (var cat in (ViewData["Categories"] as List<admin.Models.AllergyCategory> ?? new()))
@@ -682,10 +698,9 @@
                             <option value="@cat.CategoryName">@cat.CategoryName</option>
                         }
                     </select>
-                    <form method="get" asp-controller="Admin" asp-action="Allergies" style="margin-left:12px;display:flex;align-items:center;gap:8px;">
-                        <label style="font-size:13px;color:var(--muted);">Show inactive</label>
-                        <input type="checkbox" name="showInactive" value="true" onchange="this.form.submit()" @(ViewData["ShowInactive"] as bool? == true ? "checked" : "") />
-                    </form>
+                    <label style="margin-left:12px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);cursor:pointer;">
+                        <input type="checkbox" id="showInactive" /> Show inactive
+                    </label>
                 </div>
 
                 @{
@@ -715,7 +730,7 @@
                             @foreach (var allergy in allergies)
                             {
                                 var inactive = allergy.IsActive == false;
-                                <tr class="@(inactive ? "inactive-row" : "")">
+                                <tr class="@(inactive ? "inactive-row" : "")" data-active="@(inactive ? "0" : "1")">
                                     <td>@allergy.AllergyID</td>
                                     <td>
                                         <strong style="@(inactive ? "text-decoration:line-through;opacity:0.6;" : "")">@allergy.AllergyName</strong>
@@ -760,17 +775,22 @@
                 @Html.AntiForgeryToken()
                 <div class="form-group">
                     <label class="form-label">Allergy name <span style="color:var(--red)">*</span></label>
-                    <input class="form-input" name="AllergyName" required placeholder="e.g. Penicillin" />
+                    <input class="form-input" name="AllergyName" id="addName" required placeholder="e.g. Penicillin" autocomplete="off" />
+                    <div id="dupWarn" class="dup-warn" style="display:none"></div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Category <span style="color:var(--red)">*</span></label>
-                    <select class="form-select" name="AllergyCategoryID" required>
+                    <select class="form-select" name="AllergyCategoryID" id="addCategory" required>
                         <option value="">Select a category...</option>
                         @foreach (var cat in (ViewData["Categories"] as List<admin.Models.AllergyCategory> ?? new()))
                         {
                             <option value="@cat.AllergyCategoryID">@cat.CategoryName</option>
                         }
                     </select>
+                </div>
+                <div class="form-group" id="existingBox" style="display:none">
+                    <label class="form-label">Already under <strong id="existingCat"></strong> <span id="existingCount" class="existing-count"></span></label>
+                    <div class="existing-list" id="existingList"></div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Description</label>
@@ -820,7 +840,7 @@
     <div class="modal-bg" id="deleteModal">
         <div class="modal">
             <div class="modal-title">Delete allergy</div>
-            <p style="font-size:13.5px;color:var(--muted);margin-bottom:20px;">Are you sure you want to delete <strong id="deleteName"></strong>? This cannot be undone.</p>
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:20px;">Are you sure you want to delete <strong id="deleteName"></strong>? It will be marked inactive and can be restored later.</p>
             <form method="post" asp-controller="Admin" asp-action="DeleteAllergy">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" id="deleteId" />
@@ -850,15 +870,68 @@
             openModal('deleteModal');
         }
 
+        // ---- existing allergies, by category (used by the Add modal) ----
+        const allAllergies = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            (ViewData["Allergies"] as List<admin.Models.Allergy> ?? new())
+                .Select(c => new { n = c.AllergyName, c = c.AllergyCategoryID, a = c.IsActive != false })));
+
+        function showExisting() {
+            const sel = document.getElementById('addCategory');
+            const box = document.getElementById('existingBox');
+            const list = document.getElementById('existingList');
+            const typed = document.getElementById('addName').value.trim().toLowerCase();
+            list.innerHTML = '';
+            if (!sel.value) { box.style.display = 'none'; document.getElementById('dupWarn').style.display = 'none'; return; }
+            const items = allAllergies.filter(x => String(x.c) === sel.value)
+                                       .sort((a, b) => a.n.localeCompare(b.n));
+            document.getElementById('existingCat').textContent = sel.options[sel.selectedIndex].text;
+            document.getElementById('existingCount').textContent = '(' + items.filter(x => x.a).length + ')';
+            if (!items.length) {
+                list.innerHTML = '<span class="existing-empty">No allergies in this category yet.</span>';
+            }
+            items.forEach(x => {
+                if (typed && !x.n.toLowerCase().includes(typed)) return;
+                const chip = document.createElement('span');
+                chip.className = 'existing-chip' + (x.a ? '' : ' gone');
+                chip.textContent = x.n;
+                if (!x.a) chip.title = 'Inactive - restore it from the table instead';
+                list.appendChild(chip);
+            });
+            box.style.display = '';
+            // duplicate warning (any category)
+            const warn = document.getElementById('dupWarn');
+            const dup = typed && allAllergies.find(x => x.n.toLowerCase() === typed);
+            if (dup) {
+                warn.textContent = dup.a ? 'A allergy with this name already exists.'
+                                         : 'This allergy exists but is inactive - restore it from the table.';
+                warn.style.display = '';
+            } else warn.style.display = 'none';
+        }
+        document.getElementById('addCategory').addEventListener('change', showExisting);
+        document.getElementById('addName').addEventListener('input', showExisting);
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = '';
+            filterTable();
+        }
+        document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); filterTable(); } });
+
+        // Search + category + "Show inactive" all handled here, in the browser.
+        // The controller must send ALL rows (active + inactive) to this page.
         function filterTable() {
             const search = document.getElementById('searchInput').value.toLowerCase();
             const category = document.getElementById('categoryFilter').value.toLowerCase();
-            const rows = document.querySelectorAll('#allergiesTable tbody tr');
-            rows.forEach(row => {
+            const showInactive = document.getElementById('showInactive').checked;
+            document.querySelectorAll('#allergiesTable tbody tr').forEach(row => {
                 const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(search) && (category === '' || text.includes(category)) ? '' : 'none';
+                const isInactive = row.dataset.active === '0';
+                const matches = text.includes(search) && (category === '' || text.includes(category));
+                row.style.display = (matches && (showInactive || !isInactive)) ? '' : 'none';
             });
         }
+        document.getElementById('showInactive').addEventListener('change', filterTable);
+        filterTable(); // hides inactive rows on first load
 
         document.querySelectorAll('.modal-bg').forEach(bg => {
             bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });

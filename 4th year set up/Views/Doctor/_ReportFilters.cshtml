@@ -1,0 +1,67 @@
+@* Filter bar + download buttons for the doctor report.
+   Put on Reports.cshtml with:   <partial name="_ReportFilters" />
+   Reads ViewBag values set by DoctorController.Reports. *@
+@{
+    var fromStr = (string)ViewBag.FromStr;
+    var toStr = (string)ViewBag.ToStr;
+    var dateField = (string)ViewBag.DateField ?? "requested";
+    var status = (string)ViewBag.Status ?? "";
+    var statuses = ViewBag.Statuses as List<string> ?? new List<string>();
+    object routes = new { from = fromStr, to = toStr, dateField = dateField, status = status };
+}
+<style>
+    .rf-bar { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-bottom:16px; }
+    .rf-field { display:flex; flex-direction:column; gap:4px; }
+    .rf-field label { font-size:12px; font-weight:600; color:#64748b; }
+    .rf-field input, .rf-field select { padding:9px 12px; border:1px solid #cbd5e1; border-radius:10px; font:inherit; font-size:14px; background:#fff; }
+    .rf-btn { padding:10px 16px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; color:#0f172a; font:inherit; font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; }
+    .rf-btn.primary { background:#0d9488; border-color:#0d9488; color:#fff; }
+    .rf-spacer { flex:1; }
+    .rf-error { color:#b91c1c; font-size:13px; display:none; }
+</style>
+
+<form method="get" asp-controller="Doctor" asp-action="Reports" class="rf-bar" id="reportFilterForm">
+    <div class="rf-field">
+        <label for="rfDateField">Filter by date</label>
+        <select id="rfDateField" name="dateField">
+            <option value="requested" selected="@(dateField == "requested")">Request date</option>
+            <option value="released" selected="@(dateField == "released")">Released date</option>
+        </select>
+    </div>
+    <div class="rf-field">
+        <label for="rfFrom">From</label>
+        <input type="date" id="rfFrom" name="from" value="@fromStr" />
+    </div>
+    <div class="rf-field">
+        <label for="rfTo">To</label>
+        <input type="date" id="rfTo" name="to" value="@toStr" />
+    </div>
+    <div class="rf-field">
+        <label for="rfStatus">Status</label>
+        <select id="rfStatus" name="status">
+            <option value="">All statuses</option>
+            @foreach (var s in statuses)
+            {
+                <option value="@s" selected="@(s == status)">@s</option>
+            }
+        </select>
+    </div>
+    <button type="submit" class="rf-btn primary">Filter</button>
+    <a class="rf-btn" asp-controller="Doctor" asp-action="Reports">Reset</a>
+
+    <span class="rf-spacer"></span>
+
+    <a class="rf-btn" asp-controller="Doctor" asp-action="ReportPdf" asp-all-route-data="@(new Dictionary<string,string>{ ["from"]=fromStr, ["to"]=toStr, ["dateField"]=dateField, ["status"]=status })" target="_blank">Download PDF</a>
+    <a class="rf-btn" asp-controller="Doctor" asp-action="ReportCsv" asp-all-route-data="@(new Dictionary<string,string>{ ["from"]=fromStr, ["to"]=toStr, ["dateField"]=dateField, ["status"]=status })">Download CSV</a>
+</form>
+<div class="rf-error" id="rfError">"From" must be on or before "To".</div>
+
+<script>
+    (function () {
+        const form = document.getElementById('reportFilterForm');
+        form.addEventListener('submit', function (e) {
+            const f = document.getElementById('rfFrom').value, t = document.getElementById('rfTo').value;
+            if (f && t && f > t) { e.preventDefault(); document.getElementById('rfError').style.display = 'block'; }
+        });
+    })();
+</script>

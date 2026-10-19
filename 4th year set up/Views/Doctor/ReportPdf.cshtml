@@ -1,41 +1,73 @@
 @model Doctor.Models.DoctorReportViewModel
 @{
     Layout = null;
+    var fromStr = (string)ViewBag.FromStr ?? "";
+    var toStr = (string)ViewBag.ToStr ?? "";
+    var byReleased = (string)ViewBag.DateField == "released";
+    var status = (string)ViewBag.Status ?? "";
+    var rows = Model.Requests ?? new List<Doctor.Models.DoctorTestRequestSummary>();
 }
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
+    <title>Doctor report</title>
     <style>
-        body { font-family: 'DM Sans', Arial, sans-serif; color: #0b1f3a; padding: 30px; }
-        h1 { font-size: 20px; margin-bottom: 4px; }
-        .muted { color: #6b7a99; font-size: 12px; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th, td { border-bottom: 1px solid #dde4f0; padding: 8px; text-align: left; }
+        body { font-family: Arial, Helvetica, sans-serif; color:#0f172a; font-size:12px; margin:24px; }
+        h1 { font-size:20px; margin:0 0 2px; }
+        .sub { color:#475569; margin-bottom:14px; }
+        .meta { margin-bottom:14px; }
+        .meta span { display:inline-block; margin-right:18px; }
+        table { width:100%; border-collapse:collapse; }
+        th { background:#0f766e; color:#fff; text-align:left; padding:7px 8px; font-size:11px; }
+        td { padding:7px 8px; border-bottom:1px solid #e2e8f0; vertical-align:top; }
+        tr:nth-child(even) td { background:#f8fafc; }
+        .foot { margin-top:16px; color:#64748b; font-size:11px; }
+        .noprint { margin-bottom:14px; }
+        .noprint button { padding:8px 14px; font-size:13px; cursor:pointer; }
+        @@media print { .noprint { display:none; } body { margin:0; } }
     </style>
 </head>
 <body>
-    <h1>NMB-HLabSys — Doctor Report</h1>
-    <div class="muted">
-        Dr. @Model.DoctorName · @Model.FromDate.ToString("yyyy-MM-dd") to @Model.ToDate.ToString("yyyy-MM-dd")
-        · @Model.Requests.Count request(s)
+    <div class="noprint"><button onclick="window.print()">Print / Save as PDF</button></div>
+
+    <h1>NMB-HLabSys — Test request report</h1>
+    <div class="sub">Dr @Model.DoctorName</div>
+
+    <div class="meta">
+        <span><strong>Period:</strong> @fromStr to @toStr</span>
+        <span><strong>Date used:</strong> @(byReleased ? "Released date" : "Request date")</span>
+        <span><strong>Status:</strong> @(string.IsNullOrEmpty(status) ? "All" : status)</span>
+        <span><strong>Requests:</strong> @rows.Count</span>
     </div>
+
     <table>
         <thead>
-            <tr><th>Request #</th><th>Patient</th><th>Date</th><th>Urgency</th><th>Status</th></tr>
+            <tr>
+                <th>Request no.</th><th>Request date</th><th>Patient</th><th>Urgency</th>
+                <th>Status</th><th>Released date</th><th>Clinical notes</th>
+            </tr>
         </thead>
         <tbody>
-            @foreach (var r in Model.Requests)
+            @foreach (var r in rows)
             {
                 <tr>
                     <td>@r.RequestNumber</td>
+                    <td>@r.RequestDate.ToString("d MMM yyyy")</td>
                     <td>@r.PatientName</td>
-                    <td>@r.RequestDate.ToString("yyyy-MM-dd")</td>
                     <td>@r.Urgency</td>
                     <td>@r.RequestStatus</td>
+                    <td>@(r.ReleasedDate.HasValue ? r.ReleasedDate.Value.ToString("d MMM yyyy") : "—")</td>
+                    <td>@(string.IsNullOrWhiteSpace(r.ClinicalNotes) ? "—" : r.ClinicalNotes)</td>
                 </tr>
+            }
+            @if (rows.Count == 0)
+            {
+                <tr><td colspan="7">No requests in this period.</td></tr>
             }
         </tbody>
     </table>
+
+    <div class="foot">Generated on @DateTime.Now.ToString("d MMM yyyy HH:mm")</div>
 </body>
 </html>

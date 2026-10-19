@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Doctor.Repository;
@@ -507,49 +508,144 @@ namespace _4th_year_set_up.Controllers
             return View("~/Views/Doctor/Alerts.cshtml", model);
         }
 
-        // ---- 6. Doctor Reports (PDF) ---------------------------------------------
+        // ---- 6. Doctor Reports (filter + PDF + CSV) -------------------------------
 
-        public IActionResult Reports(DateTime? from, DateTime? to)
+        /// <summary>
+        /// One place that builds the report rows, so the page, the PDF and the CSV
+        /// always show exactly the same thing.
+        /// dateField: "requested" (default) filters on the request date,
+        ///            "released" filters on the date results were released.
+        /// </summary>
+        private (List<DoctorTestRequestSummary> Rows, List<string> Statuses, DateTime From, DateTime To, string DateField)
+            BuildReport(DateTime? from, DateTime? to, string? dateField, string? status)
+        {
+            var (doctorId, _) = CurrentDoctor();
+            var fromDate = (from ?? DateTime.Today.AddMonths(-1)).Date;
+            var toDate = (to ?? DateTime.Today).Date;
+            if (toDate < fromDate) (fromDate, toDate) = (toDate, fromDate);
+
+            var byReleased = string.Equals(dateField, "released", StringComparison.OrdinalIgnoreCase);
+
+            List<DoctorTestRequestSummary> rows;
+            if (byReleased)
+            {
+                // The stored procedure filters on request date only, so fetch everything
+                // and apply the released-date range here.
+                rows = _doctorData.GetDoctorTestRequests(doctorId)
+                    .Where(r => r.ReleasedDate.HasValue
+                             && r.ReleasedDate.Value.Date >= fromDate
+                             && r.ReleasedDate.Value.Date <= toDate)
+                    .ToList();
+            }
+            else
+            {
+                rows = _doctorData.GetDoctorTestRequests(doctorId, fromDate, toDate);
+            }
+
+            // Status choices come from the rows themselves (before the status filter).
+            var statuses = rows.Select(r => r.RequestStatus).Distinct().OrderBy(s => s).ToList();
+
+            if (!string.IsNullOrWhiteSpace(status))
+                rows = rows.Where(r => r.RequestStatus == status).ToList();
+
+            rows = byReleased
+                ? rows.OrderByDescending(r => r.ReleasedDate).ToList()
+                : rows.OrderByDescending(r => r.RequestDate).ToList();
+
+            return (rows, statuses, fromDate, toDate, byReleased ? "released" : "requested");
+        }
+
+        private void FillReportViewBag(DateTime from, DateTime to, string dateField, string? status, List<string> statuses)
         {
             ViewBag.Email = CurrentEmail();
+            ViewBag.FromStr = from.ToString("yyyy-MM-dd");
+            ViewBag.ToStr = to.ToString("yyyy-MM-dd");
+            ViewBag.DateField = dateField;
+            ViewBag.Status = status ?? "";
+            ViewBag.Statuses = statuses;
+        }
+
+        public IActionResult Reports(DateTime? from, DateTime? to, string? dateField, string? status)
+        {
             var (doctorId, doctorName) = CurrentDoctor();
-            var fromDate = from ?? DateTime.Today.AddMonths(-1);
-            var toDate = to ?? DateTime.Today;
+            var r = BuildReport(from, to, dateField, status);
+            FillReportViewBag(r.From, r.To, r.DateField, status, r.Statuses);
+
             var model = new DoctorReportViewModel
             {
                 DoctorName = doctorName,
-                FromDate = fromDate,
-                ToDate = toDate,
-                Requests = _doctorData.GetDoctorTestRequests(doctorId, fromDate, toDate)
+                FromDate = r.From,
+                ToDate = r.To,
+                Requests = r.Rows
             };
             return View("~/Views/Doctor/Reports.cshtml", model);
         }
 
         [HttpGet]
-        public IActionResult ReportPreview(DateTime from, DateTime to)
+        public IActionResult ReportPreview(DateTime from, DateTime to, string? dateField, string? status)
         {
-            var (doctorId, _) = CurrentDoctor();
-            var requests = _doctorData.GetDoctorTestRequests(doctorId, from, to);
-            return PartialView("~/Views/Doctor/_ReportPreview.cshtml", requests);
+            var r = BuildReport(from, to, dateField, status);
+            return PartialView("~/Views/Doctor/_ReportTable.cshtml", r.Rows);
         }
 
         [HttpGet]
-        public IActionResult ReportPdf(DateTime from, DateTime to)
+        public IActionResult ReportPdf(DateTime from, DateTime to, string? dateField, string? status)
         {
-            var (doctorId, doctorName) = CurrentDoctor();
+            var (_, doctorName) = CurrentDoctor();
+            var r = BuildReport(from, to, dateField, status);
+            FillReportViewBag(r.From, r.To, r.DateField, status, r.Statuses);
+
             var model = new DoctorReportViewModel
             {
                 DoctorName = doctorName,
-                FromDate = from,
-                ToDate = to,
-                Requests = _doctorData.GetDoctorTestRequests(doctorId, from, to)
+                FromDate = r.From,
+                ToDate = r.To,
+                Requests = r.Rows
             };
+
+            Log($"Downloaded report {r.From:yyyy-MM-dd} to {r.To:yyyy-MM-dd}");
+
+            // Without wkhtmltopdf, open it as a page the browser can print / save as PDF
             if (!PdfSupport.Ready)
                 return View("~/Views/Doctor/ReportPdf.cshtml", model);
             return new ViewAsPdf("~/Views/Doctor/ReportPdf.cshtml", model)
             {
-                FileName = $"doctor-report-{from:yyyy-MM-dd}-to-{to:yyyy-MM-dd}.pdf"
+                FileName = $"doctor-report-{r.From:yyyy-MM-dd}-to-{r.To:yyyy-MM-dd}.pdf"
             };
+        }
+
+        [HttpGet]
+        public IActionResult ReportCsv(DateTime from, DateTime to, string? dateField, string? status)
+        {
+            var r = BuildReport(from, to, dateField, status);
+
+            // Spreadsheet programs run text that starts with = + - @ as a formula,
+            // so those cells get a leading apostrophe.
+            static string Cell(string? v)
+            {
+                v ??= "";
+                if (v.Length > 0 && "=+-@".IndexOf(v[0]) >= 0) v = "'" + v;
+                return "\"" + v.Replace("\"", "\"\"") + "\"";
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine("Request number,Request date,Patient,Urgency,Status,Released date,Clinical notes");
+            foreach (var x in r.Rows)
+            {
+                sb.AppendLine(string.Join(",",
+                    Cell(x.RequestNumber),
+                    Cell(x.RequestDate.ToString("yyyy-MM-dd HH:mm")),
+                    Cell(x.PatientName),
+                    Cell(x.Urgency),
+                    Cell(x.RequestStatus),
+                    Cell(x.ReleasedDate?.ToString("yyyy-MM-dd HH:mm")),
+                    Cell(x.ClinicalNotes)));
+            }
+
+            Log($"Exported CSV report {r.From:yyyy-MM-dd} to {r.To:yyyy-MM-dd}");
+            // UTF-8 with BOM so Excel shows accents correctly
+            var bytes = new UTF8Encoding(true).GetPreamble().Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
+            return File(bytes, "text/csv", $"doctor-report-{r.From:yyyy-MM-dd}-to-{r.To:yyyy-MM-dd}.csv");
         }
 
         // ---- Profile -------------------------------------------------------------

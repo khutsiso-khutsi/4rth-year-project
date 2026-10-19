@@ -189,7 +189,7 @@ namespace _4th_year_set_up.Controllers
         public IActionResult Register(string Username, string Email, string Password, string ConfirmPassword,
             string FirstName, string LastName, string IDNumber,
             DateTime DateOfBirth, string CellphoneNumber,
-            string AddressLine1, string? AddressLine2, string City, string PostalCode)
+            string AddressLine1, string? AddressLine2, string Province, string City, string PostalCode)
         {
             // Same rules as the checks on the Register page, repeated here because
             // anything in the browser can be bypassed.
@@ -197,7 +197,8 @@ namespace _4th_year_set_up.Controllers
                 string.IsNullOrWhiteSpace(Password) || string.IsNullOrWhiteSpace(ConfirmPassword) ||
                 string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName) ||
                 string.IsNullOrWhiteSpace(IDNumber) || string.IsNullOrWhiteSpace(CellphoneNumber) ||
-                string.IsNullOrWhiteSpace(AddressLine1) || string.IsNullOrWhiteSpace(City) ||
+                string.IsNullOrWhiteSpace(AddressLine1) || string.IsNullOrWhiteSpace(Province) ||
+                string.IsNullOrWhiteSpace(City) ||
                 string.IsNullOrWhiteSpace(PostalCode))
             {
                 ModelState.AddModelError("", "Please fill in all the required fields.");
@@ -242,6 +243,14 @@ namespace _4th_year_set_up.Controllers
                 return View();
             }
 
+            // Province must be one of the nine (the page's dropdown only offers these)
+            var province = SaProvinces.FirstOrDefault(p => p.Equals(Province.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (province == null)
+            {
+                ModelState.AddModelError("", "Please choose your province from the list.");
+                return View();
+            }
+
             // SA postal codes are 4 digits
             var postalCode = PostalCode.Trim();
             if (!System.Text.RegularExpressions.Regex.IsMatch(postalCode, @"^\d{4}$"))
@@ -251,8 +260,8 @@ namespace _4th_year_set_up.Controllers
             }
 
             // The database keeps the address in one column (Patients.HomeAddress),
-            // so the parts are joined: "12 Cape Road, Mill Park, Gqeberha, 6045"
-            var homeAddress = string.Join(", ", new[] { AddressLine1, AddressLine2, City, postalCode }
+            // so the parts are joined: "12 Cape Road, Mill Park, Gqeberha, Eastern Cape, 6045"
+            var homeAddress = string.Join(", ", new[] { AddressLine1, AddressLine2, City, province, postalCode }
                 .Where(part => !string.IsNullOrWhiteSpace(part))
                 .Select(part => part!.Trim()));
 
@@ -363,6 +372,12 @@ namespace _4th_year_set_up.Controllers
         /// Spec password rules: at least 8 characters, one uppercase letter,
         /// one number and one special character. Returns null when fine.
         /// </summary>
+        private static readonly string[] SaProvinces =
+        {
+            "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal", "Limpopo",
+            "Mpumalanga", "North West", "Northern Cape", "Western Cape"
+        };
+
         private static string? PasswordRuleError(string password)
         {
             if (password.Length < 8) return "Password must be at least 8 characters.";

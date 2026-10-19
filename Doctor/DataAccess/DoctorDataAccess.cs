@@ -8,29 +8,7 @@ using Patient.Models;
 
 namespace Doctor.DataAccess
 {
-    /// <summary>
-    /// Data access for the Doctor module (patient records, test requests,
-    /// results, alerts, reports).
-    ///
-    /// This calls the REAL, already-existing stored procedures from the
-    /// team's NMB_HaematologyLab database (see the SSMS schema script the
-    /// user attached) wherever one exists for the job, and falls back to
-    /// plain parameterised SQL — the same convention already used in
-    /// Patient.DataAccess.UserDataAccess (e.g. its GetAllRoles()) — for the
-    /// handful of lookups that have no matching stored procedure (a
-    /// doctor-by-user-id lookup, a joined test-type list, a sample-type
-    /// list). No new stored procedures or schema changes are introduced
-    /// here, to avoid any further drift from the shared database.
-    ///
-    /// KNOWN EXISTING-DATABASE BUG (not fixed here — see CancelTestRequest
-    /// below): sp_CancelTestRequest sets TestRequestItems.ItemStatus to
-    /// 'Cancelled' for every non-Verified item, but the ItemStatus column's
-    /// own CHECK constraint does not allow 'Cancelled' as a value. That
-    /// will make a real cancel throw a constraint-violation error from SQL
-    /// Server. This needs a real fix in the shared database (either the
-    /// procedure or the constraint) — flag it to the team rather than
-    /// silently altering a constraint everyone else's code also relies on.
-    /// </summary>
+
     public class DoctorDataAccess
     {
         private readonly string _connectionString;
@@ -73,18 +51,7 @@ namespace Doctor.DataAccess
             return null;
         }
 
-        /// <summary>
-        /// Same join as GetDoctorByUserId, but with FirstName/LastName kept
-        /// separate (rather than concatenated into DoctorName) for the
-        /// profile page's editable name fields.
-        ///
-        /// NOTE: only DoctorID/FirstName/LastName/Email are confirmed real
-        /// Doctors-table columns. LicenseNumber, Specialization, Department,
-        /// PracticeAddress, HomeAddress, CellphoneNumber and DateOfBirth are
-        /// NOT populated here — nobody has confirmed those columns exist on
-        /// the real Doctors table yet, so the profile page leaves them blank
-        /// rather than showing invented placeholder data.
-        /// </summary>
+
         public (int DoctorID, string FirstName, string LastName, string Email)? GetDoctorProfileByUserId(int userId)
         {
             using var conn = Open();
@@ -107,10 +74,7 @@ namespace Doctor.DataAccess
             return null;
         }
 
-        /// <summary>
-        /// The doctor's own profile for the Profile page. Plain SQL, the same as
-        /// the lookup above, because no stored procedure reads a doctor by UserID.
-        /// </summary>
+
         public DoctorProfileViewModel? GetDoctorOwnProfile(int userId)
         {
             using var conn = Open();
@@ -200,15 +164,7 @@ namespace Doctor.DataAccess
             return result != null && Convert.ToInt32(result) > 0;
         }
 
-        /// <summary>
-        /// Calls the real sp_RegisterPatientByDoctor — NOT the generic
-        /// sp_RegisterUser. This one is the correct proc for this feature:
-        /// it sets MustChangePassword = 1 and IsEmailVerified = 0, matching
-        /// the spec's "must change password at first login" requirement
-        /// (sp_RegisterUser used elsewhere in the app always sets
-        /// MustChangePassword = 0, which is right for public self sign-up
-        /// but wrong here).
-        /// </summary>
+
         public (string Result, int NewUserId, int NewPatientId) RegisterPatientByDoctor(
             string username, string email, string passwordHash,
             string firstName, string lastName, string idNumber,
@@ -243,20 +199,22 @@ namespace Doctor.DataAccess
 
         // ---- 2. Create Test Requests -----------------------------------------
         // No sp_GetAllTestTypes exists, so this is a plain join
-        // (TestTypes -> TestCategories / SampleTypes / UnitsOfMeasurement).
+        // (TestTypes -> TestCategories / SampleTypes).
 
         public List<TestTypeOption> GetAllTestTypes()
         {
             var list = new List<TestTypeOption>();
             using var conn = Open();
+            // TestTypes keeps its unit as plain text in the UnitofMeasurement column
+            // (there is no UnitID on that table), so no join to UnitsOfMeasurement.
             using var cmd = new SqlCommand(@"
                 SELECT tt.TestTypeID, tt.TestName, tc.CategoryName,
                        tt.SampleTypeID, st.SampleTypeName,
-                       uom.UnitName, tt.NormalRangeMin, tt.NormalRangeMax
+                       tt.UnitofMeasurement AS UnitName,
+                       tt.NormalRangeMin, tt.NormalRangeMax
                 FROM TestTypes tt
                 INNER JOIN TestCategories tc ON tt.CategoryID = tc.CategoryID
                 INNER JOIN SampleTypes st ON tt.SampleTypeID = st.SampleTypeID
-                INNER JOIN UnitsOfMeasurement uom ON tt.UnitID = uom.UnitID
                 WHERE tt.IsActive = 1
                 ORDER BY tc.CategoryName, tt.TestName", conn);
             using var reader = cmd.ExecuteReader();
@@ -269,9 +227,9 @@ namespace Doctor.DataAccess
                     CategoryName = reader.GetString(reader.GetOrdinal("CategoryName")),
                     SampleTypeID = reader.GetInt32(reader.GetOrdinal("SampleTypeID")),
                     SampleTypeName = reader.GetString(reader.GetOrdinal("SampleTypeName")),
-                    UnitName = reader.GetString(reader.GetOrdinal("UnitName")),
-                    NormalRangeMin = reader.GetDecimal(reader.GetOrdinal("NormalRangeMin")),
-                    NormalRangeMax = reader.GetDecimal(reader.GetOrdinal("NormalRangeMax"))
+                    UnitName = reader.IsDBNull(reader.GetOrdinal("UnitName")) ? "" : reader.GetString(reader.GetOrdinal("UnitName")),
+                    NormalRangeMin = reader.IsDBNull(reader.GetOrdinal("NormalRangeMin")) ? 0 : reader.GetDecimal(reader.GetOrdinal("NormalRangeMin")),
+                    NormalRangeMax = reader.IsDBNull(reader.GetOrdinal("NormalRangeMax")) ? 0 : reader.GetDecimal(reader.GetOrdinal("NormalRangeMax"))
                 });
             }
             return list;
@@ -503,24 +461,7 @@ namespace Doctor.DataAccess
             return request;
         }
 
-        /// <summary>
-        /// Calls the real sp_CancelTestRequest(@RequestID, @CancellationReason,
-        /// @CancelledByUserID, @CancelledByRole, @Result OUTPUT,
-        /// @NotifyDoctorEmail OUTPUT, @NotifyDoctorName OUTPUT).
-        ///
-        /// NOTE: as written in the real database, this procedure will throw a
-        /// CHECK-constraint violation the moment it tries to set a
-        /// non-Verified item's ItemStatus to 'Cancelled' (see the class
-        /// remarks above) — that surfaces here as a SqlException, not a
-        /// friendly @Result string, since the constraint violation happens
-        /// inside the same transaction the proc's own TRY/CATCH wraps... but
-        /// a CHECK constraint violation IS caught by that CATCH block (it's a
-        /// regular T-SQL error), so in practice @Result will come back as
-        /// "ERROR: The UPDATE statement conflicted with the CHECK
-        /// constraint...". Callers must treat any @Result that isn't exactly
-        /// "SUCCESS" as a failure and show it to the doctor rather than
-        /// assuming the cancel went through.
-        /// </summary>
+
         public (bool Success, string Message, string? NotifyDoctorEmail, string? NotifyDoctorName) CancelTestRequest(
             int requestId, string reason, int cancelledByUserId, string cancelledByRole)
         {
@@ -547,17 +488,7 @@ namespace Doctor.DataAccess
             return (result == "SUCCESS", result, notifyEmail, notifyName);
         }
 
-        /// <summary>
-        /// Calls the real sp_ReleaseTestResults(@RequestID, @DoctorID,
-        /// @ReleaseNote, @Result OUTPUT). The procedure itself enforces two
-        /// preconditions: only the requesting doctor may release, and every
-        /// item on the request must already be 'Verified' — it throws
-        /// otherwise, which comes back here as an @Result starting with
-        /// "ERROR:". Callers should check every item's ItemStatus themselves
-        /// first (see TestItemStatus.Verified) so the doctor gets a clear
-        /// message before even trying, rather than only finding out from a
-        /// raw SQL error message.
-        /// </summary>
+
         public (bool Success, string Message) ReleaseResults(int requestId, int doctorId, string releaseNotes)
         {
             using var conn = Open();
@@ -576,14 +507,7 @@ namespace Doctor.DataAccess
             return (result == "SUCCESS", result);
         }
 
-        // ---- 5. Alerts --------------------------------------------------------
 
-        /// <summary>
-        /// sp_GetDoctorAlerts only takes @FromDate (defaults to "5 days ago"
-        /// inside the proc itself if NULL is passed) — there is no @ToDate
-        /// parameter in the real procedure, so an upper bound is applied
-        /// here in C# after the fact.
-        /// </summary>
         public List<AbnormalAlertViewModel> GetAbnormalAlerts(int doctorId, DateTime? from, DateTime? to)
         {
             var list = new List<AbnormalAlertViewModel>();

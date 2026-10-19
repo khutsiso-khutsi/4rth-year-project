@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Medications";
     Layout = null;
 }
@@ -393,12 +393,17 @@
             font-weight: 500;
         }
 
-        .pill-green {
-            background: #f0fdf4;
-            color: #166534;
+        .pill-red {
+            background: #fef2f2;
+            color: var(--red);
         }
 
-
+        /* Inactive row badge (was used in the view but not defined) */
+        .pill-inactive {
+            background: #f1f5f9;
+            color: var(--muted);
+            margin-left: 6px;
+        }
 
         .action-btns {
             display: flex;
@@ -574,6 +579,13 @@
             color: var(--red);
             border: 1px solid #fecaca;
         }
+    
+        .dup-warn { margin-top:6px; font-size:12.5px; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:6px 10px; }
+        .existing-count { font-weight:400; color:var(--muted); font-size:12px; }
+        .existing-list { max-height:170px; overflow:auto; border:1px solid var(--border, #e2e8f0); border-radius:10px; padding:8px; display:flex; flex-wrap:wrap; gap:6px; background:#f8fafc; }
+        .existing-chip { font-size:12px; padding:3px 9px; border-radius:999px; background:#e0f2f1; color:#0f766e; }
+        .existing-chip.gone { background:#f1f5f9; color:#94a3b8; text-decoration:line-through; }
+        .existing-empty { font-size:12.5px; color:var(--muted); }
     </style>
 </head>
 <body>
@@ -677,6 +689,8 @@
             <div class="card">
                 <div class="search-bar">
                     <input class="search-input" type="text" id="searchInput" placeholder="Search medications..." onkeyup="filterTable()" />
+                    <button type="button" class="btn-sm" id="searchBtn" onclick="filterTable()">Search</button>
+                    <button type="button" class="btn-sm" id="clearBtn" onclick="clearSearch()">Clear</button>
                     <select class="filter-select" id="categoryFilter" onchange="filterTable()">
                         <option value="">All categories</option>
                         @foreach (var cat in (ViewData["Categories"] as List<admin.Models.MedicationCategory> ?? new()))
@@ -684,10 +698,9 @@
                             <option value="@cat.CategoryName">@cat.CategoryName</option>
                         }
                     </select>
-                    <form method="get" asp-controller="Admin" asp-action="Medications" style="margin-left:12px;display:flex;align-items:center;gap:8px;">
-                        <label style="font-size:13px;color:var(--muted);">Show inactive</label>
-                        <input type="checkbox" name="showInactive" value="true" onchange="this.form.submit()" @(ViewData["ShowInactive"] as bool? == true ? "checked" : "") />
-                    </form>
+                    <label style="margin-left:12px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);cursor:pointer;">
+                        <input type="checkbox" id="showInactive" /> Show inactive
+                    </label>
                 </div>
 
                 @{
@@ -697,7 +710,7 @@
                 @if (medications == null || !medications.Any())
                 {
                     <div class="empty-state">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="2" width="18" height="20" rx="2" /><path d="M8 6h8M8 10h6" /></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                         <p>No medications found. Add one to get started.</p>
                     </div>
                 }
@@ -714,33 +727,32 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var med in medications)
+                            @foreach (var medication in medications)
                             {
-                                var inactive = (med.GetType().GetProperty("IsActive") != null) ? (bool?)med.GetType().GetProperty("IsActive")!.GetValue(med) : true;
-                                var isInactive = inactive == false;
-                                <tr class="@(isInactive ? "inactive-row" : "")">
-                                    <td>@med.MedicationID</td>
+                                var inactive = medication.IsActive == false;
+                                <tr class="@(inactive ? "inactive-row" : "")" data-active="@(inactive ? "0" : "1")">
+                                    <td>@medication.MedicationID</td>
                                     <td>
-                                        <strong style="@(isInactive ? "text-decoration:line-through;opacity:0.6;" : "")">@med.MedicationName</strong>
-                                        @if (isInactive)
+                                        <strong style="@(inactive ? "text-decoration:line-through;opacity:0.6;" : "")">@medication.MedicationName</strong>
+                                        @if (inactive)
                                         {
                                             <span class="pill pill-inactive">Inactive</span>
                                         }
                                     </td>
-                                    <td><span class="pill pill-green">@(med.CategoryName ?? "—")</span></td>
-                                    <td style="@(isInactive ? "opacity:0.6;" : "")">@(med.Description ?? "—")</td>
+                                    <td><span class="pill pill-red">@((!string.IsNullOrWhiteSpace(medication.CategoryName) ? medication.CategoryName : "—"))</span></td>
+                                    <td style="@(inactive ? "opacity:0.6;" : "")">@(medication.Description ?? "—")</td>
                                     <td>
                                         <div class="action-btns">
-                                            @if (!isInactive)
+                                            @if (!inactive)
                                             {
-                                                <button class="btn-sm" onclick="openEditModal(@med.MedicationID, '@med.MedicationName.Replace("'", "\\'")', '@(med.Description?.Replace("'", "\\'") ?? "")', @med.MedicationCategoryID)">Edit</button>
-                                                <button class="btn-sm danger" onclick="openDeleteModal(@med.MedicationID, '@med.MedicationName.Replace("'", "\\'")')">Delete</button>
+                                                <button class="btn-sm" onclick="openEditModal(@medication.MedicationID, '@medication.MedicationName.Replace("'", "\\'")', '@(medication.Description?.Replace("'", "\\'") ?? "")', @medication.MedicationCategoryID)">Edit</button>
+                                                <button class="btn-sm danger" onclick="openDeleteModal(@medication.MedicationID, '@medication.MedicationName.Replace("'", "\\'")')">Delete</button>
                                             }
                                             else
                                             {
                                                 <form method="post" asp-controller="Admin" asp-action="RestoreMedication" style="display:inline">
                                                     @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="id" value="@med.MedicationID" />
+                                                    <input type="hidden" name="id" value="@medication.MedicationID" />
                                                     <button type="submit" class="btn-sm">Restore</button>
                                                 </form>
                                             }
@@ -763,17 +775,22 @@
                 @Html.AntiForgeryToken()
                 <div class="form-group">
                     <label class="form-label">Medication name <span style="color:var(--red)">*</span></label>
-                    <input class="form-input" name="MedicationName" required placeholder="e.g. Warfarin" />
+                    <input class="form-input" name="MedicationName" id="addName" required placeholder="e.g. Paracetamol" autocomplete="off" />
+                    <div id="dupWarn" class="dup-warn" style="display:none"></div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Category <span style="color:var(--red)">*</span></label>
-                    <select class="form-select" name="MedicationCategoryID" required>
+                    <select class="form-select" name="MedicationCategoryID" id="addCategory" required>
                         <option value="">Select a category...</option>
                         @foreach (var cat in (ViewData["Categories"] as List<admin.Models.MedicationCategory> ?? new()))
                         {
                             <option value="@cat.MedicationCategoryID">@cat.CategoryName</option>
                         }
                     </select>
+                </div>
+                <div class="form-group" id="existingBox" style="display:none">
+                    <label class="form-label">Already under <strong id="existingCat"></strong> <span id="existingCount" class="existing-count"></span></label>
+                    <div class="existing-list" id="existingList"></div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Description</label>
@@ -823,7 +840,7 @@
     <div class="modal-bg" id="deleteModal">
         <div class="modal">
             <div class="modal-title">Delete medication</div>
-            <p style="font-size:13.5px;color:var(--muted);margin-bottom:20px;">Are you sure you want to delete <strong id="deleteName"></strong>? This cannot be undone.</p>
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:20px;">Are you sure you want to delete <strong id="deleteName"></strong>? It will be marked inactive and can be restored later.</p>
             <form method="post" asp-controller="Admin" asp-action="DeleteMedication">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" id="deleteId" />
@@ -853,15 +870,68 @@
             openModal('deleteModal');
         }
 
+        // ---- existing medications, by category (used by the Add modal) ----
+        const allMedications = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            (ViewData["Medications"] as List<admin.Models.Medication> ?? new())
+                .Select(c => new { n = c.MedicationName, c = c.MedicationCategoryID, a = c.IsActive != false })));
+
+        function showExisting() {
+            const sel = document.getElementById('addCategory');
+            const box = document.getElementById('existingBox');
+            const list = document.getElementById('existingList');
+            const typed = document.getElementById('addName').value.trim().toLowerCase();
+            list.innerHTML = '';
+            if (!sel.value) { box.style.display = 'none'; document.getElementById('dupWarn').style.display = 'none'; return; }
+            const items = allMedications.filter(x => String(x.c) === sel.value)
+                                       .sort((a, b) => a.n.localeCompare(b.n));
+            document.getElementById('existingCat').textContent = sel.options[sel.selectedIndex].text;
+            document.getElementById('existingCount').textContent = '(' + items.filter(x => x.a).length + ')';
+            if (!items.length) {
+                list.innerHTML = '<span class="existing-empty">No medications in this category yet.</span>';
+            }
+            items.forEach(x => {
+                if (typed && !x.n.toLowerCase().includes(typed)) return;
+                const chip = document.createElement('span');
+                chip.className = 'existing-chip' + (x.a ? '' : ' gone');
+                chip.textContent = x.n;
+                if (!x.a) chip.title = 'Inactive - restore it from the table instead';
+                list.appendChild(chip);
+            });
+            box.style.display = '';
+            // duplicate warning (any category)
+            const warn = document.getElementById('dupWarn');
+            const dup = typed && allMedications.find(x => x.n.toLowerCase() === typed);
+            if (dup) {
+                warn.textContent = dup.a ? 'A medication with this name already exists.'
+                                         : 'This medication exists but is inactive - restore it from the table.';
+                warn.style.display = '';
+            } else warn.style.display = 'none';
+        }
+        document.getElementById('addCategory').addEventListener('change', showExisting);
+        document.getElementById('addName').addEventListener('input', showExisting);
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = '';
+            filterTable();
+        }
+        document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); filterTable(); } });
+
+        // Search + category + "Show inactive" all handled here, in the browser.
+        // The controller must send ALL rows (active + inactive) to this page.
         function filterTable() {
             const search = document.getElementById('searchInput').value.toLowerCase();
             const category = document.getElementById('categoryFilter').value.toLowerCase();
-            const rows = document.querySelectorAll('#medicationsTable tbody tr');
-            rows.forEach(row => {
+            const showInactive = document.getElementById('showInactive').checked;
+            document.querySelectorAll('#medicationsTable tbody tr').forEach(row => {
                 const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(search) && (category === '' || text.includes(category)) ? '' : 'none';
+                const isInactive = row.dataset.active === '0';
+                const matches = text.includes(search) && (category === '' || text.includes(category));
+                row.style.display = (matches && (showInactive || !isInactive)) ? '' : 'none';
             });
         }
+        document.getElementById('showInactive').addEventListener('change', filterTable);
+        filterTable(); // hides inactive rows on first load
 
         document.querySelectorAll('.modal-bg').forEach(bg => {
             bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });

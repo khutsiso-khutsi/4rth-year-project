@@ -1,10 +1,5 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
 @{
-}
-@{
-    ViewData["Title"] = "Medical Conditions";
+    ViewData["Title"] = "Medical conditions";
     Layout = null;
 }
 
@@ -13,7 +8,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Medical Conditions — NMB-HLabSys</title>
+    <title>Medical conditions — NMB-HLabSys</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
     <style>
         *, *::before, *::after {
@@ -24,7 +19,6 @@
 
         :root {
             --navy: #0b1f3a;
-            --navy2: #122848;
             --blue: #1a4f8a;
             --accent: #e8f0fe;
             --teal: #0d9488;
@@ -264,9 +258,6 @@
             justify-content: space-between;
         }
 
-        .page-header-left {
-        }
-
         .page-label {
             font-size: 11px;
             font-weight: 600;
@@ -402,11 +393,17 @@
             font-weight: 500;
         }
 
-        .pill-blue {
-            background: var(--accent);
-            color: var(--blue);
+        .pill-red {
+            background: #fef2f2;
+            color: var(--red);
         }
 
+        /* Inactive row badge (was used in the view but not defined) */
+        .pill-inactive {
+            background: #f1f5f9;
+            color: var(--muted);
+            margin-left: 6px;
+        }
 
         .action-btns {
             display: flex;
@@ -582,6 +579,13 @@
             color: var(--red);
             border: 1px solid #fecaca;
         }
+    
+        .dup-warn { margin-top:6px; font-size:12.5px; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:6px 10px; }
+        .existing-count { font-weight:400; color:var(--muted); font-size:12px; }
+        .existing-list { max-height:170px; overflow:auto; border:1px solid var(--border, #e2e8f0); border-radius:10px; padding:8px; display:flex; flex-wrap:wrap; gap:6px; background:#f8fafc; }
+        .existing-chip { font-size:12px; padding:3px 9px; border-radius:999px; background:#e0f2f1; color:#0f766e; }
+        .existing-chip.gone { background:#f1f5f9; color:#94a3b8; text-decoration:line-through; }
+        .existing-empty { font-size:12.5px; color:var(--muted); }
     </style>
 </head>
 <body>
@@ -662,10 +666,10 @@
 
         <main class="main">
             <div class="page-header">
-                <div class="page-header-left">
+                <div>
                     <div class="page-label">Reference Data</div>
-                    <h1 class="page-title">Medical Conditions</h1>
-                    <p class="page-sub">Manage medical conditions and their categories.</p>
+                    <h1 class="page-title">Medical conditions</h1>
+                    <p class="page-sub">Manage conditions and their categories.</p>
                 </div>
                 <button class="btn-primary" onclick="openModal('addModal')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
@@ -685,6 +689,8 @@
             <div class="card">
                 <div class="search-bar">
                     <input class="search-input" type="text" id="searchInput" placeholder="Search conditions..." onkeyup="filterTable()" />
+                    <button type="button" class="btn-sm" id="searchBtn" onclick="filterTable()">Search</button>
+                    <button type="button" class="btn-sm" id="clearBtn" onclick="clearSearch()">Clear</button>
                     <select class="filter-select" id="categoryFilter" onchange="filterTable()">
                         <option value="">All categories</option>
                         @foreach (var cat in (ViewData["Categories"] as List<admin.Models.ConditionCategory> ?? new()))
@@ -692,10 +698,9 @@
                             <option value="@cat.CategoryName">@cat.CategoryName</option>
                         }
                     </select>
-                    <form method="get" asp-controller="Admin" asp-action="MedicalConditions" style="margin-left:12px;display:flex;align-items:center;gap:8px;">
-                        <label style="font-size:13px;color:var(--muted);">Show inactive</label>
-                        <input type="checkbox" name="showInactive" value="true" onchange="this.form.submit()" @(ViewData["ShowInactive"] as bool? == true ? "checked" : "") />
-                    </form>
+                    <label style="margin-left:12px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);cursor:pointer;">
+                        <input type="checkbox" id="showInactive" /> Show inactive
+                    </label>
                 </div>
 
                 @{
@@ -705,8 +710,8 @@
                 @if (conditions == null || !conditions.Any())
                 {
                     <div class="empty-state">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
-                        <p>No medical conditions found. Add one to get started.</p>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                        <p>No conditions found. Add one to get started.</p>
                     </div>
                 }
                 else
@@ -724,22 +729,21 @@
                         <tbody>
                             @foreach (var condition in conditions)
                             {
-                                var inactive = (condition.GetType().GetProperty("IsActive") != null) ? (bool?)condition.GetType().GetProperty("IsActive")!.GetValue(condition) : true;
-                                var isInactive = inactive == false;
-                                <tr class="@(isInactive ? "inactive-row" : "")">
+                                var inactive = condition.IsActive == false;
+                                <tr class="@(inactive ? "inactive-row" : "")" data-active="@(inactive ? "0" : "1")">
                                     <td>@condition.ConditionID</td>
                                     <td>
-                                        <strong style="@(isInactive ? "text-decoration:line-through;opacity:0.6;" : "")">@condition.ConditionName</strong>
-                                        @if (isInactive)
+                                        <strong style="@(inactive ? "text-decoration:line-through;opacity:0.6;" : "")">@condition.ConditionName</strong>
+                                        @if (inactive)
                                         {
                                             <span class="pill pill-inactive">Inactive</span>
                                         }
                                     </td>
-                                    <td><span class="pill pill-blue">@(condition.CategoryName ?? "—")</span></td>
-                                    <td style="@(isInactive ? "opacity:0.6;" : "")">@(condition.Description ?? "—")</td>
+                                    <td><span class="pill pill-red">@((!string.IsNullOrWhiteSpace(condition.CategoryName) ? condition.CategoryName : "—"))</span></td>
+                                    <td style="@(inactive ? "opacity:0.6;" : "")">@(condition.Description ?? "—")</td>
                                     <td>
                                         <div class="action-btns">
-                                            @if (!isInactive)
+                                            @if (!inactive)
                                             {
                                                 <button class="btn-sm" onclick="openEditModal(@condition.ConditionID, '@condition.ConditionName.Replace("'", "\\'")', '@(condition.Description?.Replace("'", "\\'") ?? "")', @condition.ConditionCategoryID)">Edit</button>
                                                 <button class="btn-sm danger" onclick="openDeleteModal(@condition.ConditionID, '@condition.ConditionName.Replace("'", "\\'")')">Delete</button>
@@ -766,22 +770,27 @@
     <!-- ADD MODAL -->
     <div class="modal-bg" id="addModal">
         <div class="modal">
-            <div class="modal-title">Add medical condition</div>
+            <div class="modal-title">Add condition</div>
             <form method="post" asp-controller="Admin" asp-action="CreateCondition">
                 @Html.AntiForgeryToken()
                 <div class="form-group">
                     <label class="form-label">Condition name <span style="color:var(--red)">*</span></label>
-                    <input class="form-input" name="ConditionName" required placeholder="e.g. Anaemia" />
+                    <input class="form-input" name="ConditionName" id="addName" required placeholder="e.g. Hypertension" autocomplete="off" />
+                    <div id="dupWarn" class="dup-warn" style="display:none"></div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Category <span style="color:var(--red)">*</span></label>
-                    <select class="form-select" name="ConditionCategoryID" required>
+                    <select class="form-select" name="ConditionCategoryID" id="addCategory" required>
                         <option value="">Select a category...</option>
                         @foreach (var cat in (ViewData["Categories"] as List<admin.Models.ConditionCategory> ?? new()))
                         {
                             <option value="@cat.ConditionCategoryID">@cat.CategoryName</option>
                         }
                     </select>
+                </div>
+                <div class="form-group" id="existingBox" style="display:none">
+                    <label class="form-label">Already under <strong id="existingCat"></strong> <span id="existingCount" class="existing-count"></span></label>
+                    <div class="existing-list" id="existingList"></div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Description</label>
@@ -798,7 +807,7 @@
     <!-- EDIT MODAL -->
     <div class="modal-bg" id="editModal">
         <div class="modal">
-            <div class="modal-title">Edit medical condition</div>
+            <div class="modal-title">Edit condition</div>
             <form method="post" asp-controller="Admin" asp-action="EditCondition">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="ConditionID" id="editId" />
@@ -831,7 +840,7 @@
     <div class="modal-bg" id="deleteModal">
         <div class="modal">
             <div class="modal-title">Delete condition</div>
-            <p style="font-size:13.5px;color:var(--muted);margin-bottom:20px;">Are you sure you want to delete <strong id="deleteName"></strong>? This cannot be undone.</p>
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:20px;">Are you sure you want to delete <strong id="deleteName"></strong>? It will be marked inactive and can be restored later.</p>
             <form method="post" asp-controller="Admin" asp-action="DeleteCondition">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" id="deleteId" />
@@ -861,17 +870,68 @@
             openModal('deleteModal');
         }
 
+        // ---- existing conditions, by category (used by the Add modal) ----
+        const allConditions = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            (ViewData["Conditions"] as List<admin.Models.MedicalCondition> ?? new())
+                .Select(c => new { n = c.ConditionName, c = c.ConditionCategoryID, a = c.IsActive != false })));
+
+        function showExisting() {
+            const sel = document.getElementById('addCategory');
+            const box = document.getElementById('existingBox');
+            const list = document.getElementById('existingList');
+            const typed = document.getElementById('addName').value.trim().toLowerCase();
+            list.innerHTML = '';
+            if (!sel.value) { box.style.display = 'none'; document.getElementById('dupWarn').style.display = 'none'; return; }
+            const items = allConditions.filter(x => String(x.c) === sel.value)
+                                       .sort((a, b) => a.n.localeCompare(b.n));
+            document.getElementById('existingCat').textContent = sel.options[sel.selectedIndex].text;
+            document.getElementById('existingCount').textContent = '(' + items.filter(x => x.a).length + ')';
+            if (!items.length) {
+                list.innerHTML = '<span class="existing-empty">No conditions in this category yet.</span>';
+            }
+            items.forEach(x => {
+                if (typed && !x.n.toLowerCase().includes(typed)) return;
+                const chip = document.createElement('span');
+                chip.className = 'existing-chip' + (x.a ? '' : ' gone');
+                chip.textContent = x.n;
+                if (!x.a) chip.title = 'Inactive - restore it from the table instead';
+                list.appendChild(chip);
+            });
+            box.style.display = '';
+            // duplicate warning (any category)
+            const warn = document.getElementById('dupWarn');
+            const dup = typed && allConditions.find(x => x.n.toLowerCase() === typed);
+            if (dup) {
+                warn.textContent = dup.a ? 'A condition with this name already exists.'
+                                         : 'This condition exists but is inactive - restore it from the table.';
+                warn.style.display = '';
+            } else warn.style.display = 'none';
+        }
+        document.getElementById('addCategory').addEventListener('change', showExisting);
+        document.getElementById('addName').addEventListener('input', showExisting);
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = '';
+            filterTable();
+        }
+        document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); filterTable(); } });
+
+        // Search + category + "Show inactive" all handled here, in the browser.
+        // The controller must send ALL rows (active + inactive) to this page.
         function filterTable() {
             const search = document.getElementById('searchInput').value.toLowerCase();
             const category = document.getElementById('categoryFilter').value.toLowerCase();
-            const rows = document.querySelectorAll('#conditionsTable tbody tr');
-            rows.forEach(row => {
+            const showInactive = document.getElementById('showInactive').checked;
+            document.querySelectorAll('#conditionsTable tbody tr').forEach(row => {
                 const text = row.textContent.toLowerCase();
-                const matchSearch = text.includes(search);
-                const matchCategory = category === '' || text.includes(category);
-                row.style.display = matchSearch && matchCategory ? '' : 'none';
+                const isInactive = row.dataset.active === '0';
+                const matches = text.includes(search) && (category === '' || text.includes(category));
+                row.style.display = (matches && (showInactive || !isInactive)) ? '' : 'none';
             });
         }
+        document.getElementById('showInactive').addEventListener('change', filterTable);
+        filterTable(); // hides inactive rows on first load
 
         document.querySelectorAll('.modal-bg').forEach(bg => {
             bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });

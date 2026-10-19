@@ -6,13 +6,7 @@ using _4th_year_set_up.Models;
 
 namespace _4th_year_set_up.DataAccess
 {
-    /// <summary>
-    /// Data access for the Doctor module (patient records, test requests,
-    /// results, alerts, reports). Follows the same raw ADO.NET +
-    /// stored-procedure convention as Patient.DataAccess.UserDataAccess,
-    /// so it can sit next to it without introducing a third pattern.
-    /// See Database/DoctorModule.sql for the stored procedures this calls.
-    /// </summary>
+    
     public class DoctorDataAccess
     {
         private readonly string _connectionString;
