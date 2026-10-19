@@ -1,0 +1,850 @@
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@{
+    ViewData["Title"] = "Verification";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification — NMB-HLabSys</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --navy: #0b1f33;
+            --navy2: #132d46;
+            --teal: #087f8c;
+            --teal-light: #e5f5f6;
+            --orange: #e67e22;
+            --orange-light: #fdf0e5;
+            --amber: #d99a00;
+            --amber-light: #fff5d9;
+            --red: #c0392b;
+            --red-light: #fde8e6;
+            --green: #27804d;
+            --green-light: #e7f5ed;
+            --blue: #3269a8;
+            --blue-light: #eaf2fb;
+            --slate: #64748b;
+            --white: #ffffff;
+            --offwhite: #f7f9fa;
+            --muted: #6b7c8f;
+            --border: #e1e7ec;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--offwhite);
+            color: var(--navy);
+        }
+
+        .topbar {
+            height: 70px;
+            background: var(--navy);
+            color: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            background: var(--teal);
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .brand-text {
+            font-family: 'DM Serif Display', serif;
+            font-size: 20px;
+        }
+
+            .brand-text span {
+                color: #65c8cf;
+            }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12px;
+            color: #a8bdcf;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #48c78e;
+            border-radius: 50%;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .user-role {
+            font-size: 11px;
+            color: #a8bdcf;
+        }
+
+        .layout {
+            display: flex;
+            min-height: calc(100vh - 70px);
+        }
+
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            flex-shrink: 0;
+            position: sticky;
+            top: 80px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+
+        .nav-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0 20px;
+            margin-bottom: 4px;
+            margin-top: 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-left: 3px solid transparent;
+            transition: all 0.15s;
+        }
+
+            .nav-item:hover {
+                background: var(--offwhite);
+                color: var(--navy);
+            }
+
+            .nav-item.active {
+                background: var(--orange-light);
+                color: var(--orange);
+                border-left-color: var(--orange);
+            }
+
+            .nav-item svg {
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+            }
+
+        .main {
+            flex: 1;
+            padding: 32px 38px;
+            min-width: 0;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            text-decoration: none;
+            margin-bottom: 16px;
+            padding: 7px 12px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            background: var(--white);
+            transition: all 0.15s;
+        }
+
+            .back-link:hover {
+                color: var(--navy);
+                border-color: var(--teal);
+                background: var(--teal-light);
+            }
+
+            .back-link svg {
+                width: 14px;
+                height: 14px;
+            }
+
+        .welcome {
+            background: var(--navy);
+            border-radius: 12px;
+            padding: 25px 28px;
+            color: var(--white);
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .welcome::after {
+                content: "";
+                position: absolute;
+                width: 230px;
+                height: 230px;
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: 50%;
+                right: -70px;
+                top: -100px;
+            }
+
+        .welcome-tag {
+            display: inline-block;
+            background: rgba(101,200,207,0.14);
+            color: #65c8cf;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 5px 9px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .welcome h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 25px;
+            font-weight: 400;
+            margin-bottom: 5px;
+        }
+
+            .welcome h1 em {
+                color: #65c8cf;
+                font-style: normal;
+            }
+
+        .welcome p {
+            color: #a8bdcf;
+            font-size: 12px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            margin-top: 10px;
+            line-height: 1;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .card-subtitle {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        .queue-item {
+            padding: 14px 20px;
+            border-bottom: 1px solid #edf0f2;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+            .queue-item:hover {
+                background: #fafcfd;
+            }
+
+            .queue-item.selected {
+                background: var(--teal-light);
+            }
+
+            .queue-item:last-child {
+                border-bottom: none;
+            }
+
+        .queue-item-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .queue-item-title {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--navy);
+        }
+
+        .queue-item-sub {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 700;
+        }
+
+        .badge-abnormal {
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+        .badge-normal {
+            background: var(--green-light);
+            color: var(--green);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        dl.detail-list {
+            display: grid;
+            grid-template-columns: 130px 1fr;
+            row-gap: 10px;
+            font-size: 12.5px;
+            margin-bottom: 18px;
+        }
+
+            dl.detail-list dt {
+                color: var(--muted);
+                font-weight: 600;
+            }
+
+            dl.detail-list dd {
+                color: var(--navy);
+            }
+
+        .field {
+            margin-bottom: 16px;
+        }
+
+            .field label {
+                display: block;
+                font-size: 11px;
+                font-weight: 600;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin-bottom: 6px;
+            }
+
+            .field textarea {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid var(--border);
+                border-radius: 7px;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 13px;
+                color: var(--navy);
+            }
+
+        .action-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 7px;
+            padding: 10px 18px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+            .btn:disabled {
+                opacity: 0.55;
+                cursor: not-allowed;
+            }
+
+        .btn-primary {
+            background: var(--teal);
+            color: white;
+        }
+
+            .btn-primary:hover {
+                background: #076c77;
+            }
+
+        .btn-danger {
+            background: white;
+            border: 1px solid var(--red);
+            color: var(--red);
+        }
+
+            .btn-danger:hover {
+                background: var(--red-light);
+            }
+
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--navy);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            z-index: 300;
+            display: none;
+            max-width: 340px;
+        }
+
+            .toast.show {
+                display: block;
+            }
+
+        @@media (max-width: 1000px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 650px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark">HL</div>
+            <div class="brand-text">NMB-<span>HLabSys</span></div>
+        </div>
+        <div class="topbar-right">
+            <div class="system-status"><span class="status-dot"></span>System Online</div>
+            <div class="user-info">
+                <div class="avatar">NA</div>
+                <div>
+                    <div class="user-name" id="verifierNameLabel">Verifying Technician</div>
+                    <div class="user-role">Testing Department</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="layout">
+
+        <aside class="sidebar">
+            <a asp-controller="TechnicianDashboard" asp-action="Index" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 10.5L12 3l9 7.5" />
+                    <path d="M5 9.5V21h14V9.5" />
+                    <path d="M9 21v-6h6v6" />
+                </svg>
+                Dashboard
+            </a>
+
+            <div class="nav-label">Samples and Requests</div>
+            <a asp-controller="TechnicianDashboard" asp-action="ReceiveSamples" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6" />
+                    <polyline points="16 6 12 10 8 6" />
+                    <line x1="12" y1="10" x2="12" y2="2" />
+                </svg>
+                Receive Samples
+            </a>
+
+            <div class="nav-label">Tests</div>
+            <a asp-controller="TechnicianDashboard" asp-action="TestQueue" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" />
+                    <line x1="9" y1="2" x2="15" y2="2" />
+                </svg>
+                Testing Queue
+            </a>
+
+            <div class="nav-label">Results</div>
+            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="3" width="16" height="18" rx="2" />
+                    <line x1="8" y1="8" x2="16" y2="8" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                    <line x1="8" y1="16" x2="13" y2="16" />
+                </svg>
+                Capture Results
+            </a>
+            <a asp-controller="TechnicianDashboard" asp-action="Verification" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="9 12 11 14 15 10" />
+                </svg>
+                Verification
+            </a>
+
+            <div class="nav-label">Reports</div>
+            <a asp-controller="TechnicianDashboard" asp-action="Reports" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="4" y1="19" x2="20" y2="19" />
+                    <rect x="5" y="10" width="3" height="7" />
+                    <rect x="10.5" y="6" width="3" height="11" />
+                    <rect x="16" y="3" width="3" height="14" />
+                </svg>
+                Reporting
+            </a>
+
+            <div class="nav-label">System</div>
+            <a asp-controller="TechnicianDashboard" asp-action="Profile" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                </svg>
+                Profile
+            </a>
+        </aside>
+
+        <main class="main">
+
+            <a asp-controller="TechnicianDashboard" asp-action="Index" class="back-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                </svg>
+                Back to Dashboard
+            </a>
+
+            <section class="welcome">
+                <div class="welcome-tag">Result Verification</div>
+                <h1>Second-technician <em>sign-off</em></h1>
+                <p>Completed results awaiting independent verification before release to the doctor.</p>
+            </section>
+
+            <section class="stats">
+                <div class="stat-card">
+                    <div class="stat-label">Awaiting Verification</div>
+                    <div class="stat-number" id="statAwaiting">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Abnormal Results in Queue</div>
+                    <div class="stat-number" id="statAbnormal">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Verified This Session</div>
+                    <div class="stat-number" id="statVerified">0</div>
+                </div>
+            </section>
+
+            <section class="content-grid">
+
+                <!-- QUEUE -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Verification Queue</div>
+                        <div class="card-subtitle">Excludes results you captured yourself</div>
+                    </div>
+                    <div id="queueList"></div>
+                    <div class="empty-state" id="queueEmptyState" style="display:none;">
+                        Nothing waiting on verification right now.
+                    </div>
+                </div>
+
+                <!-- DETAIL / DECISION -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Review Result</div>
+                        <div class="card-subtitle" id="detailSubtitle">Select a test from the queue to review it.</div>
+                    </div>
+                    <div class="card-body" id="detailBody">
+                        <div class="empty-state">No test selected.</div>
+                    </div>
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ---------------------------------------------------------------
+        // Self-contained UI demo data - no shared store, no localStorage,
+        // no database. This page stands alone: approving/rejecting only
+        // affects the lists and counts on THIS screen.
+        // ---------------------------------------------------------------
+        const VERIFYING_TECH = 'N. Adams';
+        document.getElementById('verifierNameLabel').textContent = VERIFYING_TECH;
+
+        let nextId = 200;
+        function makeCompletedTest(reqNumber, testName, capturedBy, patientName, patientAge,
+                                    doctorName, clinicalNotes, resultValue, unit, min, max, notes) {
+            const isAbnormal = (min !== null && max !== null)
+                ? (parseFloat(resultValue) < min || parseFloat(resultValue) > max)
+                : false;
+            return {
+                id: nextId++,
+                requestNumber: reqNumber,
+                testName: testName,
+                assignedTech: capturedBy,
+                patientName: patientName,
+                patientAge: patientAge,
+                doctorName: doctorName,
+                clinicalNotes: clinicalNotes,
+                resultValue: resultValue,
+                unit: unit,
+                normalMin: min,
+                normalMax: max,
+                notes: notes,
+                isAbnormal: isAbnormal
+            };
+        }
+
+        let verificationQueue = [
+            makeCompletedTest('REQ-0152', 'Serum Potassium', 'T. Naidoo', 'Nomsa Radebe', 58,
+                'Dr. A. Okafor', 'Routine liver panel, on statin therapy.', '5.8', 'mmol/L', 3.5, 5.1,
+                'Sample non-haemolysed, run in duplicate.'),
+            makeCompletedTest('REQ-0150', 'Full Blood Count', 'T. Naidoo', 'Andile Mthembu', 31,
+                'Dr. J. Whitfield', 'Fatigue and pallor for 2 weeks. Rule out anaemia.', '9.8', 'x10^3/uL', 4.0, 11.0,
+                'No abnormal cells seen on differential.'),
+            makeCompletedTest('REQ-0155', 'Liver Function Panel', 'S. Khumalo', 'Peter van Wyk', 47,
+                'Dr. R. Naidoo', 'Pre-employment screening.', '34', 'U/L', 7, 56,
+                '')
+        ];
+
+        let selectedTestId = null;
+        let verifiedThisSession = 0;
+
+        function getById(id) {
+            return verificationQueue.find(t => t.id === id) || null;
+        }
+
+        function renderQueue() {
+            const list = document.getElementById('queueList');
+            list.innerHTML = '';
+
+            verificationQueue.forEach(t => {
+                const div = document.createElement('div');
+                div.className = 'queue-item' + (t.id === selectedTestId ? ' selected' : '');
+                div.onclick = () => selectTest(t.id);
+                div.innerHTML = `
+                    <div class="queue-item-top">
+                        <span class="queue-item-title">${t.testName}</span>
+                        <span class="badge ${t.isAbnormal ? 'badge-abnormal' : 'badge-normal'}">${t.isAbnormal ? 'Abnormal' : 'Normal'}</span>
+                    </div>
+                    <div class="queue-item-sub">${t.requestNumber} — ${t.patientName} — captured by ${t.assignedTech}</div>`;
+                list.appendChild(div);
+            });
+
+            document.getElementById('queueEmptyState').style.display = verificationQueue.length === 0 ? 'block' : 'none';
+
+            document.getElementById('statAwaiting').textContent = verificationQueue.length;
+            document.getElementById('statAbnormal').textContent = verificationQueue.filter(t => t.isAbnormal).length;
+            document.getElementById('statVerified').textContent = verifiedThisSession;
+
+            if (selectedTestId && !verificationQueue.find(t => t.id === selectedTestId)) {
+                selectedTestId = null;
+                renderDetail();
+            }
+        }
+
+        function selectTest(id) {
+            selectedTestId = id;
+            renderQueue();
+            renderDetail();
+        }
+
+        function renderDetail() {
+            const body = document.getElementById('detailBody');
+            const subtitle = document.getElementById('detailSubtitle');
+
+            if (!selectedTestId) {
+                subtitle.textContent = 'Select a test from the queue to review it.';
+                body.innerHTML = '<div class="empty-state">No test selected.</div>';
+                return;
+            }
+
+            const test = getById(selectedTestId);
+            if (!test) return;
+
+            subtitle.textContent = `${test.requestNumber} — captured by ${test.assignedTech}`;
+
+            const rangeText = test.normalMin !== null
+                ? `${test.normalMin} – ${test.normalMax} ${test.unit}`
+                : `${test.unit} (qualitative)`;
+
+            body.innerHTML = `
+                <dl class="detail-list">
+                    <dt>Test</dt><dd>${test.testName}</dd>
+                    <dt>Result</dt><dd>${test.resultValue} <span class="badge ${test.isAbnormal ? 'badge-abnormal' : 'badge-normal'}">${test.isAbnormal ? 'Abnormal' : 'Normal'}</span></dd>
+                    <dt>Normal Range</dt><dd>${rangeText}</dd>
+                    <dt>Technician Notes</dt><dd>${test.notes || '(none)'}</dd>
+                    <dt>Patient</dt><dd>${test.patientName}, ${test.patientAge}</dd>
+                    <dt>Ordering Doctor</dt><dd>${test.doctorName}</dd>
+                    <dt>Clinical Notes</dt><dd>${test.clinicalNotes}</dd>
+                </dl>
+
+                <div class="field">
+                    <label>Rejection note (required only if returning for review)</label>
+                    <textarea id="rejectNoteInput" rows="3" placeholder="e.g. Value inconsistent with clinical picture, please recheck..."></textarea>
+                </div>
+
+                <div class="action-row">
+                    <button type="button" class="btn btn-primary" onclick="approveSelected()">Verify Result</button>
+                    <button type="button" class="btn btn-danger" onclick="rejectSelected()">Return for Review</button>
+                </div>`;
+        }
+
+        function approveSelected() {
+            if (!selectedTestId) return;
+            const test = getById(selectedTestId);
+
+            verificationQueue = verificationQueue.filter(t => t.id !== selectedTestId);
+            verifiedThisSession++;
+
+            showToast(`Result verified for "${test.testName}" (${test.requestNumber}).`);
+
+            selectedTestId = null;
+            renderQueue();
+            renderDetail();
+        }
+
+        function rejectSelected() {
+            if (!selectedTestId) return;
+            const note = document.getElementById('rejectNoteInput').value.trim();
+            if (!note) {
+                showToast('A note is required when returning a result for review.');
+                return;
+            }
+
+            const test = getById(selectedTestId);
+            verificationQueue = verificationQueue.filter(t => t.id !== selectedTestId);
+
+            showToast(`Returned to ${test.assignedTech} for review.`);
+
+            selectedTestId = null;
+            renderQueue();
+            renderDetail();
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        renderQueue();
+        renderDetail();
+    </script>
+
+</body>
+</html>

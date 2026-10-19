@@ -1,0 +1,25 @@
+@* Quick-view modal: shows 5 essential fields. "View more" goes to the full TestDetails page. *@
+<div class="modal-overlay" id="testModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tmTitle">
+        <div class="modal-header">
+            <div>
+                <div class="modal-title" id="tmTitle"></div>
+                <div class="detail-badges" id="tmBadges"></div>
+            </div>
+            <button type="button" class="modal-close" id="tmClose" aria-label="Close">✕</button>
+        </div>
+
+        <dl class="info-list">
+            <dt>Patient</dt><dd id="tmPatient"></dd>
+            <dt>Test</dt><dd id="tmTest"></dd>
+            <dt>Medical condition</dt><dd id="tmCondition"></dd>
+            <dt>Medication</dt><dd><ul class="plain-list" id="tmMeds"></ul></dd>
+            <dt>Clinical notes</dt><dd id="tmNotes"></dd>
+        </dl>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" id="tmCancel">Close</button>
+            <a href="#" class="btn btn-primary" id="tmMore">View more patient data →</a>
+        </div>
+    </div>
+</div>

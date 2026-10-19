@@ -1,7 +1,10 @@
-﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model _4th_year_set_up.Models.ReceiveSamplesViewModel
 @{
     ViewData["Title"] = "Receive Samples";
     Layout = null;
+    var email = ViewBag.Email?.ToString();
+    var initial = string.IsNullOrEmpty(email) ? "T" : email.Substring(0, 1).ToUpper();
 }
 
 <!DOCTYPE html>
@@ -438,7 +441,17 @@
             font-weight: 600;
         }
 
-        .badge-released {
+        .badge-stat {
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+        .badge-urgent {
+            background: var(--amber-light);
+            color: var(--amber);
+        }
+
+        .badge-routine {
             background: var(--slate-light);
             color: var(--slate);
         }
@@ -457,6 +470,11 @@
             align-items: center;
             gap: 5px;
         }
+
+            .btn:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
 
         .btn-primary {
             background: var(--teal);
@@ -488,8 +506,35 @@
                 color: var(--teal);
             }
 
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 7px 12px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            background: var(--white);
+            transition: all 0.15s;
+        }
+
+            .back-link:hover {
+                color: var(--navy);
+                border-color: var(--teal);
+                background: var(--teal-light);
+            }
+
+            .back-link svg {
+                width: 14px;
+                height: 14px;
+            }
+
         .empty-state {
-            padding: 20px;
+            padding: 40px 20px;
             text-align: center;
             font-size: 14px;
             color: var(--muted);
@@ -544,30 +589,103 @@
                 color: var(--navy);
             }
 
-        .field label {
-            display: block;
-            font-size: 0.7rem;
-            font-weight: 600;
+        .field {
+            margin-bottom: 14px;
+        }
+
+            .field label {
+                display: block;
+                font-size: 0.7rem;
+                font-weight: 600;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+                margin-bottom: 6px;
+            }
+
+            .field textarea, .field input, .field select {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                font-size: 0.85rem;
+                font-family: 'DM Sans', sans-serif;
+                color: var(--navy);
+                resize: vertical;
+            }
+
+                .field textarea:focus, .field input:focus, .field select:focus {
+                    outline: none;
+                    border-color: var(--teal);
+                }
+
+        .field-hint {
+            font-size: 0.72rem;
             color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            margin-bottom: 6px;
+            margin-top: 4px;
         }
 
-        .field textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
+        .field-error {
+            font-size: 0.75rem;
+            color: var(--red);
+            margin-top: 6px;
+            display: none;
+        }
+
+            .field-error.show {
+                display: block;
+            }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--navy);
+            color: white;
+            padding: 14px 20px;
+            border-radius: 10px;
             font-size: 0.85rem;
-            font-family: 'DM Sans', sans-serif;
-            color: var(--navy);
-            resize: vertical;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            z-index: 300;
+            display: none;
+            max-width: 340px;
         }
 
-            .field textarea:focus {
-                outline: none;
-                border-color: var(--red);
+            .toast.show {
+                display: block;
+            }
+
+            .toast.success {
+                border-left: 4px solid var(--green);
+            }
+
+            .toast.error {
+                border-left: 4px solid var(--red);
+            }
+
+        .sample-row {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+            background: var(--offwhite);
+        }
+
+        .sample-row-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--teal);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 10px;
+        }
+
+        .sample-row .field {
+            margin-bottom: 10px;
+        }
+
+            .sample-row .field:last-child {
+                margin-bottom: 0;
             }
 
         @@media (max-width: 1100px) {
@@ -601,6 +719,7 @@
 </head>
 <body>
 
+    @* ===== TOPBAR + SIDEBAR: identical to the dashboard. Only the "active" class moves. ===== *@
     <div class="topbar">
         <a class="brand" asp-controller="Home" asp-action="Index">
             <div class="brand-logo"><svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg></div>
@@ -608,8 +727,8 @@
         </a>
         <div class="topbar-right">
             <div class="user-chip">
-                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "T")</div>
-                <span class="user-email">@ViewBag.Email</span>
+                <div class="user-avatar">@initial</div>
+                <span class="user-email">@email</span>
             </div>
             <a asp-controller="Home" asp-action="Logout" class="logout-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
@@ -619,52 +738,66 @@
     </div>
 
     <div class="page">
+
         <aside class="sidebar">
-            <div class="nav-label">Main</div>
-            <a asp-controller="Lab" asp-action="Index" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+            <a asp-controller="TechnicianDashboard" asp-action="Index" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /><path d="M9 21v-6h6v6" /></svg>
                 Dashboard
             </a>
-            <a asp-controller="Lab" asp-action="DoctorOrders" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><polyline points="9 14 11 16 15 12" /></svg>
-                Doctor Orders
-            </a>
-            <a asp-controller="Lab" asp-action="ReceiveSamples" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6" />
-                    <polyline points="16 6 12 10 8 6" />
-                    <line x1="12" y1="10" x2="12" y2="2" />
-                </svg>
+
+            <div class="nav-label">Samples and Requests</div>
+            <a asp-controller="TechnicianDashboard" asp-action="ReceiveSamples" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6" /><polyline points="16 6 12 10 8 6" /><line x1="12" y1="10" x2="12" y2="2" /></svg>
                 Receive Samples
             </a>
-            <a asp-controller="Lab" asp-action="TestingQueue" class="nav-item active">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" />
-                    <line x1="9" y1="2" x2="15" y2="2" />
-                </svg>                Testing Queue
+            <a asp-controller="TechnicianDashboard" asp-action="SampleVerification" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" /><polyline points="9 14 11 16 15 12" /></svg>
+                Sample Verification
             </a>
-            <a asp-controller="Lab" asp-action="Verification" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="9 12 11 14 15 10" />
-                </svg>
-                Verification
+
+            <div class="nav-label">Tests</div>
+            <a asp-controller="TechnicianDashboard" asp-action="TestQueue" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" /><line x1="9" y1="2" x2="15" y2="2" /></svg>
+                Testing Queue
             </a>
+            <a asp-controller="TechnicianDashboard" asp-action="MyTests" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                My Tests
+            </a>
+
+            <div class="nav-label">Results</div>
+            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2" /><line x1="8" y1="8" x2="16" y2="8" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="8" y1="16" x2="13" y2="16" /></svg>
+                Capture Results
+            </a>
+            <a asp-controller="TechnicianDashboard" asp-action="Verification" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
+                Result Verification
+            </a>
+
+            <div class="nav-label">Reports</div>
+            <a asp-controller="TechnicianDashboard" asp-action="Reports" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="19" x2="20" y2="19" /><rect x="5" y="10" width="3" height="7" /><rect x="10.5" y="6" width="3" height="11" /><rect x="16" y="3" width="3" height="14" /></svg>
+                Reporting
+            </a>
+
             <div class="nav-label">System</div>
-            <a asp-controller="Lab" asp-action="Profile" class="nav-item">
+            <a asp-controller="TechnicianDashboard" asp-action="Profile" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                 Profile
             </a>
-            <a asp-controller="Lab" asp-action="ActivityLog" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                </svg>
-                Activity Log
-            </a>
         </aside>
+        @* ===== END shared topbar + sidebar ===== *@
 
         <main class="main">
+            <a asp-controller="TechnicianDashboard" asp-action="Index" class="back-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                </svg>
+                Back to Dashboard
+            </a>
+
             <div class="welcome-banner">
                 <div class="welcome-inner">
                     <div class="welcome-tag">Receiving Technician</div>
@@ -679,15 +812,15 @@
                         <div class="stat-icon" style="background:var(--slate-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--slate)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg></div>
                         <span class="stat-trend trend-warn">Awaiting</span>
                     </div>
-                    <div class="stat-value">2</div>
+                    <div class="stat-value">@Model.AwaitingReceiptCount</div>
                     <div class="stat-label">Awaiting Receipt</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-top">
                         <div class="stat-icon" style="background:var(--teal-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg></div>
-                        <span class="stat-trend trend-up">+4 today</span>
+                        <span class="stat-trend trend-up">Today</span>
                     </div>
-                    <div class="stat-value">7</div>
+                    <div class="stat-value">@Model.ReceivedTodayCount</div>
                     <div class="stat-label">Received Today</div>
                 </div>
                 <div class="stat-card">
@@ -695,7 +828,7 @@
                         <div class="stat-icon" style="background:var(--red-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg></div>
                         <span class="stat-trend trend-danger">Today</span>
                     </div>
-                    <div class="stat-value">1</div>
+                    <div class="stat-value">@Model.RejectedTodayCount</div>
                     <div class="stat-label">Rejected Today</div>
                 </div>
             </div>
@@ -708,37 +841,73 @@
                     </div>
                 </div>
 
-                <table class="table">
-                    <thead>
-                        <tr><th>Request #</th><th>Patient</th><th>Tests</th><th>Ordering Doctor</th><th></th></tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>REQ-0151</strong></td>
-                            <td>Andile Mthembu, 31</td>
-                            <td>Urea &amp; Electrolytes</td>
-                            <td>Dr. J. Whitfield</td>
-                            <td style="text-align:right">
-                                <button class="btn btn-danger" onclick="openReject('REQ-0151','Andile Mthembu')">Reject Sample</button>
-                                <a href="#" class="btn btn-primary">Receive Sample</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>REQ-0154</strong></td>
-                            <td>Nomsa Radebe, 58</td>
-                            <td>Full Blood Count</td>
-                            <td>Dr. A. Okafor</td>
-                            <td style="text-align:right">
-                                <button class="btn btn-danger" onclick="openReject('REQ-0154','Nomsa Radebe')">Reject Sample</button>
-                                <a href="#" class="btn btn-primary">Receive Sample</a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                @if (!Model.PendingSamples.Any())
+                {
+                    <div class="empty-state">No samples currently awaiting check-in.</div>
+                }
+                else
+                {
+                    <table class="table">
+                        <thead>
+                            <tr><th>Request #</th><th>Patient</th><th>Tests</th><th>Ordering Doctor</th><th>Urgency</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in Model.PendingSamples)
+                            {
+                                var urgencyClass = s.Urgency switch
+                                {
+                                    "Stat" => "badge-stat",
+                                    "Urgent" => "badge-urgent",
+                                    _ => "badge-routine"
+                                };
+                                <tr data-sample-id="@s.SampleId">
+                                    <td><strong>@s.RequestNumber</strong></td>
+                                    <td>@s.PatientName, @s.PatientAge</td>
+                                    <td>@s.TestTypeNames</td>
+                                    <td>@s.OrderingDoctorName</td>
+                                    <td><span class="badge @urgencyClass">@s.Urgency</span></td>
+                                    <td style="text-align:right; white-space:nowrap;">
+                                        <button class="btn btn-danger"
+                                                onclick="openReject(@s.SampleId, '@s.RequestNumber', '@s.PatientName')">
+                                            Reject Sample
+                                        </button>
+                                        <button class="btn btn-primary"
+                                                onclick="openReceive(@s.SampleId, '@s.RequestNumber', '@s.PatientName', '@s.ExpectedSampleType')">
+                                            Receive Sample
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
             </div>
         </main>
     </div>
 
+    <!-- Receive Sample Modal -->
+    <div class="modal-overlay" id="receiveModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title" id="receiveModalTitle">Receive Sample</div>
+                <button class="modal-close" onclick="closeReceive()">✕</button>
+            </div>
+            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;" id="receiveModalSubtitle"></p>
+
+            <div id="receiveSamplesList"></div>
+            <div class="field-hint">Each barcode must match the one logged by the ordering doctor.</div>
+
+
+            <div class="field-error" id="receiveError"></div>
+
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
+                <button class="btn btn-ghost" onclick="closeReceive()">Cancel</button>
+                <button class="btn btn-primary" id="confirmReceiveBtn" onclick="confirmReceive()">Confirm Receipt</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Sample Modal -->
     <div class="modal-overlay" id="rejectModal">
         <div class="modal">
             <div class="modal-header">
@@ -748,24 +917,230 @@
             <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;" id="rejectModalSubtitle"></p>
             <div class="field">
                 <label>Reason for rejection</label>
-                <textarea rows="3" placeholder="e.g. Sample haemolysed, insufficient volume, mislabeled tube..."></textarea>
+                <textarea rows="3" id="rejectReasonInput" placeholder="e.g. Sample haemolysed, insufficient volume, mislabeled tube..."></textarea>
             </div>
+            <div class="field-error" id="rejectError"></div>
             <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
                 <button class="btn btn-ghost" onclick="closeReject()">Cancel</button>
-                <button class="btn btn-danger" style="background:var(--red);color:white;border:none" onclick="closeReject()">Confirm Rejection</button>
+                <button class="btn btn-danger" style="background:var(--red);color:white;border:none" id="confirmRejectBtn" onclick="confirmReject()">Confirm Rejection</button>
             </div>
         </div>
     </div>
 
+    <div class="toast" id="toast"></div>
+
+    @Html.AntiForgeryToken()
+
     <script>
-        function openReject(reqNum, patient) {
+        let activeSampleId = null;
+
+        // ---------- Receive modal ----------
+        function openReceive(sampleId, reqNum, patient, expectedType) {
+            activeSampleId = sampleId;
+            document.getElementById('receiveModalTitle').textContent = 'Receive Sample — ' + reqNum;
+            document.getElementById('receiveModalSubtitle').textContent = 'Patient: ' + patient + '. Confirm the physical sample matches the request before receiving.';
+            document.getElementById('receiveError').classList.remove('show');
+            buildSampleRows(expectedType);
+            document.getElementById('receiveModal').classList.add('open');
+        }
+
+        // One row per physical sample. A request that needs "Whole blood + Bone marrow" gets two rows.
+        const SAMPLE_TYPES = ['Whole Blood', 'Plasma', 'Serum', 'Bone Marrow'];
+
+        function buildSampleRows(expectedType) {
+            const list = document.getElementById('receiveSamplesList');
+            list.textContent = '';
+            const expected = expectedType ? expectedType.split(' + ') : [''];
+
+            expected.forEach(function (type, i) {
+                const row = document.createElement('div');
+                row.className = 'sample-row';
+
+                const title = document.createElement('div');
+                title.className = 'sample-row-title';
+                title.textContent = expected.length > 1 ? 'Sample ' + (i + 1) + ' of ' + expected.length : 'Sample';
+                row.appendChild(title);
+
+                const typeField = document.createElement('div');
+                typeField.className = 'field';
+                const typeLabel = document.createElement('label');
+                typeLabel.textContent = 'Sample type received';
+                const select = document.createElement('select');
+                SAMPLE_TYPES.forEach(function (t) {
+                    const opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = t;
+                    if (t.toLowerCase() === type.trim().toLowerCase()) opt.selected = true;
+                    select.appendChild(opt);
+                });
+                typeField.appendChild(typeLabel);
+                typeField.appendChild(select);
+                row.appendChild(typeField);
+
+                const codeField = document.createElement('div');
+                codeField.className = 'field';
+                const codeLabel = document.createElement('label');
+                codeLabel.textContent = 'Scan or enter sample barcode';
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = 'e.g. BC-00214';
+                input.autocomplete = 'off';
+                codeField.appendChild(codeLabel);
+                codeField.appendChild(input);
+                row.appendChild(codeField);
+
+                list.appendChild(row);
+            });
+        }
+
+        function closeReceive() {
+            document.getElementById('receiveModal').classList.remove('open');
+            activeSampleId = null;
+        }
+
+        async function confirmReceive() {
+            const sampleId = activeSampleId;   // keep a copy: closeReceive() clears activeSampleId
+            const rows = Array.from(document.querySelectorAll('#receiveSamplesList .sample-row'));
+            const samples = rows.map(function (r) {
+                return {
+                    scannedBarcode: r.querySelector('input').value.trim(),
+                    confirmedSampleType: r.querySelector('select').value
+                };
+            });
+            const errorEl = document.getElementById('receiveError');
+            const btn = document.getElementById('confirmReceiveBtn');
+
+            if (samples.some(function (s) { return !s.scannedBarcode; })) {
+                errorEl.textContent = samples.length > 1
+                    ? 'Scan or enter a barcode for every sample.'
+                    : 'Please scan or enter the sample barcode.';
+                errorEl.classList.add('show');
+                return;
+            }
+
+            const codes = samples.map(function (s) { return s.scannedBarcode.toLowerCase(); });
+            if (new Set(codes).size !== codes.length) {
+                errorEl.textContent = 'Each sample needs its own barcode.';
+                errorEl.classList.add('show');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Checking...';
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const response = await fetch('@Url.Action("ReceiveSample", "TechnicianDashboard")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({
+                        sampleId: sampleId,
+                        samples: samples
+                    })
+                });
+                const result = await response.json();
+
+                if (!result.success) {
+                    errorEl.textContent = result.message;
+                    errorEl.classList.add('show');
+                    return;
+                }
+
+                closeReceive();
+                showToast(result.message + (result.requestStatus ? ' Request status: ' + result.requestStatus + '.' : ''), 'success');
+                removeRowFromTable(sampleId);
+            } catch (e) {
+                errorEl.textContent = 'Something went wrong. Please try again.';
+                errorEl.classList.add('show');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Confirm Receipt';
+            }
+        }
+
+        // ---------- Reject modal ----------
+        function openReject(sampleId, reqNum, patient) {
+            activeSampleId = sampleId;
             document.getElementById('rejectModalTitle').textContent = 'Reject Sample — ' + reqNum;
-            document.getElementById('rejectModalSubtitle').textContent = 'Patient: ' + patient + '. This will alert the ordering doctor by banner and email.';
+            document.getElementById('rejectModalSubtitle').textContent = 'Patient: ' + patient + '. This will notify the ordering doctor by email.';
+            document.getElementById('rejectReasonInput').value = '';
+            document.getElementById('rejectError').classList.remove('show');
             document.getElementById('rejectModal').classList.add('open');
         }
+
         function closeReject() {
             document.getElementById('rejectModal').classList.remove('open');
+            activeSampleId = null;
         }
+
+        async function confirmReject() {
+            const sampleId = activeSampleId;   // keep a copy: closeReject() clears activeSampleId
+            const reason = document.getElementById('rejectReasonInput').value.trim();
+            const errorEl = document.getElementById('rejectError');
+            const btn = document.getElementById('confirmRejectBtn');
+
+            if (!reason) {
+                errorEl.textContent = 'A rejection reason is required.';
+                errorEl.classList.add('show');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                // Renamed from RejectSample so it no longer clashes with the senior technician's RejectSample action
+                const response = await fetch('@Url.Action("RejectReceivedSample", "TechnicianDashboard")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({
+                        sampleId: sampleId,
+                        reason: reason
+                    })
+                });
+                const result = await response.json();
+
+                if (!result.success) {
+                    errorEl.textContent = result.message;
+                    errorEl.classList.add('show');
+                    return;
+                }
+
+                closeReject();
+                showToast(result.message, 'success');
+                removeRowFromTable(sampleId);
+            } catch (e) {
+                errorEl.textContent = 'Something went wrong. Please try again.';
+                errorEl.classList.add('show');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Confirm Rejection';
+            }
+        }
+
+        // ---------- Shared helpers ----------
+        function removeRowFromTable(sampleId) {
+            const row = document.querySelector('tr[data-sample-id="' + sampleId + '"]');
+            if (row) row.remove();
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => { toast.className = 'toast'; }, 4000);
+        }
+
+        document.getElementById('receiveModal').addEventListener('click', function (e) {
+            if (e.target === this) closeReceive();
+        });
         document.getElementById('rejectModal').addEventListener('click', function (e) {
             if (e.target === this) closeReject();
         });

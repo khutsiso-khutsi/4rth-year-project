@@ -11,6 +11,8 @@ namespace _4th_year_set_up.Models
         public string Password { get; set; }
 
         public bool RememberMe { get; set; }
+
+        public string EmployeeNumber { get; set; }
     }
 
     public class UserSession
@@ -20,5 +22,6 @@ namespace _4th_year_set_up.Models
         public string RoleName { get; set; }
         public string FullName { get; set; }
         public int RoleID { get; set; }
+
     }
 }

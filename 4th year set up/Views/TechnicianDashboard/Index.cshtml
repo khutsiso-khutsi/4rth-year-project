@@ -1,7 +1,12 @@
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model _4th_year_set_up.Models.DashboardViewModel
 @{
     ViewData["Title"] = "Index";
     Layout = null;
+    var email = ViewBag.Email?.ToString();
+    var initial = string.IsNullOrEmpty(email) ? "T" : email.Substring(0, 1).ToUpper();
+    var flash = TempData["Flash"] as string;
+    var flashType = TempData["FlashType"] as string ?? "ok";
 }
 
 <!DOCTYPE html>
@@ -11,754 +16,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Technician Dashboard — NMB-HLabSys</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <style>
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        :root {
-            --navy: #0b1f3a;
-            --navy2: #122848;
-            --teal: #0d9488;
-            --teal-light: rgba(13,148,136,0.1);
-            --orange: #ea580c;
-            --orange-light: rgba(234,88,12,0.1);
-            --amber: #d97706;
-            --amber-light: rgba(217,119,6,0.1);
-            --red: #dc2626;
-            --red-light: rgba(220,38,38,0.1);
-            --green: #16a34a;
-            --green-light: rgba(22,163,74,0.1);
-            --blue: #2563eb;
-            --blue-light: rgba(37,99,235,0.1);
-            --white: #ffffff;
-            --offwhite: #f4f7fb;
-            --muted: #6b7a99;
-            --border: #dde4f0;
-        }
-
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--offwhite);
-            color: var(--navy);
-            min-height: 100vh;
-        }
-
-        /* TOPBAR */
-        .topbar {
-            background: var(--navy);
-            padding: 0 40px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 64px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-        }
-
-        .brand-logo {
-            width: 34px;
-            height: 34px;
-            background: var(--teal);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-            .brand-logo svg {
-                width: 18px;
-                height: 18px;
-                fill: white;
-            }
-
-        .brand-name {
-            font-family: 'DM Serif Display', serif;
-            color: white;
-            font-size: 1.1rem;
-            line-height: 1.1;
-        }
-
-            .brand-name span {
-                display: block;
-                font-family: 'DM Sans', sans-serif;
-                font-size: 0.6rem;
-                font-weight: 300;
-                color: rgba(255,255,255,0.4);
-                letter-spacing: 0.1em;
-                text-transform: uppercase;
-            }
-
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .user-chip {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 100px;
-            padding: 6px 14px 6px 8px;
-        }
-
-        .user-avatar {
-            width: 28px;
-            height: 28px;
-            background: var(--orange);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: white;
-        }
-
-        .user-email {
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.75);
-            max-width: 160px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .logout-btn {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            color: rgba(255,255,255,0.8);
-            padding: 8px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 0.82rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-        }
-
-            .logout-btn:hover {
-                background: rgba(255,255,255,0.15);
-                color: white;
-            }
-
-            .logout-btn svg {
-                width: 14px;
-                height: 14px;
-            }
-
-        /* LAYOUT */
-        .page {
-            display: flex;
-            min-height: calc(100vh - 64px);
-        }
-
-        /* SIDEBAR */
-        .sidebar {
-            width: 220px;
-            background: white;
-            border-right: 1px solid var(--border);
-            padding: 24px 0;
-            flex-shrink: 0;
-            position: sticky;
-            top: 64px;
-            height: calc(100vh - 64px);
-            overflow-y: auto;
-        }
-
-        .nav-label {
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: var(--muted);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            padding: 0 20px;
-            margin-bottom: 4px;
-            margin-top: 16px;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 20px;
-            color: var(--muted);
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            border-left: 3px solid transparent;
-            transition: all 0.15s;
-        }
-
-            .nav-item:hover {
-                background: var(--offwhite);
-                color: var(--navy);
-            }
-
-            .nav-item.active {
-                background: var(--orange-light);
-                color: var(--orange);
-                border-left-color: var(--orange);
-            }
-
-            .nav-item svg {
-                width: 16px;
-                height: 16px;
-                flex-shrink: 0;
-            }
-
-        /* MAIN */
-        .main {
-            flex: 1;
-            padding: 32px 40px;
-        }
-
-        /* WELCOME BANNER */
-        .welcome-banner {
-            background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
-            border-radius: 20px;
-            padding: 32px 36px;
-            margin-bottom: 28px;
-            position: relative;
-            overflow: hidden;
-        }
-
-            .welcome-banner::before {
-                content: '';
-                position: absolute;
-                inset: 0;
-                background: radial-gradient(ellipse 60% 80% at 90% 50%, rgba(234,88,12,0.2) 0%, transparent 60%);
-            }
-
-            .welcome-banner::after {
-                content: '';
-                position: absolute;
-                inset: 0;
-                background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-                background-size: 40px 40px;
-            }
-
-        .welcome-inner {
-            position: relative;
-            z-index: 2;
-        }
-
-        .welcome-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(234,88,12,0.2);
-            border: 1px solid rgba(234,88,12,0.3);
-            color: #fdba74;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            padding: 4px 10px;
-            border-radius: 100px;
-            margin-bottom: 12px;
-        }
-
-            .welcome-tag::before {
-                content: '';
-                width: 5px;
-                height: 5px;
-                background: #fdba74;
-                border-radius: 50%;
-            }
-
-        .welcome-banner h1 {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.8rem;
-            color: white;
-            margin-bottom: 6px;
-        }
-
-            .welcome-banner h1 em {
-                font-style: italic;
-                color: #fdba74;
-            }
-
-        .welcome-banner p {
-            color: rgba(255,255,255,0.5);
-            font-size: 0.875rem;
-        }
-
-        /* STATS */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 28px;
-        }
-
-        .stat-card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
-        }
-
-        .stat-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 14px;
-        }
-
-        .stat-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-            .stat-icon svg {
-                width: 18px;
-                height: 18px;
-            }
-
-        .stat-trend {
-            font-size: 0.72rem;
-            font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 100px;
-        }
-
-        .trend-up {
-            background: var(--green-light);
-            color: var(--green);
-        }
-
-        .trend-warn {
-            background: var(--amber-light);
-            color: var(--amber);
-        }
-
-        .trend-danger {
-            background: var(--red-light);
-            color: var(--red);
-        }
-
-        .stat-value {
-            font-family: 'DM Serif Display', serif;
-            font-size: 2rem;
-            color: var(--navy);
-            line-height: 1;
-            margin-bottom: 4px;
-        }
-
-        .stat-label {
-            font-size: 0.78rem;
-            color: var(--muted);
-            font-weight: 500;
-        }
-
-        /* SECTION GRID */
-        .section-grid {
-            display: grid;
-            grid-template-columns: 1.6fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        /* CARDS */
-        .card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .card-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.05rem;
-            color: var(--navy);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-            .card-title svg {
-                width: 17px;
-                height: 17px;
-                stroke: var(--orange);
-            }
-
-        .card-action {
-            font-size: 0.78rem;
-            color: var(--teal);
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-            .card-action:hover {
-                text-decoration: underline;
-            }
-
-        /* TABLE */
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-            .table th {
-                font-size: 0.7rem;
-                font-weight: 600;
-                color: var(--muted);
-                text-transform: uppercase;
-                letter-spacing: 0.08em;
-                padding: 0 0 10px;
-                text-align: left;
-                border-bottom: 1px solid var(--border);
-            }
-
-            .table td {
-                padding: 12px 0;
-                font-size: 0.83rem;
-                color: var(--navy);
-                border-bottom: 1px solid var(--offwhite);
-                vertical-align: middle;
-            }
-
-            .table tr:last-child td {
-                border-bottom: none;
-            }
-
-        /* BADGES */
-        .badge {
-            display: inline-block;
-            padding: 3px 9px;
-            border-radius: 100px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-
-        .badge-completed {
-            background: var(--green-light);
-            color: var(--green);
-        }
-
-        .badge-pending {
-            background: var(--amber-light);
-            color: var(--amber);
-        }
-
-        .badge-urgent {
-            background: var(--red-light);
-            color: var(--red);
-        }
-
-        .badge-inprogress {
-            background: var(--blue-light);
-            color: var(--blue);
-        }
-
-        /* ACTION BTN */
-        .btn {
-            padding: 6px 14px;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.78rem;
-            cursor: pointer;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 600;
-            transition: all 0.15s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .btn-primary {
-            background: var(--teal);
-            color: white;
-        }
-
-            .btn-primary:hover {
-                background: #0b7a70;
-            }
-
-        .btn-orange {
-            background: var(--orange);
-            color: white;
-        }
-
-            .btn-orange:hover {
-                background: #c2410c;
-            }
-
-        .btn-ghost {
-            background: var(--offwhite);
-            border: 1px solid var(--border);
-            color: var(--navy);
-        }
-
-            .btn-ghost:hover {
-                border-color: var(--teal);
-                color: var(--teal);
-            }
-
-        /* RESULT FORM */
-        .result-form {
-            background: var(--offwhite);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 10px;
-        }
-
-        .result-form-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-        }
-
-        .result-test-name {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: var(--navy);
-        }
-
-        .result-category {
-            font-size: 0.72rem;
-            color: var(--muted);
-            margin-top: 2px;
-        }
-
-        .result-inputs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .result-field label {
-            display: block;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            margin-bottom: 5px;
-        }
-
-        .result-field input, .result-field select {
-            width: 100%;
-            padding: 8px 10px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.83rem;
-            font-family: 'DM Sans', sans-serif;
-            color: var(--navy);
-            background: white;
-            outline: none;
-            transition: border-color 0.15s;
-        }
-
-            .result-field input:focus, .result-field select:focus {
-                border-color: var(--teal);
-            }
-
-        .range-hint {
-            font-size: 0.7rem;
-            color: var(--muted);
-            margin-top: 4px;
-        }
-
-        /* ACTIVITY */
-        .activity-item {
-            display: flex;
-            gap: 12px;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--offwhite);
-        }
-
-            .activity-item:last-child {
-                border-bottom: none;
-            }
-
-        .activity-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-top: 6px;
-            flex-shrink: 0;
-        }
-
-        .activity-text {
-            font-size: 0.82rem;
-            color: var(--navy);
-            line-height: 1.5;
-        }
-
-        .activity-time {
-            font-size: 0.72rem;
-            color: var(--muted);
-            margin-top: 2px;
-        }
-
-        /* MODAL OVERLAY */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(11,31,58,0.5);
-            z-index: 200;
-            align-items: center;
-            justify-content: center;
-        }
-
-            .modal-overlay.open {
-                display: flex;
-            }
-
-        .modal {
-            background: white;
-            border-radius: 20px;
-            padding: 32px;
-            width: 100%;
-            max-width: 520px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-        }
-
-        .modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .modal-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.2rem;
-            color: var(--navy);
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--muted);
-            font-size: 1.2rem;
-            padding: 4px;
-        }
-
-            .modal-close:hover {
-                color: var(--navy);
-            }
-
-        @@media (max-width: 1100px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .section-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @@media (max-width: 768px) {
-            .topbar {
-                padding: 0 20px;
-            }
-
-            .user-email {
-                display: none;
-            }
-
-            .sidebar {
-                display: none;
-            }
-
-            .main {
-                padding: 20px 16px;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .result-inputs {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /*Filter */
-        .filter-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 16px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .form-control {
-            height: 34px;
-            padding: 0 10px;
-            border: 1px solid #d0d5dd;
-            border-radius: 6px;
-            font-size: 13px;
-            font-family: inherit;
-            color: #374151;
-            background: #fff;
-        }
-
-            .form-control:focus {
-                outline: none;
-                border-color: #2563eb;
-                box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
-            }
-
-        .form-control--search {
-            min-width: 170px;
-        }
-
-        .form-control--select {
-            min-width: 150px;
-            cursor: pointer;
-        }
-
-        .empty-state {
-            padding: 20px;
-            text-align: center;
-            font-size: 14px;
-            color: #667085;
-        }
-
-    </style>
+    <link rel="stylesheet" href="~/css/technician.css" />
 </head>
 <body>
 
-    <!-- TOPBAR -->
+    @* ===== TOPBAR + SIDEBAR: copy this block unchanged into every technician screen. Only move the "active" class. ===== *@
     <div class="topbar">
         <a class="brand" asp-controller="Home" asp-action="Index">
             <div class="brand-logo">
@@ -768,8 +30,8 @@
         </a>
         <div class="topbar-right">
             <div class="user-chip">
-                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "T")</div>
-                <span class="user-email">@ViewBag.Email</span>
+                <div class="user-avatar">@initial</div>
+                <span class="user-email">@email</span>
             </div>
             <a asp-controller="Home" asp-action="Logout" class="logout-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -783,53 +45,64 @@
     </div>
 
     <div class="page">
-
-        <!-- SIDEBAR -->
         <aside class="sidebar">
-            <div class="nav-label">Main</div>  
-            <a asp-controller="TechnicianDashboard" asp-action="ReceiveSamples" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6" />
-                    <polyline points="16 6 12 10 8 6" />
-                    <line x1="12" y1="10" x2="12" y2="2" />
-                </svg>
-            Receive Samples
+            <a asp-controller="TechnicianDashboard" asp-action="Index" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /><path d="M9 21v-6h6v6" /></svg>
+                Dashboard
             </a>
-            <a asp-controller="TechnicianDashboard" asp-action="TestQueue" class="nav-item active">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" />
-                    <line x1="9" y1="2" x2="15" y2="2" />
-                </svg>                Testing Queue
+
+            <div class="nav-label">Samples and Requests</div>
+            <a asp-controller="TechnicianDashboard" asp-action="ReceiveSamples" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6" /><polyline points="16 6 12 10 8 6" /><line x1="12" y1="10" x2="12" y2="2" /></svg>
+                Receive Samples
+            </a>
+            <a asp-controller="TechnicianDashboard" asp-action="SampleVerification" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" /><polyline points="9 14 11 16 15 12" /></svg>
+                Sample Verification
+            </a>
+
+            <div class="nav-label">Tests</div>
+            <a asp-controller="TechnicianDashboard" asp-action="TestQueue" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" /><line x1="9" y1="2" x2="15" y2="2" /></svg>
+                Testing Queue
+            </a>
+            <a asp-controller="TechnicianDashboard" asp-action="MyTests" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                My Tests
+            </a>
+
+            <div class="nav-label">Results</div>
+            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2" /><line x1="8" y1="8" x2="16" y2="8" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="8" y1="16" x2="13" y2="16" /></svg>
+                Capture Results
             </a>
             <a asp-controller="TechnicianDashboard" asp-action="Verification" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="9 12 11 14 15 10" />
-                </svg>
-                Verification
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
+                Result Verification
             </a>
-            <div class="nav-label">System</div>
-            <a asp-controller="TechnicianDashboard" asp-action="Profile" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+
+            <div class="nav-label">Reports</div>
+            <a asp-controller="TechnicianDashboard" asp-action="Reports" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="19" x2="20" y2="19" /><rect x="5" y="10" width="3" height="7" /><rect x="10.5" y="6" width="3" height="11" /><rect x="16" y="3" width="3" height="14" /></svg>
                 Reporting
             </a>
+
+            <div class="nav-label">System</div>
             <a asp-controller="TechnicianDashboard" asp-action="Profile" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                 Profile
             </a>
-            <a asp-controller="TechnicianDashboard" asp-action="ActivityLog" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                </svg>
-                Activity Log
-            </a>
         </aside>
 
-        <!-- MAIN -->
+        @* ===== END shared topbar + sidebar ===== *@
+
         <main class="main">
 
-            <!-- WELCOME BANNER -->
+            @if (!string.IsNullOrEmpty(flash))
+            {
+                <div class="flash flash-@flashType" role="status">@flash</div>
+            }
+
             <div class="welcome-banner">
                 <div class="welcome-inner">
                     <div class="welcome-tag">Lab Technician Portal</div>
@@ -838,268 +111,192 @@
                 </div>
             </div>
 
-            <!-- STATS -->
+            <!-- CLICKABLE TILES -->
             <div class="stats-grid">
-                <a asp-controller="TechnicianDashboard" asp-action="TestQueue" class="stat-card" style="text-decoration:none; color:inherit; display:block;">
+
+                <a asp-controller="TechnicianDashboard" asp-action="TestQueue" class="stat-card">
                     <div class="stat-top">
                         <div class="stat-icon" style="background:var(--orange-light)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" /></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round"><path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" /><line x1="9" y1="2" x2="15" y2="2" /></svg>
                         </div>
-                        <span class="stat-trend trend-warn">Assigned</span>
+                        <span class="stat-trend trend-warn">Active</span>
                     </div>
-                    <div class="stat-value">8</div>
-                    <div class="stat-label">Samples awaiting receipt</div>
+                    <div class="stat-value">@Model.QueueCount</div>
+                    <div class="stat-label">Test queue</div>
+                    <div class="stat-go">Open queue →</div>
                 </a>
-                <div class="stat-card">
-                    <div class="stat-top">
-                        <div class="stat-icon" style="background:var(--red-light)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-                        </div>
-                        <span class="stat-trend trend-danger">Urgent</span>
-                    </div>
-                    <div class="stat-value">2</div>
-                    <div class="stat-label">Urgent Tests</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-top">
-                        <div class="stat-icon" style="background:var(--green-light)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg>
-                        </div>
-                        <span class="stat-trend trend-up">+3 today</span>
-                    </div>
-                    <div class="stat-value">14</div>
-                    <div class="stat-label">Completed Today</div>
-                </div>
-                <div class="stat-card">
+
+                <a asp-controller="TechnicianDashboard" asp-action="MyTests" class="stat-card">
                     <div class="stat-top">
                         <div class="stat-icon" style="background:var(--blue-light)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                         </div>
-                        <span class="stat-trend trend-warn">Pending</span>
+                        <span class="stat-trend trend-info">Mine</span>
                     </div>
-                    <div class="stat-value">6</div>
-                    <div class="stat-label">Awaiting Verification</div>
-                </div>
+                    <div class="stat-value">@Model.MineCount</div>
+                    <div class="stat-label">Tests selected by me</div>
+                    <div class="stat-go">Open my tests →</div>
+                </a>
+
+                <a asp-controller="TechnicianDashboard" asp-action="AwaitingAssignment" class="stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon" style="background:var(--amber-light)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                        </div>
+                        <span class="stat-trend trend-warn">Unassigned</span>
+                    </div>
+                    <div class="stat-value">@Model.AwaitingCount</div>
+                    <div class="stat-label">Tests awaiting assignment</div>
+                    <div class="stat-go">View unassigned →</div>
+                </a>
+
+                <a asp-controller="TechnicianDashboard" asp-action="Verified" class="stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon" style="background:var(--green-light)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
+                        </div>
+                        <span class="stat-trend trend-up">Done</span>
+                    </div>
+                    <div class="stat-value">@Model.VerifiedCount</div>
+                    <div class="stat-label">Verified results</div>
+                    <div class="stat-go">View verified →</div>
+                </a>
             </div>
 
-            <!-- TEST QUEUE + ENTER RESULTS -->
-            <div class="section-grid">
-
-                <!-- TEST QUEUE -->
-                <!-- Tests awaiting assignment -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" /></svg>
-                            Tests awaiting assignment
+            @if (Model.IsSenior)
+            {
+                <div class="section-label">Senior technician tasks</div>
+                <div class="stats-grid senior">
+                    <a asp-controller="TechnicianDashboard" asp-action="SampleVerification" class="stat-card">
+                        <div class="stat-top">
+                            <div class="stat-icon" style="background:var(--amber-light)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"><path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" /><polyline points="9 14 11 16 15 12" /></svg>
+                            </div>
+                            <span class="stat-trend trend-warn">Before testing</span>
                         </div>
-                        <a href="#" class="card-action">View all</a>
-                    </div>
+                        <div class="stat-value">@Model.SamplesToVerifyCount</div>
+                        <div class="stat-label">Samples to verify</div>
+                        <div class="stat-go">Verify samples →</div>
+                    </a>
 
-                    <!-- ADDED: filter bar -->
-                    <div class="filter-bar">
-                        <input type="text" id="filterReqNum" class="form-control form-control--search" placeholder="Search Request #" oninput="filterQueue()" />
-
-                        <select id="filterUrgency" class="form-control form-control--select" onchange="filterQueue()">
-                            <option value="">All Urgencies</option>
-                            <option value="urgent">Urgent</option>
-                            <option value="routine">Routine</option>
-                        </select>
-
-                        <select id="filterCategory" class="form-control form-control--select" onchange="filterQueue()">
-                            <option value="">All Test Categories</option>
-                            <option value="Full Blood Count">Full Blood Count</option>
-                            <option value="Haemoglobin">Haemoglobin</option>
-                            <option value="Platelet Count">Platelet Count</option>
-                            <option value="WBC Differential">WBC Differential</option>
-                            <option value="ESR">ESR</option>
-                        </select>
-
-                        <select id="filterDue" class="form-control form-control--select" onchange="filterQueue()">
-                            <option value="">All Due Times</option>
-                            <option value="overdue">Overdue</option>
-                            <option value="today">Due Today</option>
-                            <option value="week">Due This Week</option>
-                        </select>
-
-                        <button onclick="resetFilters()" class="btn btn-ghost">Reset</button>
-                    </div>
-
-                    <table class="table" id="queueTable">
-                        <!-- ADDED: id -->
-                        <thead>
-                            <tr>
-                                <th>Request #</th>
-                                <th>Patient</th>
-                                <th>Test</th>
-                                <th>Urgency</th>
-                                <th>Status</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- ADDED: data-* attributes on each <tr>, everything else unchanged -->
-                            <tr data-reqnum="REQ-0148" data-urgency="urgent" data-category="Full Blood Count" data-due="overdue">
-                                <td><strong>REQ-0148</strong></td>
-                                <td>Thabo Nkosi</td>
-                                <td>Full Blood Count</td>
-                                <td><span class="badge badge-urgent">Urgent</span></td>
-                                <td><span class="badge badge-pending">Pending</span></td>
-                                <td><a href="#" class="btn btn-orange" onclick="openModal('REQ-0148','Full Blood Count','Thabo Nkosi')">Enter Results</a></td>
-                            </tr>
-                            <tr data-reqnum="REQ-0147" data-urgency="urgent" data-category="Haemoglobin" data-due="today">
-                                <td><strong>REQ-0147</strong></td>
-                                <td>Zanele Dlamini</td>
-                                <td>Haemoglobin</td>
-                                <td><span class="badge badge-urgent">Urgent</span></td>
-                                <td><span class="badge badge-inprogress">In Progress</span></td>
-                                <td><a href="#" class="btn btn-primary" onclick="openModal('REQ-0147','Haemoglobin','Zanele Dlamini')">Update</a></td>
-                            </tr>
-                            <tr data-reqnum="REQ-0145" data-urgency="routine" data-category="Platelet Count" data-due="today">
-                                <td><strong>REQ-0145</strong></td>
-                                <td>Nomsa Ndlovu</td>
-                                <td>Platelet Count</td>
-                                <td><span class="badge badge-pending">Routine</span></td>
-                                <td><span class="badge badge-pending">Pending</span></td>
-                                <td><a href="#" class="btn btn-ghost" onclick="openModal('REQ-0145','Platelet Count','Nomsa Ndlovu')">Enter Results</a></td>
-                            </tr>
-                            <tr data-reqnum="REQ-0143" data-urgency="routine" data-category="WBC Differential" data-due="week">
-                                <td><strong>REQ-0143</strong></td>
-                                <td>Sipho Khumalo</td>
-                                <td>WBC Differential</td>
-                                <td><span class="badge badge-pending">Routine</span></td>
-                                <td><span class="badge badge-pending">Pending</span></td>
-                                <td><a href="#" class="btn btn-ghost" onclick="openModal('REQ-0143','WBC Differential','Sipho Khumalo')">Enter Results</a></td>
-                            </tr>
-                            <tr data-reqnum="REQ-0140" data-urgency="routine" data-category="ESR" data-due="week">
-                                <td><strong>REQ-0140</strong></td>
-                                <td>Bongani Zulu</td>
-                                <td>ESR</td>
-                                <td><span class="badge badge-pending">Routine</span></td>
-                                <td><span class="badge badge-completed">Completed</span></td>
-                                <td><a href="#" class="btn btn-ghost">View</a></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <!-- ADDED: empty-state message -->
-                    <div id="noResultsMsg" style="display:none; padding:20px; text-align:center; color:#667085;">
-                        No matching requests found.
-                    </div>
+                    <a asp-controller="TechnicianDashboard" asp-action="Verification" class="stat-card">
+                        <div class="stat-top">
+                            <div class="stat-icon" style="background:var(--orange-light)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
+                            </div>
+                            <span class="stat-trend trend-warn">Before release</span>
+                        </div>
+                        <div class="stat-value">@Model.ResultsToVerifyCount</div>
+                        <div class="stat-label">Results to verify</div>
+                        <div class="stat-go">Verify results →</div>
+                    </a>
                 </div>
+            }
+
+            <!-- MY TESTS PREVIEW -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">My Tests</div>
+                        <div class="card-sub">Tests you've selected, most pressing first</div>
+                    </div>
+                    <a asp-controller="TechnicianDashboard" asp-action="MyTests" class="card-action">View all (@Model.MineCount) →</a>
+                </div>
+
+                @if (Model.MyTestsPreview.Count == 0)
+                {
+                    <div class="empty-state">
+                        You haven't selected any tests yet.
+                        <a asp-controller="TechnicianDashboard" asp-action="AwaitingAssignment" class="card-action">Pick one from the unassigned list</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="filter-bar">
+                        <input type="text" id="filterReqNum" class="form-control form-control--search" placeholder="Search request # or patient" oninput="filterMine()" aria-label="Search my tests" />
+                        <button type="button" class="chip active" data-filter="all" onclick="setMineFilter('all')">All <span class="chip-count">@Model.MyTestsPreview.Count</span></button>
+                        <button type="button" class="chip chip-urgent" data-filter="urgent" onclick="setMineFilter('urgent')">Urgent <span class="chip-count">@Model.MyTestsPreview.Count(x => x.IsUrgent)</span></button>
+                        <button type="button" class="chip chip-overdue" data-filter="overdue" onclick="setMineFilter('overdue')">Overdue <span class="chip-count">@Model.MyTestsPreview.Count(x => x.Tat == _4th_year_set_up.Models.TatStatus.Overdue)</span></button>
+                        <button type="button" class="chip chip-nearing" data-filter="nearing" onclick="setMineFilter('nearing')">Nearing TAT <span class="chip-count">@Model.MyTestsPreview.Count(x => x.Tat == _4th_year_set_up.Models.TatStatus.NearingTat)</span></button>
+                        <button type="button" class="btn btn-ghost" onclick="setMineFilter('all', true)">Reset</button>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="table" id="myTestsTable">
+                            <thead>
+                                <tr>
+                                    <th>Request #</th>
+                                    <th>Patient</th>
+                                    <th>Test</th>
+                                    <th>Priority</th>
+                                    <th>Turnaround</th>
+                                    <th>Stage</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var t in Model.MyTestsPreview)
+                                {
+                                    var stageCss = t.StageCss;
+                                    var tatCss = t.Tat == _4th_year_set_up.Models.TatStatus.Overdue ? "badge-overdue"
+                                    : t.Tat == _4th_year_set_up.Models.TatStatus.NearingTat ? "badge-nearing" : "badge-ontrack";
+                                    <tr class="@(t.Tat == _4th_year_set_up.Models.TatStatus.Overdue ? "row-overdue" : "")"
+                                        data-search="@((t.ReqNum + " " + t.Patient).ToLower())"
+                                        data-urgent="@(t.IsUrgent ? "1" : "0")"
+                                        data-tat="@(t.Tat == _4th_year_set_up.Models.TatStatus.Overdue ? "overdue" : t.Tat == _4th_year_set_up.Models.TatStatus.NearingTat ? "nearing" : "ontrack")">
+                                        <td><partial name="_ReqLink" model="t" /></td>
+                                        <td>@t.Patient</td>
+                                        <td>@t.Test</td>
+                                        <td><span class="badge @(t.IsUrgent ? "badge-urgent" : "badge-routine")">@(t.IsUrgent ? "Urgent" : "Routine")</span></td>
+                                        <td>
+                                            <span class="badge @tatCss">@t.TatLabel</span>
+                                            <span class="due-text">@t.DueText</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge @stageCss">@t.StageLabel</span>
+                                            @if (t.Stage == _4th_year_set_up.Models.TestStage.ToBeReviewed && !string.IsNullOrEmpty(t.ReviewNote))
+                                            {
+                                                <span class="due-text">Note: @t.ReviewNote</span>
+                                            }
+                                        </td>
+                                        <td class="actions-cell"><partial name="_TestActions" model="t" /></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="noResultsMsg" class="empty-state" style="display:none;">No matching tests found.</div>
+                }
             </div>
 
         </main>
     </div>
 
-    <!-- ENTER RESULTS MODAL -->
-    <div class="modal-overlay" id="resultsModal">
-        <div class="modal">
-            <div class="modal-header">
-                <div class="modal-title" id="modalTitle">Enter Results</div>
-                <button class="modal-close" onclick="closeModal()">✕</button>
-            </div>
-            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:20px;" id="modalSubtitle"></p>
-
-            <div class="result-form">
-                <div class="result-form-header">
-                    <div>
-                        <div class="result-test-name" id="modalTestName"></div>
-                        <div class="result-category">Haematology</div>
-                    </div>
-                    <span class="badge badge-pending">Pending</span>
-                </div>
-                <div class="result-inputs">
-                    <div class="result-field">
-                        <label>Result Value</label>
-                        <input type="number" step="0.01" placeholder="e.g. 13.5" />
-                        <div class="range-hint">Normal range: 12.0 – 17.5</div>
-                    </div>
-                    <div class="result-field">
-                        <label>Unit</label>
-                        <select>
-                            <option>g/dL</option>
-                            <option>cells/µL</option>
-                            <option>×10³/µL</option>
-                            <option>mm/hr</option>
-                            <option>%</option>
-                        </select>
-                    </div>
-                    <div class="result-field" style="grid-column:span 2">
-                        <label>Notes (optional)</label>
-                        <input type="text" placeholder="Any additional observations..." />
-                    </div>
-                    <div class="result-field">
-                        <label>Status</label>
-                        <select>
-                            <option>In Progress</option>
-                            <option>Completed</option>
-                            <option>Requires Review</option>
-                        </select>
-                    </div>
-                    <div class="result-field">
-                        <label>Abnormal?</label>
-                        <select>
-                            <option>No</option>
-                            <option>Yes — High</option>
-                            <option>Yes — Low</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
-                <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="closeModal()">Save Results</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        function openModal(reqNum, testName, patient) {
-            document.getElementById('modalTitle').textContent = 'Enter Results — ' + reqNum;
-            document.getElementById('modalSubtitle').textContent = 'Patient: ' + patient;
-            document.getElementById('modalTestName').textContent = testName;
-            document.getElementById('resultsModal').classList.add('open');
+        var mineFilter = 'all';
+        function setMineFilter(f, clearSearch) {
+            mineFilter = f;
+            if (clearSearch) document.getElementById('filterReqNum').value = '';
+            filterMine();
         }
-        function closeModal() {
-            document.getElementById('resultsModal').classList.remove('open');
-        }
-        document.getElementById('resultsModal').addEventListener('click', function(e) {
-            if (e.target === this) closeModal();
-        });
-
-                function filterQueue() {
-            const reqNum = document.getElementById('filterReqNum').value.trim().toLowerCase();
-            const urgency = document.getElementById('filterUrgency').value;
-            const category = document.getElementById('filterCategory').value;
-            const due = document.getElementById('filterDue').value;
-
-            const rows = document.querySelectorAll('#queueTable tbody tr');
-            let visibleCount = 0;
-
-            rows.forEach(row => {
-                const matches =
-                    (!reqNum || row.dataset.reqnum.toLowerCase().includes(reqNum)) &&
-                    (!urgency || row.dataset.urgency === urgency) &&
-                    (!category || row.dataset.category === category) &&
-                    (!due || row.dataset.due === due);
-
-                row.style.display = matches ? '' : 'none';
-                if (matches) visibleCount++;
+        function filterMine() {
+            var table = document.getElementById('myTestsTable');
+            if (!table) return;
+            var q = document.getElementById('filterReqNum').value.trim().toLowerCase();
+            var visible = 0;
+            table.querySelectorAll('tbody tr').forEach(function (row) {
+                var okFilter = mineFilter === 'all' ||
+                    (mineFilter === 'urgent' && row.dataset.urgent === '1') ||
+                    mineFilter === row.dataset.tat;
+                var show = okFilter && (!q || row.dataset.search.indexOf(q) !== -1);
+                row.style.display = show ? '' : 'none';
+                if (show) visible++;
             });
-
-            document.getElementById('noResultsMsg').style.display = visibleCount === 0 ? 'block' : 'none';
+            document.querySelectorAll('.filter-bar .chip[data-filter]').forEach(function (c) {
+                c.classList.toggle('active', c.dataset.filter === mineFilter);
+            });
+            document.getElementById('noResultsMsg').style.display = visible === 0 ? 'block' : 'none';
         }
-
-        function resetFilters() {
-            document.getElementById('filterReqNum').value = '';
-            document.getElementById('filterUrgency').value = '';
-            document.getElementById('filterCategory').value = '';
-            document.getElementById('filterDue').value = '';
-            filterQueue();
-        }
-
     </script>
 </body>
 </html>

@@ -409,24 +409,85 @@
 
     <div class="page">
 
-        <!-- SIDEBAR -->
+        <!-- Menu -->
         <aside class="sidebar">
 
-            <div class="nav-label">Main</div>
+            @* <div class="nav-label">Dashboard</div> *@
 
-            <a href="/TechnicianDashboard/Index" class="nav-item">
+            <a asp-controller="TechnicianDashboard" asp-action="Index" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 10.5L12 3l9 7.5" />
+                    <path d="M5 9.5V21h14V9.5" />
+                    <path d="M9 21v-6h6v6" />
+                </svg>
                 Dashboard
             </a>
 
-            <a href="/TechnicianDashboard/EnterResults" class="nav-item active">
-                Enter Results
+
+            <div class="nav-label">Samples and Requests</div>
+
+            <a asp-controller="TechnicianDashboard" asp-action="ReceiveSamples" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6" />
+                    <polyline points="16 6 12 10 8 6" />
+                    <line x1="12" y1="10" x2="12" y2="2" />
+                </svg>
+                Receive Samples
             </a>
-            <a asp-controller="TechnicianDashboard" asp-action="ViewResults" class="nav-item">
-                
-                View Results
+
+            <div class="nav-label">Tests</div>
+
+            <a asp-controller="TechnicianDashboard" asp-action="TestQueue" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" />
+                    <line x1="9" y1="2" x2="15" y2="2" />
+                </svg>
+                Testing Queue
             </a>
-            <a href="#" class="nav-item">
-                Completed
+
+
+            <div class="nav-label">Results</div>
+
+            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="3" width="16" height="18" rx="2" />
+                    <line x1="8" y1="8" x2="16" y2="8" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                    <line x1="8" y1="16" x2="13" y2="16" />
+                </svg>
+                Capture Results
+            </a>
+
+            <a asp-controller="TechnicianDashboard" asp-action="Verification" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="9 12 11 14 15 10" />
+                </svg>
+                Verification
+            </a>
+
+
+            <div class="nav-label">Reports</div>
+
+            <a asp-controller="TechnicianDashboard" asp-action="Reports" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="4" y1="19" x2="20" y2="19" />
+                    <rect x="5" y="10" width="3" height="7" />
+                    <rect x="10.5" y="6" width="3" height="11" />
+                    <rect x="16" y="3" width="3" height="14" />
+                </svg>
+                Reporting
+            </a>
+
+
+            <div class="nav-label">System</div>
+
+            <a asp-controller="TechnicianDashboard" asp-action="Profile" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                </svg>
+                Profile
             </a>
 
         </aside>
