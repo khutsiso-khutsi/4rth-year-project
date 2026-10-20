@@ -1,20 +1,21 @@
 ﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Patient.Repository;
+using LabManager.Repository;
 using Patient.Models;
 using _4th_year_set_up.Models;
 using _4th_year_set_up.Services;
-using LabManager.Repository;
+   
 
 namespace _4th_year_set_up.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        private readonly UserRepository _userRepo;
+        private readonly Patient.Repository.UserRepository _userRepo;
         private readonly IEmailService _emailService;
 
-        public HomeController(ILogger<HomeController> logger, UserRepository userRepo, IEmailService emailService)
+        public HomeController(ILogger<HomeController> logger, Patient.Repository.UserRepository userRepo, IEmailService emailService)
         {
             _logger = logger;
             _userRepo = userRepo;

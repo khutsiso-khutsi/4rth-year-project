@@ -337,7 +337,7 @@
             animation: modalIn .18s ease;
             max-height: 90vh; overflow-y: auto;
         }
-        .modal-wide { max-width: 760px; }
+        .modal-wide { max-width: 900px; }
 
         @@keyframes modalIn {
             from { opacity: 0; transform: translateY(8px) scale(.98); }
@@ -399,6 +399,12 @@
 
         .supplier-table { min-width: 0; }
         .supplier-table td, .supplier-table th { padding: 11px 14px; }
+
+        .supplier-address {
+            color: var(--muted);
+            max-width: 220px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
 
         .count-pill {
             display: inline-block; min-width: 24px; text-align: center;
@@ -833,6 +839,7 @@
                                 <th>Supplier</th>
                                 <th>Contact</th>
                                 <th>Email</th>
+                                <th>Address</th>
                                 <th>Items</th>
                                 <th>Actions</th>
                             </tr>
@@ -844,10 +851,11 @@
                                 {
                                     var itemCount = consumableList.Count(c => c.SupplierID.ToString() == s.SupplierID.ToString());
 
-                                    <tr data-search="@($"{s.SupplierName} {s.ContactPerson} {s.EmailAddress}".ToLower())">
+                                    <tr data-search="@($"{s.SupplierName} {s.ContactPerson} {s.EmailAddress} {s.Address}".ToLower())">
                                         <td><div class="consumable-name">@s.SupplierName</div></td>
                                         <td class="supplier-name">@(string.IsNullOrWhiteSpace(s.ContactPerson) ? "—" : s.ContactPerson)</td>
                                         <td class="supplier-name">@s.EmailAddress</td>
+                                        <td class="supplier-address" title="@s.Address">@(string.IsNullOrWhiteSpace(s.Address) ? "—" : s.Address)</td>
                                         <td><span class="count-pill">@itemCount</span></td>
                                         <td>
                                             <div class="actions">
@@ -856,7 +864,8 @@
                                                         data-id="@s.SupplierID"
                                                         data-name="@s.SupplierName"
                                                         data-contact="@s.ContactPerson"
-                                                        data-email="@s.EmailAddress">
+                                                        data-email="@s.EmailAddress"
+                                                        data-address="@s.Address">
                                                     Edit
                                                 </button>
 
@@ -879,7 +888,7 @@
                             else
                             {
                                 <tr>
-                                    <td colspan="5">
+                                    <td colspan="6">
                                         <div class="empty-state">
                                             <div class="empty-icon">🚚</div>
                                             No suppliers yet. Add your first one.
@@ -929,6 +938,11 @@
                         </div>
                     </div>
 
+                    <div class="fgroup2">
+                        <label class="app-label">Address</label>
+                        <input class="app-finput" type="text" name="Address" maxlength="300" placeholder="Street, city, postal code" />
+                    </div>
+
                     <div class="modal-actions">
                         <button type="submit" class="btn-full teal">Add Supplier</button>
                         <button type="button" class="btn-full btn-outline"
@@ -970,6 +984,11 @@
                             <label class="app-label">Email Address <span class="required">*</span></label>
                             <input class="app-finput" type="email" id="es-email" name="EmailAddress" required />
                         </div>
+                    </div>
+
+                    <div class="fgroup2">
+                        <label class="app-label">Address</label>
+                        <input class="app-finput" type="text" id="es-address" name="Address" maxlength="300" placeholder="Street, city, postal code" />
                     </div>
 
                     <div class="modal-actions">
@@ -1263,6 +1282,7 @@
             document.getElementById("es-name").value = button.dataset.name || "";
             document.getElementById("es-contact").value = button.dataset.contact || "";
             document.getElementById("es-email").value = button.dataset.email || "";
+            document.getElementById("es-address").value = button.dataset.address || "";
 
             openModal("m-edit-supplier");
         }

@@ -55,7 +55,8 @@ namespace LabManager.Repository
                     {
                         supplier.SupplierName,
                         supplier.ContactPerson,
-                        supplier.EmailAddress
+                        supplier.EmailAddress,
+                        supplier.Address
                     });
 
                 return true;
@@ -80,7 +81,8 @@ namespace LabManager.Repository
                         supplier.SupplierID,
                         supplier.SupplierName,
                         supplier.ContactPerson,
-                        supplier.EmailAddress
+                        supplier.EmailAddress,
+                        supplier.Address 
                     });
 
                 return true;
@@ -259,8 +261,17 @@ namespace LabManager.Repository
         // =====================================================
         public async Task<Supplier> GetSupplierById(int supplierId)
         {
-            var suppliers = await GetAllSuppliers();
-            return suppliers.FirstOrDefault(s => s.SupplierID == supplierId);
+            string query = "sp_GetSupplierById";
+
+            IEnumerable<Supplier> result =
+                await _dataAcess.GetData<Supplier, dynamic>(
+                    query,
+                    new
+                    {
+                        SupplierID = supplierId
+                    });
+
+            return result.FirstOrDefault();
         }
 
         public async Task<bool> SupplierNameExists(string supplierName, int? excludeSupplierId = null)

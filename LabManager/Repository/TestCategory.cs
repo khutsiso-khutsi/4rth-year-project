@@ -131,11 +131,12 @@ namespace LabManager.Repositories
             try
             {
                 await _dataAccess.SaveData(
-                    "sp_AddTestCategory",
+                    "sp_AddCategory",
                     new
                     {
                         CategoryName = category.CategoryName,
-                        Description = category.Description
+                        Description = category.Description,
+                        
                     }
                 );
 

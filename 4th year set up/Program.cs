@@ -26,8 +26,8 @@ builder.Services.AddSession(options =>
 });
 
 // Patient class library
-builder.Services.AddScoped<UserRepository>(provider =>
-    new UserRepository(
+builder.Services.AddScoped<Patient.Repository.UserRepository>(provider =>
+    new Patient.Repository.UserRepository(
         builder.Configuration.GetConnectionString("DefaultConnection")!));
 
 // Admin class library
@@ -44,13 +44,12 @@ builder.Services.AddTransient<IConsumablesRepository, ConsumablesRepository>();
 builder.Services.AddTransient<IOrderRepository, ConsumableOrderRepository>();
 builder.Services.AddTransient<ITestCatalogueRepository, TestCatalogueRepository>();
 builder.Services.AddTransient<IStaffRepository, StaffRepository>();
-builder.Services.AddScoped<IUserProfileRepository, UserProfileRepository>();
+builder.Services.AddTransient<IUserRepository, LabManager.Repository.UserRepository>();
 builder.Services.AddTransient<IEmailService, LabManager.Repository.EmailService>();
 // Register the concrete EmailService used by HomeController so the DI container can resolve it
 builder.Services.AddTransient<_4th_year_set_up.Services.EmailService>();
 builder.Services.AddTransient<
-    ITestsByCategoryRepository,
-    TestsByCategoryRepository>();
+    ITestsByCategoryRepository,TestsByCategoryRepository>();
 builder.Services.AddLogging();
 
 
