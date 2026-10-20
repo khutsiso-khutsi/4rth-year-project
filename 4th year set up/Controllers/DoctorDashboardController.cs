@@ -504,15 +504,7 @@ namespace _4th_year_set_up.Controllers
 
             if (!success)
             {
-                // See the remarks on DoctorDataAccess.CancelTestRequest: the
-                // real sp_CancelTestRequest has a known bug (it tries to set
-                // TestRequestItems.ItemStatus = 'Cancelled', a value that
-                // column's own CHECK constraint disallows), so a genuine
-                // cancel attempt can currently fail here with a SQL
-                // constraint-violation message. That needs a fix in the
-                // shared database — surfacing the real message rather than
-                // hiding it is intentional, so it gets reported instead of
-                // silently swallowed.
+                
                 TempData["Error"] = $"Could not cancel request: {message}";
                 return RedirectToAction("TestRequests");
             }
