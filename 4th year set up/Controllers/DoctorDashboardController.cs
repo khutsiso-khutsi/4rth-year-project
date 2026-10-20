@@ -117,7 +117,7 @@ namespace _4th_year_set_up.Controllers
         public IActionResult PatientRecords(string? q)
         {
             ViewBag.Email = CurrentEmail();
-            var model = _doctorData.SearchPatients(q);
+            var model = _doctorData.SearchPatients(q, _doctorId);
             ViewBag.SearchTerm = q;
 
             // Lookup lists for the "Register New Patient" modal's condition/
@@ -252,7 +252,7 @@ namespace _4th_year_set_up.Controllers
             var (result, newUserId, newPatientId) = _doctorData.RegisterPatientByDoctor(
                 username, model.Email.Trim(), passwordHash,
                 model.FirstName.Trim(), model.LastName.Trim(), model.IDNumber.Trim(),
-                model.DateOfBirth, model.CellphoneNumber.Trim());
+                model.DateOfBirth, model.CellphoneNumber.Trim(), _doctorId);
 
             if (result != "SUCCESS")
             {
@@ -274,14 +274,40 @@ namespace _4th_year_set_up.Controllers
                     _userRepo.AddPatientMedication(newPatientId, medicationId, null, null, null, null, null);
             }
 
-            _email.SendEmail(model.Email, "Your Student/Patient account — NMB-HLabSys",
-                $"<p>Hi {model.FirstName},</p>" +
-                $"<p>A doctor has registered you on NMB-HLabSys. Your temporary password is:</p>" +
-                $"<p style='font-size:1.2rem;font-weight:700'>{tempPassword}</p>" +
-                $"<p>You will be asked to change this password the first time you log in.</p>");
+            // The e-mail says which role the person was registered as, who registered
+            // them, and how to sign in. Names are HTML-encoded because they are typed text.
+            static string H(string? v) => System.Net.WebUtility.HtmlEncode(v ?? "");
+            var loginUrl = Url.Action("Login", "Home", null, Request.Scheme) ?? "";
+            var patientEmail = model.Email.Trim();
+
+            var emailSent = true;
+            try
+            {
+                _email.SendEmail(patientEmail, "You have been registered as a Patient \u2014 NMB-HLabSys",
+                    $"<p>Hi {H(model.FirstName)},</p>" +
+                    $"<p>Your doctor, <strong>{H(_doctorName)}</strong>, has registered you as a <strong>Patient</strong> " +
+                    "on NMB-HLabSys, the Haematology Lab System.</p>" +
+                    "<p><strong>Your login details</strong></p>" +
+                    "<ul>" +
+                    "<li>Role: Patient</li>" +
+                    $"<li>Username: {H(patientEmail)}</li>" +
+                    $"<li>Temporary password: <strong style='font-size:1.1rem'>{H(tempPassword)}</strong></li>" +
+                    "</ul>" +
+                    (loginUrl.Length > 0 ? $"<p>Sign in here: <a href='{H(loginUrl)}'>{H(loginUrl)}</a></p>" : "") +
+                    "<p>You will be asked to change this password the first time you sign in.</p>" +
+                    "<p>If you were not expecting this e-mail, please contact your doctor.</p>");
+            }
+            catch (Exception)
+            {
+                emailSent = false;
+            }
 
             Log($"Registered new patient: {model.FirstName} {model.LastName} ({model.IDNumber})");
-            TempData["Success"] = $"{model.FirstName} {model.LastName} was registered and emailed their temporary password.";
+            if (emailSent)
+                TempData["Success"] = $"{model.FirstName} {model.LastName} was registered as a Patient and emailed their login details.";
+            else
+                TempData["Error"] = $"{model.FirstName} {model.LastName} was registered as a Patient, but the e-mail could not be sent. " +
+                                    $"Give them this temporary password in person: {tempPassword}";
             return RedirectToAction("PatientRecords");
         }
 
@@ -294,7 +320,7 @@ namespace _4th_year_set_up.Controllers
 
             var model = new CreateTestRequestViewModel
             {
-                Patients = _doctorData.SearchPatients(null),
+                Patients = _doctorData.SearchPatients(null, doctorId),
                 TestTypes = _doctorData.GetAllTestTypes(),
                 SampleTypes = _doctorData.GetAllSampleTypes()
             };
@@ -329,6 +355,14 @@ namespace _4th_year_set_up.Controllers
                 return RedirectToAction("TestRequests");
             }
 
+            // A doctor may only request tests for their own patients, even if
+            // someone posts another patient's id.
+            if (!_doctorData.DoctorCanAccessPatient(doctorId, model.PatientID))
+            {
+                TempData["Error"] = "You can only request tests for your own patients.";
+                return RedirectToAction("TestRequests");
+            }
+
             var samples = (model.Samples ?? new())
                 .Where(s => !string.IsNullOrWhiteSpace(s.BarcodeNumber) && s.SampleTypeID > 0)
                 .ToList();
@@ -351,7 +385,7 @@ namespace _4th_year_set_up.Controllers
                 return RedirectToAction("TestRequests");
             }
 
-            var patient = _doctorData.SearchPatients(null).FirstOrDefault(p => p.PatientID == model.PatientID);
+            var patient = _doctorData.SearchPatients(null, doctorId).FirstOrDefault(p => p.PatientID == model.PatientID);
             if (patient != null)
             {
                 _email.SendEmail(patient.Email, $"Test request {requestNumber} submitted — NMB-HLabSys",
@@ -431,7 +465,7 @@ namespace _4th_year_set_up.Controllers
         }
 
         [HttpGet]
-        public IActionResult ResultsPdf(int requestId)
+        public IActionResult ResultsPdf(int requestId, bool preview = false)
         {
             var (doctorId, _) = CurrentDoctor();
             var detail = _doctorData.GetTestRequestDetail(doctorId, requestId);
@@ -441,7 +475,7 @@ namespace _4th_year_set_up.Controllers
                 return View("~/Views/Doctor/ResultsPdf.cshtml", detail);
             return new ViewAsPdf("~/Views/Doctor/ResultsPdf.cshtml", detail)
             {
-                FileName = $"{detail.RequestNumber}-results.pdf"
+                FileName = preview ? null : $"{detail.RequestNumber}-results.pdf"   // no file name = shown in the browser, not downloaded
             };
         }
 
@@ -589,7 +623,7 @@ namespace _4th_year_set_up.Controllers
         }
 
         [HttpGet]
-        public IActionResult ReportPdf(DateTime from, DateTime to, string? dateField, string? status)
+        public IActionResult ReportPdf(DateTime from, DateTime to, string? dateField, string? status, bool preview = false)
         {
             var (_, doctorName) = CurrentDoctor();
             var r = BuildReport(from, to, dateField, status);
@@ -603,14 +637,14 @@ namespace _4th_year_set_up.Controllers
                 Requests = r.Rows
             };
 
-            Log($"Downloaded report {r.From:yyyy-MM-dd} to {r.To:yyyy-MM-dd}");
+            if (!preview) Log($"Downloaded report {r.From:yyyy-MM-dd} to {r.To:yyyy-MM-dd}");
 
             // Without wkhtmltopdf, open it as a page the browser can print / save as PDF
             if (!PdfSupport.Ready)
                 return View("~/Views/Doctor/ReportPdf.cshtml", model);
             return new ViewAsPdf("~/Views/Doctor/ReportPdf.cshtml", model)
             {
-                FileName = $"doctor-report-{r.From:yyyy-MM-dd}-to-{r.To:yyyy-MM-dd}.pdf"
+                FileName = preview ? null : $"doctor-report-{r.From:yyyy-MM-dd}-to-{r.To:yyyy-MM-dd}.pdf"
             };
         }
 

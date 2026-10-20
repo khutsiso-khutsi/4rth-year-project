@@ -1088,6 +1088,7 @@
 
        
 
+        @@media (max-width: 768px) {
             .user-email {
                 display: none;
             }
@@ -1258,7 +1259,7 @@
                     <h2 id="reportTitle">Download results report</h2>
                     <p>A PDF of all your released results in a date range, grouped by test category.</p>
                 </div>
-                <form class="report-form" method="get" action="@Url.Action("Report", "PatientDashboard")" id="reportForm">
+                <form class="report-form" method="get" action="@Url.Action("Report", "PatientDashboard")" id="reportForm" data-pdf-title="Results report">
                     <label for="repFrom">From</label>
                     <input type="date" id="repFrom" name="from" value="@DateTime.Today.AddMonths(-12).ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" required />
                     <label for="repTo">To</label>
@@ -1596,7 +1597,7 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
                     Full Page View
                 </button>
-                <a id="qv-pdf-link" href="#" target="_blank" class="action-btn primary">
+                <a id="qv-pdf-link" href="#" target="_blank" class="action-btn primary" data-pdf-preview data-pdf-title="Test results">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                     Download PDF
                 </a>
@@ -1613,7 +1614,7 @@
                 Back to My Results
             </button>
             <div class="fp-actions">
-                <a id="fp-pdf-link" href="#" target="_blank" class="action-btn primary" style="font-size:12px;padding:7px 14px;">
+                <a id="fp-pdf-link" href="#" target="_blank" class="action-btn primary" data-pdf-preview data-pdf-title="Test results" style="font-size:12px;padding:7px 14px;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                     Download PDF
                 </a>
@@ -2193,5 +2194,7 @@
             })();
         </script>
     }
+
+    <partial name="_PdfPreview" />
 </body>
 </html>

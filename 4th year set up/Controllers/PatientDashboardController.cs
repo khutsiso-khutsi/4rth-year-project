@@ -695,7 +695,7 @@ namespace _4th_year_set_up.Controllers
         /// shows the same report as a printable page instead of crashing.
         /// </summary>
         [HttpGet]
-        public IActionResult Report(DateTime? from, DateTime? to)
+        public IActionResult Report(DateTime? from, DateTime? to, bool preview = false)
         {
             if (!IsPatient())
                 return RedirectToAction("Login", "Home");
@@ -731,7 +731,7 @@ namespace _4th_year_set_up.Controllers
                 From = fromDate,
                 To = toDate
             };
-            Log($"Downloaded results report {fromDate:yyyy-MM-dd} to {toDate:yyyy-MM-dd}");
+            if (!preview) Log($"Downloaded results report {fromDate:yyyy-MM-dd} to {toDate:yyyy-MM-dd}");
 
             var fileName = $"my-results-{fromDate:yyyy-MM-dd}-to-{toDate:yyyy-MM-dd}.pdf";
             if (!_4th_year_set_up.Services.PdfSupport.Ready)
@@ -742,12 +742,12 @@ namespace _4th_year_set_up.Controllers
 
             return new ViewAsPdf("~/Views/PatientDashboard/ReportPdf.cshtml", model)
             {
-                FileName = fileName,
+                FileName = preview ? null : fileName,   // no file name = shown in the browser, not downloaded
                 CustomSwitches = "--footer-center \"Page [page] of [topage]\" --footer-font-size 8 --footer-font-name Arial"
             };
         }
 
-        public IActionResult PrintResult(int requestId)
+        public IActionResult PrintResult(int requestId, bool preview = false)
         {
             if (!IsPatient())
                 return RedirectToAction("Login", "Home");
@@ -769,7 +769,8 @@ namespace _4th_year_set_up.Controllers
             }
 
             req.Items = _userRepo.GetTestRequestItems(req.RequestID);
-            Log("Downloaded test result PDF", "TestRequest", requestId);
+            if (!preview) Log("Downloaded test result PDF", "TestRequest", requestId);
+            ViewBag.Preview = preview;   // the view can skip auto-print when previewing
             return View("~/Views/PatientDashboard/PrintResult.cshtml", req);
 
         }
