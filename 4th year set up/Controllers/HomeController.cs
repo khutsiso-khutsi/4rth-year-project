@@ -129,23 +129,43 @@ namespace _4th_year_set_up.Controllers
         // ── DEV SHORTCUT LOGIN (bypasses password) ──
         // Only works when running locally in Development. On the SICT server
         // (Production) it returns 404, so nobody can skip the password there.
+        //
+        // Admin, Doctor and Patient sign in as the real seeded accounts, so the session holds
+        // the same values as a normal login (UserID, RoleID, RoleName, Username, Email) and
+        // every page - patient records, requests, reports, the PDF buttons - works.
+        // Manager and Technician are left to the DevController (/Dev/Login) as before.
         public IActionResult DevLogin(string role)
         {
             if (!_env.IsDevelopment())
                 return NotFound();
 
-            HttpContext.Session.SetString("RoleName", role);
-            HttpContext.Session.SetString("Email", $"dev-{role.ToLower()}@test.com");
-
-            return role switch
+            var devEmail = role switch
             {
-                "Admin" => RedirectToAction("Dashboard", "Admin"),
-                "Doctor" => RedirectToAction("DoctorDashboard", "Doctor"),
-                "Lab Manager" => RedirectToAction("Index", "ManagerDashboard"),
-                "Lab Technician" => RedirectToAction("Index", "TechnicianDashboard"),
-                "Patient" => RedirectToAction("Index", "PatientDashboard"),
-                _ => RedirectToAction("Login", "Home")
+                "Admin" => "admin@test.com",
+                "Doctor" => "khutsisoletageng7@gmail.com",
+                "Patient" => "s224114719@mandela.ac.za",
+                _ => null
             };
+
+            if (devEmail == null)
+                return RedirectToAction("Login");
+
+            var (user, _) = _userRepo.GetUserLoginData(devEmail);
+            if (user == null)
+            {
+                // the seeded account is missing: wrong database, or the seed was not run
+                TempData["Error"] = $"Dev shortcut: no active account for {devEmail}. Run the seed scripts first.";
+                return RedirectToAction("Login");
+            }
+
+            HttpContext.Session.Clear();
+            HttpContext.Session.SetInt32("UserID", user.UserID);
+            HttpContext.Session.SetInt32("RoleID", user.RoleID);
+            HttpContext.Session.SetString("RoleName", user.RoleName);
+            HttpContext.Session.SetString("Username", user.Email);
+            HttpContext.Session.SetString("Email", user.Email);
+
+            return RedirectToDashboard(user.RoleName);
         }
 
         public IActionResult Logout()

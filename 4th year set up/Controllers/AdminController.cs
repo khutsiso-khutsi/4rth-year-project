@@ -1,15 +1,19 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using admin.Repository;
+using Patient.Repository;
 
 namespace _4th_year_set_up.Controllers
 {
     public class AdminController : Controller
     {
         private readonly AdminRepository _adminRepo;
+        private readonly UserRepository _userRepo;   // used for the admin's own password check/change
 
-        public AdminController(AdminRepository adminRepo)
+        public AdminController(AdminRepository adminRepo, UserRepository userRepo)
         {
             _adminRepo = adminRepo;
+            _userRepo = userRepo;
         }
 
         // ── DASHBOARD ─────────────────────────────────────────
@@ -28,6 +32,7 @@ namespace _4th_year_set_up.Controllers
             ViewData["AllergyCatCount"] = allergyCats;
             ViewData["MedCatCount"] = medicationCats;
             ViewData["CategoryCount"] = conditionCats + allergyCats + medicationCats;
+            ViewData["RecentActivity"] = _adminRepo.GetActivityLog().OrderByDescending(l => l.LogDate).Take(5).ToList();
 
             return View("~/Views/Admin/AdminDashboard.cshtml");
         }
@@ -288,6 +293,69 @@ namespace _4th_year_set_up.Controllers
                 ? "Medication deleted successfully."
                 : "Failed to delete medication: " + result;
             return RedirectToAction("Medications");
+        }
+
+        // ── MY PROFILE ────────────────────────────────────────
+        public IActionResult Profile()
+        {
+            if (HttpContext.Session.GetString("RoleName") != "Admin")
+                return RedirectToAction("Login", "Home");
+
+            var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
+            var email = HttpContext.Session.GetString("Email") ?? "";
+            var account = _adminRepo.GetAdminAccount(userId);
+
+            ViewData["AdminEmail"] = email;
+            ViewData["Username"] = account?.Username ?? "";
+            ViewData["MemberSince"] = account?.CreatedDate;
+            ViewData["RecentActivity"] = _adminRepo.GetActivityLog()
+                .Where(l => string.Equals(l.PerformedBy, email, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(l => l.LogDate)
+                .Take(5)
+                .ToList();
+            return View("~/Views/Admin/Profile.cshtml");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ChangePassword(string CurrentPassword, string NewPassword, string ConfirmPassword)
+        {
+            if (HttpContext.Session.GetString("RoleName") != "Admin")
+                return RedirectToAction("Login", "Home");
+
+            var userId = HttpContext.Session.GetInt32("UserID") ?? 0;
+            CurrentPassword ??= "";
+            NewPassword ??= "";
+            ConfirmPassword ??= "";
+
+            string? error =
+                CurrentPassword.Length == 0 ? "Please enter your current password." :
+                !_userRepo.PasswordMatches(userId, CurrentPassword) ? "Your current password is incorrect." :
+                PasswordRuleError(NewPassword) is string ruleError ? ruleError :
+                NewPassword != ConfirmPassword ? "New password and confirmation do not match." :
+                NewPassword == CurrentPassword ? "New password cannot be the same as your current password." :
+                null;
+
+            if (error != null)
+            {
+                TempData["Error"] = error;
+                return RedirectToAction("Profile");
+            }
+
+            _userRepo.SetOwnPassword(userId, NewPassword);
+            _adminRepo.LogActivity("Changed own password", HttpContext.Session.GetString("Email") ?? "");
+            TempData["Success"] = "Your password has been changed. Use the new one next time you sign in.";
+            return RedirectToAction("Profile");
+        }
+
+        // Same password rules as the Doctor and Patient pages.
+        private static string? PasswordRuleError(string password)
+        {
+            if (password.Length < 8) return "New password must be at least 8 characters.";
+            if (!password.Any(char.IsUpper)) return "New password must contain at least one uppercase letter.";
+            if (!password.Any(char.IsDigit)) return "New password must contain at least one number.";
+            if (password.All(char.IsLetterOrDigit)) return "New password must contain at least one special character.";
+            return null;
         }
 
         // ── ACTIVITY LOG ──────────────────────────────────────

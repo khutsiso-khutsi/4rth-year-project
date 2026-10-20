@@ -728,6 +728,21 @@ namespace admin.DataAccess
             => RestoreItem("Medications", "MedicationID", "MedicationCategoryID",
                            "MedicationCategories", "MedicationCategoryID", id);
 
+        // ACCOUNT (the logged-in admin's own row in Users)
+
+        public (string Email, string Username, DateTime? CreatedDate)? GetAdminAccount(int userId)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("SELECT Email, Username, CreatedDate FROM Users WHERE UserID = @UserID", conn);
+            cmd.Parameters.AddWithValue("@UserID", userId);
+            conn.Open();
+            using var r = cmd.ExecuteReader();
+            if (!r.Read()) return null;
+            return (r["Email"] as string ?? "",
+                    r["Username"] as string ?? "",
+                    r["CreatedDate"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(r["CreatedDate"]));
+        }
+
         // ACTIVITY LOG
 
         public List<ActivityLogEntry> GetActivityLog()

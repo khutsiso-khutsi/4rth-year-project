@@ -621,6 +621,8 @@
         tr.inactive-row td {
             background: #fafbfd;
         }
+        a.nav-user { text-decoration: none; transition: background .15s; }
+        a.nav-user:hover { background: rgba(255,255,255,0.14); }
     </style>
 </head>
 <body>
@@ -636,13 +638,13 @@
             <div class="nav-title">NMB-HLabSys <span>Haematology Lab System</span></div>
         </a>
         <div class="nav-right">
-            <div class="nav-user">
+            <a class="nav-user" asp-controller="Admin" asp-action="Profile" title="My profile">
                 <div class="nav-avatar">A</div>
                 <div class="nav-user-info">
                     <div class="nav-user-name">@(ViewData["AdminEmail"] ?? Context.Session.GetString("Email") ?? "Admin")</div>
                     <div class="nav-user-role">Admin</div>
                 </div>
-            </div>
+            </a>
             <a asp-controller="Home" asp-action="Logout" class="btn-signout">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -690,6 +692,11 @@
             <a class="nav-item" asp-controller="Admin" asp-action="ActivityLog">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
                 Activity log
+            </a>
+            <div class="sidebar-section">Account</div>
+            <a class="nav-item" asp-controller="Admin" asp-action="Profile">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                My profile
             </a>
             <div class="sidebar-bottom">
                 <a class="nav-item danger" asp-controller="Home" asp-action="Logout">
