@@ -409,6 +409,14 @@ namespace Patient.DataAccess
             return vm;
         }
 
+        private static bool HasColumn(IDataRecord record, string name)
+        {
+            for (int i = 0; i < record.FieldCount; i++)
+                if (string.Equals(record.GetName(i), name, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            return false;
+        }
+
         private static List<LookupItem> LoadLookup(SqlConnection con, string sql)
         {
             var list = new List<LookupItem>();
@@ -522,13 +530,27 @@ namespace Patient.DataAccess
             {
                 cmd.CommandType = CommandType.StoredProcedure;
                 using var dr = cmd.ExecuteReader();
+                // sp_GetAllDoctors returns FirstName/LastName/EmailAddress (and IsActive);
+                // older versions returned DoctorName/Email. Accept either.
                 while (dr.Read())
+                {
+                    if (HasColumn(dr, "IsActive") && !dr.IsDBNull(dr.GetOrdinal("IsActive")) && !Convert.ToBoolean(dr["IsActive"]))
+                        continue;
+
+                    var name = HasColumn(dr, "DoctorName")
+                        ? dr["DoctorName"].ToString()
+                        : $"{(HasColumn(dr, "FirstName") ? dr["FirstName"] : "")} {(HasColumn(dr, "LastName") ? dr["LastName"] : "")}".Trim();
+                    var email = HasColumn(dr, "Email") ? dr["Email"].ToString()
+                              : HasColumn(dr, "EmailAddress") ? dr["EmailAddress"].ToString()
+                              : "";
+
                     vm.AllDoctors.Add(new DoctorOption
                     {
                         DoctorID = (int)dr["DoctorID"],
-                        DoctorName = dr["DoctorName"].ToString()!,
-                        Email = dr["Email"].ToString()!
+                        DoctorName = name ?? "",
+                        Email = email ?? ""
                     });
+                }
             }
 
             using (var cmd = new SqlCommand("sp_GetPatientConsents", con))
@@ -787,6 +809,29 @@ namespace Patient.DataAccess
             cmd.Parameters.AddWithValue("@CellphoneNumber", cellphone);
             cmd.Parameters.AddWithValue("@HomeAddress", homeAddress);
             cmd.Parameters.AddWithValue("@Email", email);
+            conn.Open();
+            cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>True when another patient already has this SA ID number.</summary>
+        public bool IdNumberInUse(string idNumber, int exceptPatientId)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(
+                "SELECT COUNT(*) FROM Patients WHERE IDNumber = @Id AND PatientID <> @PatientID", conn);
+            cmd.Parameters.AddWithValue("@Id", idNumber);
+            cmd.Parameters.AddWithValue("@PatientID", exceptPatientId);
+            conn.Open();
+            return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+        }
+
+        public void UpdatePatientIdNumber(int patientId, string idNumber)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(
+                "UPDATE Patients SET IDNumber = @Id WHERE PatientID = @PatientID", conn);
+            cmd.Parameters.AddWithValue("@Id", idNumber);
+            cmd.Parameters.AddWithValue("@PatientID", patientId);
             conn.Open();
             cmd.ExecuteNonQuery();
         }

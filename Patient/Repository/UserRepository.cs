@@ -123,6 +123,12 @@ namespace Patient.Repository
         {
             _dataAccess.UpdatePatientProfile(patientId, firstName, lastName, dob, cellphone, homeAddress, email);
         }
+        public bool IdNumberInUse(string idNumber, int exceptPatientId)
+            => _dataAccess.IdNumberInUse(idNumber, exceptPatientId);
+
+        public void UpdatePatientIdNumber(int patientId, string idNumber)
+            => _dataAccess.UpdatePatientIdNumber(patientId, idNumber);
+
         public void ChangePatientPassword(int userId, string newPasswordHash)
             => _dataAccess.ChangePatientPassword(userId, newPasswordHash);
 

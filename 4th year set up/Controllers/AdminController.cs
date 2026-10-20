@@ -33,13 +33,14 @@ namespace _4th_year_set_up.Controllers
         }
 
         // ── CONDITION CATEGORIES ──────────────────────────────
-        public IActionResult ConditionCategories()
+        public IActionResult ConditionCategories(bool showInactive = false)
         {
             if (HttpContext.Session.GetString("RoleName") != "Admin")
                 return RedirectToAction("Login", "Home");
 
             ViewData["AdminEmail"] = HttpContext.Session.GetString("Email");
-            ViewData["Categories"] = _adminRepo.GetAllConditionCategories();
+            ViewData["Categories"] = _adminRepo.GetAllConditionCategories(showInactive);
+            ViewData["ShowInactive"] = showInactive;
             return View("~/Views/Admin/ConditionCategories.cshtml");
         }
 
@@ -87,7 +88,7 @@ namespace _4th_year_set_up.Controllers
 
             ViewData["AdminEmail"] = HttpContext.Session.GetString("Email");
             ViewData["Conditions"] = _adminRepo.GetAllConditions();
-            ViewData["Categories"] = _adminRepo.GetAllConditionCategories();
+            ViewData["Categories"] = _adminRepo.GetAllConditionCategories(false);
             return View("~/Views/Admin/MedicalConditions.cshtml");
         }
 
@@ -122,13 +123,14 @@ namespace _4th_year_set_up.Controllers
         }
 
         // ── ALLERGY CATEGORIES ────────────────────────────────
-        public IActionResult AllergyCategories()
+        public IActionResult AllergyCategories(bool showInactive = false)
         {
             if (HttpContext.Session.GetString("RoleName") != "Admin")
                 return RedirectToAction("Login", "Home");
 
             ViewData["AdminEmail"] = HttpContext.Session.GetString("Email");
-            ViewData["Categories"] = _adminRepo.GetAllAllergyCategories();
+            ViewData["Categories"] = _adminRepo.GetAllAllergyCategories(showInactive);
+            ViewData["ShowInactive"] = showInactive;
             return View("~/Views/Admin/AllergyCategories.cshtml");
         }
 
@@ -170,7 +172,7 @@ namespace _4th_year_set_up.Controllers
 
             ViewData["AdminEmail"] = HttpContext.Session.GetString("Email");
             ViewData["Allergies"] = _adminRepo.GetAllAllergies();
-            ViewData["Categories"] = _adminRepo.GetAllAllergyCategories();
+            ViewData["Categories"] = _adminRepo.GetAllAllergyCategories(false);
             return View("~/Views/Admin/Allergies.cshtml");
         }
 
@@ -205,13 +207,14 @@ namespace _4th_year_set_up.Controllers
         }
 
         // ── MEDICATION CATEGORIES ─────────────────────────────
-        public IActionResult MedicationCategories()
+        public IActionResult MedicationCategories(bool showInactive = false)
         {
             if (HttpContext.Session.GetString("RoleName") != "Admin")
                 return RedirectToAction("Login", "Home");
 
             ViewData["AdminEmail"] = HttpContext.Session.GetString("Email");
-            ViewData["Categories"] = _adminRepo.GetAllMedicationCategories();
+            ViewData["Categories"] = _adminRepo.GetAllMedicationCategories(showInactive);
+            ViewData["ShowInactive"] = showInactive;
             return View("~/Views/Admin/MedicationCategories.cshtml");
         }
 
@@ -253,7 +256,7 @@ namespace _4th_year_set_up.Controllers
 
             ViewData["AdminEmail"] = HttpContext.Session.GetString("Email");
             ViewData["Medications"] = _adminRepo.GetAllMedications();
-            ViewData["Categories"] = _adminRepo.GetAllMedicationCategories();
+            ViewData["Categories"] = _adminRepo.GetAllMedicationCategories(false);
             return View("~/Views/Admin/Medications.cshtml");
         }
 
@@ -300,5 +303,3 @@ namespace _4th_year_set_up.Controllers
 
     }
 }
-
-

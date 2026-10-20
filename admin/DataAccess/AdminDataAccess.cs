@@ -20,12 +20,12 @@ namespace admin.DataAccess
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(
                 "SELECT " +
-                "(SELECT COUNT(*) FROM MedicalConditions) AS ConditionCount, " +
-                "(SELECT COUNT(*) FROM Allergies) AS AllergyCount, " +
-                "(SELECT COUNT(*) FROM Medications) AS MedicationCount, " +
-                "(SELECT COUNT(*) FROM MedicalConditionCategories) AS ConditionCatCount, " +
-                "(SELECT COUNT(*) FROM AllergyCategories) AS AllergyCatCount, " +
-                "(SELECT COUNT(*) FROM MedicationCategories) AS MedicationCatCount", conn);
+                "(SELECT COUNT(*) FROM MedicalConditions WHERE IsActive = 1) AS ConditionCount, " +
+                "(SELECT COUNT(*) FROM Allergies WHERE IsActive = 1) AS AllergyCount, " +
+                "(SELECT COUNT(*) FROM Medications WHERE IsActive = 1) AS MedicationCount, " +
+                "(SELECT COUNT(*) FROM MedicalConditionCategories WHERE IsActive = 1) AS ConditionCatCount, " +
+                "(SELECT COUNT(*) FROM AllergyCategories WHERE IsActive = 1) AS AllergyCatCount, " +
+                "(SELECT COUNT(*) FROM MedicationCategories WHERE IsActive = 1) AS MedicationCatCount", conn);
             conn.Open();
             using var reader = cmd.ExecuteReader();
             if (reader.Read())

@@ -118,6 +118,9 @@
         .form-group label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
         .form-group input { background: var(--offwhite); border: 1px solid var(--border); color: var(--navy); padding: 10px 14px; border-radius: 10px; font-size: 0.875rem; font-family: inherit; outline: none; transition: border-color 0.2s, box-shadow 0.2s; width: 100%; }
         .form-group input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-light); background: white; }
+        .form-group input[readonly] { background: #eef2f8; color: var(--muted); cursor: not-allowed; }
+        .form-group input[readonly]:focus { border-color: var(--border); box-shadow: none; background: #eef2f8; }
+        .lock-hint { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
         .form-group input.error { border-color: var(--red); box-shadow: 0 0 0 3px rgba(220,38,38,0.08); }
         .field-error { font-size: 0.72rem; color: var(--red); font-weight: 500; display: none; margin-top: 2px; }
         .field-error.visible { display: block; }
@@ -319,7 +322,8 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="DateOfBirth">Date of Birth</label>
-                                    <input type="date" id="DateOfBirth" name="DateOfBirth" value="@Model.DateOfBirth.ToString("yyyy-MM-dd")" />
+                                    <input type="date" id="DateOfBirth" name="DateOfBirth" value="@Model.DateOfBirth.ToString("yyyy-MM-dd")" readonly tabindex="-1" aria-readonly="true" />
+                                    <span class="lock-hint">Date of birth can't be changed.</span>
                                     <span class="field-error" id="err-dob">Please enter a valid date of birth.</span>
                                 </div>
                                 <div class="form-group">
@@ -504,7 +508,13 @@
         if (first.value.trim().length < 1) { showError(first, document.getElementById('err-firstname')); valid = false; }
         if (last.value.trim().length < 1)  { showError(last,  document.getElementById('err-lastname'));  valid = false; }
         if (!/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(email.value.trim())) { showError(email, document.getElementById('err-email')); valid = false; }
-        if (!/^\d{13}$/.test(id.value.trim())) { showError(id, document.getElementById('err-id')); valid = false; }
+        var errId = document.getElementById('err-id');
+        errId.textContent = 'Please enter a valid 13-digit SA ID number.';
+        if (!/^\d{13}$/.test(id.value.trim())) { showError(id, errId); valid = false; }
+        else if (id.value.trim() !== '@Model.IDNumber' && dob.value && id.value.trim().substr(0, 6) !== dob.value.substr(2, 2) + dob.value.substr(5, 2) + dob.value.substr(8, 2)) {
+            errId.textContent = "This ID number doesn't match your date of birth.";
+            showError(id, errId); valid = false;
+        }
         if (!dob.value) { showError(dob, document.getElementById('err-dob')); valid = false; }
 
         if (!valid) { e.preventDefault(); this.querySelector('.error')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }

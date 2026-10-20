@@ -1,4 +1,5 @@
-﻿@{
+@using Microsoft.AspNetCore.Http
+@{
     ViewData["Title"] = "Medication Categories";
     Layout = null;
 }
@@ -546,6 +547,79 @@
         }
 
 
+
+        /* search + inactive toggle */
+        .btn-search, .btn-clear {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13.5px;
+            font-weight: 500;
+            padding: 9px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-search {
+            background: var(--teal);
+            color: white;
+            border: 1px solid var(--teal);
+        }
+
+            .btn-search:hover {
+                background: #0f7a70;
+            }
+
+        .btn-clear {
+            background: var(--white);
+            color: var(--muted);
+            border: 1px solid var(--border);
+        }
+
+            .btn-clear:hover {
+                background: var(--offwhite);
+                color: var(--navy);
+            }
+
+        .inactive-toggle {
+            margin-left: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+            .inactive-toggle label {
+                font-size: 13px;
+                color: var(--muted);
+                cursor: pointer;
+            }
+
+            .inactive-toggle input {
+                cursor: pointer;
+            }
+
+        .pill {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 9px;
+            border-radius: 100px;
+            font-size: 10.5px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            vertical-align: middle;
+        }
+
+        .pill-inactive {
+            background: #f3f4f6;
+            color: #6b7280;
+            border: 1px solid #e5e7eb;
+        }
+
+        tr.inactive-row td {
+            background: #fafbfd;
+        }
     </style>
 </head>
 <body>
@@ -564,7 +638,7 @@
             <div class="nav-user">
                 <div class="nav-avatar">A</div>
                 <div class="nav-user-info">
-                    <div class="nav-user-name">@ViewData["AdminEmail"]</div>
+                    <div class="nav-user-name">@(ViewData["AdminEmail"] ?? Context.Session.GetString("Email") ?? "Admin")</div>
                     <div class="nav-user-role">Admin</div>
                 </div>
             </div>
@@ -647,11 +721,19 @@
             }
 
             <div class="card">
+                @{
+                    var showInactive = ViewData["ShowInactive"] as bool? == true
+                        || string.Equals(Context.Request.Query["showInactive"].ToString().Split(',')[0], "true", StringComparison.OrdinalIgnoreCase);
+                    var searchTerm = Context.Request.Query["q"].ToString();
+                }
                 <div class="search-bar">
-                    <input class="search-input" type="text" id="searchInput" placeholder="Search categories..." onkeyup="filterTable()" />
-                    <form method="get" asp-controller="Admin" asp-action="MedicationCategories" style="margin-left:12px;display:flex;align-items:center;gap:8px;">
-                        <label style="font-size:13px;color:var(--muted);">Show inactive</label>
-                        <input type="checkbox" name="showInactive" value="true" onchange="this.form.submit()" @(ViewData["ShowInactive"] as bool? == true ? "checked" : "") />
+                    <input class="search-input" type="text" id="searchInput" placeholder="Search categories..." value="@searchTerm" autocomplete="off" />
+                    <button type="button" class="btn-search" id="searchBtn">Search</button>
+                    <button type="button" class="btn-clear" id="clearBtn">Clear</button>
+                    <form method="get" asp-controller="Admin" asp-action="MedicationCategories" id="inactiveForm" class="inactive-toggle">
+                        <input type="hidden" name="q" id="qHidden" value="@searchTerm" />
+                        <label for="showInactive">Show inactive</label>
+                        <input type="checkbox" id="showInactive" name="showInactive" value="true" @(showInactive ? "checked" : "") />
                     </form>
                 </div>
 
@@ -713,6 +795,7 @@
                             }
                         </tbody>
                     </table>
+                    <div id="noMatch" class="empty-state" style="display:none"><p>No categories match your search.</p></div>
                 }
             </div>
         </main>
@@ -797,12 +880,37 @@
         }
 
         function filterTable() {
-            const input = document.getElementById('searchInput').value.toLowerCase();
+            const term = document.getElementById('searchInput').value.trim().toLowerCase();
             const rows = document.querySelectorAll('#categoriesTable tbody tr');
+            let shown = 0;
             rows.forEach(row => {
-                row.style.display = row.textContent.toLowerCase().includes(input) ? '' : 'none';
+                const match = !term || row.textContent.toLowerCase().includes(term);
+                row.style.display = match ? '' : 'none';
+                if (match) shown++;
             });
+            const nm = document.getElementById('noMatch');
+            if (nm) nm.style.display = (rows.length && !shown) ? 'block' : 'none';
         }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('qHidden').value = '';
+            filterTable();
+            document.getElementById('searchInput').focus();
+        }
+
+        document.getElementById('searchBtn').addEventListener('click', filterTable);
+        document.getElementById('clearBtn').addEventListener('click', clearSearch);
+        document.getElementById('searchInput').addEventListener('input', filterTable);
+        document.getElementById('searchInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); filterTable(); }
+        });
+        document.getElementById('showInactive').addEventListener('change', function () {
+            // keep the typed search when the page reloads with/without inactive items
+            document.getElementById('qHidden').value = document.getElementById('searchInput').value.trim();
+            document.getElementById('inactiveForm').submit();
+        });
+        filterTable();
 
         document.querySelectorAll('.modal-bg').forEach(bg => {
             bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
