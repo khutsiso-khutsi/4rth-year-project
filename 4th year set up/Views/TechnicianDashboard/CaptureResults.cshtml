@@ -278,7 +278,7 @@
                             <span class="tag tag-progress">In Progress</span>
                         }
                     </h1>
-                    <p>Request @item.ReqNum — @item.Patient</p>
+                    <p>Request @item.TestId — @item.Patient</p>
                 </div>
             </div>
 
@@ -298,7 +298,7 @@
                 </div>
                 <dl class="detail-list">
                     <dt>Request #</dt>
-                    <dd>@item.ReqNum</dd>
+                    <dd>@item.TestId</dd>
                     <dt>Patient</dt>
                     <dd>@item.Patient</dd>
                     <dt>Test</dt>
@@ -363,7 +363,7 @@
             </div>
 
             <form id="saveForm" method="post" asp-controller="TechnicianDashboard" asp-action="SaveResults">
-                <input type="hidden" name="id" value="@item.ReqNum" />
+                <input type="hidden" name="id" value="@item.TestId" />
                 <input type="hidden" name="resultsJson" id="resultsJson" />
                 <input type="hidden" name="finalise" id="finaliseFlag" value="false" />
             </form>

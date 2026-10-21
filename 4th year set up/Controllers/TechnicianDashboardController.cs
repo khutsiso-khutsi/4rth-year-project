@@ -1,21 +1,82 @@
-// MERGE these actions into your existing TechnicianDashboardController.
-// Keep your existing [Authorize] attribute, ViewBag.Email assignment, and the other actions
-// (ReceiveSamples, CaptureResults, Reports, Profile).
-// NOTE: "Verification" below is the RESULT verification list. Remove your old placeholder Verification action.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using _4th_year_set_up.DataAccess;
 using _4th_year_set_up.Models;
 
+namespace _4th_year_set_up.Controllers
+{
 public class TechnicianDashboardController : Controller
 {
+    private readonly TechnicianDataAccess _db;
+
+    public TechnicianDashboardController(TechnicianDataAccess db)
+    {
+        _db = db;
+        // The test types the laboratory manager assigned to this technician (TechnicianTestTypes).
+        CurrentUser.VerifiableTests = _db.GetAssignedTestNames(CurrentUser.Id);
+    }
+
     public IActionResult Index()
     {
         ViewBag.Email = User?.Identity?.Name;           // keep whatever you already use to set this
-        return View(DashboardViewModel.Build());
+        return View(DashboardViewModel.Build(_db));
+    }
+
+    // ---------------------------------------------------------------- your other screens (views you already have)
+    // These just open their view. If yours does more, keep your own version of the action.
+
+    public IActionResult ReceiveSamples() { ViewBag.Email = User?.Identity?.Name; return View(); }
+    public IActionResult Reports()        { ViewBag.Email = User?.Identity?.Name; return View(); }
+
+    // ---------------------------------------------------------------- profile
+
+    public IActionResult Profile()
+    {
+        var profile = _db.GetProfile(CurrentUser.Id);
+        if (profile == null) return NotFound();
+        profile.IsSenior = CurrentUser.IsSenior;
+        ViewBag.Email = profile.Email;
+        return View(profile);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult UpdateProfile(string firstName, string lastName, string cellphoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
+            TempData["Error"] = "First name and last name are required.";
+        else if (!System.Text.RegularExpressions.Regex.IsMatch(cellphoneNumber?.Trim() ?? "", @"^0[6-8]\d{8}$"))
+            TempData["Error"] = "Enter a valid 10-digit South African cellphone number.";
+        else if (!_db.UpdateProfile(CurrentUser.Id, firstName, lastName, cellphoneNumber))
+            TempData["Error"] = "Your profile could not be updated.";
+        else
+            TempData["Success"] = "Your profile has been updated.";
+        return RedirectToAction("Profile");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ChangePassword(string currentPassword, string newPassword, string confirmPassword)
+    {
+        if (string.IsNullOrEmpty(currentPassword) || string.IsNullOrEmpty(newPassword))
+            TempData["Error"] = "Enter your current password and a new password.";
+        else if (newPassword != confirmPassword)
+            TempData["Error"] = "The new passwords do not match.";
+        else if (newPassword.Length < 8 || !newPassword.Any(char.IsUpper) || !newPassword.Any(char.IsDigit))
+            TempData["Error"] = "Password must be at least 8 characters with 1 uppercase letter and 1 number.";
+        else if (newPassword == currentPassword)
+            TempData["Error"] = "The new password cannot be the same as your current password.";
+        else
+        {
+            var error = _db.ChangePassword(CurrentUser.Id, currentPassword, newPassword);
+            if (error == null) TempData["Success"] = "Your password has been changed.";
+            else TempData["Error"] = error;
+        }
+        return RedirectToAction("Profile");
     }
 
     // ---------------------------------------------------------------- test lists
@@ -24,29 +85,32 @@ public class TechnicianDashboardController : Controller
     // Optional ?filter=urgent|overdue|nearing pre-selects a filter chip.
     public IActionResult TestQueue(string filter = "all")
         => List("queue", "Testing Queue", "Tests with a verified sample that still need work.",
-                TestData.All.Where(t => t.IsInQueue), filter);
+                _db.GetTests().Where(t => t.IsInQueue), filter);
 
     public IActionResult MyTests(string filter = "all")
         => List("mine", "My Tests", "Tests you have selected, including any returned to you for review.",
-                TestData.All.Where(t => t.IsInQueue && t.AssignedToMe), filter);
+                _db.GetTests().Where(t => t.IsInQueue && t.AssignedToMe), filter);
 
     // Sample already verified by a senior technician, waiting for a technician to pick it up.
     public IActionResult AwaitingAssignment(string filter = "all")
         => List("awaiting", "Awaiting Assignment", "Samples verified by a senior technician. Pick one to start.",
-                TestData.All.Where(t => t.Stage == TestStage.AwaitingAssignment), filter);
+                _db.GetTests().Where(t => t.Stage == TestStage.AwaitingAssignment), filter);
 
-    // Results that have been verified and released.
+    // Results that have been verified.
     public IActionResult Verified(string filter = "all")
-        => List("verified", "Verified Tests", "Results verified by a senior technician and released.",
-                TestData.All.Where(t => t.Stage == TestStage.Verified), filter);
+        => List("verified", "Verified Tests", "Results verified by a second technician. A request is complete when every test on it is verified.",
+                _db.GetTests().Where(t => t.Stage == TestStage.Verified), filter);
 
     // ---------------------------------------------------------------- senior technician: step 2, sample verification
 
     public IActionResult SampleVerification(string filter = "all")
     {
         if (!CurrentUser.CanVerifySample) return NotSenior();
-        return List("samples", "Sample Verification", "Received samples waiting for a senior technician to accept or reject.",
-                    TestData.All.Where(t => t.Stage == TestStage.AwaitingSampleVerification), filter);
+        // One row per tube. A tube holding several tests is verified once for all of them.
+        return List("samples", "Sample Verification", "Received tubes waiting for a senior technician to accept or reject. Each tube is verified once.",
+                    _db.GetRequests().SelectMany(r => r.Tubes)
+                        .Where(tube => tube.Status == TubeStatus.AwaitingVerification && tube.Tests.Count > 0)
+                        .Select(tube => tube.Tests.First()), filter);
     }
 
     public IActionResult VerifySample(string id)
@@ -58,6 +122,7 @@ public class TechnicianDashboardController : Controller
         return View(item);
     }
 
+    // Accepting or rejecting works on the TUBE of the test that was opened, so it covers every test on that tube.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult AcceptSample(string id, string[] checks)
@@ -65,9 +130,10 @@ public class TechnicianDashboardController : Controller
         if (!CurrentUser.CanVerifySample) return NotSenior();
         var item = Find(id);
         if (item == null) return NotFound();
-        if (item.Stage != TestStage.AwaitingSampleVerification)
+        var tube = item.Sample;
+        if (tube.Status != TubeStatus.AwaitingVerification)
         {
-            Flash($"{id} is no longer waiting for sample verification.", "warn");
+            Flash($"{tube.TubeId} is no longer waiting for sample verification.", "warn");
             return RedirectToAction("SampleVerification");
         }
         if ((checks?.Length ?? 0) < SampleChecklist.Items.Length)
@@ -76,12 +142,14 @@ public class TechnicianDashboardController : Controller
             return RedirectToAction("VerifySample", new { id });
         }
 
-        item.Stage = TestStage.AwaitingAssignment;
-        item.SampleCondition = "Acceptable";
-        item.SampleVerifiedBy = CurrentUser.Id;
-        item.SampleVerifiedAt = DateTime.Now;
-        item.Log("Sample verified", CurrentUser.Id, EventScope.Sample, EventTone.Good, detail: $"All {SampleChecklist.Items.Length} checks passed");
-        Flash($"{id}: sample accepted. The test is now awaiting assignment.", "ok");
+        var ev = tube.Log("Sample verified", CurrentUser.Id, EventTone.Good, $"All {SampleChecklist.Items.Length} checks passed");
+        if (!_db.AcceptSample(tube, CurrentUser.Id, ev))
+        {
+            Flash($"{tube.TubeId} is no longer waiting for sample verification.", "warn");
+            return RedirectToAction("SampleVerification");
+        }
+
+        Flash($"{item.ReqNum}: tube accepted. {tube.TestsLabel} {(tube.Tests.Count == 1 ? "is" : "are")} now awaiting assignment.", "ok");
         return RedirectToAction("SampleVerification");
     }
 
@@ -92,9 +160,10 @@ public class TechnicianDashboardController : Controller
         if (!CurrentUser.CanVerifySample) return NotSenior();
         var item = Find(id);
         if (item == null) return NotFound();
-        if (item.Stage != TestStage.AwaitingSampleVerification)
+        var tube = item.Sample;
+        if (tube.Status != TubeStatus.AwaitingVerification)
         {
-            Flash($"{id} is no longer waiting for sample verification.", "warn");
+            Flash($"{tube.TubeId} is no longer waiting for sample verification.", "warn");
             return RedirectToAction("SampleVerification");
         }
         if (string.IsNullOrWhiteSpace(reasonType))
@@ -103,14 +172,18 @@ public class TechnicianDashboardController : Controller
             return RedirectToAction("VerifySample", new { id });
         }
 
-        item.Stage = TestStage.SampleRejected;
-        item.SampleRejectReason = string.IsNullOrWhiteSpace(reasonNote)
+        var reason = string.IsNullOrWhiteSpace(reasonNote)
             ? reasonType
             : $"{reasonType}: {reasonNote.Trim()}";
-        item.SampleVerifiedBy = CurrentUser.Id;
-        item.SampleVerifiedAt = DateTime.Now;
-        item.Log("Sample rejected", CurrentUser.Id, EventScope.Sample, EventTone.Bad, detail: item.SampleRejectReason);
-        Flash($"{id}: sample rejected. A recollection should be requested from {item.Ward}.", "ok");
+
+        var ev = tube.Log("Sample rejected", CurrentUser.Id, EventTone.Bad, reason);
+        if (!_db.RejectSample(tube, CurrentUser.Id, reasonType, reason, ev))
+        {
+            Flash($"{tube.TubeId} is no longer waiting for sample verification.", "warn");
+            return RedirectToAction("SampleVerification");
+        }
+
+        Flash($"{item.ReqNum}: tube rejected ({tube.TestsLabel}). A recollection should be requested from {item.Ward}.", "ok");
         return RedirectToAction("SampleVerification");
     }
 
@@ -122,7 +195,7 @@ public class TechnicianDashboardController : Controller
         if (!CurrentUser.IsSenior) return NotSenior();
         return List("results", "Result Verification",
                     "Captured results waiting for a second technician to verify before release.",
-                    TestData.All.Where(t => t.Stage == TestStage.Complete), filter);
+                    _db.GetTests().Where(t => t.Stage == TestStage.Complete), filter);
     }
 
     public IActionResult VerifyResult(string id)
@@ -148,12 +221,17 @@ public class TechnicianDashboardController : Controller
             return RedirectToAction("Verification");
         }
 
-        item.Stage = TestStage.Verified;
-        item.VerifiedBy = CurrentUser.Id;
-        item.VerifiedAt = DateTime.Now;
-        item.ReviewNote = null;
-        item.Log("Result verified", CurrentUser.Id, tone: EventTone.Good, attempt: item.Attempt);
-        Flash($"{id}: result verified and released.", "ok");
+        var ev = item.Log("Result verified", CurrentUser.Id, tone: EventTone.Good, attempt: item.Attempt);
+        if (!_db.ApproveResult(item, CurrentUser.Id, ev))
+        {
+            Flash($"{Label(item)} can't be verified. It is no longer waiting for verification, or you captured it yourself.", "warn");
+            return RedirectToAction("Verification");
+        }
+
+        item.Stage = TestStage.Verified;     // so the message below reflects the request as it is now
+        Flash(item.Request.IsReadyToRelease
+                ? $"{Label(item)}: result verified. Every test on {item.ReqNum} is now verified, so the request is complete and ready for the doctor to release."
+                : $"{Label(item)}: result verified." + (item.Request.HoldReason != null ? $" {item.ReqNum} stays open: {item.Request.HoldReason}." : ""), "ok");
         return RedirectToAction("Verification");
     }
 
@@ -177,18 +255,14 @@ public class TechnicianDashboardController : Controller
             return RedirectToAction("VerifyResult", new { id });
         }
 
-        item.Log("Result returned to technician", CurrentUser.Id, tone: EventTone.Warn, detail: note.Trim(), attempt: item.Attempt);
-        item.History.Add(new ReturnedAttempt
+        var ev = item.Log("Result returned to technician", CurrentUser.Id, tone: EventTone.Warn, detail: note.Trim(), attempt: item.Attempt);
+        if (!_db.ReturnResult(item, CurrentUser.Id, note.Trim(), ev))
         {
-            Note = note.Trim(),
-            CapturedBy = item.CapturedBy,
-            CapturedAt = item.CapturedAt,
-            Results = item.Results.Select(r => new ResultLine { Parameter = r.Parameter, Value = r.Value, Unit = r.Unit, Range = r.Range, Flag = r.Flag }).ToList()
-        });
-        item.Stage = TestStage.ToBeReviewed;
-        item.ReviewNote = note.Trim();
-        item.AssignedToMe = false;   // goes back to the technician who captured it
-        Flash($"{id}: returned to technician {item.CapturedBy} for review.", "ok");
+            Flash($"{Label(item)} is no longer waiting for verification.", "warn");
+            return RedirectToAction("Verification");
+        }
+
+        Flash($"{Label(item)}: returned to {TechnicianNames.Of(item.CapturedBy)} for review. {item.ReqNum} stays open until it is verified again.", "ok");
         return RedirectToAction("Verification");
     }
 
@@ -200,14 +274,14 @@ public class TechnicianDashboardController : Controller
     {
         if (string.IsNullOrEmpty(id))
             return List("mine", "Capture Results", "Tests you have selected. Open one to capture its result.",
-                        TestData.All.Where(t => t.IsInQueue && t.AssignedToMe), filter);
+                        _db.GetTests().Where(t => t.IsInQueue && t.AssignedToMe), filter);
 
         var item = Find(id);
         if (item == null) return NotFound();
 
         if (!CanCapture(item))
         {
-            Flash($"{id} isn't available for result capture. Select it from the unassigned list first.", "warn");
+            Flash($"{Label(item)} isn't available for result capture. Select it from the unassigned list first.", "warn");
             return RedirectToAction("MyTests");
         }
 
@@ -242,7 +316,7 @@ public class TechnicianDashboardController : Controller
         if (item == null) return NotFound();
         if (!CanCapture(item))
         {
-            Flash($"{id} isn't available for result capture.", "warn");
+            Flash($"{Label(item)} isn't available for result capture.", "warn");
             return RedirectToAction("MyTests");
         }
 
@@ -306,43 +380,64 @@ public class TechnicianDashboardController : Controller
         }
 
         var wasReturned = item.Stage == TestStage.ToBeReviewed;
-        if (item.Stage == TestStage.Assigned) item.Stage = TestStage.InProgress;   // saving counts as starting
+        var previousAttempt = item.History.LastOrDefault()?.Results;     // what was entered before it was returned
 
         item.Results = lines;
         item.CaptureNote = comments.Count == 0 ? null : string.Join("; ", comments);
 
+        // Draft: saved against this attempt, not logged. Saving counts as starting the test.
         if (!finalise)
         {
-            Flash($"{id}: draft saved. It stays in your tests until you submit it.", "ok");
+            if (!_db.SaveDraft(item, CurrentUser.Id, item.Attempt, item.CaptureNote))
+            {
+                Flash($"{Label(item)} isn't available for result capture.", "warn");
+                return RedirectToAction("MyTests");
+            }
+            Flash($"{Label(item)}: draft saved. It stays in your tests until you submit it.", "ok");
             return RedirectToAction("CaptureResults", new { id });
         }
 
         // Submit: one audit entry per submission. A re-entry shows what changed since the returned attempt.
-        var changes = wasReturned ? TestItem.Diff(item.History.LastOrDefault()?.Results, lines) : null;
-
-        item.CapturedBy = CurrentUser.Id;
-        item.CapturedAt = DateTime.Now;
-        item.ReviewNote = null;                 // the earlier note is kept in History
-        item.Stage = TestStage.Complete;
-
+        var changes = wasReturned ? TestItem.Diff(previousAttempt, lines) : null;
         var detail = TestItem.Summarise(lines) + (item.CaptureNote != null ? $" — {item.CaptureNote}" : "");
-        item.Log(wasReturned ? "Result re-entered" : "Result captured", CurrentUser.Id,
-                 detail: detail, attempt: item.Attempt, changes: changes);
+
+        var events = new List<TestEvent>
+        {
+            item.Log(wasReturned ? "Result re-entered" : "Result captured", CurrentUser.Id,
+                     detail: detail, attempt: item.Attempt, changes: changes)
+        };
 
         var critical = lines.Where(l => l.Flag != null && l.Flag.StartsWith("Critical")).ToList();
+        string values = null;
         if (critical.Count > 0)
         {
-            var values = string.Join(", ", critical.Select(c => $"{c.Parameter} {c.Value} {c.Unit}"));
-            item.Log("Critical value flagged", CurrentUser.Id, tone: EventTone.Bad, attempt: item.Attempt,
-                     detail: $"{values}. Phone {item.Ward} ({item.RequestingDoctor}).");
-            Flash($"{id}: submitted for verification. CRITICAL: {values}. Phone {item.Ward} ({item.RequestingDoctor}) now.", "warn");
-        }
-        else
-        {
-            Flash($"{id}: results submitted for verification.", "ok");
+            values = string.Join(", ", critical.Select(c => $"{c.Parameter} {c.Value} {c.Unit}"));
+            events.Add(item.Log("Critical value flagged", CurrentUser.Id, tone: EventTone.Bad, attempt: item.Attempt,
+                                detail: $"{values}. Phone {item.Ward} ({item.RequestingDoctor})."));
         }
 
+        if (!_db.SubmitResults(item, CurrentUser.Id, item.Attempt, item.CaptureNote, events))
+        {
+            Flash($"{Label(item)} isn't available for result capture.", "warn");
+            return RedirectToAction("MyTests");
+        }
+
+        if (values != null)
+            Flash($"{Label(item)}: submitted for verification. CRITICAL: {values}. Phone {item.Ward} ({item.RequestingDoctor}) now.", "warn");
+        else
+            Flash($"{Label(item)}: results submitted for verification.", "ok");
+
         return RedirectToAction("MyTests");
+    }
+
+    // ---------------------------------------------------------------- release status (read-only)
+
+    // The doctor releases a request to the patient once every test on it is verified.
+    // This page only shows which requests are ready, which are held back, and which have been released.
+    public IActionResult ReleaseResults()
+    {
+        ViewBag.Email = User?.Identity?.Name;
+        return View(ReleaseViewModel.Build(_db));
     }
 
     // ---------------------------------------------------------------- test details
@@ -355,10 +450,9 @@ public class TechnicianDashboardController : Controller
         return View(item);
     }
 
-    // ---------------------------------------------------------------- technician: select / release
+    // ---------------------------------------------------------------- technician: select / return to pool
 
-    // NOTE: hardcoded data is shared in memory, so everything resets when the app restarts.
-    // With the database, make this one atomic UPDATE ... WHERE Stage = AwaitingAssignment so two technicians can't both win.
+    // One atomic UPDATE in the database (see PickUpTest), so two technicians can't both win.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult SelectTest(string id, string returnUrl)
@@ -368,20 +462,21 @@ public class TechnicianDashboardController : Controller
 
         if (item.Stage != TestStage.AwaitingAssignment)
         {
-            Flash($"{id} has already been taken by another technician.", "warn");
+            Flash($"{Label(item)} has already been taken by another technician.", "warn");
         }
         else
         {
-            item.Stage = TestStage.Assigned;
-            item.AssignedToMe = true;
-            item.Log("Test picked up", CurrentUser.Id);
-            Flash($"{id} is now in your tests.", "ok");
+            var ev = item.Log("Test picked up", CurrentUser.Id);
+            if (_db.PickUpTest(item, CurrentUser.Id, ev))
+                Flash($"{Label(item)} is now in your tests.", "ok");
+            else
+                Flash($"{Label(item)} has already been taken by another technician.", "warn");
         }
         return BackTo(returnUrl);
     }
 
-    // Puts one of your own, not-yet-started tests back in the pool.
-    // Tests already in progress can't be released here; that is a supervisor reassignment.
+    // "Return to pool": puts one of your own, not-yet-started tests back in the pool. (Not the same as releasing results.)
+    // Tests already in progress can't be returned here; that is a supervisor reassignment.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult ReleaseTest(string id, string returnUrl)
@@ -391,14 +486,15 @@ public class TechnicianDashboardController : Controller
 
         if (item.AssignedToMe && item.Stage == TestStage.Assigned)
         {
-            item.Stage = TestStage.AwaitingAssignment;
-            item.AssignedToMe = false;
-            item.Log("Returned to the pool", CurrentUser.Id);
-            Flash($"{id} was returned to the pool.", "ok");
+            var ev = item.Log("Returned to the pool", CurrentUser.Id);
+            if (_db.ReturnToPool(item, CurrentUser.Id, ev))
+                Flash($"{Label(item)} was returned to the pool.", "ok");
+            else
+                Flash($"{Label(item)} can't be returned to the pool. Ask a supervisor to reassign it.", "warn");
         }
         else
         {
-            Flash($"{id} can't be released. Ask a supervisor to reassign it.", "warn");
+            Flash($"{Label(item)} can't be returned to the pool. Ask a supervisor to reassign it.", "warn");
         }
         return BackTo(returnUrl);
     }
@@ -409,7 +505,11 @@ public class TechnicianDashboardController : Controller
     private static bool CanCapture(TestItem t)
         => t.AssignedToMe && (t.Stage is TestStage.Assigned or TestStage.InProgress or TestStage.ToBeReviewed);
 
-    private static TestItem Find(string id) => TestData.All.FirstOrDefault(t => t.ReqNum == id);
+    // Looks a test up by its unique TestId (the RequestItemID). A request number also works when the request has only one test.
+    private TestItem Find(string id) => _db.GetTest(id);
+
+    // "Haemoglobin on REQ-20261015-801": easier to read in a message than the test's number.
+    private static string Label(TestItem t) => $"{t.Test} on {t.ReqNum}";
 
     private void Flash(string message, string type)
     {
@@ -438,7 +538,8 @@ public class TechnicianDashboardController : Controller
             Subtitle = subtitle,
             InitialFilter = (filter ?? "all").ToLowerInvariant(),
             Items = items.ToList(),
-            Counts = DashboardViewModel.Build()
+            Counts = DashboardViewModel.Build(_db)
         });
     }
+}
 }

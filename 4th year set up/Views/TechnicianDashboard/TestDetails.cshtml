@@ -100,6 +100,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
                 Result Verification
             </a>
+            <a asp-controller="TechnicianDashboard" asp-action="ReleaseResults" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></svg>
+                Release Results
+            </a>
 
             <div class="nav-label">Reports</div>
             <a asp-controller="TechnicianDashboard" asp-action="Reports" class="nav-item">
@@ -145,6 +149,42 @@
                     <partial name="_TestActions" model="Model" />
                 </div>
             </div>
+
+            @if (Model.InMultiTestRequest || Model.Request.IsReleased)
+            {
+                <div class="card sibling-strip">
+                    <div class="sibling-title">@(Model.InMultiTestRequest ? "Also on " + Model.ReqNum : Model.ReqNum)</div>
+                    @foreach (var sib in Model.Request.Tests)
+                    {
+                        if (sib == Model)
+                        {
+                            <span class="sibling-chip sibling-current">@sib.Test · @sib.StageLabel <em>(this test)</em></span>
+                        }
+                        else
+                        {
+                            <a class="sibling-chip" asp-controller="TechnicianDashboard" asp-action="TestDetails" asp-route-id="@sib.TestId">@sib.Test · @sib.StageLabel</a>
+                        }
+                    }
+                    <div class="sibling-note @(Model.Request.IsReadyToRelease ? "sibling-ok" : Model.Request.IsHeld ? "sibling-held" : "")">
+                        @if (Model.Request.IsReleased)
+                        {
+                            <text>Released on @Model.Request.ReleasedAt?.ToString("dd MMM yyyy, HH:mm")</text>
+                        }
+                        else if (Model.Request.IsReadyToRelease)
+                        {
+                            <text>Every test is verified. Ready to release.</text>
+                        }
+                        else if (Model.Request.IsHeld)
+                        {
+                            <text>Release held: @Model.Request.HoldReason. Results go out together.</text>
+                        }
+                        else
+                        {
+                            <text>Results are released together once every test is verified.</text>
+                        }
+                    </div>
+                </div>
+            }
 
             <div class="confidential">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
@@ -242,26 +282,26 @@
                             }
                             else if (Model.Stage == TestStage.SampleRejected)
                             {
-                                <text>Rejected by @Model.SampleVerifiedBy on @Model.SampleVerifiedAt?.ToString("dd MMM yyyy, HH:mm")</text>
+                                <text>Rejected by @TechnicianNames.Of(Model.SampleVerifiedBy) on @Model.SampleVerifiedAt?.ToString("dd MMM yyyy, HH:mm")</text>
                             }
                             else
                             {
-                                <text>Verified by @Model.SampleVerifiedBy on @Model.SampleVerifiedAt?.ToString("dd MMM yyyy, HH:mm")</text>
+                                <text>Verified by @TechnicianNames.Of(Model.SampleVerifiedBy) on @Model.SampleVerifiedAt?.ToString("dd MMM yyyy, HH:mm")</text>
                             }
                         </dd>
                         <dt>Result</dt>
                         <dd>
                             @if (Model.Stage == TestStage.Verified)
                             {
-                                <text>Verified by technician @Model.VerifiedBy on @Model.VerifiedAt?.ToString("dd MMM yyyy, HH:mm")</text>
+                                <text>Verified by @TechnicianNames.Of(Model.VerifiedBy) on @Model.VerifiedAt?.ToString("dd MMM yyyy, HH:mm")</text>
                             }
                             else if (Model.Stage == TestStage.Complete)
                             {
-                                <text>Captured by technician @Model.CapturedBy. Awaiting verification.</text>
+                                <text>Captured by @TechnicianNames.Of(Model.CapturedBy). Awaiting verification.</text>
                             }
                             else if (Model.Stage == TestStage.ToBeReviewed)
                             {
-                                <text>Returned to technician @Model.CapturedBy for review.</text>
+                                <text>Returned to @TechnicianNames.Of(Model.CapturedBy) for review.</text>
                             }
                             else
                             {
@@ -304,7 +344,7 @@
                             <span class="detail-card-title">History</span>
                             @if (lastEvent != null)
                             {
-                                <span class="history-last">@lastEvent.Action · @lastEvent.By · @lastEvent.At.ToString("dd MMM HH:mm")</span>
+                                <span class="history-last">@lastEvent.Action · @TechnicianNames.Of(lastEvent.By) · @lastEvent.At.ToString("dd MMM HH:mm")</span>
                             }
                             else
                             {
@@ -334,7 +374,7 @@
                                             {
                                                 <span class="tl-tag">@(e.Scope == EventScope.Sample ? "Sample" : "Request")</span>
                                             }
-                                            <span class="tl-by">@(e.By + (e.By == CurrentUser.Id ? " (you)" : ""))</span>
+                                            <span class="tl-by">@(TechnicianNames.Of(e.By) + (e.By == CurrentUser.Id ? " (you)" : ""))</span>
                                         </div>
                                         @if (!string.IsNullOrWhiteSpace(e.Detail))
                                         {

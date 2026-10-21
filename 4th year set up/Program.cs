@@ -1,4 +1,5 @@
 ﻿using Doctor.Repository;
+using _4th_year_set_up.DataAccess;
 using _4th_year_set_up.Services;
 using admin.Repository;
 using LabManager.DataAccess;
@@ -43,6 +44,10 @@ builder.Services.AddScoped<AdminRepository>(provider =>
 builder.Services.AddScoped<DoctorRepository>(provider =>
     new DoctorRepository(
         builder.Configuration.GetConnectionString("conn")!));
+
+
+builder.Services.AddScoped<TechnicianDataAccess>(provider =>
+    new TechnicianDataAccess(builder.Configuration.GetConnectionString("conn")!));
 
 
 //Lab Manager
