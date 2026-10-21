@@ -1,8 +1,9 @@
-﻿using LabManager.DataAccess;
+﻿
+using LabManager.DataAccess;
 using LabManager.Models;
 using LabManager.Repository;
 
-namespace LabManager.Repositories
+namespace LabManager.Repository
 {
     public class StaffRepository : IStaffRepository
     {
@@ -13,188 +14,168 @@ namespace LabManager.Repositories
             _db = db;
         }
 
-
-        // ============================================================
-        // ADD DOCTOR
-        // ============================================================
-
-        public async Task<bool> AddDoctor(Doctor doctor)
+        public async Task<int> CreateDoctorAccount(
+            Doctor doctor,
+            string passwordHash,
+            DateTime expiryUtc)
         {
-            try
-            {
-                await _db.SaveData(
-                    "sp_AddDoctor",
-                    new
-                    {
-                        doctor.FirstName,
-                        doctor.LastName,
-                        doctor.HCPSANumber,
-                        doctor.EmailAddress,
-                        doctor.ContactNumber
-                    });
+            var result = await _db.GetData<int, dynamic>(
+                "sp_CreateStaffUser",
+                new
+                {
+                    doctor.FirstName,
+                    doctor.LastName,
+                    doctor.EmailAddress,
+                    Role = "Doctor",
+                    PasswordHash = passwordHash,
+                    TemporaryPasswordExpiry = expiryUtc,
+                    doctor.HCPSANumber,
+                    doctor.ContactNumber,
+                    EmployeeNumber = (string?)null,
+                    TestTypeID = (int?)null
+                });
 
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return result.FirstOrDefault();
         }
 
+        public async Task<int> CreateTechnicianAccount(
+            Technician technician,
+            string passwordHash,
+            DateTime expiryUtc)
+        {
+            var result = await _db.GetData<int, dynamic>(
+                "sp_CreateStaffUser",
+                new
+                {
+                    technician.FirstName,
+                    technician.LastName,
+                    technician.EmailAddress,
+                    Role = "Technician",
+                    PasswordHash = passwordHash,
+                    TemporaryPasswordExpiry = expiryUtc,
+                    HCPSANumber = (string?)null,
+                    ContactNumber = (string?)null,
+                    technician.EmployeeNumber,
+                    technician.TestTypeID
+                });
 
-        // ============================================================
-        // UPDATE DOCTOR
-        // ============================================================
+            return result.FirstOrDefault();
+        }
 
         public async Task<bool> UpdateDoctor(Doctor doctor)
         {
-            try
+            await _db.SaveData("sp_UpdateDoctor", new
             {
-                await _db.SaveData(
-                    "sp_UpdateDoctor",
-                    new
-                    {
-                        doctor.Id,
-                        doctor.FirstName,
-                        doctor.LastName,
-                        doctor.HCPSANumber,
-                        doctor.EmailAddress,
-                        doctor.ContactNumber
-                    });
+                Id = doctor.Id,
+                doctor.FirstName,
+                doctor.LastName,
+                doctor.HCPSANumber,
+                doctor.EmailAddress,
+                doctor.ContactNumber
+            });
 
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return true;
         }
-
-
-        // ============================================================
-        // GET ALL DOCTORS
-        // ============================================================
 
         public async Task<IEnumerable<Doctor>> GetAllDoctor()
         {
-            return await _db.GetData<Doctor, object>(
-                "sp_GetDoctors",
-                new { });
+            return await _db.GetData<Doctor, dynamic>(
+                "sp_GetAllDoctors", new { });
         }
 
-
-        // ============================================================
-        // GET DOCTOR BY ID
-        // ============================================================
-
-        public async Task<Doctor> GetDoctorById(int id)
+        public async Task<Doctor?> GetDoctorById(int id)
         {
-            var result = await _db.GetData<Doctor, object>(
-                "sp_GetDoctorById",
-                new
-                {
-                    Id = id
-                });
+            var result = await _db.GetData<Doctor, dynamic>(
+                "sp_GetDoctorById", new { Id = id });
 
             return result.FirstOrDefault();
         }
 
-
-        // ============================================================
-        // ADD TECHNICIAN
-        // ============================================================
-
-        public async Task<bool> AddTechnician(Technician tech)
+        public async Task<IEnumerable<TestType>> GetTestType()
         {
-            try
-            {
-                await _db.SaveData(
-                    "sp_AddTechnician",
-                    new
-                    {
-                        tech.FirstName,
-                        tech.LastName,
-                        tech.EmployeeNumber,
-                        tech.EmailAddress,
-                        tech.TestTypeID
-                    });
-
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return await _db.GetData<TestType, dynamic>(
+                "sp_GetTestTypes", new { });
         }
 
-
-        // ============================================================
-        // UPDATE TECHNICIAN
-        // ============================================================
-
-        public async Task<bool> UpdateTechnician(Technician tech)
+        public async Task<bool> UpdateTechnician(Technician technician)
         {
-            try
+            await _db.SaveData("sp_UpdateTechnician", new
             {
-                await _db.SaveData(
-                    "sp_UpdateTechnician",
-                    new
-                    {
-                        tech.Id,
-                        tech.FirstName,
-                        tech.LastName,
-                        tech.EmployeeNumber,
-                        tech.EmailAddress,
-                        tech.TestTypeID
-                    });
+                Id = technician.Id,
+                technician.FirstName,
+                technician.LastName,
+                technician.EmployeeNumber,
+                technician.EmailAddress,
+                technician.TestTypeID
+            });
 
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return true;
         }
-
-
-        // ============================================================
-        // GET ALL TECHNICIANS
-        // ============================================================
 
         public async Task<IEnumerable<Technician>> GetTechnician()
         {
-            return await _db.GetData<Technician, object>(
-                "sp_GetTechnicians",
-                new { });
+            return await _db.GetData<Technician, dynamic>(
+                "sp_GetAllTechnicians", new { }); 
         }
 
-
-        // ============================================================
-        // GET TECHNICIAN BY ID
-        // ============================================================
-
-        public async Task<Technician> GetTechnicianById(int id)
+        public async Task<Technician?> GetTechnicianById(int id)
         {
             var result = await _db.GetData<Technician, object>(
-                "sp_GetTechnicianById",
-                new
-                {
-                    Id = id
-                });
+                "sp_GetTechnicianById", new { Id = id });
 
             return result.FirstOrDefault();
         }
 
-
-        // ============================================================
-        // GET TEST TYPES
-        // ============================================================
-
         public async Task<IEnumerable<TestType>> GetAllTestTypes()
         {
-            return await _db.GetData<TestType, object>(
-                "sp_GetTestTypes",
-                new { });
+            return await _db.GetData<TestType, dynamic>(
+                "sp_GetTestTypes", new { });
         }
+
+        // Returns a mapping of TechnicianId -> List of TestTypeIds. The stored procedure
+        // should return rows with columns TechnicianId and TestTypeId.
+        public async Task<Dictionary<int, List<int>>> GetTechnicianTestTypeMap()
+        {
+            // Local DTO to match expected columns from the query
+            var rows = await _db.GetData<TechnicianTestTypeRow, dynamic>(
+                "sp_GetTechnicianTestTypeMap", new { });
+
+            var map = new Dictionary<int, List<int>>();
+
+            foreach (var r in rows)
+            {
+                if (!map.TryGetValue(r.TechnicianId, out var list))
+                {
+                    list = new List<int>();
+                    map[r.TechnicianId] = list;
+                }
+
+                if (r.TestTypeId > 0 && !list.Contains(r.TestTypeId)) list.Add(r.TestTypeId);
+            }
+
+            return map;
+        }
+
+        // Replaces the technician's assigned test types. Deletes existing mappings then inserts each provided id.
+        public async Task SetTechnicianTestTypes(int technicianId, IEnumerable<int> testTypeIds)
+        {
+            // Remove existing mappings first. Stored procedure name assumed; adjust to match DB.
+            await _db.SaveData("sp_DeleteTechnicianTestTypes", new { TechnicianId = technicianId });
+
+            if (testTypeIds == null) return;
+
+            foreach (var tid in testTypeIds.Distinct())
+            {
+                if (tid <= 0) continue;
+                await _db.SaveData("sp_AddTechnicianTestType", new { TechnicianId = technicianId, TestTypeId = tid });
+            }
+        }
+    }
+
+    // Private DTO used to read rows from sp_GetTechnicianTestTypeMap
+    internal class TechnicianTestTypeRow
+    {
+        public int TechnicianId { get; set; }
+        public int TestTypeId { get; set; }
     }
 }

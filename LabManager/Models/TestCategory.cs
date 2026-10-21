@@ -9,11 +9,11 @@ namespace LabManager.Models
     public class TestCategory
     {
        
-            public int Id { get; set; }
+            public int CategoryID { get; set; }
 
-            public string CategoryName { get; set; }
+            public string? CategoryName { get; set; }
 
-            public string Description { get; set; }
+            public string?   Description { get; set; }
        
 
     }

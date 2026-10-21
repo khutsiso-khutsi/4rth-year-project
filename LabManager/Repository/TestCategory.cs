@@ -1,223 +1,170 @@
-﻿using LabManager.DataAccess;
+﻿using _4th_year_set_up.Models;
+using LabManager.DataAccess;
 using LabManager.Models;
 using LabManager.Repository;
 
 namespace LabManager.Repositories
 {
-    public class TestCategoryRepository : ITestCategoryrepository
+    public class TestCatalogueRepository : ITestCatalogueRepository
     {
-        private readonly ISqlDataAcess _dataAcess;
+        private readonly ISqlDataAcess _dataAccess;
 
-        public TestCategoryRepository(ISqlDataAcess dataAcess)
+        public TestCatalogueRepository(ISqlDataAcess dataAccess)
         {
-            _dataAcess = dataAcess;
+            _dataAccess = dataAccess;
         }
 
-        // =========================================================
-        // ADD CATEGORY
-        // =========================================================
-
-        public async Task<bool> AddTestCategory(TestCategory category)
+        // ---------------------------------------------------------
+        // GET ALL TEST TYPES
+        // ---------------------------------------------------------
+        public async Task<IEnumerable<TestType>> GetAllTestTypes()
         {
-            try
-            {
-                await _dataAcess.SaveData(
-                    "sp_AddCategory",
-                    new
-                    {
-                        category.CategoryName,
-                        category.Description
-                    });
-
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
+            return await _dataAccess.GetData<TestType, dynamic>(
+                "sp_GetAllTestTypes",
+                new { }
+            );
         }
 
-        // =========================================================
+        // ---------------------------------------------------------
+        // GET ALL CATEGORIES
+        // ---------------------------------------------------------
+        public async Task<IEnumerable<TestCategory>> GetAllCategories()
+        {
+            return await _dataAccess.GetData<TestCategory, object>(
+                "sp_GetAllTestCategories",
+                new { }
+            );
+        }
+
+
+
+        // ---------------------------------------------------------
         // ADD TEST TYPE
-        // =========================================================
-
+        // ---------------------------------------------------------
         public async Task<bool> AddTestType(TestType test)
         {
             try
             {
-                await _dataAcess.SaveData(
+                await _dataAccess.SaveData(
                     "sp_AddTestType",
                     new
                     {
                         test.TestName,
                         test.CategoryId,
                         test.SampleTypeId,
-                        test.TurnaroundTime,
-                        test.ConsumablesUsed,
                         test.UnitMeasurement,
+                        test.TurnaroundTime,
                         test.NormalRangeMax,
-                        test.NormalRangeMin
-                      
-                    });
+                        test.NormalRangeMin,
+                        test.ConsumablesUsed
+                    }
+                 
+                        
+
+                 
+                );
 
                 return true;
             }
-            catch (Exception)
+            catch
             {
                 return false;
             }
         }
 
-        // =========================================================
-        // EDIT TEST TYPE
-        // =========================================================
-
-        public async Task<bool> EditTestType(TestType test)
+        // ---------------------------------------------------------
+        // UPDATE TEST TYPE
+        // ---------------------------------------------------------
+        public async Task<bool> UpdateTestType(TestType test)
         {
             try
             {
-                await _dataAcess.SaveData(
+                await _dataAccess.SaveData(
                     "sp_UpdateTestType",
                     new
                     {
-                        test.TestId,
-                        test.TestName,
-                        test.CategoryId,
-                        test.SampleTypeId,
-                        test.TurnaroundTime,
-                        test.ConsumablesUsed,
-                        test.UnitMeasurement,
-                        test.NormalRangeMax,
-                        test.NormalRangeMin
-                    });
+                        TestId = test.TestId,
+                        TestName = test.TestName,
+                        CategoryId = test.CategoryId,
+                        SampleTypeId = test.SampleTypeId,
+                        UnitMeasurement = test.UnitMeasurement,
+                        NormalRangeMin = test.NormalRangeMin,
+                        NormalRangeMax = test.NormalRangeMax,
+                        TurnaroundTime = test.TurnaroundTime,
+                        ConsumablesUsed = test.ConsumablesUsed
+                    }
+                );
 
                 return true;
             }
-            catch (Exception)
+            catch
             {
                 return false;
             }
         }
 
-        // =========================================================
-        // EDIT CATEGORY
-        // =========================================================
-
-        public async Task<bool> EditCategory(TestCategory category)
-        {
-            try
-            {
-                await _dataAcess.SaveData(
-                    "sp_UpdateTestCategory",
-                    new
-                    {
-                        category.Id,
-                        category.CategoryName,
-                        category.Description
-                    });
-
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        // =========================================================
+        // ---------------------------------------------------------
         // DELETE TEST TYPE
-        // =========================================================
-
-        public async Task<bool> DeleteTestType(int id)
+        // ---------------------------------------------------------
+        public async Task<bool> DeleteTestType(int testId)
         {
             try
             {
-                await _dataAcess.SaveData(
+                await _dataAccess.SaveData(
                     "sp_DeleteTestType",
                     new
                     {
-                        TestId = id
-                    });
+                        TestId = testId
+                    }
+                );
 
                 return true;
             }
-            catch (Exception)
+            catch
             {
                 return false;
             }
         }
 
-        // =========================================================
-        // DELETE CATEGORY
-        // =========================================================
-
-        public async Task<bool> DeleteCategory(int id)
+        // ---------------------------------------------------------
+        // ADD CATEGORY
+        // ---------------------------------------------------------
+        public async Task<bool> AddCategory(TestCategory category)
         {
             try
             {
-                await _dataAcess.SaveData(
-                    "sp_DeleteTestCategory",
+                await _dataAccess.SaveData(
+                    "sp_AddCategory",
                     new
                     {
-                        CategoryId = id
-                    });
+                        CategoryName = category.CategoryName,
+                        Description = category.Description,
+                        
+                    }
+                );
 
                 return true;
             }
-            catch (Exception)
+            catch
             {
                 return false;
             }
         }
 
-        // =========================================================
-        // GET ALL CATEGORIES
-        // =========================================================
 
-        public async Task<IEnumerable<TestCategory>> GetAllCategory()
+        public async Task<TestType> GetTestTypeById(int testId)
         {
-            return await _dataAcess.GetData<TestCategory, dynamic>(
-                "sp_GetAllTestCategories",
-                new { }
+            var result = await _dataAccess.GetData<TestType, dynamic>(
+                "sp_GetTestTypeById",
+                new { TestId = testId }
             );
-        }
-
-        // =========================================================
-        // GET ALL TEST TYPES
-        // Expects sp_GetAllTestTypes to join Category and alias the
-        // category name column as CategoryName so TestType.CategoryName
-        // populates automatically.
-        // =========================================================
-
-        public async Task<IEnumerable<TestType>> GetAllTestTypes()
-        {
-            return await _dataAcess.GetData<TestType, dynamic>(
-                "sp_GetAllTestTypes",
-                new { }
-            );
-        }
-
-        // =========================================================
-        // GET ONE TEST TYPE
-        // =========================================================
-
-        public async Task<TestType?> GetTestType(int id)
-        {
-            IEnumerable<TestType> result =
-                await _dataAcess.GetData<TestType, dynamic>(
-                    "sp_GetTestTypeById",
-                    new
-                    {
-                        TestId = id
-                    });
-
             return result.FirstOrDefault();
         }
 
         //Foreign keys 
         public async Task<IEnumerable<TestCategory>> GetCategory()
         {
-            return await _dataAcess.GetData<TestCategory, dynamic>(
+            return await _dataAccess.GetData<TestCategory, dynamic>(
                 "sp_GetCategory",
                 new { }
             );
@@ -227,10 +174,51 @@ namespace LabManager.Repositories
 
         public async Task<IEnumerable<TestType>> GetSampleType()
         {
-            return await _dataAcess.GetData<TestType, dynamic>(
+            return await _dataAccess.GetData<TestType, dynamic>(
                 "sp_GetSampleType",
                 new { }
             );
         }
+
+        public async Task AddSampleTypeAsync(SampleType sampleType)
+        {
+            await _dataAccess.SaveData(
+                "dbo.sp_AddSampleType",
+                new { sampleType.SampleName }
+            );
+        }
+
+        public async Task<IEnumerable<TestType>>
+            GetDeletedTestTypesAsync()
+        {
+            return await _dataAccess.GetData<TestType, dynamic>(
+                "dbo.sp_GetDeletedTestTypes",
+                new { });
+        }
+
+        public async Task DeleteTestTypeAsync(int testId)
+        {
+            await _dataAccess.SaveData(
+                "dbo.sp_SoftDeleteTestType",
+                new { TestId = testId });
+        }
+
+        public async Task RestoreTestTypeAsync(int testId)
+        {
+            await _dataAccess.SaveData(
+                "dbo.sp_RestoreTestType",
+                new { TestId = testId });
+        }
+
+     
+
+
+        public async Task<IEnumerable<Consumable>> GetConsumables()
+        {
+            return await _dataAccess.GetData<Consumable, dynamic>(
+                "sp_GetorderConsumables",
+                new { });
+        }
+
     }
 }

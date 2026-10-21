@@ -1,10 +1,11 @@
-﻿using LabManager.DataAccess;
+﻿using _4th_year_set_up.Models;
+using LabManager.DataAccess;
 using LabManager.Models;
 using LabManager.Repository;
 
 namespace LabManager.Repositories
 {
-    public class ConsumableOrderRepository: IOrderRepository
+    public class ConsumableOrderRepository : IOrderRepository
     {
         private readonly ISqlDataAcess _db;
 
@@ -36,11 +37,11 @@ namespace LabManager.Repositories
         public async Task<IEnumerable<ConsumableOrder>> GetOrderById(
             int id)
         {
-            return await _db.GetData<ConsumableOrder, object>(
+            return await _db.GetData<ConsumableOrder, dynamic>(
                 "sp_GetConsumableOrderById",
                 new
                 {
-                    Id = id
+                    OrderId = id
                 });
         }
 
@@ -49,16 +50,19 @@ namespace LabManager.Repositories
         // CREATE ORDER
         // =========================================================
 
+
         public async Task CreateOrder(
-            ConsumableOrder order)
+            ConsumableOrder order,
+            string orderItemsJson)
         {
             await _db.SaveData(
                 "sp_CreateConsumableOrder",
                 new
                 {
                     OrderNumber = order.OrderNumber,
-                    Supplier = order.Supplier,
-                    Items = order.Items
+                    SupplierID = order.SupplierID,
+                    OrderDate = order.OrderDate,
+                    OrderItemsJson = orderItemsJson
                 });
         }
 
@@ -106,9 +110,45 @@ namespace LabManager.Repositories
 
         public async Task<IEnumerable<Supplier>> GetSuppliers()
         {
-            return await _db.GetData<Supplier, object>(
+            return await _db.GetData<Supplier, dynamic>(
                 "sp_GetSuppliers",
                 new { });
         }
+
+      
+
+
+        public async Task<IEnumerable<Consumable>> GetConsumables()
+        {
+            return await _db.GetData<Consumable, dynamic>(
+                "sp_GetorderConsumables",
+                new { });
+        }
+
+
+
+
+
+        public async Task<IEnumerable<Consumable>> GetConsumablesBySupplier(int supplierId)
+        {
+            if (supplierId <= 0)
+                return Enumerable.Empty<Consumable>();
+
+            return await _db.GetData<Consumable, dynamic>(
+                "dbo.sp_GetConsumablesBySupplier",
+                new { SupplierID = supplierId });
+        }
+
+
+        public async Task<IEnumerable<OrderItemRow>> GetOrderItems(int orderId)
+        {
+            return await _db.GetData<OrderItemRow, dynamic>(
+                "dbo.sp_GetConsumableOrderItems",
+                new { OrderID = orderId });
+        }
+
+
+
+
     }
 }

@@ -1,7 +1,16 @@
-﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+﻿@using LabManager.Models
 @model LabManager.Models.TestsByCategoryReportViewModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
 @{
     Layout = null;
+
+    var username = ViewBag.Email?.ToString() ?? "Laboratory Manager";
+
+    var reportDate = DateTime.Now.ToString("dd MMMM yyyy");
+
+    var fromDate = Model.FromDate.ToString("dd MMMM yyyy");
+    var toDate = Model.EndDate.ToString("dd MMMM yyyy");
 }
 
 <!DOCTYPE html>
@@ -29,8 +38,10 @@
                 box-sizing: border-box;
             }
 
-            html, body {
-                height: 100%;
+            html,
+            body {
+                width: 100%;
+                min-height: 100%;
             }
 
             body {
@@ -160,10 +171,6 @@
                 }
 
             /* ================= PAGE LAYOUT ================= */
-
-            html, body, .page {
-                width: 100%;
-            }
 
             .page {
                 display: flex;
@@ -312,6 +319,47 @@
                     background: #0b7d73;
                 }
 
+            /* ================= REPORT HEADER ================= */
+
+            .report-header {
+                padding: 30px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .report-title {
+                font-family: Georgia, 'Times New Roman', serif;
+                font-size: 1.45rem;
+                font-weight: bold;
+                color: var(--navy);
+                margin-bottom: 20px;
+            }
+
+            .report-information {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(220px, 1fr));
+                gap: 14px 30px;
+            }
+
+            .report-field {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .report-field-label {
+                font-size: 0.66rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+
+            .report-field-value {
+                font-size: 0.9rem;
+                color: var(--navy);
+                font-weight: 600;
+            }
+
             /* ================= TABLE ================= */
 
             table {
@@ -359,6 +407,8 @@
                 background: var(--teal-light);
                 color: var(--teal);
             }
+
+            /* ================= TOTAL ================= */
 
             tfoot td {
                 background: var(--teal);
@@ -425,6 +475,10 @@
                     align-items: flex-start;
                     gap: 8px;
                 }
+
+                .report-information {
+                    grid-template-columns: 1fr;
+                }
             }
 
             /* ================= PRINT ================= */
@@ -453,11 +507,31 @@
                 .report-container {
                     border: none;
                     box-shadow: none;
+                    border-radius: 0;
+                }
+
+                .report-header {
+                    padding: 20px 0;
+                }
+
+                .report-information {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+
+                th {
+                    padding: 12px 10px;
+                }
+
+                td {
+                    padding: 12px 10px;
+                }
+
+                .footer {
+                    padding: 15px 0;
                 }
             }
 
     </style>
-
 </head>
 
 <body>
@@ -503,12 +577,12 @@
 
                 <div class="user-avatar">
 
-                    @(ViewBag.Email?.ToString()?.Substring(0, 1).ToUpper() ?? "M")
+                    @(username.Substring(0, 1).ToUpper())
 
                 </div>
 
                 <span class="user-email">
-                    @ViewBag.Email
+                    @username
                 </span>
 
             </div>
@@ -525,7 +599,9 @@
                      stroke-linejoin="round">
 
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+
                     <polyline points="16 17 21 12 16 7" />
+
                     <line x1="21" y1="12" x2="9" y2="12" />
 
                 </svg>
@@ -537,6 +613,7 @@
         </div>
 
     </div>
+
 
     <!-- ================= PAGE ================= -->
 
@@ -556,11 +633,18 @@
                    asp-action="Index"
                    class="nav-item">
 
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round">
+
                         <rect x="3" y="3" width="7" height="7" />
                         <rect x="14" y="3" width="7" height="7" />
                         <rect x="14" y="14" width="7" height="7" />
                         <rect x="3" y="14" width="7" height="7" />
+
                     </svg>
 
                     Dashboard
@@ -568,13 +652,20 @@
                 </a>
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="TestCatalogue"
+                   asp-controller="TestCatalogue" asp-action="Index"
                    class="nav-item">
 
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round">
+
                         <polyline points="4 7 4 4 20 4 20 7" />
                         <line x1="9" y1="20" x2="15" y2="20" />
                         <line x1="12" y1="4" x2="12" y2="20" />
+
                     </svg>
 
                     Test Catalogue
@@ -582,12 +673,19 @@
                 </a>
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="Consumables"
+                   asp-controller="Consumables" asp-action="Index"
                    class="nav-item">
 
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round">
+
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                         <polyline points="14 2 14 8 20 8" />
+
                     </svg>
 
                     Consumables
@@ -595,12 +693,19 @@
                 </a>
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="Staff"
+                   asp-controller="Staff" asp-action="Index"
                    class="nav-item">
 
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round">
+
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
+
                     </svg>
 
                     Staff
@@ -608,11 +713,18 @@
                 </a>
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="Orders"
+                   asp-controller="ConsumableOrder" asp-action="Index"
                    class="nav-item">
 
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round">
+
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+
                     </svg>
 
                     Orders
@@ -620,15 +732,22 @@
                 </a>
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="TestsByCategory"
+                   asp-controller="TestsByCategory" asp-action="Index"
                    class="nav-item active">
 
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round">
+
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                         <polyline points="14 2 14 8 20 8" />
                         <line x1="16" y1="13" x2="8" y2="13" />
                         <line x1="16" y1="17" x2="8" y2="17" />
                         <polyline points="10 9 9 9 8 9" />
+
                     </svg>
 
                     Reports
@@ -637,6 +756,7 @@
 
             </div>
 
+
             <div class="nav-section">
 
                 <div class="nav-label">
@@ -644,12 +764,19 @@
                 </div>
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="Profile"
+                   asp-controller="User" asp-action="Profile"
                    class="nav-item">
 
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round">
+
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
+
                     </svg>
 
                     Profile
@@ -660,8 +787,15 @@
                    asp-action="AuditLog"
                    class="nav-item">
 
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round">
+
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+
                     </svg>
 
                     Audit Log
@@ -672,32 +806,145 @@
 
         </aside>
 
+
         <!-- ================= REPORT ================= -->
 
         <main class="main">
 
             <h1>Laboratory Test Report</h1>
-            <div class="subtitle">Breakdown of tests performed by category for the selected period.</div>
+
+            <div class="subtitle">
+                Detailed laboratory tests performed for the selected period.
+            </div>
+
 
             <div class="report-container">
 
-                <!-- ================= FILTER FORM ================= -->
+                <!-- ================= FILTER ================= -->
 
-                <form method="get" asp-controller="ManagerDashboard" asp-action="TestsByCategory" class="filter-bar">
-
-                    <div class="field">
-                        <label for="from">From</label>
-                        <input type="date" id="from" name="from" value="@Model.FromDate.ToString("yyyy-MM-dd")" />
-                    </div>
+                <form method="get"
+                      asp-controller="ManagerDashboard"
+                      asp-controller="TestsByCategory" asp-action="Index"
+                      class="filter-bar">
 
                     <div class="field">
-                        <label for="to">To</label>
-                        <input type="date" id="to" name="to" value="@Model.ToDate.ToString("yyyy-MM-dd")" />
+
+                        <label for="from">
+                            From
+                        </label>
+
+                        <input type="date"
+                               id="from"
+                               name="from"
+                               value="@Model.FromDate.ToString("yyyy-MM-dd")" />
+
                     </div>
 
-                    <button type="submit" class="filter-btn">Filter</button>
+
+                    <div class="field">
+
+                        <label for="to">
+                            To
+                        </label>
+
+                        <input type="date"
+                               id="to"
+                               name="to"
+                               value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+
+                    </div>
+
+
+                    <button type="submit"
+                            class="filter-btn">
+
+                        Filter
+
+                    </button>
 
                 </form>
+
+
+                <!-- ================= REPORT INFORMATION ================= -->
+
+                <div class="report-header">
+
+                    <div class="report-title">
+                        Laboratory Test Report
+                    </div>
+
+                    <div class="report-information">
+
+                        <div class="report-field">
+
+                            <span class="report-field-label">
+                                Date
+                            </span>
+
+                            <span class="report-field-value">
+                                @reportDate
+                            </span>
+
+                        </div>
+
+
+                        <div class="report-field">
+
+                            <span class="report-field-label">
+                                Username
+                            </span>
+
+                            <span class="report-field-value">
+                                @username
+                            </span>
+
+                        </div>
+
+
+                        <div class="report-field">
+
+                            <span class="report-field-label">
+                                Test Type
+                            </span>
+
+                            <span class="report-field-value">
+                                Laboratory Test
+                            </span>
+
+                        </div>
+
+
+                        <div class="report-field">
+
+                            <span class="report-field-label">
+                                Test Performed
+                            </span>
+
+                            <span class="report-field-value">
+                                @Model.TotalTests
+                            </span>
+
+                        </div>
+
+
+                        <div class="report-field">
+
+                            <span class="report-field-label">
+                                Reporting Period
+                            </span>
+
+                            <span class="report-field-value">
+                                @fromDate - @toDate
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================= TEST TABLE ================= -->
 
                 <table>
 
@@ -706,39 +953,51 @@
                         <tr>
 
                             <th>
-                                Category
+                                Date
                             </th>
 
                             <th>
-                                Total Tests
+                                Username
                             </th>
 
                             <th>
-                                Percentage
+                                Test Type
+                            </th>
+
+                            <th>
+                                Test Performed
                             </th>
 
                         </tr>
 
                     </thead>
 
+
                     <tbody>
 
-                        @if (Model.Categories != null && Model.Categories.Any())
+                        @if (Model.Categories != null &&
+                             Model.Categories.Any())
                         {
                             foreach (var item in Model.Categories)
                             {
                                 <tr>
+
+                                    <td>
+                                        @reportDate
+                                    </td>
+
+                                    <td>
+                                        @username
+                                    </td>
 
                                     <td class="category-name">
                                         @item.CategoryName
                                     </td>
 
                                     <td>
-                                        <span class="pill">@item.TestCount</span>
-                                    </td>
-
-                                    <td>
-                                        @item.Percentage.ToString("0.00")%
+                                        <span class="pill">
+                                            @item.TestCount
+                                        </span>
                                     </td>
 
                                 </tr>
@@ -748,8 +1007,12 @@
                         {
                             <tr>
 
-                                <td colspan="3">
-                                    No test category data available.
+                                <td colspan="4"
+                                    style="text-align:center;">
+
+                                    No test records available
+                                    for the selected period.
+
                                 </td>
 
                             </tr>
@@ -757,20 +1020,17 @@
 
                     </tbody>
 
+
                     <tfoot>
 
                         <tr>
 
-                            <td>
-                                Total
+                            <td colspan="3">
+                                Total Tests Performed
                             </td>
 
                             <td>
                                 @Model.TotalTests
-                            </td>
-
-                            <td>
-                                100.00%
                             </td>
 
                         </tr>
@@ -778,6 +1038,9 @@
                     </tfoot>
 
                 </table>
+
+
+                <!-- ================= PRINT ================= -->
 
                 <button class="print-btn"
                         onclick="window.print()">
@@ -792,7 +1055,7 @@
 
                         <polyline points="6 9 6 2 18 2 18 9" />
 
-                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5h-2" />
 
                         <rect x="6"
                               y="14"
@@ -805,16 +1068,18 @@
 
                 </button>
 
+
                 <!-- ================= FOOTER ================= -->
 
                 <div class="footer">
 
                     <span>
-                        NMB-HLabSys · Haematology Laboratory System
+                        NMB-HLabSys � Haematology Laboratory System
                     </span>
 
                     <span>
-                        Internal management report · @DateTime.Now.ToString("yyyy")
+                        Internal management report �
+                        @DateTime.Now.ToString("yyyy")
                     </span>
 
                 </div>
@@ -826,5 +1091,4 @@
     </div>
 
 </body>
-
 </html>

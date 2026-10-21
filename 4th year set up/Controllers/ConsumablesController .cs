@@ -1,15 +1,20 @@
 ﻿using _4th_year_set_up.Models;
 using LabManager.Models;
 using LabManager.Repository;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace LabManager.Controllers
 {
-    public class ManagerDashboardController : Controller
+    public class ConsumablesController : Controller
     {
         private readonly IConsumablesRepository _consumablesRepository;
 
-        public ManagerDashboardController(
+        public ConsumablesController(
             IConsumablesRepository consumablesRepository)
         {
             _consumablesRepository = consumablesRepository;
@@ -19,15 +24,14 @@ namespace LabManager.Controllers
         // CONSUMABLES PAGE
         // =====================================================
         [HttpGet]
-        public async Task<IActionResult> Consumables()
+        public async Task<IActionResult> Index()
         {
             var consumables =
                 await _consumablesRepository.GetAllConsumables();
 
-            var suppliers =
-                await _consumablesRepository.GetAllSuppliers();
-
-            ViewBag.Suppliers = suppliers;
+            // Full supplier records for the dropdowns and the Manage Suppliers modal
+            IEnumerable<Supplier> suppliers = await _consumablesRepository.GetAllSuppliers();
+            ViewBag.SupplierList = suppliers.OrderBy(s => s.SupplierName).ToList();
 
             ViewBag.Email =
                 HttpContext.Session.GetString("Email");
@@ -51,7 +55,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Consumable name is required.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (QuantityOnHand < 0)
@@ -59,7 +63,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Quantity on hand cannot be negative.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (ReorderLevel < 0)
@@ -67,7 +71,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Reorder level cannot be negative.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (SupplierID <= 0)
@@ -75,13 +79,13 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Please select a supplier.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             var consumable = new Consumable
             {
                 ConsumableName = ConsumableName,
-                OnHand = QuantityOnHand,
+                QuantityOnHand = QuantityOnHand,
                 ReorderLevel = ReorderLevel,
                 SupplierID = SupplierID
             };
@@ -101,58 +105,7 @@ namespace LabManager.Controllers
                     "Unable to add consumable.";
             }
 
-            return RedirectToAction(nameof(Consumables));
-        }
-
-        // =====================================================
-        // ADD SUPPLIER
-        // =====================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddSupplier(
-            string SupplierName,
-            string ContactPerson,
-            string Email)
-        {
-            if (string.IsNullOrWhiteSpace(SupplierName))
-            {
-                TempData["Error"] =
-                    "Supplier name is required.";
-
-                return RedirectToAction(nameof(Consumables));
-            }
-
-            if (string.IsNullOrWhiteSpace(Email))
-            {
-                TempData["Error"] =
-                    "Supplier email is required.";
-
-                return RedirectToAction(nameof(Consumables));
-            }
-
-            var supplier = new Supplier
-            {
-                SupplierName = SupplierName,
-                ContactPerson = ContactPerson,
-                EmailAddress = Email
-            };
-
-            bool result =
-                await _consumablesRepository
-                    .AddSupplier(supplier);
-
-            if (result)
-            {
-                TempData["Success"] =
-                    "Supplier added successfully.";
-            }
-            else
-            {
-                TempData["Error"] =
-                    "Unable to add supplier.";
-            }
-
-            return RedirectToAction(nameof(Consumables));
+            return RedirectToAction(nameof(Index));
         }
 
         // =====================================================
@@ -170,7 +123,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Invalid consumable.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (Quantity < 0)
@@ -178,7 +131,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Quantity cannot be negative.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (string.IsNullOrWhiteSpace(AdjustmentType))
@@ -186,17 +139,17 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Please select an adjustment type.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
-            if (AdjustmentType != "increase" &&
-                AdjustmentType != "decrease" &&
-                AdjustmentType != "set")
+            if (AdjustmentType != "Increase" &&
+                AdjustmentType != "Decrease" &&
+                AdjustmentType != "Set")
             {
                 TempData["Error"] =
                     "Invalid adjustment type.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             bool result =
@@ -218,7 +171,7 @@ namespace LabManager.Controllers
                     "Check that the quantity is valid.";
             }
 
-            return RedirectToAction(nameof(Consumables));
+            return RedirectToAction(nameof(Index));
         }
 
         // =====================================================
@@ -237,7 +190,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Invalid consumable.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (string.IsNullOrWhiteSpace(ConsumableName))
@@ -245,7 +198,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Consumable name is required.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (SupplierID <= 0)
@@ -253,7 +206,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Please select a supplier.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             if (ReorderLevel < 0)
@@ -261,7 +214,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Reorder level cannot be negative.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             var consumable = new Consumable
@@ -287,7 +240,7 @@ namespace LabManager.Controllers
                     "Unable to update consumable.";
             }
 
-            return RedirectToAction(nameof(Consumables));
+            return RedirectToAction(nameof(Index));
         }
 
         // =====================================================
@@ -303,7 +256,7 @@ namespace LabManager.Controllers
                 TempData["Error"] =
                     "Invalid consumable.";
 
-                return RedirectToAction(nameof(Consumables));
+                return RedirectToAction(nameof(Index));
             }
 
             bool result =
@@ -321,7 +274,7 @@ namespace LabManager.Controllers
                     "Unable to delete consumable.";
             }
 
-            return RedirectToAction(nameof(Consumables));
+            return RedirectToAction(nameof(Index));
         }
 
         // =====================================================
@@ -339,6 +292,109 @@ namespace LabManager.Controllers
             }
 
             return Json(consumable);
+        }
+
+        // =====================================================
+        // ADD SUPPLIER
+        // =====================================================
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddSupplier(
+            [Bind("SupplierName,ContactPerson,EmailAddress")] Supplier model)
+        {
+            if (string.IsNullOrWhiteSpace(model.SupplierName) ||
+                string.IsNullOrWhiteSpace(model.EmailAddress))
+            {
+                TempData["Error"] = "Supplier name and email are required.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (await _consumablesRepository.SupplierNameExists(model.SupplierName))
+            {
+                TempData["Error"] =
+                    $"A supplier named \"{model.SupplierName.Trim()}\" already exists.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            model.SupplierName = model.SupplierName.Trim();
+
+            bool result = await _consumablesRepository.AddSupplier(model);
+
+            if (result)
+                TempData["Success"] = $"{model.SupplierName} added.";
+            else
+                TempData["Error"] = "Unable to add supplier.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // =====================================================
+        // UPDATE SUPPLIER
+        // =====================================================
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateSupplier(
+            [Bind("SupplierID,SupplierName,ContactPerson,EmailAddress")] Supplier model)
+        {
+            var existing = await _consumablesRepository.GetSupplierById(model.SupplierID);
+            if (existing == null)
+            {
+                TempData["Error"] = "Supplier not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (string.IsNullOrWhiteSpace(model.SupplierName) ||
+                string.IsNullOrWhiteSpace(model.EmailAddress))
+            {
+                TempData["Error"] = "Supplier name and email are required.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (await _consumablesRepository.SupplierNameExists(model.SupplierName, model.SupplierID))
+            {
+                TempData["Error"] =
+                    $"A supplier named \"{model.SupplierName.Trim()}\" already exists.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            model.SupplierName = model.SupplierName.Trim();
+
+            bool result = await _consumablesRepository.UpdateSupplier(model);
+
+            if (result)
+                TempData["Success"] = $"{model.SupplierName} updated.";
+            else
+                TempData["Error"] = "Unable to update supplier.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // =====================================================
+        // DELETE SUPPLIER
+        // =====================================================
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteSupplier(int supplierId)
+        {
+            var supplier = await _consumablesRepository.GetSupplierById(supplierId);
+            if (supplier == null)
+            {
+                TempData["Error"] = "Supplier not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (await _consumablesRepository.SupplierHasConsumables(supplierId))
+            {
+                TempData["Error"] =
+                    $"{supplier.SupplierName} still has consumables assigned. Reassign them first.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            bool result = await _consumablesRepository.DeleteSupplier(supplierId);
+
+            if (result)
+                TempData["Success"] = $"{supplier.SupplierName} deleted.";
+            else
+                TempData["Error"] = "Unable to delete supplier.";
+
+            return RedirectToAction(nameof(Index));
         }
     }
 }

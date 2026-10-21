@@ -1,0 +1,1357 @@
+﻿@using LabManager.Models
+@model TestsByCategoryReportViewModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Tests by Category";
+
+    var email = ViewBag.Email?.ToString() ?? "Laboratory Manager";
+    var initial = string.IsNullOrWhiteSpace(email)
+        ? "M"
+        : email.Substring(0, 1).ToUpperInvariant();
+
+    // Dates come from the model (set by the controller), not ViewBag
+    var startDate = Model?.FromDate ?? DateTime.Today.AddDays(-30);
+    var endDate   = Model?.EndDate  ?? DateTime.Today;
+
+    var reportRows = Model?.Categories
+        ?? new List<TestsByCategoryReportItem>();
+
+    var totalTests = Model?.TotalTests
+        ?? reportRows.Sum(x => x.TestCount);
+
+    // Group rows so each category appears once, with its test types underneath
+    var groups = reportRows
+        .GroupBy(x => string.IsNullOrWhiteSpace(x.CategoryName)
+            ? "Uncategorised"
+            : x.CategoryName)
+        .ToList();
+
+    var totalCategories = groups.Count;
+
+    var periodDays = Math.Max(0, (endDate.Date - startDate.Date).Days + 1);
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tests by Category — NMB-HLabSys</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --navy: #0b1f3a;
+            --navy2: #122848;
+            --teal: #0d9488;
+            --teal-dark: #0b7c72;
+            --teal-light: rgba(13,148,136,0.1);
+            --white: #ffffff;
+            --offwhite: #f4f7fb;
+            --muted: #6b7a99;
+            --border: #dde4f0;
+            --red: #dc2626;
+            --red-dark: #b91c1c;
+            --red-light: rgba(220,38,38,0.1);
+            --green: #16a34a;
+            --green-light: rgba(22,163,74,0.1);
+            --amber: #d97706;
+            --amber-light: rgba(217,119,6,0.1);
+            --purple: #4f46e5;
+            --purple-light: rgba(79,70,229,0.1);
+            --radius-sm: 8px;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 2px 8px rgba(11,31,58,.05);
+            --shadow: 0 2px 8px rgba(11,31,58,.04);
+            --shadow-lg: 0 20px 60px rgba(11,31,58,.20);
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--offwhite);
+            color: var(--navy);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        button, input, select, textarea {
+            font-family: inherit;
+        }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            background: var(--navy);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .brand-logo {
+            width: 34px;
+            height: 34px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .brand-logo svg {
+                width: 18px;
+                height: 18px;
+                fill: white;
+            }
+
+        .brand-name {
+            font-family: 'DM Serif Display', serif;
+            color: white;
+            font-size: 1.1rem;
+            line-height: 1.1;
+        }
+
+            .brand-name span {
+                display: block;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.6rem;
+                font-weight: 300;
+                color: rgba(255,255,255,0.4);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 100px;
+            padding: 6px 14px 6px 8px;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            background: var(--teal);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .user-email {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.75);
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.8);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+            .logout-btn:hover {
+                background: rgba(255,255,255,0.15);
+                color: white;
+            }
+
+            .logout-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+
+        /* ── LAYOUT ── */
+        .page {
+            display: flex;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            flex-shrink: 0;
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: 8px;
+        }
+
+        .nav-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0 20px;
+            margin-bottom: 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.15s;
+            border-left: 3px solid transparent;
+        }
+
+            .nav-item:hover {
+                background: var(--offwhite);
+                color: var(--navy);
+            }
+
+            .nav-item.active {
+                background: var(--teal-light);
+                color: var(--teal);
+                border-left-color: var(--teal);
+                font-weight: 600;
+            }
+
+            .nav-item svg {
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+            }
+
+            .nav-item:focus-visible {
+                outline: 2px solid var(--teal);
+                outline-offset: -2px;
+            }
+
+        /* ── MAIN ── */
+        .main {
+            flex: 1;
+            min-width: 0;
+            padding: clamp(24px, 3vw, 40px);
+            overflow-y: auto;
+        }
+
+        /* ── PAGE HEADER ── */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 25px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .page-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.8rem;
+            font-weight: 400;
+            color: var(--navy);
+            letter-spacing: -.4px;
+            line-height: 1.15;
+        }
+
+        .page-description {
+            margin-top: 6px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-weight: 300;
+            max-width: 650px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 9px;
+            flex-wrap: wrap;
+        }
+
+        /* ── BUTTONS ── */
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            text-decoration: none;
+            transition: all .18s ease;
+        }
+
+            .btn:hover {
+                transform: translateY(-1px);
+            }
+
+            .btn:active {
+                transform: translateY(0);
+            }
+
+        .btn-primary {
+            background: var(--teal);
+            color: var(--white);
+            box-shadow: 0 2px 8px rgba(13,148,136,0.25);
+        }
+
+            .btn-primary:hover {
+                background: var(--teal-dark);
+                box-shadow: 0 4px 12px rgba(13,148,136,0.3);
+            }
+
+        .btn-secondary {
+            background: var(--offwhite);
+            color: var(--navy);
+            border: 1px solid var(--border);
+        }
+
+            .btn-secondary:hover {
+                background: var(--white);
+                border-color: var(--teal);
+                color: var(--teal);
+                box-shadow: 0 2px 8px rgba(13,148,136,0.1);
+            }
+
+        .btn svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        /* ── ALERTS ── */
+        .alert {
+            padding: 13px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .alert-success {
+            background: var(--green-light);
+            color: var(--green);
+            border: 1px solid rgba(22,163,74,0.25);
+        }
+
+        .alert-error {
+            background: var(--red-light);
+            color: var(--red);
+            border: 1px solid rgba(220,38,38,0.25);
+        }
+
+        /* ── CARD ── */
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .card-header {
+            min-height: 66px;
+            padding: 17px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            background: #ffffff;
+        }
+
+        .card-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.05rem;
+            color: var(--navy);
+        }
+
+        .record-count {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--muted);
+            background: var(--offwhite);
+            border: 1px solid var(--border);
+            padding: 5px 10px;
+            border-radius: 100px;
+            white-space: nowrap;
+        }
+
+        /* ── FILTER ── */
+        .filter-card {
+            margin-bottom: 20px;
+        }
+
+        .filter-body {
+            padding: 18px 24px 20px;
+        }
+
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 14px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+            .field label {
+                font-size: 0.75rem;
+                font-weight: 700;
+                color: var(--navy);
+            }
+
+        .form-control {
+            width: 100%;
+            min-width: 170px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            color: var(--navy);
+            outline: none;
+            background: var(--white);
+            transition: border-color .18s ease, box-shadow .18s ease;
+        }
+
+            .form-control:hover {
+                border-color: #b9c5d3;
+            }
+
+            .form-control:focus {
+                border-color: var(--teal);
+                box-shadow: 0 0 0 3px var(--teal-light);
+            }
+
+            .form-control.is-invalid {
+                border-color: var(--red);
+                box-shadow: 0 0 0 3px var(--red-light);
+            }
+
+        .field-error {
+            display: none;
+            width: 100%;
+            font-size: .72rem;
+            color: var(--red);
+            font-weight: 600;
+        }
+
+            .field-error.show {
+                display: block;
+            }
+
+        /* ── STAT CARDS ── */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 20px 22px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .stat-icon {
+            width: 46px;
+            height: 46px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: var(--tint);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .stat-icon svg {
+                width: 21px;
+                height: 21px;
+            }
+
+        .stat-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.8rem;
+            color: var(--navy);
+            line-height: 1.15;
+        }
+
+            .stat-value small {
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.78rem;
+                font-weight: 500;
+                color: var(--muted);
+            }
+
+        .stat-caption {
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+
+        /* ── REPORT META STRIP ── */
+        .report-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 22px;
+            padding: 12px 24px;
+            background: var(--offwhite);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+            .report-meta strong {
+                color: var(--navy);
+                font-weight: 600;
+            }
+
+        /* ── TABLE ── */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--offwhite);
+            color: var(--muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            font-weight: 600;
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+            th.num,
+            td.num {
+                text-align: right;
+            }
+
+        td {
+            padding: 14px 15px;
+            border-bottom: 1px solid var(--offwhite);
+            font-size: 0.83rem;
+            vertical-align: middle;
+            color: var(--navy);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr {
+            transition: background .18s ease;
+        }
+
+            tbody tr:hover {
+                background: var(--offwhite);
+            }
+
+        .category-cell {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .category-icon {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+            border-radius: 8px;
+            background: var(--teal-light);
+            color: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .category-icon svg {
+                width: 15px;
+                height: 15px;
+            }
+
+        .category-name {
+            font-weight: 700;
+            color: var(--navy);
+            font-size: 0.85rem;
+        }
+
+        /* Category heading row + test type rows underneath */
+        .group-row td {
+            background: var(--offwhite);
+            border-bottom: 1px solid var(--border);
+            border-top: 1px solid var(--border);
+        }
+
+        .group-row:hover {
+            background: var(--offwhite);
+        }
+
+        .group-count {
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: var(--muted);
+            margin-left: 4px;
+        }
+
+        .sub-row td:first-child {
+            padding-left: 58px;
+        }
+
+        .test-name {
+            font-weight: 500;
+            color: var(--navy);
+        }
+
+        .date-cell {
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .count-badge {
+            display: inline-block;
+            min-width: 52px;
+            padding: 4px 12px;
+            border-radius: 100px;
+            background: var(--teal-light);
+            color: var(--teal);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .table-footer {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 14px 24px;
+            border-top: 1px solid var(--border);
+            background: var(--offwhite);
+            color: var(--muted);
+            font-size: 0.75rem;
+        }
+
+            .table-footer strong {
+                color: var(--navy);
+            }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 55px 20px;
+            color: var(--muted);
+        }
+
+        .empty-icon {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 17px;
+            border-radius: 50%;
+            background: var(--teal-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        .empty-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 5px;
+        }
+
+        .empty-state > div:not(.empty-icon):not(.empty-title) {
+            font-size: 0.8rem;
+        }
+
+        /* ── FOOTER ── */
+        .footer {
+            margin-top: 28px;
+            padding: 0 2px;
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 0.7rem;
+        }
+
+        /* ── SCROLLBAR ── */
+        .sidebar::-webkit-scrollbar,
+        .table-container::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+
+        .sidebar::-webkit-scrollbar-track,
+        .table-container::-webkit-scrollbar-track {
+            background: var(--offwhite);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb,
+        .table-container::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 20px;
+        }
+
+        @@keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.96) translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* ── RESPONSIVE ── */
+        @@media (max-width: 1000px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .topbar {
+                padding: 0 20px;
+            }
+
+            .user-email {
+                display: none;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                padding: 20px 16px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .header-actions {
+                width: 100%;
+            }
+
+                .header-actions .btn {
+                    flex: 1;
+                }
+
+            .filter-body {
+                padding: 16px;
+            }
+
+            .filter-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .form-control {
+                min-width: 0;
+            }
+
+            .report-meta,
+            .table-footer {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .sub-row td:first-child {
+                padding-left: 24px;
+            }
+
+            .footer {
+                flex-direction: column;
+                gap: 6px;
+                line-height: 1.5;
+            }
+        }
+
+        /* ── PRINT ── */
+        @@page {
+            size: A4 portrait;
+            margin: 12mm;
+        }
+
+        @@media print {
+            body {
+                background: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .topbar {
+                position: static;
+                box-shadow: none;
+            }
+
+            .topbar-right,
+            .sidebar,
+            .filter-card,
+            .header-actions,
+            .alert {
+                display: none !important;
+            }
+
+            .page {
+                display: block;
+                min-height: 0;
+            }
+
+            .main {
+                padding: 15px 0;
+                overflow: visible;
+            }
+
+            .card,
+            .stat-card {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+
+            thead {
+                display: table-header-group;
+            }
+
+            tr {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <a class="brand" asp-controller="ManagerDashboard" asp-action="Index">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
+            </div>
+            <div class="brand-name">
+                NMB-HLabSys
+                <span>Haematology Lab System</span>
+            </div>
+        </a>
+        <div class="topbar-right">
+            <div class="user-chip">
+                <div class="user-avatar">@initial</div>
+                <span class="user-email">@email</span>
+            </div>
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn" id="logout-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Sign Out
+            </a>
+        </div>
+    </div>
+
+    <div class="page">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="nav-section">
+                <div class="nav-label">Main</div>
+
+                <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                    </svg>
+                    Dashboard
+                </a>
+
+                <a asp-controller="TestCatalogue" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M9 3v11a3 3 0 006 0V3" />
+                        <line x1="6" y1="3" x2="18" y2="3" />
+                    </svg>
+                    Test Catalogue
+                </a>
+
+                <a asp-controller="Consumables" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    Consumables
+                </a>
+
+                <a asp-controller="Staff" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    Staff
+                </a>
+
+                <a asp-controller="ConsumableOrder" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                    </svg>
+                    Orders
+                </a>
+
+                <a asp-controller="TestsByCategory" asp-action="Index" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                    Reports
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-label">System</div>
+
+                <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    Profile
+                </a>
+
+                <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                    Audit Log
+                </a>
+            </div>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main">
+
+            <!-- PAGE HEADER -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Tests by Category</h1>
+                    <p class="page-description">
+                        Monitor the number of tests performed in each laboratory category
+                        over a selected reporting period, with the test types and the dates
+                        they were taken.
+                    </p>
+                </div>
+
+                <div class="header-actions">
+                    <button type="button" class="btn btn-secondary" onclick="window.print()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 6 2 18 2 18 9" />
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                            <rect x="6" y="14" width="12" height="8" />
+                        </svg>
+                        Print Report
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="downloadPdf()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Download PDF
+                    </button>
+                </div>
+            </div>
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success">✓ @TempData["Success"]</div>
+            }
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-error">⚠ @TempData["Error"]</div>
+            }
+
+            <!-- DATE FILTER -->
+            <div class="card filter-card">
+                <div class="card-header">
+                    <div class="card-title">Report Date Range</div>
+                </div>
+
+                <div class="filter-body">
+                    <form method="get"
+                          asp-controller="TestsByCategory"
+                          asp-action="Index"
+                          class="filter-form"
+                          id="filter-form"
+                          novalidate>
+                        <div class="field">
+                            <label for="from">Start Date</label>
+                            <input type="date"
+                                   id="from"
+                                   name="from"
+                                   class="form-control"
+                                   value="@startDate.ToString("yyyy-MM-dd")"
+                                   required />
+                        </div>
+
+                        <div class="field">
+                            <label for="to">End Date</label>
+                            <input type="date"
+                                   id="to"
+                                   name="to"
+                                   class="form-control"
+                                   value="@endDate.ToString("yyyy-MM-dd")"
+                                   required />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Apply Filter</button>
+
+                        <span class="field-error" id="date-error">The start date must not be after the end date.</span>
+                    </form>
+                </div>
+            </div>
+
+            <!-- SUMMARY -->
+            <div class="stats">
+                <div class="stat-card" style="--accent:#0d9488;--tint:rgba(13,148,136,0.1);">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M9 3v11a3 3 0 006 0V3" />
+                            <line x1="6" y1="3" x2="18" y2="3" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="stat-label">Total Tests Performed</div>
+                        <div class="stat-value">@totalTests.ToString("N0")</div>
+                        <div class="stat-caption">Recorded during this period</div>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="--accent:#4f46e5;--tint:rgba(79,70,229,0.1);">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="stat-label">Categories Reported</div>
+                        <div class="stat-value">@totalCategories.ToString("N0")</div>
+                        <div class="stat-caption">With recorded activity</div>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="--accent:#d97706;--tint:rgba(217,119,6,0.1);">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="stat-label">Reporting Period</div>
+                        <div class="stat-value">@periodDays <small>@(periodDays == 1 ? "day" : "days")</small></div>
+                        <div class="stat-caption">@startDate.ToString("dd MMM yyyy") – @endDate.ToString("dd MMM yyyy")</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REPORT TABLE -->
+            <div class="card">
+
+                <div class="card-header">
+                    <div class="card-title">Tests by Category</div>
+                    <div class="record-count">@totalCategories @(totalCategories == 1 ? "category" : "categories")</div>
+                </div>
+
+                <div class="report-meta">
+                    <span><strong>From:</strong> @startDate.ToString("dd MMMM yyyy")</span>
+                    <span><strong>To:</strong> @endDate.ToString("dd MMMM yyyy")</span>
+                    <span><strong>Generated:</strong> @DateTime.Now.ToString("dd MMMM yyyy, HH:mm")</span>
+                </div>
+
+                @if (reportRows.Any())
+                {
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Category / Test Type</th>
+                                    <th>Date Taken</th>
+                                    <th class="num">Total Tests</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var group in groups)
+                                {
+                                    var groupTotal = group.Sum(x => x.TestCount);
+
+                                    <!-- Category heading row (one per category) -->
+                                    <tr class="group-row">
+                                        <td>
+                                            <div class="category-cell">
+                                                <div class="category-icon">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                                        <path d="M9 3v11a3 3 0 006 0V3" />
+                                                        <line x1="6" y1="3" x2="18" y2="3" />
+                                                    </svg>
+                                                </div>
+                                                <span class="category-name">@group.Key</span>
+                                                <span class="group-count">
+                                                    · @group.Count() @(group.Count() == 1 ? "entry" : "entries")
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td></td>
+                                        <td class="num">
+                                            <span class="count-badge">@groupTotal.ToString("N0")</span>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Test types underneath, with the date taken -->
+                                    @foreach (var item in group)
+                                    {
+                                        <tr class="sub-row">
+                                            <td><span class="test-name">@item.TestTypeName</span></td>
+                                            <td class="date-cell">@item.PerformedDate.ToString("dd MMM yyyy")</td>
+                                            <td class="num">@item.TestCount.ToString("N0")</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-footer">
+                        <span>
+                            Showing <strong>@reportRows.Count()</strong>
+                            test @(reportRows.Count() == 1 ? "entry" : "entries")
+                            in <strong>@totalCategories</strong>
+                            @(totalCategories == 1 ? "category" : "categories")
+                        </span>
+                        <span>Total tests: <strong>@totalTests.ToString("N0")</strong></span>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-icon">📊</div>
+                        <div class="empty-title">No report data available</div>
+                        <div>No tests were found for the selected dates.</div>
+                    </div>
+                }
+
+            </div>
+
+            <!-- FOOTER -->
+            <div class="footer">
+                <span>NMB-HLabSys · Haematology Laboratory System</span>
+                <span>Internal management report · @DateTime.Now.ToString("yyyy")</span>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ── LOGOUT CONFIRMATION MODAL ── -->
+    <div id="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title"
+         style="display:none;position:fixed;inset:0;z-index:2500;background:rgba(11,31,58,0.45);align-items:center;justify-content:center;">
+        <div style="background:white;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(11,31,58,0.2);animation:modalIn 0.18s ease;">
+            <div style="width:52px;height:52px;background:#fee2e2;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+            </div>
+            <h3 id="logout-modal-title" style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--navy);margin-bottom:8px;">Sign out?</h3>
+            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:24px;line-height:1.6;">You'll be returned to the login screen. Any unsaved changes will be lost.</p>
+            <div style="display:flex;gap:10px;">
+                <button id="logout-cancel" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:white;color:var(--navy);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancel</button>
+                <a id="logout-confirm" href="#" style="flex:1;padding:10px;border:none;border-radius:10px;background:#dc2626;color:white;font-size:0.85rem;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;font-family:'DM Sans',sans-serif;">Sign Out</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function downloadPdf() {
+            // In the print dialog, choose "Save as PDF".
+            window.print();
+        }
+
+        (function () {
+            var form = document.getElementById("filter-form");
+            var fromInput = document.getElementById("from");
+            var toInput = document.getElementById("to");
+            var dateError = document.getElementById("date-error");
+
+            if (!form || !fromInput || !toInput) return;
+
+            function syncLimits() {
+                toInput.min = fromInput.value || "";
+                fromInput.max = toInput.value || "";
+            }
+
+            function clearError() {
+                fromInput.classList.remove("is-invalid");
+                toInput.classList.remove("is-invalid");
+                dateError.classList.remove("show");
+            }
+
+            syncLimits();
+
+            fromInput.addEventListener("change", function () { syncLimits(); clearError(); });
+            toInput.addEventListener("change", function () { syncLimits(); clearError(); });
+
+            form.addEventListener("submit", function (e) {
+                if (!fromInput.value || !toInput.value) {
+                    e.preventDefault();
+                    (fromInput.value ? toInput : fromInput).classList.add("is-invalid");
+                    dateError.textContent = "Please choose both a start date and an end date.";
+                    dateError.classList.add("show");
+                    return;
+                }
+
+                if (fromInput.value > toInput.value) {
+                    e.preventDefault();
+                    fromInput.classList.add("is-invalid");
+                    toInput.classList.add("is-invalid");
+                    dateError.textContent = "The start date must not be after the end date.";
+                    dateError.classList.add("show");
+                }
+            });
+        })();
+
+        setTimeout(function () {
+            document.querySelectorAll(".alert").forEach(function (alert) {
+                alert.style.transition = "opacity .4s ease";
+                alert.style.opacity = "0";
+                setTimeout(function () { alert.remove(); }, 400);
+            });
+        }, 5000);
+
+        (function () {
+            /* ── LOGOUT MODAL ── */
+            var logoutBtn = document.getElementById('logout-btn');
+            var logoutModal = document.getElementById('logout-modal');
+            var logoutCancel = document.getElementById('logout-cancel');
+            var logoutConfirm = document.getElementById('logout-confirm');
+
+            if (logoutBtn && logoutModal) {
+                logoutConfirm.href = logoutBtn.href;
+
+                logoutBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    logoutModal.style.display = 'flex';
+                    logoutCancel.focus();
+                });
+
+                function closeLogoutModal() {
+                    logoutModal.style.display = 'none';
+                    logoutBtn.focus();
+                }
+
+                logoutCancel.addEventListener('click', closeLogoutModal);
+                logoutModal.addEventListener('click', function (e) {
+                    if (e.target === logoutModal) closeLogoutModal();
+                });
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape' && logoutModal.style.display === 'flex') closeLogoutModal();
+                });
+            }
+        })();
+    </script>
+
+</body>
+</html>

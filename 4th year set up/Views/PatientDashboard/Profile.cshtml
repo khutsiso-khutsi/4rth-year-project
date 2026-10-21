@@ -234,7 +234,7 @@
             </div>
             <div class="nav-section">
                 <div class="nav-label">Support</div>
-                <a href="#" class="nav-item">
+                <a asp-controller="Home" asp-action="Privacy" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     Help
                 </a>
@@ -311,13 +311,11 @@
                             </div>
                             <div class="form-group">
                                 <label for="Email">Email Address</label>
-                                <input type="email" id="Email" name="Email" value="@Model.Email" autocomplete="email" />
-                                <span class="field-error" id="err-email">Please enter a valid email address.</span>
+                                <input type="email" id="Email" value="@Model.Email" autocomplete="email" readonly />
                             </div>
                             <div class="form-group">
                                 <label for="IDNumber">SA ID Number</label>
-                                <input type="text" id="IDNumber" name="IDNumber" value="@Model.IDNumber" maxlength="13" />
-                                <span class="field-error" id="err-id">Please enter a valid 13-digit SA ID number.</span>
+                                <input type="text" id="IDNumber" value="@Model.IDNumber" maxlength="13" readonly />
                             </div>
                             <div class="form-row">
                                 <div class="form-group">

@@ -20,6 +20,8 @@ namespace LabManager.Repository
         // =====================================================
         // ADD CONSUMABLE
         // =====================================================
+
+
         public async Task<bool> AddConsumables(Consumable consumables)
         {
             try
@@ -31,7 +33,7 @@ namespace LabManager.Repository
                         consumables.ConsumableName,
                         consumables.SupplierID,
                         consumables.ReorderLevel,
-                        QuantityOnHand = consumables.OnHand
+                        QuantityOnHand = consumables.QuantityOnHand
                     });
 
                 return true;
@@ -45,6 +47,8 @@ namespace LabManager.Repository
         // =====================================================
         // ADD SUPPLIER
         // =====================================================
+
+
         public async Task<bool> AddSupplier(Supplier supplier)
         {
             try
@@ -54,8 +58,60 @@ namespace LabManager.Repository
                     new
                     {
                         supplier.SupplierName,
+                        supplier.ContactPerson,
                         supplier.EmailAddress,
-                        supplier.ContactPerson
+
+                        supplier.Address
+                    });
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // =====================================================
+        // UPDATE SUPPLIER   (needs sp_UpdateSupplier)
+        // =====================================================
+        public async Task<bool> UpdateSupplier(Supplier supplier)
+        {
+            try
+            {
+                await _dataAcess.SaveData(
+                    "sp_UpdateSupplier",
+                    new
+                    {
+                        supplier.SupplierID,
+                        supplier.SupplierName,
+                        supplier.ContactPerson,
+                        supplier.EmailAddress,
+                        supplier.Address 
+                    });
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // =====================================================
+        // DELETE SUPPLIER   (needs sp_DeleteSupplier)
+        // The procedure refuses to delete a supplier that still
+        // has consumables, which surfaces here as 'false'.
+        // =====================================================
+        public async Task<bool> DeleteSupplier(int supplierId)
+        {
+            try
+            {
+                await _dataAcess.SaveData(
+                    "sp_DeleteSupplier",
+                    new
+                    {
+                        SupplierID = supplierId
                     });
 
                 return true;
@@ -192,6 +248,60 @@ namespace LabManager.Repository
             try
             {
                 string query = "sp_GetSuppliers";
+
+                return await _dataAcess.GetData<Supplier, dynamic>(
+                    query,
+                    new { });
+            }
+            catch
+            {
+                return Enumerable.Empty<Supplier>();
+            }
+        }
+
+        // =====================================================
+        // SUPPLIER LOOKUPS
+        // Built on the existing sp_GetSuppliers / sp_GetConsumables,
+        // so no extra stored procedures are needed for these.
+        // =====================================================
+        public async Task<Supplier> GetSupplierById(int supplierId)
+        {
+            string query = "sp_GetSupplierById";
+
+            IEnumerable<Supplier> result =
+                await _dataAcess.GetData<Supplier, dynamic>(
+                    query,
+                    new
+                    {
+                        SupplierID = supplierId
+                    });
+
+            return result.FirstOrDefault();
+        }
+
+        public async Task<bool> SupplierNameExists(string supplierName, int? excludeSupplierId = null)
+        {
+            var name = (supplierName ?? "").Trim();
+            var suppliers = await GetAllSuppliers();
+
+            return suppliers.Any(s =>
+                string.Equals((s.SupplierName ?? "").Trim(), name, StringComparison.OrdinalIgnoreCase) &&
+                (excludeSupplierId == null || s.SupplierID != excludeSupplierId));
+        }
+
+        public async Task<bool> SupplierHasConsumables(int supplierId)
+        {
+            var consumables = await GetAllConsumables();
+            return consumables.Any(c => c.SupplierID == supplierId);
+        }
+
+
+        public async Task<IEnumerable<Supplier>> GetSuppliers()
+        {
+
+            try
+            {
+                string query = "sp_GetSuppliersForeign";
 
                 return await _dataAcess.GetData<Supplier, dynamic>(
                     query,
