@@ -122,7 +122,19 @@ namespace Doctor.DataAccess
         // No sp_SearchPatients / sp_CheckPatientIdNumberExists exist, so these
         // are plain SQL too.
 
-        public List<PatientRecordListItem> SearchPatients(string? searchTerm)
+        // A patient "belongs" to a doctor when the doctor registered them, has a test
+        // request for them, or the patient has granted (and not revoked) consent to
+        // that doctor. Shared by SearchPatients and DoctorCanAccessPatient.
+        private const string PatientBelongsToDoctorSql = @"
+                (p.RegisteredByDoctorID = @DoctorID
+                 OR EXISTS (SELECT 1 FROM TestRequests tr
+                            WHERE tr.PatientID = p.PatientID AND tr.DoctorID = @DoctorID)
+                 OR EXISTS (SELECT 1 FROM PatientDoctorConsent pdc
+                            WHERE pdc.PatientID = p.PatientID AND pdc.DoctorID = @DoctorID
+                              AND pdc.ConsentGranted = 1 AND pdc.RevokedDate IS NULL))";
+
+        /// <summary>Only the patients that belong to this doctor.</summary>
+        public List<PatientRecordListItem> SearchPatients(string? searchTerm, int doctorId)
         {
             var list = new List<PatientRecordListItem>();
             using var conn = Open();
@@ -131,12 +143,14 @@ namespace Doctor.DataAccess
                        p.CellphoneNumber, u.Email
                 FROM Patients p
                 INNER JOIN Users u ON u.UserID = p.UserID
-                WHERE (@SearchTerm IS NULL
+                WHERE " + PatientBelongsToDoctorSql + @"
+                  AND (@SearchTerm IS NULL
                        OR p.FirstName LIKE '%' + @SearchTerm + '%'
                        OR p.LastName LIKE '%' + @SearchTerm + '%'
                        OR p.IDNumber LIKE '%' + @SearchTerm + '%'
                        OR u.Email LIKE '%' + @SearchTerm + '%')
                 ORDER BY p.LastName, p.FirstName", conn);
+            cmd.Parameters.AddWithValue("@DoctorID", doctorId);
             cmd.Parameters.AddWithValue("@SearchTerm", (object?)searchTerm ?? DBNull.Value);
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
@@ -155,6 +169,18 @@ namespace Doctor.DataAccess
             return list;
         }
 
+        /// <summary>True when this patient belongs to this doctor (see PatientBelongsToDoctorSql).</summary>
+        public bool DoctorCanAccessPatient(int doctorId, int patientId)
+        {
+            using var conn = Open();
+            using var cmd = new SqlCommand(@"
+                SELECT COUNT(*) FROM Patients p
+                WHERE p.PatientID = @PatientID AND " + PatientBelongsToDoctorSql, conn);
+            cmd.Parameters.AddWithValue("@PatientID", patientId);
+            cmd.Parameters.AddWithValue("@DoctorID", doctorId);
+            return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+        }
+
         public bool PatientIdNumberExists(string idNumber)
         {
             using var conn = Open();
@@ -168,7 +194,7 @@ namespace Doctor.DataAccess
         public (string Result, int NewUserId, int NewPatientId) RegisterPatientByDoctor(
             string username, string email, string passwordHash,
             string firstName, string lastName, string idNumber,
-            DateTime dateOfBirth, string cellphoneNumber)
+            DateTime dateOfBirth, string cellphoneNumber, int registeredByDoctorId = 0)
         {
             using var conn = Open();
             using var cmd = new SqlCommand("sp_RegisterPatientByDoctor", conn);
@@ -194,6 +220,18 @@ namespace Doctor.DataAccess
             var result = resultParam.Value as string ?? "ERROR: Unknown";
             var newUserId = newUserIdParam.Value == DBNull.Value ? 0 : (int)newUserIdParam.Value;
             var newPatientId = newPatientIdParam.Value == DBNull.Value ? 0 : (int)newPatientIdParam.Value;
+
+            // The stored procedure doesn't record which doctor registered the patient,
+            // so do it here. This is what makes the patient "belong" to that doctor.
+            if (result == "SUCCESS" && newPatientId > 0 && registeredByDoctorId > 0)
+            {
+                using var link = new SqlCommand(
+                    "UPDATE Patients SET RegisteredByDoctorID = @DoctorID WHERE PatientID = @PatientID", conn);
+                link.Parameters.AddWithValue("@DoctorID", registeredByDoctorId);
+                link.Parameters.AddWithValue("@PatientID", newPatientId);
+                link.ExecuteNonQuery();
+            }
+
             return (result, newUserId, newPatientId);
         }
 

@@ -68,6 +68,9 @@ namespace admin.Repository
         public string DeleteMedication(int id) => _dataAccess.DeleteMedication(id);
         public string RestoreMedication(int id) => _dataAccess.RestoreMedication(id);
 
+        // ── ACCOUNT ───────────────────────────────────────────────────
+        public (string Email, string Username, DateTime? CreatedDate)? GetAdminAccount(int userId) => _dataAccess.GetAdminAccount(userId);
+
         // ── ACTIVITY LOG ──────────────────────────────────────────────
         public List<ActivityLogEntry> GetActivityLog() => _dataAccess.GetActivityLog();
         public void LogActivity(string action, string performedBy) => _dataAccess.LogActivity(action, performedBy);

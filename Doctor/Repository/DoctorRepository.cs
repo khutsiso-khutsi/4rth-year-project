@@ -36,8 +36,11 @@ namespace Doctor.Repository
 
         // ---- 1. Manage Patient Records -----------------------------------
 
-        public List<PatientRecordListItem> SearchPatients(string? searchTerm)
-            => _dataAccess.SearchPatients(searchTerm);
+        public List<PatientRecordListItem> SearchPatients(string? searchTerm, int doctorId)
+            => _dataAccess.SearchPatients(searchTerm, doctorId);
+
+        public bool DoctorCanAccessPatient(int doctorId, int patientId)
+            => _dataAccess.DoctorCanAccessPatient(doctorId, patientId);
 
         public bool PatientIdNumberExists(string idNumber)
             => _dataAccess.PatientIdNumberExists(idNumber);
@@ -45,10 +48,10 @@ namespace Doctor.Repository
         public (string Result, int NewUserId, int NewPatientId) RegisterPatientByDoctor(
             string username, string email, string passwordHash,
             string firstName, string lastName, string idNumber,
-            DateTime dateOfBirth, string cellphoneNumber)
+            DateTime dateOfBirth, string cellphoneNumber, int registeredByDoctorId = 0)
             => _dataAccess.RegisterPatientByDoctor(
                 username, email, passwordHash, firstName, lastName,
-                idNumber, dateOfBirth, cellphoneNumber);
+                idNumber, dateOfBirth, cellphoneNumber, registeredByDoctorId);
 
         // ---- 2. Create Test Requests --------------------------------------
 

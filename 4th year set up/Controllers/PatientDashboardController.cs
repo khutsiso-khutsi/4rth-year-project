@@ -189,10 +189,26 @@ namespace _4th_year_set_up.Controllers
             if (patientId == null)
                 return RedirectToAction("Index");
 
+            if (conditionId <= 0)
+            {
+                TempData["Error"] = "Please choose a condition.";
+                return RedirectToAction("MedicalHistory");
+            }
+
+            // a patient can only have each condition once
+            var existing = _userRepo.GetMedicalHistory(patientId.Value).Conditions
+                .FirstOrDefault(x => x.ConditionID == conditionId);
+            if (existing != null)
+            {
+                TempData["Error"] = $"{existing.ConditionName} is already on your medical history.";
+                return RedirectToAction("MedicalHistory");
+            }
+
             // add the condition to this patient
             _userRepo.AddPatientCondition(patientId.Value, conditionId, diagnosedDate, notes);
             Log("Added medical condition", "MedicalCondition", conditionId);
 
+            TempData["Success"] = "Condition added.";
             return RedirectToAction("MedicalHistory");
         }
 
@@ -228,9 +244,24 @@ namespace _4th_year_set_up.Controllers
                 return RedirectToAction("Index");
             }
 
+            if (allergyId <= 0)
+            {
+                TempData["Error"] = "Please choose an allergy.";
+                return RedirectToAction("MedicalHistory");
+            }
+
+            var existing = _userRepo.GetMedicalHistory(patientId.Value).Allergies
+                .FirstOrDefault(x => x.AllergyID == allergyId);
+            if (existing != null)
+            {
+                TempData["Error"] = $"{existing.AllergyName} is already on your medical history.";
+                return RedirectToAction("MedicalHistory");
+            }
+
             _userRepo.AddPatientAllergy(patientId.Value, allergyId, severity, notes);
             Log("Added allergy", "Allergy", allergyId);
 
+            TempData["Success"] = "Allergy added.";
             return RedirectToAction("MedicalHistory");
         }
 
@@ -265,10 +296,25 @@ namespace _4th_year_set_up.Controllers
             if (patientId == null)
                 return RedirectToAction("Index");
 
+            if (medicationId <= 0)
+            {
+                TempData["Error"] = "Please choose a medication.";
+                return RedirectToAction("MedicalHistory");
+            }
+
+            var existing = _userRepo.GetMedicalHistory(patientId.Value).Medications
+                .FirstOrDefault(x => x.MedicationID == medicationId);
+            if (existing != null)
+            {
+                TempData["Error"] = $"{existing.MedicationName} is already on your medical history.";
+                return RedirectToAction("MedicalHistory");
+            }
+
             _userRepo.AddPatientMedication(patientId.Value, medicationId, dosage,
                 frequency, startDate, endDate, notes);
             Log("Added medication", "Medication", medicationId);
 
+            TempData["Success"] = "Medication added.";
             return RedirectToAction("MedicalHistory");
         }
 
@@ -500,7 +546,10 @@ namespace _4th_year_set_up.Controllers
             return View("~/Views/PatientDashboard/Profile.cshtml", vm);
         }
 
+        // Personal Details form: cellphone number and home address only.
+        // Everything else is read from the database, so nothing else can change here.
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult UpdateProfile(ProfileViewModel model)
         {
             if (!IsPatient())
@@ -509,11 +558,101 @@ namespace _4th_year_set_up.Controllers
             var patientId = GetCurrentPatientId();
             if (patientId == null) return RedirectToAction("Index");
 
-            _userRepo.UpdatePatientProfile(patientId.Value, model.FirstName, model.LastName,
-        model.DateOfBirth, model.CellphoneNumber, model.HomeAddress, model.Email);
+            var current = _userRepo.GetPatientProfile(patientId.Value);
+            if (current == null) return RedirectToAction("Index");
+
+            var phone = (model.CellphoneNumber ?? "").Replace(" ", "");
+            var address = (model.HomeAddress ?? "").Trim();
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(phone, @"^0[6-8]\d{8}$"))
+            {
+                TempData["Error"] = "Please enter a valid 10-digit SA cellphone number.";
+                return RedirectToAction("Profile");
+            }
+            if (address.Length < 5)
+            {
+                TempData["Error"] = "Please enter a valid home address (at least 5 characters).";
+                return RedirectToAction("Profile");
+            }
+
+            _userRepo.UpdatePatientProfile(patientId.Value, current.FirstName, current.LastName,
+                current.DateOfBirth, phone, address, current.Email);
 
             Log("Updated profile");
             TempData["Success"] = "Profile updated successfully.";
+            return RedirectToAction("Profile");
+        }
+
+        // Account Information form: name, e-mail and ID number.
+        // The date of birth is locked: whatever the browser posts is ignored
+        // and the value already stored in the database is kept.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult UpdateAccountInfo(ProfileViewModel model)
+        {
+            if (!IsPatient())
+                return RedirectToAction("Login", "Home");
+
+            var patientId = GetCurrentPatientId();
+            if (patientId == null) return RedirectToAction("Index");
+
+            var current = _userRepo.GetPatientProfile(patientId.Value);
+            if (current == null) return RedirectToAction("Index");
+
+            var first = (model.FirstName ?? "").Trim();
+            var last = (model.LastName ?? "").Trim();
+            var email = (model.Email ?? "").Trim().ToLowerInvariant();
+            var idNumber = (model.IDNumber ?? "").Trim();
+
+            if (first.Length < 1 || last.Length < 1)
+            {
+                TempData["Error"] = "First name and last name are required.";
+                return RedirectToAction("Profile");
+            }
+            if (!System.Text.RegularExpressions.Regex.IsMatch(email, @"^[^\s@]+@[^\s@]+\.[^\s@]{2,}$"))
+            {
+                TempData["Error"] = "Please enter a valid email address.";
+                return RedirectToAction("Profile");
+            }
+            if (!System.Text.RegularExpressions.Regex.IsMatch(idNumber, @"^\d{13}$"))
+            {
+                TempData["Error"] = "Please enter a valid 13-digit SA ID number.";
+                return RedirectToAction("Profile");
+            }
+
+            // date of birth can't be changed: always use the stored one
+            var dob = current.DateOfBirth;
+
+            var idChanged = idNumber != current.IDNumber;
+            if (idChanged)
+            {
+                if (idNumber.Substring(0, 6) != dob.ToString("yyMMdd"))
+                {
+                    TempData["Error"] = "This ID number doesn't match your date of birth.";
+                    return RedirectToAction("Profile");
+                }
+                if (_userRepo.IdNumberInUse(idNumber, patientId.Value))
+                {
+                    TempData["Error"] = "That ID number is already registered to another patient.";
+                    return RedirectToAction("Profile");
+                }
+            }
+
+            if (!email.Equals(current.Email, StringComparison.OrdinalIgnoreCase) && _userRepo.EmailExists(email))
+            {
+                TempData["Error"] = "That email address is already registered to another account.";
+                return RedirectToAction("Profile");
+            }
+
+            _userRepo.UpdatePatientProfile(patientId.Value, first, last, dob,
+                current.CellphoneNumber, current.HomeAddress, email);
+            if (idChanged)
+                _userRepo.UpdatePatientIdNumber(patientId.Value, idNumber);
+
+            HttpContext.Session.SetString("Email", email);
+
+            Log("Updated account information");
+            TempData["Success"] = "Account information updated successfully.";
             return RedirectToAction("Profile");
         }
 
@@ -556,7 +695,7 @@ namespace _4th_year_set_up.Controllers
         /// shows the same report as a printable page instead of crashing.
         /// </summary>
         [HttpGet]
-        public IActionResult Report(DateTime? from, DateTime? to)
+        public IActionResult Report(DateTime? from, DateTime? to, bool preview = false)
         {
             if (!IsPatient())
                 return RedirectToAction("Login", "Home");
@@ -592,7 +731,7 @@ namespace _4th_year_set_up.Controllers
                 From = fromDate,
                 To = toDate
             };
-            Log($"Downloaded results report {fromDate:yyyy-MM-dd} to {toDate:yyyy-MM-dd}");
+            if (!preview) Log($"Downloaded results report {fromDate:yyyy-MM-dd} to {toDate:yyyy-MM-dd}");
 
             var fileName = $"my-results-{fromDate:yyyy-MM-dd}-to-{toDate:yyyy-MM-dd}.pdf";
             if (!_4th_year_set_up.Services.PdfSupport.Ready)
@@ -603,12 +742,12 @@ namespace _4th_year_set_up.Controllers
 
             return new ViewAsPdf("~/Views/PatientDashboard/ReportPdf.cshtml", model)
             {
-                FileName = fileName,
+                FileName = preview ? null : fileName,   // no file name = shown in the browser, not downloaded
                 CustomSwitches = "--footer-center \"Page [page] of [topage]\" --footer-font-size 8 --footer-font-name Arial"
             };
         }
 
-        public IActionResult PrintResult(int requestId)
+        public IActionResult PrintResult(int requestId, bool preview = false)
         {
             if (!IsPatient())
                 return RedirectToAction("Login", "Home");
@@ -630,7 +769,8 @@ namespace _4th_year_set_up.Controllers
             }
 
             req.Items = _userRepo.GetTestRequestItems(req.RequestID);
-            Log("Downloaded test result PDF", "TestRequest", requestId);
+            if (!preview) Log("Downloaded test result PDF", "TestRequest", requestId);
+            ViewBag.Preview = preview;   // the view can skip auto-print when previewing
             return View("~/Views/PatientDashboard/PrintResult.cshtml", req);
 
         }

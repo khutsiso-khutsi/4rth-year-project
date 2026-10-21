@@ -779,6 +779,12 @@
                 background: var(--border);
             }
 
+        /* ── FLASH MESSAGES ── */
+        .flash { padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; font-size: 0.85rem; font-weight: 500; border: 1px solid; }
+        .flash-error { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+        .flash-ok { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+        .form-group select option:disabled { color: #9aa5ba; }
+
         /* ── TOAST ── */
         #toast {
             position: fixed;
@@ -904,12 +910,31 @@
                 </div>
             </div>
 
+            <!-- SERVER MESSAGES (e.g. "already recorded") -->
+            @{
+                var flashErr = (TempData["Error"] ?? TempData["ErrorMessage"] ?? ViewBag.Error)?.ToString();
+                var flashOk  = (TempData["Success"] ?? TempData["SuccessMessage"] ?? TempData["Message"] ?? ViewBag.Success)?.ToString();
+            }
+            @if (!string.IsNullOrEmpty(flashErr))
+            {
+                <div class="flash flash-error" role="alert">@flashErr</div>
+            }
+            @if (!string.IsNullOrEmpty(flashOk))
+            {
+                <div class="flash flash-ok" role="status">@flashOk</div>
+            }
+
             <!-- STATS -->
             @{
                 var conditionCount  = Model.Conditions.Count();
                 var allergyCount    = Model.Allergies.Count();
                 var medicationCount = Model.Medications.Count();
                 var severeCount     = Model.Allergies.Count(a => a.Severity == "Severe");
+
+                // What the patient already has recorded: used to grey out duplicates in the dropdowns.
+                var haveConditions = new HashSet<int>(Model.Conditions.Select(x => x.ConditionID));
+                var haveAllergies  = new HashSet<int>(Model.Allergies.Select(x => x.AllergyID));
+                var haveMeds       = new HashSet<int>(Model.Medications.Select(x => x.MedicationID));
             }
             <div class="stats" id="statsRow">
                 <div class="stat-card">
@@ -987,7 +1012,8 @@
                                         <option value="">— Select condition —</option>
                                         @foreach (var c in Model.AllConditions)
                                         {
-                                            <option value="@c.Id">@c.Name</option>
+                                            var dupC = haveConditions.Contains(c.Id);
+                                            <option value="@c.Id" disabled="@dupC">@(c.Name + (dupC ? " — already recorded" : ""))</option>
                                         }
                                     </select>
                                 </div>
@@ -1047,7 +1073,7 @@
                                         </div>
                                     </div>
                                     <form asp-controller="PatientDashboard" asp-action="RemoveCondition" method="post">
-                                        <input type="hidden" name="patientConditionId" value="@c.PatientConditionID" />
+                                        <input type="hidden" name="conditionId" value="@c.ConditionID" />
                                         <button type="submit" class="btn-remove">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
                                             Remove
@@ -1081,7 +1107,8 @@
                                         <option value="">— Select allergy —</option>
                                         @foreach (var a in Model.AllAllergies)
                                         {
-                                            <option value="@a.Id">@a.Name</option>
+                                            var dupA = haveAllergies.Contains(a.Id);
+                                            <option value="@a.Id" disabled="@dupA">@(a.Name + (dupA ? " — already recorded" : ""))</option>
                                         }
                                     </select>
                                 </div>
@@ -1203,9 +1230,10 @@
                                     <label>Medication</label>
                                     <select name="medicationId" required>
                                         <option value="">— Select medication —</option>
-                                        @foreach (var m in Model.AllMedications)
+                                        @foreach (var med in Model.AllMedications)
                                         {
-                                            <option value="@m.Id">@m.Name</option>
+                                            var dupM = haveMeds.Contains(med.Id);
+                                            <option value="@med.Id" disabled="@dupM">@(med.Name + (dupM ? " — already recorded" : ""))</option>
                                         }
                                     </select>
                                 </div>
@@ -1353,8 +1381,16 @@
                 document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
                 document.getElementById('tab-' + tab).classList.add('active');
                 btn.classList.add('active');
+                try { sessionStorage.setItem('mh_tab', tab); } catch (e) { }
             }
             window.switchTab = switchTab;
+            try {
+                var savedTab = sessionStorage.getItem('mh_tab');
+                if (savedTab && document.getElementById('tab-' + savedTab)) {
+                    var savedBtn = document.querySelector('.tab-btn[onclick*="\'' + savedTab + '\'"]');
+                    if (savedBtn) switchTab(savedTab, savedBtn);
+                }
+            } catch (e) { }
 
             /* ─── STAGGERED SECTION CARD ANIMATIONS ─── */
             var cards = document.querySelectorAll('.section-card');

@@ -276,7 +276,7 @@
             border-radius: 20px;
             padding: clamp(24px, 3vw, 36px) clamp(20px, 2.8vw, 36px);
             width: 100%;
-            max-width: 540px;
+            max-width: 620px;
             box-shadow: 0 4px 40px rgba(11,31,58,0.08);
             margin: auto 0;
         }
@@ -381,6 +381,10 @@
             grid-template-columns: 1fr 1fr;
             gap: 12px;
         }
+
+            .form-row.single {
+                grid-template-columns: 1fr;
+            }
 
         /* Input with an icon on the left */
         .input-wrap {
@@ -960,7 +964,7 @@
                     </div>
                 </div>
 
-                <div class="form-row">
+                <div class="form-row single">
                     <div class="field">
                         <label for="idNumber">SA ID number</label>
                         <div class="input-wrap">
@@ -1036,7 +1040,7 @@
                     </div>
                 </div>
 
-                <div class="form-row">
+                <div class="form-row single">
                     <div class="field">
                         <label for="postalCode">Postal code</label>
                         <div class="input-wrap">
