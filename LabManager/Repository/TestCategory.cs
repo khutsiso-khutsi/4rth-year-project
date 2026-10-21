@@ -49,6 +49,16 @@ namespace LabManager.Repositories
                     "sp_AddTestType",
                     new
                     {
+                        test.TestName,
+                        test.CategoryId,
+                        test.SampleTypeId,
+                        test.UnitMeasurement,
+                        test.TurnaroundTime,
+                        test.NormalRangeMax,
+                        test.NormalRangeMin,
+                         test.ConsumablesUsed
+
+                    });
                         TestName = test.TestName,
                         CategoryId = test.CategoryId,
                         SampleTypeId = test.SampleTypeId,

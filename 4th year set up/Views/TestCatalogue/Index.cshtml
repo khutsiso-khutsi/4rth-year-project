@@ -1,4 +1,5 @@
-﻿@using LabManager.Models
+﻿```cshtml
+@using LabManager.Models
 @using System.Text.Json
 @using Microsoft.AspNetCore.Mvc.Rendering
 @model IEnumerable<TestType>
@@ -18,6 +19,7 @@
     // soft-deleted test types (controller sets ViewBag.DeletedTests)
     var deletedTests = ViewBag.DeletedTests as IEnumerable<TestType> ?? Enumerable.Empty<TestType>();
 
+    <meta charset="UTF-8" />
     // Technician map: TestId -> list of technician names.
     // (Also tolerates the old shape: TestId -> single string.)
     var rawTechMap = ViewBag.TechnicianMap as object;
@@ -41,6 +43,41 @@
             padding: 0;
         }
 
+            /* =========================================================
+                               ROOT
+                            ========================================================= */
+
+            :root {
+                --navy: #0b1f3a;
+                --navy-dark: #071629;
+                --navy-light: #16365f;
+                --teal: #0f766e;
+                --teal-dark: #0b625c;
+                --teal-light: #14b8a6;
+                --teal-soft: #e8f7f5;
+                --white: #ffffff;
+                --bg: #f4f7fb;
+                --border: #e2e8f0;
+                --border-dark: #cbd5e1;
+                --text: #172033;
+                --text-dark: #0f172a;
+                --muted: #64748b;
+                --danger: #dc2626;
+                --danger-dark: #b91c1c;
+                --danger-soft: #fee2e2;
+                --success: #15803d;
+                --success-soft: #dcfce7;
+                --warning: #d97706;
+                --warning-soft: #fef3c7;
+                --blue-soft: #e0f2fe;
+                --blue: #0369a1;
+                --shadow-sm: 0 2px 8px rgba(11, 31, 58, .05);
+                --shadow: 0 8px 28px rgba(11, 31, 58, .07);
+                --shadow-lg: 0 20px 60px rgba(7, 22, 41, .20);
+                --radius-sm: 8px;
+                --radius: 12px;
+                --radius-lg: 16px;
+            }
         :root {
             --navy: #0b1f3a;
             --navy2: #122848;
@@ -68,6 +105,26 @@
             --shadow-lg: 0 20px 60px rgba(11,31,58,.20);
         }
 
+
+            /* =========================================================
+                               RESET
+                            ========================================================= */
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html {
+                scroll-behavior: smooth;
+            }
+
+            body {
+                margin: 0;
+                font-family: "DM Sans", sans-serif;
+                background: var(--bg);
+                color: var(--text);
+                line-height: 1.5;
+            }
         body {
             font-family: 'DM Sans', sans-serif;
             background: var(--offwhite);
@@ -80,6 +137,26 @@
             font-family: inherit;
         }
 
+
+            /* =========================================================
+                               TOPBAR
+                            ========================================================= */
+
+            .topbar {
+                height: 70px;
+                background: linear-gradient(135deg, var(--navy-dark), var(--navy));
+                color: var(--white);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 30px;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+                box-shadow: 0 2px 12px rgba(0, 0, 0, .12);
+            }
         /* ── TOPBAR ── */
         .topbar {
             background: var(--navy);
@@ -94,6 +171,16 @@
             box-shadow: 0 2px 20px rgba(0,0,0,0.15);
         }
 
+
+            /* =========================================================
+                               BRAND
+                            ========================================================= */
+
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 13px;
+            }
         .brand {
             display: flex;
             align-items: center;
@@ -101,6 +188,17 @@
             text-decoration: none;
         }
 
+            .brand-icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 10px;
+                background: linear-gradient(135deg, var(--teal), var(--teal-light));
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 19px;
+                box-shadow: 0 5px 14px rgba(20, 184, 166, .20);
+            }
         .brand-logo {
             width: 34px;
             height: 34px;
@@ -134,6 +232,16 @@
                 text-transform: uppercase;
             }
 
+
+            /* =========================================================
+                               TOPBAR USER
+                            ========================================================= */
+
+            .topbar-right {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+            }
         .topbar-right {
             display: flex;
             align-items: center;
@@ -172,6 +280,18 @@
             white-space: nowrap;
         }
 
+            .avatar {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, var(--teal), var(--teal-light));
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                font-weight: 800;
+                border: 2px solid rgba(255, 255, 255, .15);
+            }
         .logout-btn {
             background: rgba(255,255,255,0.08);
             border: 1px solid rgba(255,255,255,0.12);
@@ -193,6 +313,9 @@
                 color: white;
             }
 
+            /* =========================================================
+                               SIDEBAR
+                            ========================================================= */
             .logout-btn svg {
                 width: 14px;
                 height: 14px;
@@ -267,6 +390,15 @@
                 outline-offset: -2px;
             }
 
+            /* =========================================================
+                               MAIN
+                            ========================================================= */
+
+            .main {
+                margin-left: 245px;
+                padding: 104px 32px 40px;
+                min-height: 100vh;
+            }
         /* ── MAIN ── */
         .main {
             flex: 1;
@@ -274,6 +406,18 @@
             overflow-y: auto;
         }
 
+
+            /* =========================================================
+                               PAGE HEADER
+                            ========================================================= */
+
+            .page-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 25px;
+                margin-bottom: 25px;
+            }
         /* ── PAGE HEADER ── */
         .page-header {
             display: flex;
@@ -307,6 +451,26 @@
             flex-wrap: wrap;
         }
 
+
+            /* =========================================================
+                               BUTTONS
+                            ========================================================= */
+
+            .btn {
+                border: none;
+                border-radius: 8px;
+                padding: 10px 16px;
+                font-family: inherit;
+                font-size: 12px;
+                font-weight: 800;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 7px;
+                text-decoration: none;
+                transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+            }
         /* ── BUTTONS ── */
         .btn {
             border: none;
@@ -372,6 +536,9 @@
             border: 1px solid rgba(217,119,6,.3);
         }
 
+            /* =========================================================
+                               ALERTS
+                            ========================================================= */
             .btn-amber:hover {
                 background: var(--amber);
                 color: var(--white);
@@ -414,6 +581,18 @@
             border: 1px solid rgba(220,38,38,0.25);
         }
 
+
+            /* =========================================================
+                               CARD
+                            ========================================================= */
+
+            .card {
+                background: var(--white);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                box-shadow: var(--shadow);
+                overflow: hidden;
+            }
         /* ── CARD ── */
         .card {
             background: white;
@@ -449,6 +628,14 @@
             border-radius: 100px;
         }
 
+
+            /* =========================================================
+                               TABLE
+                            ========================================================= */
+
+            .table-container {
+                overflow-x: auto;
+            }
         /* ── TABLE ── */
         .table-container {
             overflow-x: auto;
@@ -493,6 +680,20 @@
                 background: var(--offwhite);
             }
 
+            tr:hover td {
+                background: transparent;
+            }
+
+
+            /* =========================================================
+                               TABLE CONTENT
+                            ========================================================= */
+
+            .test-name {
+                font-weight: 800;
+                color: var(--navy);
+                font-size: 13px;
+            }
         /* ── TABLE CONTENT ── */
         .test-name {
             font-weight: 700;
@@ -553,6 +754,15 @@
             white-space: nowrap;
         }
 
+
+            /* =========================================================
+                               ACTION BUTTONS
+                            ========================================================= */
+
+            .actions {
+                display: flex;
+                gap: 7px;
+            }
         /* ── ACTION BUTTONS ── */
         .actions {
             display: flex;
@@ -602,6 +812,16 @@
                 box-shadow: 0 3px 8px rgba(220,38,38,0.15);
             }
 
+
+            /* =========================================================
+                               EMPTY STATE
+                            ========================================================= */
+
+            .empty-state {
+                text-align: center;
+                padding: 65px 20px;
+                color: var(--muted);
+            }
         /* ── EMPTY STATE ── */
         .empty-state {
             text-align: center;
@@ -632,6 +852,22 @@
             font-size: 0.8rem;
         }
 
+
+            /* =========================================================
+                               MODAL OVERLAY
+                            ========================================================= */
+
+            .modal-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(7, 22, 41, .68);
+                backdrop-filter: blur(3px);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                z-index: 2000;
+            }
         /* ── MODAL OVERLAY ── */
         .modal-overlay {
             position: fixed;
@@ -649,6 +885,22 @@
                 display: flex;
             }
 
+
+            /* =========================================================
+                               MODAL
+                            ========================================================= */
+
+            .modal {
+                width: 100%;
+                max-width: 650px;
+                max-height: 90vh;
+                overflow-y: auto;
+                background: var(--white);
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow-lg);
+                animation: modalIn .22s ease;
+                border: 1px solid rgba(255,255,255,.7);
+            }
         .modal {
             width: 100%;
             max-width: 650px;
@@ -672,6 +924,19 @@
             }
         }
 
+
+            /* =========================================================
+                               MODAL HEADER
+                            ========================================================= */
+
+            .modal-header {
+                padding: 19px 22px;
+                border-bottom: 1px solid var(--border);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: #ffffff;
+            }
         .modal-header {
             padding: 19px 22px;
             border-bottom: 1px solid var(--border);
@@ -706,6 +971,14 @@
                 transform: rotate(3deg);
             }
 
+
+            /* =========================================================
+                               MODAL BODY
+                            ========================================================= */
+
+            .modal-body {
+                padding: 23px;
+            }
         .modal-body {
             padding: 23px;
         }
@@ -719,6 +992,16 @@
             background: var(--offwhite);
         }
 
+
+            /* =========================================================
+                               FORM
+                            ========================================================= */
+
+            .form-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 17px;
+            }
         /* ── FORM ── */
         .form-grid {
             display: grid;
@@ -790,6 +1073,9 @@
             box-shadow: 0 0 0 3px var(--red-light);
         }
 
+            /* =========================================================
+                               DELETE MODAL
+                            ========================================================= */
         .field-error {
             display: none;
             font-size: .7rem;
@@ -905,6 +1191,9 @@
             gap: 8px;
         }
 
+            /* =========================================================
+                               FOOTER
+                            ========================================================= */
         .restore-item {
             display: flex;
             justify-content: space-between;
@@ -935,6 +1224,17 @@
             font-size: 0.7rem;
         }
 
+
+            /* =========================================================
+                               SCROLLBAR
+                            ========================================================= */
+
+            .modal::-webkit-scrollbar,
+            .sidebar::-webkit-scrollbar,
+            .table-container::-webkit-scrollbar {
+                width: 7px;
+                height: 7px;
+            }
         /* ── SCROLLBAR ── */
         .modal::-webkit-scrollbar,
         .sidebar::-webkit-scrollbar,
@@ -956,6 +1256,57 @@
             border-radius: 20px;
         }
 
+
+            /* =========================================================
+                               RESPONSIVE — TABLET
+                            ========================================================= */
+
+            @@media (max-width: 850px) {
+
+                .sidebar {
+                    width: 70px;
+                    padding: 20px 8px;
+                }
+
+                .nav-section-title,
+                .nav-text {
+                    display: none;
+                }
+
+                .nav-item {
+                    justify-content: center;
+                    padding: 12px 8px;
+                }
+
+                    .nav-item.active {
+                        box-shadow: none;
+                    }
+
+                .main {
+                    margin-left: 70px;
+                    padding-left: 22px;
+                    padding-right: 22px;
+                }
+
+                .user-info {
+                    display: none;
+                }
+
+                .page-title {
+                    font-size: 30px;
+                }
+            }
+
+
+            /* =========================================================
+                               RESPONSIVE — MOBILE
+                            ========================================================= */
+
+            @@media (max-width: 650px) {
+
+                .topbar {
+                    padding: 0 16px;
+                }
         /* ── RESPONSIVE ── */
         @@media (max-width: 768px) {
             .topbar {
@@ -1023,6 +1374,62 @@
                     flex: 1;
                 }
 
+                .footer {
+                    flex-direction: column;
+                    gap: 6px;
+                    line-height: 1.5;
+                }
+            }
+
+
+            /* =========================================================
+                               VERY SMALL SCREENS
+                            ========================================================= */
+
+            @@media (max-width: 420px) {
+
+                .topbar {
+                    height: 64px;
+                }
+
+                .sidebar {
+                    top: 64px;
+                }
+
+                .main {
+                    padding-top: 84px;
+                }
+
+                .brand-name {
+                    font-size: 17px;
+                }
+
+                .avatar {
+                    width: 36px;
+                    height: 36px;
+                }
+
+                .page-title {
+                    font-size: 25px;
+                }
+
+                .header-actions {
+                    flex-direction: column;
+                }
+
+                    .header-actions .btn {
+                        width: 100%;
+                    }
+
+                .card-header {
+                    padding: 15px 17px;
+                }
+
+                .record-count {
+                    font-size: 10px;
+                }
+            }
+
             .footer {
                 flex-direction: column;
                 gap: 6px;
@@ -1033,6 +1440,16 @@
 </head>
 <body>
 
+    <!-- =========================
+         TOPBAR
+    ========================= -->
+
+    <header class="topbar">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                🧪
     <!-- TOPBAR -->
     <div class="topbar">
         <a class="brand" asp-controller="Home" asp-action="Index">
@@ -1062,6 +1479,16 @@
 
     <div class="page">
 
+        </div>
+
+    </header>
+
+
+    <!-- =========================
+         SIDEBAR
+    ========================= -->
+
+    <aside class="sidebar">
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="nav-section">
@@ -1137,6 +1564,12 @@
             </div>
         </aside>
 
+
+    <!-- =========================
+         MAIN CONTENT
+    ========================= -->
+
+    <main class="main">
         <!-- MAIN -->
         <main class="main">
 
@@ -1180,6 +1613,12 @@
                 <div class="alert alert-error">⚠ @TempData["Error"]</div>
             }
 
+
+        <!-- =========================
+             TEST TABLE
+        ========================= -->
+
+        <div class="card">
             <!-- TEST TABLE -->
             <div class="card">
 
@@ -1307,6 +1746,47 @@
                                                         .ToList();
                                                 }
 
+                                        @if (!string.IsNullOrWhiteSpace(test.ConsumablesUsed))
+                                        {
+                                            @test.ConsumablesUsed
+                                        }
+                                        else
+                                        {
+                                            <span style="color:#94a3b8;">
+                                                None
+                                            </span>
+                                        }
+
+                                    </td>
+
+
+                                    <!-- ACTIONS -->
+
+                                    <td>
+
+                                        <div class="actions">
+
+
+                                            <!-- EDIT -->
+
+                                            <button type="button"
+                                                    class="action-btn edit-btn"
+                                                    title="Edit"
+                                                    onclick="openEditModal(
+                                                @test.TestId,
+                                                '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.TestName ?? ""))',
+                                                '@test.CategoryId',
+                                                '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.SampleTypeId ?? ""))',
+                                                '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.UnitMeasurement ?? ""))',
+                                                '@(test.NormalRangeMin?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")',
+                                                '@(test.NormalRangeMax?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")',
+                                                '@test.TurnaroundTime',
+                                                '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.ConsumablesUsed ?? ""))'
+                                                )">
+
+                                                ✎
+
+                                            </button>
                                                 techNames = techNames
                                                     .Where(n => !string.IsNullOrWhiteSpace(n))
                                                     .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -1380,6 +1860,22 @@
 
             </div>
 
+
+        <!-- =========================
+             FOOTER
+        ========================= -->
+
+        <div class="footer">
+
+            <span>
+                NMB-HLabSys · Haematology Laboratory System
+            </span>
+
+            <span>
+                Internal management system · @DateTime.Now.ToString("yyyy")
+            </span>
+
+        </div>
             <!-- FOOTER -->
             <div class="footer">
                 <span>NMB-HLabSys · Haematology Laboratory System</span>
@@ -1390,6 +1886,12 @@
     </div>
 
     <!-- =====================================================
+         ADD TEST TYPE MODAL
+    ====================================================== -->
+
+    <div id="addModal"
+         class="modal-overlay">
+
          ADD TEST TYPE MODAL
     ====================================================== -->
     <div id="addModal" class="modal-overlay">
@@ -1414,14 +1916,36 @@
                         </div>
 
                         <div class="form-group">
+
+                            <label class="form-label">
+
+                                Category
+
+                                <span class="required">*</span>
+
+                            </label>
+
+                            <select id="add-CategoryId"
+                                    name="CategoryId"
+                                    class="form-control"
+                                    required>
+
+                                <option value="">
+                                    Select category
+                                </option>
+
                             <label class="form-label">Category<span class="required">*</span></label>
                             <select id="add-CategoryId" name="CategoryId" class="form-control" required
                                     data-required="Please select a category.">
                                 <option value="">Select category</option>
                                 @if (ViewBag.Category != null)
                                 {
+                                    @foreach (var sampleType in ViewBag.Category)
                                     @foreach (var cat in ViewBag.Category)
                                     {
+                                        <option value="@sampleType.Value">
+                                            @sampleType.Text
+                                        </option>
                                         <option value="@cat.Value">@cat.Text</option>
                                     }
                                 }
@@ -1430,6 +1954,24 @@
                         </div>
 
                         <div class="form-group">
+
+                            <label class="form-label">
+
+                                Sample Type
+
+                                <span class="required">*</span>
+
+                            </label>
+
+                            <select id="add-SampleTypeId"
+                                    name="SampleTypeId"
+                                    class="form-control"
+                                    required>
+
+                                <option value="">
+                                    Select sample type
+                                </option>
+
                             <label class="form-label">Sample Type<span class="required">*</span></label>
                             <select id="add-SampleTypeId" name="SampleTypeId" class="form-control" required
                                     data-required="Please select a sample type.">
@@ -1446,6 +1988,47 @@
                         </div>
 
                         <div class="form-group">
+
+                            <label class="form-label">
+                                Unit Measurement
+                            </label>
+
+                            <select id="add-UnitMeasurement"
+                                    name="UnitMeasurement"
+                                    class="form-control">
+
+                                <option value="">
+                                    Select unit
+                                </option>
+
+                                <option value="µL">
+                                    µL
+                                </option>
+
+                                <option value="mcL">
+                                    mcL
+                                </option>
+
+                                <option value="g/dL">
+                                    g/dL
+                                </option>
+
+                                <option value="g/L">
+                                    g/L
+                                </option>
+
+                                <option value="g/mL">
+                                    g/mL
+                                </option>
+
+                                <option value="k/µL">
+                                    k/µL
+                                </option>
+
+                                <option value="x10³/µL">
+                                    x10³/µL
+                                </option>
+
                             <label class="form-label">Unit Measurement</label>
                             <select id="add-UnitMeasurement" name="UnitMeasurement" class="form-control">
                                 <option value="">Select unit</option>
@@ -1531,6 +2114,19 @@
     <!-- =====================================================
          ADD CATEGORY MODAL
     ====================================================== -->
+
+    <div id="addCategoryModal"
+         class="modal-overlay">
+
+        <div class="modal"
+             style="max-width:480px;">
+
+            <form asp-controller="TestCatalogue"
+                  asp-action="AddCategory"
+                  method="post">
+
+         ADD CATEGORY MODAL
+    ====================================================== -->
     <div id="addCategoryModal" class="modal-overlay">
         <div class="modal" style="max-width:480px;">
             <form asp-controller="TestCatalogue" asp-action="AddCategory" method="post" novalidate data-validate>
@@ -1605,6 +2201,12 @@
     <!-- =====================================================
          EDIT TEST TYPE MODAL
     ====================================================== -->
+
+    <div id="editModal"
+         class="modal-overlay">
+
+         EDIT TEST TYPE MODAL
+    ====================================================== -->
     <div id="editModal" class="modal-overlay">
         <div class="modal">
             <form asp-controller="TestCatalogue" asp-action="EditTestType" method="post" novalidate data-validate>
@@ -1635,8 +2237,12 @@
                                 <option value="">Select category</option>
                                 @if (ViewBag.Category != null)
                                 {
+                                    @foreach (var sampleType in ViewBag.Category)
                                     @foreach (var cat in ViewBag.Category)
                                     {
+                                        <option value="@sampleType.Value">
+                                            @sampleType.Text
+                                        </option>
                                         <option value="@cat.Value">@cat.Text</option>
                                     }
                                 }
@@ -1711,6 +2317,19 @@
     </div>
 
     <!-- =====================================================
+         DELETE CONFIRMATION MODAL
+    ====================================================== -->
+
+    <div id="deleteModal"
+         class="modal-overlay">
+
+        <div class="modal"
+             style="max-width:450px;">
+
+            <form asp-controller="TestCatalogue"
+                  asp-action="DeleteTest"
+                  method="post">
+
          DELETE CONFIRMATION MODAL (soft delete)
     ====================================================== -->
     <div id="deleteModal" class="modal-overlay">
@@ -1747,6 +2366,8 @@
     </div>
 
     <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
          RESTORE DELETED TESTS MODAL
     ====================================================== -->
     <div id="restoreModal" class="modal-overlay">
@@ -2147,5 +2768,9 @@
         })();
     </script>
 
+
+
 </body>
+
+</html>
 </html>

@@ -20,6 +20,8 @@ namespace LabManager.Repository
         // =====================================================
         // ADD CONSUMABLE
         // =====================================================
+
+
         public async Task<bool> AddConsumables(Consumable consumables)
         {
             try
@@ -45,6 +47,8 @@ namespace LabManager.Repository
         // =====================================================
         // ADD SUPPLIER
         // =====================================================
+
+
         public async Task<bool> AddSupplier(Supplier supplier)
         {
             try
@@ -55,6 +59,10 @@ namespace LabManager.Repository
                     {
                         supplier.SupplierName,
                         supplier.ContactPerson,
+                        supplier.EmailAddress
+                  
+                        supplier.ContactPerson,
+                        supplier.EmailAddress
                         supplier.EmailAddress,
                         supplier.Address
                     });
@@ -288,6 +296,24 @@ namespace LabManager.Repository
         {
             var consumables = await GetAllConsumables();
             return consumables.Any(c => c.SupplierID == supplierId);
+        }
+
+
+        public async Task<IEnumerable<Supplier>> GetSuppliers()
+        {
+
+            try
+            {
+                string query = "sp_GetSuppliersForeign";
+
+                return await _dataAcess.GetData<Supplier, dynamic>(
+                    query,
+                    new { });
+            }
+            catch
+            {
+                return Enumerable.Empty<Supplier>();
+            }
         }
     }
 }
