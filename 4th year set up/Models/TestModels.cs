@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using _4th_year_set_up.DataAccess;
+using _4th_year_set_up.Repository;
 
 namespace _4th_year_set_up.Models
 {
@@ -127,6 +127,8 @@ namespace _4th_year_set_up.Models
         public string Ward { get; set; }
         public string ClinicalNotes { get; set; }
         public bool IsUrgent { get; set; }
+        public string Priority { get; set; } = "Routine";     // Routine | Urgent | STAT
+        public DateTime RequestedAt { get; set; }             // when the doctor created the request
 
         public List<SampleTube> Tubes { get; } = new();
         public List<TestItem> Tests { get; } = new();
@@ -185,6 +187,8 @@ namespace _4th_year_set_up.Models
         public string Test { get; set; }
         public TestStage Stage { get; set; }
         public bool AssignedToMe { get; set; }
+        public string AssignedTo { get; set; }                // technician ID of whoever holds the test (null = unassigned)
+        public int TargetMinutes { get; set; }                // turnaround target for this test type
         public TatStatus Tat { get; set; }
         public string DueText { get; set; }
         public string PreviousResult { get; set; }
@@ -373,6 +377,8 @@ namespace _4th_year_set_up.Models
 
     public static class SampleChecklist
     {
+        public const string InsufficientConsumables = "Insufficient consumables";
+
         public static readonly string[] Items =
         {
             "Label matches the request (two patient identifiers)",
@@ -392,6 +398,7 @@ namespace _4th_year_set_up.Models
             "Label does not match request",
             "Unlabelled",
             "Outside stability window",
+            InsufficientConsumables,
             "Other (give details)"
         };
     }
@@ -404,20 +411,18 @@ namespace _4th_year_set_up.Models
     {
         public const string Id = "1";
         public const string Name = "Sipho Ndlovu";
-        public static bool IsSenior = true;
         public static HashSet<string> VerifiableTests = new();
 
-        public static bool CanVerifySample => IsSenior;
+        // There are no technician roles: Sipho, Lerato and Pieter are all the same kind of technician and can do every step
+        // (verify samples, capture results, verify results). The only safeguards left are the two-step rule below.
+        public static bool CanVerifySample => true;
 
         // Rules from the specification:
         //  - a technician cannot verify their own results
-        //  - a technician can only verify test types assigned to them by the laboratory manager
         public static string WhyCannotVerifyResult(TestItem t)
         {
-            if (!IsSenior) return "Only senior technicians can verify results.";
             if (t.Stage != TestStage.Complete) return "This result is not waiting for verification.";
             if (t.CapturedBy == Id) return "You captured this result, so you can't verify it. A different technician must.";
-            if (!VerifiableTests.Contains(t.Test)) return $"{t.Test} is not one of the test types assigned to you by the laboratory manager.";
             return null;
         }
 
@@ -445,8 +450,7 @@ namespace _4th_year_set_up.Models
         public int OverdueCount { get; set; }
         public int NearingCount { get; set; }
 
-        // Senior technician tasks
-        public bool IsSenior { get; set; }
+        // Tasks every technician can do
         public int SamplesToVerifyCount { get; set; }       // tubes waiting for verification
         public int ResultsToVerifyCount { get; set; }
         public int ReadyToReleaseCount { get; set; }        // requests with every test verified
@@ -454,7 +458,7 @@ namespace _4th_year_set_up.Models
         // All of this technician's tests in the queue for the dashboard card (most pressing first)
         public List<TestItem> MyTestsPreview { get; set; } = new();
 
-        public static DashboardViewModel Build(TechnicianDataAccess db)
+        public static DashboardViewModel Build(TechnicianRepository db)
         {
             var all = db.GetTests();
             var requests = db.GetRequests();
@@ -468,14 +472,13 @@ namespace _4th_year_set_up.Models
                     .ThenByDescending(t => t.Tat == TatStatus.NearingTat)
                     .ThenByDescending(t => t.IsUrgent)
                     .ToList(),
-                QueueCount = queue.Count,
+                QueueCount = queue.Count(t => !t.AssignedToMe),     // the pool: your own tests are in My Tests
                 MineCount = queue.Count(t => t.AssignedToMe),
                 AwaitingCount = all.Count(t => t.Stage == TestStage.AwaitingAssignment),
                 VerifiedCount = all.Count(t => t.Stage == TestStage.Verified),
                 UrgentCount = queue.Count(t => t.IsUrgent),
                 OverdueCount = queue.Count(t => t.Tat == TatStatus.Overdue),
                 NearingCount = queue.Count(t => t.Tat == TatStatus.NearingTat),
-                IsSenior = CurrentUser.IsSenior,
                 SamplesToVerifyCount = requests.SelectMany(r => r.Tubes).Count(t => t.Status == TubeStatus.AwaitingVerification),
                 ResultsToVerifyCount = all.Count(CurrentUser.CanVerifyResult),
                 ReadyToReleaseCount = requests.Count(r => r.IsReadyToRelease),
@@ -500,7 +503,7 @@ namespace _4th_year_set_up.Models
         public List<LabRequest> Held { get; set; } = new();
         public List<LabRequest> Released { get; set; } = new();
 
-        public static ReleaseViewModel Build(TechnicianDataAccess db)
+        public static ReleaseViewModel Build(TechnicianRepository db)
         {
             var requests = db.GetRequests();
             return new ReleaseViewModel

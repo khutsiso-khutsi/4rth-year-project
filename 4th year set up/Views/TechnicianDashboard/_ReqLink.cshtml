@@ -5,9 +5,10 @@
     var meds = string.Join("||", p.Medications.Select(m => $"{m.Name} {m.Dose}"));
 }
 @* Request number link. Opens the quick-view modal; without JavaScript it simply goes to the full details page. *@
-<a asp-controller="TechnicianDashboard" asp-action="TestDetails" asp-route-id="@Model.ReqNum"
+<a asp-controller="TechnicianDashboard" asp-action="TestDetails" asp-route-id="@Model.TestId"
    class="req-link js-test-modal"
    data-req="@Model.ReqNum"
+   data-position="@Model.PositionLabel"
    data-urgent="@(Model.IsUrgent ? "Urgent" : "Routine")"
    data-stage="@Model.StageLabel"
    data-stage-css="@Model.StageCss"
@@ -16,3 +17,11 @@
    data-condition="@p.Conditions"
    data-meds="@meds"
    data-notes="@Model.ClinicalNotes">@Model.ReqNum</a>
+@if (Model.InMultiTestRequest)
+{
+    <span class="req-chip" title="Tests on this request">@Model.PositionLabel</span>
+}
+@if (Model.IsBlockingRelease)
+{
+    <span class="req-held" title="@Model.Request.HoldReason">Release held</span>
+}

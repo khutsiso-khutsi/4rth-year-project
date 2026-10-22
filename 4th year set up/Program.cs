@@ -1,6 +1,7 @@
 ﻿using Doctor.Repository;
 using _4th_year_set_up.DataAccess;
 using _4th_year_set_up.Services;
+using _4th_year_set_up.Repository;
 using admin.Repository;
 using LabManager.DataAccess;
 using LabManager.Models;
@@ -43,10 +44,10 @@ builder.Services.AddScoped<DoctorRepository>(provider =>
     new DoctorRepository(
         builder.Configuration.GetConnectionString("conn")!));
 
-
-builder.Services.AddScoped<TechnicianDataAccess>(provider =>
-    new TechnicianDataAccess(builder.Configuration.GetConnectionString("conn")!));
-
+builder.Services.AddScoped<TechnicianRepository>(provider =>
+    new TechnicianRepository(
+        builder.Configuration.GetConnectionString("conn")!,
+        builder.Configuration.GetValue<bool>("Technician:UseSampleData")));
 
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("EmailSettings"));
