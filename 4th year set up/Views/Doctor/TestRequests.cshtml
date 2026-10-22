@@ -788,13 +788,13 @@
                     <div class="form-section-title">Sample Barcodes (at least one required)</div>
                     <div class="barcode-info">
                         <div class="barcode-dot"></div>
-                        Record one barcode per sample collected, and the sample type it was collected into.
+                        Barcodes are generated automatically for each sample. Choose the sample type it was collected into.
                     </div>
                     <div id="barcode-list">
                         <div class="barcode-row">
                             <div class="form-group">
                                 <label>Barcode</label>
-                                <input type="text" name="Samples[0].BarcodeNumber" placeholder="e.g. BC-2025-03-0441" />
+                                <input type="text" name="Samples[0].BarcodeNumber" class="auto-barcode" readonly placeholder="Generating..." title="Generated automatically" style="background:#f1f5f9; font-family:monospace; letter-spacing:.04em; cursor:default;" />
                             </div>
                             <div class="form-group">
                                 <label>Sample Type</label>
@@ -896,6 +896,19 @@
         Model.SampleTypes.Select(s => new { s.SampleTypeID, s.SampleTypeName })));
     let barcodeRowCount = 1;
 
+    // One barcode per sample, generated here and checked again on the server. Format: BC-YYYYMMDD-XXXXX
+    function newBarcode() {
+        const d = new Date();
+        const ymd = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        const bytes = new Uint8Array(5);
+        (window.crypto || window.msCrypto).getRandomValues(bytes);
+        let code = '';
+        bytes.forEach(function (b) { code += chars[b % chars.length]; });
+        return 'BC-' + ymd + '-' + code;
+    }
+    document.querySelectorAll('input.auto-barcode').forEach(function (i) { if (!i.value) i.value = newBarcode(); });
+
     function addBarcodeRow() {
         const list = document.getElementById('barcode-list');
         const row = document.createElement('div');
@@ -905,7 +918,7 @@
             sampleTypeOptions.map(st => `<option value="${st.SampleTypeID}">${st.SampleTypeName}</option>`).join('');
         row.innerHTML =
             '<div class="form-group"><label>Barcode</label>' +
-            `<input type="text" name="Samples[${idx}].BarcodeNumber" placeholder="e.g. BC-2025-03-0442" /></div>` +
+            `<input type="text" name="Samples[${idx}].BarcodeNumber" class="auto-barcode" readonly value="${newBarcode()}" title="Generated automatically" style="background:#f1f5f9; font-family:monospace; letter-spacing:.04em; cursor:default;" /></div>` +
             '<div class="form-group"><label>Sample Type</label>' +
             `<select name="Samples[${idx}].SampleTypeID">${options}</select></div>`;
         list.appendChild(row);
@@ -936,6 +949,7 @@
         return true;
     }
 </script>
+<script src="~/js/table-paginate.js?v=1"></script>
 
 </body>
 </html>
