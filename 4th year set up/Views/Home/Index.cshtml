@@ -24,7 +24,7 @@
             --teal: #0d9488;
             --white: #ffffff;
             --offwhite: #f4f7fb;
-            --muted: #6b7a99;
+            --muted: #5b6a88;
             --border: #dde4f0;
             --red: #dc2626;
         }
@@ -96,7 +96,7 @@
                 font-family: 'DM Sans', sans-serif;
                 font-size: 0.65rem;
                 font-weight: 300;
-                color: rgba(255,255,255,0.5);
+                color: rgba(255,255,255,0.68);
                 letter-spacing: 0.08em;
                 text-transform: uppercase;
             }
@@ -215,13 +215,8 @@
             margin-bottom: 24px;
         }
 
-            .hero h1 em {
-                font-style: italic;
-                color: #5eead4;
-            }
-
         .hero-desc {
-            color: rgba(255,255,255,0.6);
+            color: rgba(255,255,255,0.76);
             font-size: 1.05rem;
             line-height: 1.75;
             margin-bottom: 40px;
@@ -382,7 +377,7 @@
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.12em;
-            color: var(--teal);
+            color: #0f766e;
             font-weight: 600;
             margin-bottom: 12px;
         }
@@ -494,7 +489,7 @@
         }
 
         .how-section .section-desc {
-            color: rgba(255,255,255,0.55);
+            color: rgba(255,255,255,0.72);
         }
 
         .steps-row {
@@ -548,7 +543,7 @@
 
         .step-desc {
             font-size: 0.82rem;
-            color: rgba(255,255,255,0.45);
+            color: rgba(255,255,255,0.68);
             line-height: 1.6;
         }
 
@@ -732,13 +727,13 @@
 
         .footer-brand-sub {
             font-size: 0.65rem;
-            color: rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.62);
             text-transform: uppercase;
             letter-spacing: 0.08em;
         }
 
         .footer-tagline {
-            color: rgba(255,255,255,0.45);
+            color: rgba(255,255,255,0.65);
             font-size: 0.83rem;
             line-height: 1.7;
             max-width: 320px;
@@ -748,7 +743,7 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            color: rgba(255,255,255,0.45);
+            color: rgba(255,255,255,0.65);
             font-size: 0.78rem;
         }
 
@@ -773,13 +768,13 @@
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.1em;
-            color: rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.6);
             font-weight: 600;
             margin-bottom: 4px;
         }
 
         .footer-links-col a {
-            color: rgba(255,255,255,0.55);
+            color: rgba(255,255,255,0.72);
             text-decoration: none;
             font-size: 0.875rem;
             transition: color 0.2s;
@@ -799,7 +794,7 @@
         }
 
             .footer-bottom p {
-                color: rgba(255,255,255,0.25);
+                color: rgba(255,255,255,0.58);
                 font-size: 0.78rem;
             }
 
@@ -860,15 +855,23 @@
             overflow: hidden;
             transform: scale(0.9) translateY(20px);
             opacity: 0;
+            visibility: hidden;
             pointer-events: none;
-            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s, visibility 0s linear 0.25s;
         }
 
             .chat-window.open {
                 transform: scale(1) translateY(0);
                 opacity: 1;
+                visibility: visible;
                 pointer-events: all;
+                transition-delay: 0s;
             }
+
+        :focus-visible {
+            outline: 3px solid rgba(94,234,212,0.7);
+            outline-offset: 2px;
+        }
 
         .chat-header {
             background: var(--navy);
@@ -906,25 +909,17 @@
 
         .chat-header-status {
             font-size: 0.7rem;
-            color: rgba(255,255,255,0.5);
+            color: rgba(255,255,255,0.7);
             display: flex;
             align-items: center;
             gap: 5px;
         }
 
-            .chat-header-status::before {
-                content: '';
-                width: 5px;
-                height: 5px;
-                background: #22c55e;
-                border-radius: 50%;
-            }
-
         .chat-close {
             background: none;
             border: none;
             cursor: pointer;
-            color: rgba(255,255,255,0.5);
+            color: rgba(255,255,255,0.75);
             padding: 4px;
             transition: color 0.2s;
         }
@@ -1111,13 +1106,13 @@
         /* ── REQUEST TRACKER PREVIEW (hero card) ── */
         .track-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 26px 26px 22px; backdrop-filter: blur(12px); width: 100%; max-width: 400px; box-shadow: 0 30px 80px rgba(0,0,0,0.25); }
         .track-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
-        .track-kicker { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.4); font-weight: 600; }
+        .track-kicker { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.62); font-weight: 600; }
         .track-num { font-size: 1.05rem; font-weight: 600; color: white; margin-top: 4px; }
-        .track-meta { font-size: 0.78rem; color: rgba(255,255,255,0.45); margin-top: 2px; }
+        .track-meta { font-size: 0.78rem; color: rgba(255,255,255,0.65); margin-top: 2px; }
         .track-urg { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 100px; background: rgba(220,38,38,0.18); color: #fca5a5; white-space: nowrap; }
         .track-steps { list-style: none; margin: 18px 0 16px; position: relative; }
         .track-steps::before { content: ''; position: absolute; left: 11px; top: 12px; bottom: 12px; width: 2px; background: rgba(255,255,255,0.1); }
-        .track-steps li { position: relative; display: flex; align-items: center; gap: 14px; padding: 8px 0; font-size: 0.86rem; color: rgba(255,255,255,0.4); }
+        .track-steps li { position: relative; display: flex; align-items: center; gap: 14px; padding: 8px 0; font-size: 0.86rem; color: rgba(255,255,255,0.6); }
         .track-dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.18); background: var(--navy); display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 1; }
         .track-dot svg { width: 12px; height: 12px; stroke: white; }
         .track-steps li.done { color: rgba(255,255,255,0.85); }
@@ -1125,13 +1120,13 @@
         .track-steps li.now { color: white; font-weight: 600; }
         .track-steps li.now .track-dot { border-color: #5eead4; box-shadow: 0 0 0 4px rgba(94,234,212,0.15); }
         .track-steps li.now .track-dot::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #5eead4; animation: pulse 1.6s ease-in-out infinite; }
-        .track-steps li small { margin-left: auto; font-size: 0.72rem; font-weight: 400; color: rgba(255,255,255,0.35); }
+        .track-steps li small { margin-left: auto; font-size: 0.72rem; font-weight: 400; color: rgba(255,255,255,0.58); }
         @@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.75); } }
         .track-result { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 14px; }
-        .track-result .lbl { font-size: 0.75rem; color: rgba(255,255,255,0.45); }
+        .track-result .lbl { font-size: 0.75rem; color: rgba(255,255,255,0.65); }
         .track-result .val { font-size: 0.95rem; font-weight: 600; color: white; }
         .track-result .flag { margin-left: auto; font-size: 0.68rem; font-weight: 700; padding: 3px 9px; border-radius: 100px; background: rgba(220,38,38,0.18); color: #fca5a5; }
-        .track-note { font-size: 0.72rem; color: rgba(255,255,255,0.3); margin-top: 12px; text-align: center; }
+        .track-note { font-size: 0.72rem; color: rgba(255,255,255,0.58); margin-top: 12px; text-align: center; }
 
         @@media (prefers-reduced-motion: reduce) {
             html { scroll-behavior: auto; }
@@ -1227,16 +1222,16 @@
         </div>
     </nav>
 
+    <main id="main">
     <!-- HERO -->
     <section class="hero">
         <div class="hero-inner">
             <div>
-                <div class="hero-tag">Live System</div>
-                <h1>Smarter Lab Testing<br />for <em>Better Care</em></h1>
+                <h1>Haematology tests,<br />from request to result.</h1>
                 <p class="hero-desc">
-                    Nelson Mandela Bay Haematology Diagnostic Laboratories —
-                    a secure, end-to-end system for doctors, technicians, and patients
-                    to manage test requests and results in real time.
+                    Nelson Mandela Bay Haematology Diagnostic Laboratories.
+                    Doctors request tests, technicians capture and verify the results,
+                    and patients see them as soon as their doctor releases them.
                 </p>
                 <div class="hero-actions">
                     <a asp-controller="Home" asp-action="Register" class="btn-primary">
@@ -1471,7 +1466,8 @@
         </div>
     </div>
 
-    <!-- FOOTER -->
+    </main>
+
     <!-- FOOTER -->
     <footer>
         <div class="footer-inner">
@@ -1516,14 +1512,13 @@
         </div>
 
         <div class="footer-bottom">
-            <p>© 2026 NMB Haematology Diagnostic Laboratories. All rights reserved.</p>
+            <p>© @DateTime.Now.Year NMB Haematology Diagnostic Laboratories. All rights reserved.</p>
             <p>Built for Nelson Mandela Bay · Powered by ASP.NET Core</p>
         </div>
     </footer>
 
     <!-- CHAT WIDGET -->
     <button class="chat-bubble" type="button" aria-label="Open help chat" onclick="toggleChat()">
-        <div class="chat-badge"></div>
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
@@ -1537,8 +1532,8 @@
                 </svg>
             </div>
             <div class="chat-header-info">
-                <div class="chat-header-name">NMB-HLabSys Support</div>
-                <div class="chat-header-status">Online</div>
+                <div class="chat-header-name">NMB-HLabSys Help</div>
+                <div class="chat-header-status">Instant answers to common questions</div>
             </div>
             <button class="chat-close" type="button" aria-label="Close chat" onclick="toggleChat()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -1548,10 +1543,10 @@
             </button>
         </div>
 
-        <div class="chat-messages" id="chatMessages">
+        <div class="chat-messages" id="chatMessages" aria-live="polite">
             <div class="msg bot">
                 <div class="msg-avatar">N</div>
-                <div class="msg-bubble">👋 Hi! I'm the NMB-HLabSys assistant. How can I help you today?</div>
+                <div class="msg-bubble">Hi! Ask me about registering, results, passwords or who can see your records.</div>
             </div>
         </div>
 
@@ -1564,7 +1559,7 @@
         </div>
 
         <div class="chat-input-row">
-            <input type="text" class="chat-input" id="chatInput" placeholder="Type your question..." onkeydown="if(event.key==='Enter') sendMessage()" />
+            <input type="text" class="chat-input" id="chatInput" aria-label="Your question" placeholder="Type your question..." onkeydown="if(event.key==='Enter') sendMessage()" />
             <button class="chat-send" type="button" aria-label="Send" onclick="sendMessage()">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round">
                     <line x1="22" y1="2" x2="11" y2="13" />
@@ -1620,7 +1615,6 @@
             if (m.includes('secure') || m.includes('safe') || m.includes('privacy') || m.includes('data')) return responses['secure'];
             if (m.includes('pdf') || m.includes('download') || m.includes('export')) return responses['pdf'];
             if (m.includes('contact') || m.includes('support') || m.includes('help') || m.includes('email')) return responses['contact'];
-            if (m.includes('graph') || m.includes('track') || m.includes('trend') || m.includes('over time')) return responses['graph'];
             if (m.includes('doctor') || m.includes('consent') || m.includes('access') || m.includes('share')) return responses['doctor'];
             if (m.includes('login') || m.includes('sign in')) return responses['login'];
             return "I'm not sure about that. Please email us at <strong>support@nmb-hlabsys.ac.za</strong> or check the FAQ section above for more answers.";
