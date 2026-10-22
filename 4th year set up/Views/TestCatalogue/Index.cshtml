@@ -1,5 +1,4 @@
-﻿```cshtml
-@using LabManager.Models
+﻿@using LabManager.Models
 @using System.Text.Json
 @using Microsoft.AspNetCore.Mvc.Rendering
 @model IEnumerable<TestType>
@@ -10,23 +9,63 @@
     Layout = null;
     ViewData["Title"] = "Test Catalogue";
 
+    var tests = Model ?? Enumerable.Empty<TestType>();
+
     var categories = ViewBag.Categories as IEnumerable<TestCategory>
                      ?? Enumerable.Empty<TestCategory>();
 
-    // raw sample types list (optional). Controller may set ViewBag.SampleTypes for this.
     var sampleTypes = ViewBag.SampleTypes as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
 
-    // soft-deleted test types (controller sets ViewBag.DeletedTests)
     var deletedTests = ViewBag.DeletedTests as IEnumerable<TestType> ?? Enumerable.Empty<TestType>();
 
-    <meta charset="UTF-8" />
-    // Technician map: TestId -> list of technician names.
-    // (Also tolerates the old shape: TestId -> single string.)
     var rawTechMap = ViewBag.TechnicianMap as object;
 
-    // Consumables available for the dropdown (controller sets ViewBag.Consumables as a list of SelectListItem)
     var consumableOptions = ViewBag.Consumables as IEnumerable<SelectListItem>
                             ?? Enumerable.Empty<SelectListItem>();
+
+    var catSelect = ViewBag.Category as IEnumerable<SelectListItem> ?? Enumerable.Empty<SelectListItem>();
+    var sampleSelect = ViewBag.SampleType as IEnumerable<SelectListItem> ?? Enumerable.Empty<SelectListItem>();
+
+    // ── Unified category list (Id, Name, Description) ──
+    Func<object, string> descOf = o =>
+    {
+        try { dynamic d = o; return (string)(d.Description ?? ""); }
+        catch { return ""; }
+    };
+
+    var catItems = new List<(string Id, string Name, string Desc)>();
+    foreach (var c in categories)
+    {
+        catItems.Add((c.CategoryID.ToString(), c.CategoryName ?? "", descOf(c)));
+    }
+    if (catItems.Count == 0)
+    {
+        foreach (var c in catSelect) { catItems.Add((c.Value, c.Text ?? "", "")); }
+    }
+    catItems = catItems.OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase).ToList();
+
+    // ── Unified sample type list (Id, Name) ──
+    var sampleItems = new List<(string Id, string Name)>();
+    foreach (var s in sampleTypes)
+    {
+        sampleItems.Add((((object)s.SampleTypeId).ToString(), (string)(s.SampleName ?? "")));
+    }
+    if (sampleItems.Count == 0)
+    {
+        foreach (var s in sampleSelect) { sampleItems.Add((s.Value, s.Text ?? "")); }
+    }
+    sampleItems = sampleItems.OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase).ToList();
+
+    // ── Usage counts (how many active tests use each category / sample type) ──
+    var catUsage = tests.GroupBy(t => t.CategoryId.ToString()).ToDictionary(g => g.Key, g => g.Count());
+    var sampleUsage = tests.GroupBy(t => t.SampleTypeId.ToString()).ToDictionary(g => g.Key, g => g.Count());
+
+    var catNameById = catItems.GroupBy(c => c.Id).ToDictionary(g => g.Key, g => g.First().Name);
+    var sampleNameById = sampleItems.GroupBy(s => s.Id).ToDictionary(g => g.Key, g => g.First().Name);
+
+    var emailStr = Convert.ToString(ViewBag.Email);
+    var initial = string.IsNullOrEmpty(emailStr) ? "M" : emailStr.Substring(0, 1).ToUpper();
+    var testCount = tests.Count();
 }
 
 <!DOCTYPE html>
@@ -37,830 +76,722 @@
     <title>Test Catalogue — NMB-HLabSys</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+            *, *::before, *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
 
-            /* =========================================================
-                               ROOT
-                            ========================================================= */
+            [hidden] {
+                display: none !important;
+            }
 
             :root {
                 --navy: #0b1f3a;
-                --navy-dark: #071629;
-                --navy-light: #16365f;
-                --teal: #0f766e;
-                --teal-dark: #0b625c;
-                --teal-light: #14b8a6;
-                --teal-soft: #e8f7f5;
+                --navy2: #122848;
+                --teal: #0d9488;
+                --teal-dark: #0b7c72;
+                --teal-light: rgba(13,148,136,0.1);
                 --white: #ffffff;
-                --bg: #f4f7fb;
-                --border: #e2e8f0;
-                --border-dark: #cbd5e1;
-                --text: #172033;
-                --text-dark: #0f172a;
-                --muted: #64748b;
-                --danger: #dc2626;
-                --danger-dark: #b91c1c;
-                --danger-soft: #fee2e2;
-                --success: #15803d;
-                --success-soft: #dcfce7;
-                --warning: #d97706;
-                --warning-soft: #fef3c7;
-                --blue-soft: #e0f2fe;
-                --blue: #0369a1;
-                --shadow-sm: 0 2px 8px rgba(11, 31, 58, .05);
-                --shadow: 0 8px 28px rgba(11, 31, 58, .07);
-                --shadow-lg: 0 20px 60px rgba(7, 22, 41, .20);
+                --offwhite: #f4f7fb;
+                --muted: #6b7a99;
+                --border: #dde4f0;
+                --red: #dc2626;
+                --red-dark: #b91c1c;
+                --red-light: rgba(220,38,38,0.1);
+                --green: #16a34a;
+                --green-light: rgba(22,163,74,0.1);
+                --amber: #d97706;
+                --amber-light: rgba(217,119,6,0.1);
+                --purple: #4f46e5;
+                --purple-light: rgba(79,70,229,0.1);
                 --radius-sm: 8px;
                 --radius: 12px;
                 --radius-lg: 16px;
-            }
-        :root {
-            --navy: #0b1f3a;
-            --navy2: #122848;
-            --teal: #0d9488;
-            --teal-dark: #0b7c72;
-            --teal-light: rgba(13,148,136,0.1);
-            --white: #ffffff;
-            --offwhite: #f4f7fb;
-            --muted: #6b7a99;
-            --border: #dde4f0;
-            --red: #dc2626;
-            --red-dark: #b91c1c;
-            --red-light: rgba(220,38,38,0.1);
-            --green: #16a34a;
-            --green-light: rgba(22,163,74,0.1);
-            --amber: #d97706;
-            --amber-light: rgba(217,119,6,0.1);
-            --purple: #4f46e5;
-            --purple-light: rgba(79,70,229,0.1);
-            --radius-sm: 8px;
-            --radius: 12px;
-            --radius-lg: 16px;
-            --shadow-sm: 0 2px 8px rgba(11,31,58,.05);
-            --shadow: 0 2px 8px rgba(11,31,58,.04);
-            --shadow-lg: 0 20px 60px rgba(11,31,58,.20);
-        }
-
-
-            /* =========================================================
-                               RESET
-                            ========================================================= */
-
-            * {
-                box-sizing: border-box;
-            }
-
-            html {
-                scroll-behavior: smooth;
+                --shadow-sm: 0 2px 8px rgba(11,31,58,.05);
+                --shadow: 0 2px 8px rgba(11,31,58,.04);
+                --shadow-lg: 0 20px 60px rgba(11,31,58,.20);
             }
 
             body {
-                margin: 0;
-                font-family: "DM Sans", sans-serif;
-                background: var(--bg);
-                color: var(--text);
+                font-family: 'DM Sans', sans-serif;
+                background: var(--offwhite);
+                color: var(--navy);
+                min-height: 100vh;
                 line-height: 1.5;
             }
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--offwhite);
-            color: var(--navy);
-            min-height: 100vh;
-            line-height: 1.5;
-        }
 
-        button, input, select, textarea {
-            font-family: inherit;
-        }
+            button, input, select, textarea {
+                font-family: inherit;
+            }
 
-
-            /* =========================================================
-                               TOPBAR
-                            ========================================================= */
-
+            /* ── TOPBAR ── */
             .topbar {
-                height: 70px;
-                background: linear-gradient(135deg, var(--navy-dark), var(--navy));
-                color: var(--white);
+                background: var(--navy);
+                padding: 0 40px;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                padding: 0 30px;
-                position: fixed;
+                height: 64px;
+                position: sticky;
                 top: 0;
-                left: 0;
-                right: 0;
-                z-index: 1000;
-                box-shadow: 0 2px 12px rgba(0, 0, 0, .12);
+                z-index: 100;
+                box-shadow: 0 2px 20px rgba(0,0,0,0.15);
             }
-        /* ── TOPBAR ── */
-        .topbar {
-            background: var(--navy);
-            padding: 0 40px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 64px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
-        }
-
-
-            /* =========================================================
-                               BRAND
-                            ========================================================= */
 
             .brand {
                 display: flex;
                 align-items: center;
-                gap: 13px;
+                gap: 10px;
+                text-decoration: none;
             }
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-        }
 
-            .brand-icon {
-                width: 40px;
-                height: 40px;
-                border-radius: 10px;
-                background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            .brand-logo {
+                width: 34px;
+                height: 34px;
+                background: var(--teal);
+                border-radius: 8px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 19px;
-                box-shadow: 0 5px 14px rgba(20, 184, 166, .20);
-            }
-        .brand-logo {
-            width: 34px;
-            height: 34px;
-            background: var(--teal);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-            .brand-logo svg {
-                width: 18px;
-                height: 18px;
-                fill: white;
             }
 
-        .brand-name {
-            font-family: 'DM Serif Display', serif;
-            color: white;
-            font-size: 1.1rem;
-            line-height: 1.1;
-        }
+                .brand-logo svg {
+                    width: 18px;
+                    height: 18px;
+                    fill: white;
+                }
 
-            .brand-name span {
-                display: block;
-                font-family: 'DM Sans', sans-serif;
-                font-size: 0.6rem;
-                font-weight: 300;
-                color: rgba(255,255,255,0.4);
-                letter-spacing: 0.1em;
-                text-transform: uppercase;
+            .brand-name {
+                font-family: 'DM Serif Display', serif;
+                color: white;
+                font-size: 1.1rem;
+                line-height: 1.1;
             }
 
-
-            /* =========================================================
-                               TOPBAR USER
-                            ========================================================= */
+                .brand-name span {
+                    display: block;
+                    font-family: 'DM Sans', sans-serif;
+                    font-size: 0.6rem;
+                    font-weight: 300;
+                    color: rgba(255,255,255,0.4);
+                    letter-spacing: 0.1em;
+                    text-transform: uppercase;
+                }
 
             .topbar-right {
                 display: flex;
                 align-items: center;
-                gap: 14px;
+                gap: 16px;
             }
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
 
-        .user-chip {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 100px;
-            padding: 6px 14px 6px 8px;
-        }
+            .user-chip {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                background: rgba(255,255,255,0.07);
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 100px;
+                padding: 6px 14px 6px 8px;
+            }
 
-        .user-avatar {
-            width: 28px;
-            height: 28px;
-            background: var(--teal);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: white;
-        }
-
-        .user-email {
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.75);
-            max-width: 160px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-            .avatar {
-                width: 40px;
-                height: 40px;
+            .user-avatar {
+                width: 28px;
+                height: 28px;
+                background: var(--teal);
                 border-radius: 50%;
-                background: linear-gradient(135deg, var(--teal), var(--teal-light));
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 12px;
-                font-weight: 800;
-                border: 2px solid rgba(255, 255, 255, .15);
-            }
-        .logout-btn {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            color: rgba(255,255,255,0.8);
-            padding: 8px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 0.82rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-            .logout-btn:hover {
-                background: rgba(255,255,255,0.15);
+                font-size: 0.75rem;
+                font-weight: 600;
                 color: white;
             }
 
-            /* =========================================================
-                               SIDEBAR
-                            ========================================================= */
-            .logout-btn svg {
-                width: 14px;
-                height: 14px;
+            .user-email {
+                font-size: 0.8rem;
+                color: rgba(255,255,255,0.75);
+                max-width: 160px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
 
-        /* ── LAYOUT ── */
-        .page {
-            display: flex;
-            min-height: calc(100vh - 64px);
-        }
-
-        /* ── SIDEBAR ── */
-        .sidebar {
-            width: 220px;
-            background: white;
-            border-right: 1px solid var(--border);
-            padding: 24px 0;
-            flex-shrink: 0;
-            position: sticky;
-            top: 64px;
-            height: calc(100vh - 64px);
-            overflow-y: auto;
-        }
-
-        .nav-section {
-            margin-bottom: 8px;
-        }
-
-        .nav-label {
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: var(--muted);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            padding: 0 20px;
-            margin-bottom: 4px;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 20px;
-            color: var(--muted);
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.15s;
-            border-left: 3px solid transparent;
-        }
-
-            .nav-item:hover {
-                background: var(--offwhite);
-                color: var(--navy);
+            .logout-btn {
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.12);
+                color: rgba(255,255,255,0.8);
+                padding: 8px 16px;
+                border-radius: 8px;
+                text-decoration: none;
+                font-size: 0.82rem;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s;
+                cursor: pointer;
             }
 
-            .nav-item.active {
-                background: var(--teal-light);
-                color: var(--teal);
-                border-left-color: var(--teal);
-                font-weight: 600;
+                .logout-btn:hover {
+                    background: rgba(255,255,255,0.15);
+                    color: white;
+                }
+
+                .logout-btn svg {
+                    width: 14px;
+                    height: 14px;
+                }
+
+            /* ── LAYOUT ── */
+            .page {
+                display: flex;
+                min-height: calc(100vh - 64px);
             }
 
-            .nav-item svg {
-                width: 16px;
-                height: 16px;
+            /* ── SIDEBAR ── */
+            .sidebar {
+                width: 220px;
+                background: white;
+                border-right: 1px solid var(--border);
+                padding: 24px 0;
                 flex-shrink: 0;
+                position: sticky;
+                top: 64px;
+                height: calc(100vh - 64px);
+                overflow-y: auto;
             }
 
-            .nav-item:focus-visible {
-                outline: 2px solid var(--teal);
-                outline-offset: -2px;
+            .nav-section {
+                margin-bottom: 8px;
             }
 
-            /* =========================================================
-                               MAIN
-                            ========================================================= */
+            .nav-label {
+                font-size: 0.65rem;
+                font-weight: 600;
+                color: var(--muted);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                padding: 0 20px;
+                margin-bottom: 4px;
+            }
 
+            .nav-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 20px;
+                color: var(--muted);
+                text-decoration: none;
+                font-size: 0.85rem;
+                font-weight: 500;
+                transition: all 0.15s;
+                border-left: 3px solid transparent;
+            }
+
+                .nav-item:hover {
+                    background: var(--offwhite);
+                    color: var(--navy);
+                }
+
+                .nav-item.active {
+                    background: var(--teal-light);
+                    color: var(--teal);
+                    border-left-color: var(--teal);
+                    font-weight: 600;
+                }
+
+                .nav-item svg {
+                    width: 16px;
+                    height: 16px;
+                    flex-shrink: 0;
+                }
+
+                .nav-item:focus-visible {
+                    outline: 2px solid var(--teal);
+                    outline-offset: -2px;
+                }
+
+            /* ── MAIN ── */
             .main {
-                margin-left: 245px;
-                padding: 104px 32px 40px;
-                min-height: 100vh;
+                flex: 1;
+                min-width: 0;
+                padding: clamp(24px, 3vw, 40px);
+                overflow-y: auto;
             }
-        /* ── MAIN ── */
-        .main {
-            flex: 1;
-            padding: clamp(24px, 3vw, 40px);
-            overflow-y: auto;
-        }
 
-
-            /* =========================================================
-                               PAGE HEADER
-                            ========================================================= */
-
+            /* ── PAGE HEADER ── */
             .page-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: flex-start;
                 gap: 25px;
                 margin-bottom: 25px;
+                flex-wrap: wrap;
             }
-        /* ── PAGE HEADER ── */
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 25px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-        }
 
-        .page-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.8rem;
-            font-weight: 400;
-            color: var(--navy);
-            letter-spacing: -.4px;
-            line-height: 1.15;
-        }
+            .page-title {
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.8rem;
+                font-weight: 400;
+                color: var(--navy);
+                letter-spacing: -.4px;
+                line-height: 1.15;
+            }
 
-        .page-description {
-            margin-top: 6px;
-            font-size: 0.85rem;
-            color: var(--muted);
-            font-weight: 300;
-            max-width: 650px;
-        }
+            .page-description {
+                margin-top: 6px;
+                font-size: 0.85rem;
+                color: var(--muted);
+                font-weight: 300;
+                max-width: 650px;
+            }
 
-        .header-actions {
-            display: flex;
-            gap: 9px;
-            flex-wrap: wrap;
-        }
+            .header-actions {
+                display: flex;
+                gap: 9px;
+                flex-wrap: wrap;
+            }
 
-
-            /* =========================================================
-                               BUTTONS
-                            ========================================================= */
-
+            /* ── BUTTONS ── */
             .btn {
                 border: none;
-                border-radius: 8px;
+                border-radius: 10px;
                 padding: 10px 16px;
                 font-family: inherit;
-                font-size: 12px;
-                font-weight: 800;
+                font-size: 0.82rem;
+                font-weight: 600;
                 cursor: pointer;
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
                 gap: 7px;
                 text-decoration: none;
-                transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
-            }
-        /* ── BUTTONS ── */
-        .btn {
-            border: none;
-            border-radius: 10px;
-            padding: 10px 16px;
-            font-family: inherit;
-            font-size: 0.82rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 7px;
-            text-decoration: none;
-            transition: all .18s ease;
-        }
-
-            .btn:hover {
-                transform: translateY(-1px);
+                transition: all .18s ease;
             }
 
-            .btn:active {
-                transform: translateY(0);
+                .btn:hover {
+                    transform: translateY(-1px);
+                }
+
+                .btn:active {
+                    transform: translateY(0);
+                }
+
+                .btn:disabled {
+                    opacity: .5;
+                    cursor: not-allowed;
+                    transform: none;
+                }
+
+            .btn-sm {
+                padding: 7px 12px;
+                font-size: 0.78rem;
             }
 
-        .btn-primary {
-            background: var(--teal);
-            color: var(--white);
-            box-shadow: 0 2px 8px rgba(13,148,136,0.25);
-        }
-
-            .btn-primary:hover {
-                background: var(--teal-dark);
-                box-shadow: 0 4px 12px rgba(13,148,136,0.3);
+            .btn-primary {
+                background: var(--teal);
+                color: var(--white);
+                box-shadow: 0 2px 8px rgba(13,148,136,0.25);
             }
 
-        .btn-secondary {
-            background: var(--offwhite);
-            color: var(--navy);
-            border: 1px solid var(--border);
-        }
+                .btn-primary:hover {
+                    background: var(--teal-dark);
+                    box-shadow: 0 4px 12px rgba(13,148,136,0.3);
+                }
 
-            .btn-secondary:hover {
-                background: var(--white);
-                border-color: var(--teal);
-                color: var(--teal);
-                box-shadow: 0 2px 8px rgba(13,148,136,0.1);
+            .btn-secondary {
+                background: var(--offwhite);
+                color: var(--navy);
+                border: 1px solid var(--border);
             }
 
-        .btn-danger {
-            background: var(--red);
-            color: var(--white);
-            box-shadow: 0 2px 8px rgba(220,38,38,0.2);
-        }
+                .btn-secondary:hover:not(:disabled) {
+                    background: var(--white);
+                    border-color: var(--teal);
+                    color: var(--teal);
+                    box-shadow: 0 2px 8px rgba(13,148,136,0.1);
+                }
 
-            .btn-danger:hover {
-                background: var(--red-dark);
+            .btn-danger {
+                background: var(--red);
+                color: var(--white);
+                box-shadow: 0 2px 8px rgba(220,38,38,0.2);
             }
 
-        .btn-amber {
-            background: var(--amber-light);
-            color: var(--amber);
-            border: 1px solid rgba(217,119,6,.3);
-        }
+                .btn-danger:hover {
+                    background: var(--red-dark);
+                }
 
-            /* =========================================================
-                               ALERTS
-                            ========================================================= */
-            .btn-amber:hover {
+            .btn-amber {
+                background: var(--amber-light);
+                color: var(--amber);
+                border: 1px solid rgba(217,119,6,.3);
+            }
+
+                .btn-amber:hover {
+                    background: var(--amber);
+                    color: var(--white);
+                }
+
+            .btn-badge {
                 background: var(--amber);
                 color: var(--white);
+                border-radius: 100px;
+                font-size: .68rem;
+                padding: 1px 7px;
             }
 
-        .btn-badge {
-            background: var(--amber);
-            color: var(--white);
-            border-radius: 100px;
-            font-size: .68rem;
-            padding: 1px 7px;
-        }
-
-        .btn-amber:hover .btn-badge {
-            background: var(--white);
-            color: var(--amber);
-        }
-
-        /* ── ALERTS ── */
-        .alert {
-            padding: 13px 16px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .alert-success {
-            background: var(--green-light);
-            color: var(--green);
-            border: 1px solid rgba(22,163,74,0.25);
-        }
-
-        .alert-error {
-            background: var(--red-light);
-            color: var(--red);
-            border: 1px solid rgba(220,38,38,0.25);
-        }
-
-
-            /* =========================================================
-                               CARD
-                            ========================================================= */
-
-            .card {
+            .btn-amber:hover .btn-badge {
                 background: var(--white);
+                color: var(--amber);
+            }
+
+            /* ── ALERTS ── */
+            .alert {
+                padding: 13px 16px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                box-shadow: var(--shadow-sm);
+            }
+
+            .alert-success {
+                background: var(--green-light);
+                color: var(--green);
+                border: 1px solid rgba(22,163,74,0.25);
+            }
+
+            .alert-error {
+                background: var(--red-light);
+                color: var(--red);
+                border: 1px solid rgba(220,38,38,0.25);
+            }
+
+            /* ── CARD ── */
+            .card {
+                background: white;
                 border: 1px solid var(--border);
-                border-radius: var(--radius);
+                border-radius: 16px;
                 box-shadow: var(--shadow);
                 overflow: hidden;
             }
-        /* ── CARD ── */
-        .card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            box-shadow: var(--shadow);
-            overflow: hidden;
-        }
 
-        .card-header {
-            min-height: 66px;
-            padding: 17px 24px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #ffffff;
-        }
+            .card-header {
+                min-height: 66px;
+                padding: 14px 24px;
+                border-bottom: 1px solid var(--border);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 14px;
+                flex-wrap: wrap;
+                background: #ffffff;
+            }
 
-        .card-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.05rem;
-            color: var(--navy);
-        }
+            .card-title {
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.05rem;
+                color: var(--navy);
+            }
 
-        .record-count {
-            font-size: 0.72rem;
-            font-weight: 600;
-            color: var(--muted);
-            background: var(--offwhite);
-            border: 1px solid var(--border);
-            padding: 5px 10px;
-            border-radius: 100px;
-        }
+            .card-tools {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
 
+            .search-box {
+                position: relative;
+            }
 
-            /* =========================================================
-                               TABLE
-                            ========================================================= */
+                .search-box svg {
+                    position: absolute;
+                    left: 10px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 14px;
+                    height: 14px;
+                    color: var(--muted);
+                    pointer-events: none;
+                }
 
+                .search-box input {
+                    padding-left: 32px;
+                    width: 230px;
+                }
+
+            .record-count {
+                font-size: 0.72rem;
+                font-weight: 600;
+                color: var(--muted);
+                background: var(--offwhite);
+                border: 1px solid var(--border);
+                padding: 5px 10px;
+                border-radius: 100px;
+                white-space: nowrap;
+            }
+
+            /* ── TABLE ── */
             .table-container {
                 overflow-x: auto;
             }
-        /* ── TABLE ── */
-        .table-container {
-            overflow-x: auto;
-        }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 950px;
-        }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 950px;
+            }
 
-        th {
-            background: var(--offwhite);
-            color: var(--muted);
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            font-weight: 600;
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-            white-space: nowrap;
-        }
-
-        td {
-            padding: 14px 15px;
-            border-bottom: 1px solid var(--offwhite);
-            font-size: 0.83rem;
-            vertical-align: middle;
-            color: var(--navy);
-        }
-
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        tbody tr {
-            transition: background .18s ease;
-        }
-
-            tbody tr:hover {
+            th {
                 background: var(--offwhite);
+                color: var(--muted);
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                letter-spacing: .08em;
+                font-weight: 600;
+                padding: 12px 15px;
+                text-align: left;
+                border-bottom: 1px solid var(--border);
+                white-space: nowrap;
             }
 
-            tr:hover td {
-                background: transparent;
-            }
-
-
-            /* =========================================================
-                               TABLE CONTENT
-                            ========================================================= */
-
-            .test-name {
-                font-weight: 800;
+            td {
+                padding: 14px 15px;
+                border-bottom: 1px solid var(--offwhite);
+                font-size: 0.83rem;
+                vertical-align: middle;
                 color: var(--navy);
-                font-size: 13px;
             }
-        /* ── TABLE CONTENT ── */
-        .test-name {
-            font-weight: 700;
-            color: var(--navy);
-            font-size: 0.85rem;
-        }
 
-        .category-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 100px;
-            background: var(--teal-light);
-            color: var(--teal);
-            font-size: 0.7rem;
-            font-weight: 600;
-            white-space: nowrap;
-        }
+            tbody tr {
+                transition: background .18s ease;
+            }
 
-        .tech-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 100px;
-            background: var(--purple-light);
-            color: var(--purple);
-            font-size: 0.72rem;
-            font-weight: 700;
-            white-space: nowrap;
-            cursor: default;
-        }
+                tbody tr:hover {
+                    background: var(--offwhite);
+                }
 
-        .tech-none {
-            color: #94a3b8;
-        }
+            /* ── TABLE CONTENT ── */
+            .test-name {
+                font-weight: 700;
+                color: var(--navy);
+                font-size: 0.85rem;
+            }
 
-        .sample-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 100px;
-            background: var(--offwhite);
-            color: var(--muted);
-            font-size: 0.7rem;
-            font-weight: 600;
-            white-space: nowrap;
-            border: 1px solid var(--border);
-        }
+            .tech-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 10px;
+                border-radius: 100px;
+                background: var(--purple-light);
+                color: var(--purple);
+                font-size: 0.72rem;
+                font-weight: 700;
+                white-space: nowrap;
+                cursor: default;
+            }
 
-        .range {
-            font-weight: 600;
-            color: var(--navy);
-            white-space: nowrap;
-        }
+            .tech-none {
+                color: #94a3b8;
+            }
 
-        .tat {
-            font-weight: 700;
-            color: var(--navy);
-            white-space: nowrap;
-        }
+            .sample-badge {
+                display: inline-block;
+                padding: 4px 10px;
+                border-radius: 100px;
+                background: var(--offwhite);
+                color: var(--muted);
+                font-size: 0.7rem;
+                font-weight: 600;
+                white-space: nowrap;
+                border: 1px solid var(--border);
+            }
 
+            .range, .tat {
+                font-weight: 600;
+                color: var(--navy);
+                white-space: nowrap;
+            }
 
-            /* =========================================================
-                               ACTION BUTTONS
-                            ========================================================= */
+            .tat {
+                font-weight: 700;
+            }
 
+            /* ── ACTION BUTTONS ── */
             .actions {
                 display: flex;
                 gap: 7px;
             }
-        /* ── ACTION BUTTONS ── */
-        .actions {
-            display: flex;
-            gap: 7px;
-        }
 
-        .action-icon-btn {
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            transition: all .18s ease;
-        }
-
-            .action-icon-btn:hover {
-                transform: translateY(-1px);
+            .action-icon-btn {
+                border: none;
+                width: 32px;
+                height: 32px;
+                border-radius: 8px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 13px;
+                transition: all .18s ease;
+                flex-shrink: 0;
             }
 
-            .action-icon-btn:disabled {
-                opacity: .4;
-                cursor: not-allowed;
-                transform: none;
+                .action-icon-btn:hover:not(:disabled) {
+                    transform: translateY(-1px);
+                }
+
+                .action-icon-btn:disabled {
+                    opacity: .4;
+                    cursor: not-allowed;
+                }
+
+            .edit-btn {
+                background: var(--purple-light);
+                color: var(--purple);
             }
 
-        .edit-btn {
-            background: var(--purple-light);
-            color: var(--purple);
-        }
+                .edit-btn:hover:not(:disabled) {
+                    background: rgba(79,70,229,0.2);
+                    box-shadow: 0 3px 8px rgba(79,70,229,0.15);
+                }
 
-            .edit-btn:hover {
-                background: rgba(79,70,229,0.2);
-                box-shadow: 0 3px 8px rgba(79,70,229,0.15);
+            .delete-btn {
+                background: var(--red-light);
+                color: var(--red);
             }
 
-        .delete-btn {
-            background: var(--red-light);
-            color: var(--red);
-        }
+                .delete-btn:hover:not(:disabled) {
+                    background: rgba(220,38,38,0.2);
+                    box-shadow: 0 3px 8px rgba(220,38,38,0.15);
+                }
 
-            .delete-btn:hover {
-                background: rgba(220,38,38,0.2);
-                box-shadow: 0 3px 8px rgba(220,38,38,0.15);
+            /* ── PAGINATION ── */
+            .pagination-bar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 14px;
+                flex-wrap: wrap;
+                padding: 14px 24px;
+                border-top: 1px solid var(--border);
+                background: #fff;
             }
 
+                .pagination-bar.compact {
+                    padding: 10px 0 0;
+                    border-top: none;
+                    margin-top: 6px;
+                }
 
-            /* =========================================================
-                               EMPTY STATE
-                            ========================================================= */
+            .page-info {
+                font-size: 0.75rem;
+                color: var(--muted);
+            }
 
+                .page-info strong {
+                    color: var(--navy);
+                }
+
+            .pager {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                flex-wrap: wrap;
+            }
+
+            .pg-btn {
+                min-width: 32px;
+                height: 32px;
+                padding: 0 9px;
+                border: 1px solid var(--border);
+                background: var(--white);
+                color: var(--navy);
+                border-radius: 8px;
+                font-size: 0.78rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all .15s ease;
+            }
+
+                .pg-btn:hover:not(:disabled):not(.active) {
+                    border-color: var(--teal);
+                    color: var(--teal);
+                    background: var(--teal-light);
+                }
+
+                .pg-btn.active {
+                    background: var(--teal);
+                    border-color: var(--teal);
+                    color: var(--white);
+                    cursor: default;
+                }
+
+                .pg-btn:disabled {
+                    opacity: .45;
+                    cursor: not-allowed;
+                }
+
+            .pg-gap {
+                color: var(--muted);
+                padding: 0 2px;
+                font-size: .8rem;
+            }
+
+            .per-page {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.75rem;
+                color: var(--muted);
+            }
+
+                .per-page select {
+                    padding: 6px 8px;
+                    width: auto;
+                }
+
+            /* ── EMPTY STATE ── */
             .empty-state {
                 text-align: center;
                 padding: 65px 20px;
                 color: var(--muted);
             }
-        /* ── EMPTY STATE ── */
-        .empty-state {
-            text-align: center;
-            padding: 65px 20px;
-            color: var(--muted);
-        }
 
-        .empty-icon {
-            width: 70px;
-            height: 70px;
-            margin: 0 auto 17px;
-            border-radius: 50%;
-            background: var(--teal-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-        }
+            .empty-icon {
+                width: 70px;
+                height: 70px;
+                margin: 0 auto 17px;
+                border-radius: 50%;
+                background: var(--teal-light);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 32px;
+            }
 
-        .empty-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--navy);
-            margin-bottom: 5px;
-        }
+            .empty-title {
+                font-size: 1rem;
+                font-weight: 700;
+                color: var(--navy);
+                margin-bottom: 5px;
+            }
 
-        .empty-state > div:not(.empty-icon):not(.empty-title) {
-            font-size: 0.8rem;
-        }
+            .empty-state > div:not(.empty-icon):not(.empty-title) {
+                font-size: 0.8rem;
+            }
 
-
-            /* =========================================================
-                               MODAL OVERLAY
-                            ========================================================= */
-
+            /* ── MODAL OVERLAY ── */
             .modal-overlay {
                 position: fixed;
                 inset: 0;
-                background: rgba(7, 22, 41, .68);
+                background: rgba(11,31,58,.45);
                 backdrop-filter: blur(3px);
                 display: none;
                 align-items: center;
@@ -868,27 +799,14 @@
                 padding: 20px;
                 z-index: 2000;
             }
-        /* ── MODAL OVERLAY ── */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(11,31,58,.45);
-            backdrop-filter: blur(3px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            z-index: 2000;
-        }
 
-            .modal-overlay.show {
-                display: flex;
-            }
+                .modal-overlay.show {
+                    display: flex;
+                }
 
-
-            /* =========================================================
-                               MODAL
-                            ========================================================= */
+                .modal-overlay.top {
+                    z-index: 2200;
+                }
 
             .modal {
                 width: 100%;
@@ -898,36 +816,20 @@
                 background: var(--white);
                 border-radius: var(--radius-lg);
                 box-shadow: var(--shadow-lg);
-                animation: modalIn .22s ease;
-                border: 1px solid rgba(255,255,255,.7);
-            }
-        .modal {
-            width: 100%;
-            max-width: 650px;
-            max-height: 90vh;
-            overflow-y: auto;
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-lg);
-            animation: modalIn .18s ease;
-        }
-
-        @@keyframes modalIn {
-            from {
-                opacity: 0;
-                transform: scale(0.96) translateY(8px);
+                animation: modalIn .18s ease;
             }
 
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
+            @@keyframes modalIn {
+                from {
+                    opacity: 0;
+                    transform: scale(0.96) translateY(8px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
+                }
             }
-        }
-
-
-            /* =========================================================
-                               MODAL HEADER
-                            ========================================================= */
 
             .modal-header {
                 padding: 19px 22px;
@@ -936,442 +838,470 @@
                 justify-content: space-between;
                 align-items: center;
                 background: #ffffff;
+                position: sticky;
+                top: 0;
+                z-index: 2;
             }
-        .modal-header {
-            padding: 19px 22px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #ffffff;
-        }
 
-        .modal-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.3rem;
-            font-weight: 400;
-            color: var(--navy);
-        }
-
-        .close-btn {
-            width: 32px;
-            height: 32px;
-            border: none;
-            border-radius: 8px;
-            background: var(--offwhite);
-            color: var(--muted);
-            cursor: pointer;
-            font-size: 18px;
-            transition: background .18s ease, transform .18s ease;
-        }
-
-            .close-btn:hover {
-                background: var(--border);
+            .modal-title {
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.3rem;
+                font-weight: 400;
                 color: var(--navy);
-                transform: rotate(3deg);
             }
 
+            .close-btn {
+                width: 32px;
+                height: 32px;
+                border: none;
+                border-radius: 8px;
+                background: var(--offwhite);
+                color: var(--muted);
+                cursor: pointer;
+                font-size: 18px;
+                transition: background .18s ease, transform .18s ease;
+            }
 
-            /* =========================================================
-                               MODAL BODY
-                            ========================================================= */
+                .close-btn:hover {
+                    background: var(--border);
+                    color: var(--navy);
+                    transform: rotate(3deg);
+                }
 
             .modal-body {
                 padding: 23px;
             }
-        .modal-body {
-            padding: 23px;
-        }
 
-        .modal-footer {
-            padding: 16px 22px;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            background: var(--offwhite);
-        }
+            .modal-footer {
+                padding: 16px 22px;
+                border-top: 1px solid var(--border);
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                background: var(--offwhite);
+            }
 
-
-            /* =========================================================
-                               FORM
-                            ========================================================= */
-
+            /* ── FORM ── */
             .form-grid {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 17px;
             }
-        /* ── FORM ── */
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 17px;
-        }
 
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 7px;
-        }
-
-            .form-group.full {
-                grid-column: 1 / -1;
+            .form-group {
+                display: flex;
+                flex-direction: column;
+                gap: 7px;
             }
 
-        .form-label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--navy);
-        }
+                .form-group.full {
+                    grid-column: 1 / -1;
+                }
 
-        .required {
-            color: var(--red);
-            margin-left: 2px;
-        }
-
-        .form-control {
-            width: 100%;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px 12px;
-            font-family: inherit;
-            font-size: 0.82rem;
-            color: var(--navy);
-            outline: none;
-            background: var(--white);
-            transition: border-color .18s ease, box-shadow .18s ease;
-        }
-
-            .form-control:hover {
-                border-color: #b9c5d3;
-            }
-
-            .form-control:focus {
-                border-color: var(--teal);
-                box-shadow: 0 0 0 3px var(--teal-light);
-            }
-
-        textarea.form-control {
-            min-height: 82px;
-            resize: vertical;
-            line-height: 1.5;
-        }
-
-        select.form-control {
-            cursor: pointer;
-        }
-
-        .form-help {
-            font-size: 0.7rem;
-            color: var(--muted);
-            margin-top: -2px;
-        }
-
-        .form-control.is-invalid {
-            border-color: var(--red);
-            box-shadow: 0 0 0 3px var(--red-light);
-        }
-
-            /* =========================================================
-                               DELETE MODAL
-                            ========================================================= */
-        .field-error {
-            display: none;
-            font-size: .7rem;
-            color: var(--red);
-            font-weight: 600;
-            margin-top: -2px;
-        }
-
-            .field-error.show {
-                display: block;
-            }
-
-        /* ── CONSUMABLE ROWS (name + quantity + remove on ONE line) ── */
-        .consumable-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .consumable-row {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 90px 36px;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .consumable-head {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 90px 36px;
-            gap: 8px;
-            font-size: 0.68rem;
-            font-weight: 600;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: .06em;
-            margin-bottom: -2px;
-        }
-
-        .consumable-row .form-control {
-            min-width: 0;
-        }
-
-        .c-remove {
-            width: 36px;
-            height: 36px;
-            border: none;
-            border-radius: 8px;
-            background: var(--red-light);
-            color: var(--red);
-            font-size: 14px;
-            cursor: pointer;
-            transition: background .18s ease;
-        }
-
-            .c-remove:hover {
-                background: rgba(220,38,38,0.2);
-            }
-
-        .consumable-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 2px;
-        }
-
-        .consumable-empty {
-            font-size: 0.75rem;
-            color: var(--muted);
-        }
-
-        /* ── DELETE MODAL ── */
-        .delete-content {
-            text-align: center;
-            padding: 10px 10px 5px;
-        }
-
-        .delete-icon {
-            width: 55px;
-            height: 55px;
-            margin: 0 auto 15px;
-            border-radius: 14px;
-            background: var(--red-light);
-            color: var(--red);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 25px;
-            font-weight: 800;
-        }
-
-        .delete-title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--navy);
-            font-family: 'DM Serif Display', serif;
-        }
-
-        .delete-message {
-            margin: 8px 0 0;
-            color: var(--muted);
-            font-size: 0.85rem;
-            line-height: 1.6;
-        }
-
-            .delete-message strong {
+            .form-label {
+                font-size: 0.75rem;
+                font-weight: 700;
                 color: var(--navy);
             }
 
-        /* ── RESTORE LIST ── */
-        .restore-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+            .required {
+                color: var(--red);
+                margin-left: 2px;
+            }
 
-            /* =========================================================
-                               FOOTER
-                            ========================================================= */
-        .restore-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 14px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: var(--offwhite);
-        }
+            .form-control {
+                width: 100%;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 10px 12px;
+                font-family: inherit;
+                font-size: 0.82rem;
+                color: var(--navy);
+                outline: none;
+                background: var(--white);
+                transition: border-color .18s ease, box-shadow .18s ease;
+            }
 
-            .restore-item .meta {
-                font-size: .72rem;
+                .form-control:hover {
+                    border-color: #b9c5d3;
+                }
+
+                .form-control:focus {
+                    border-color: var(--teal);
+                    box-shadow: 0 0 0 3px var(--teal-light);
+                }
+
+            textarea.form-control {
+                min-height: 70px;
+                resize: vertical;
+                line-height: 1.5;
+            }
+
+            select.form-control {
+                cursor: pointer;
+            }
+
+            .form-help {
+                font-size: 0.7rem;
+                color: var(--muted);
+                margin-top: -2px;
+            }
+
+            .form-control.is-invalid {
+                border-color: var(--red);
+                box-shadow: 0 0 0 3px var(--red-light);
+            }
+
+            .field-error {
+                display: none;
+                font-size: .7rem;
+                color: var(--red);
+                font-weight: 600;
+                margin-top: -2px;
+            }
+
+                .field-error.show {
+                    display: block;
+                }
+
+            /* ── CONSUMABLE ROWS ── */
+            .consumable-list {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .consumable-row, .consumable-head {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) 90px 36px;
+                gap: 8px;
+                align-items: center;
+            }
+
+            .consumable-head {
+                font-size: 0.68rem;
+                font-weight: 600;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: .06em;
+                margin-bottom: -2px;
+            }
+
+            .consumable-row .form-control {
+                min-width: 0;
+            }
+
+            .c-remove {
+                width: 36px;
+                height: 36px;
+                border: none;
+                border-radius: 8px;
+                background: var(--red-light);
+                color: var(--red);
+                font-size: 14px;
+                cursor: pointer;
+                transition: background .18s ease;
+            }
+
+                .c-remove:hover {
+                    background: rgba(220,38,38,0.2);
+                }
+
+            .consumable-actions {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-top: 2px;
+                flex-wrap: wrap;
+            }
+
+            .consumable-empty, .legacy-note {
+                font-size: 0.75rem;
                 color: var(--muted);
             }
 
-            .restore-item form {
-                margin: 0;
+            .legacy-note {
+                background: var(--amber-light);
+                color: var(--amber);
+                border: 1px solid rgba(217,119,6,.3);
+                border-radius: 8px;
+                padding: 8px 10px;
+                font-weight: 600;
             }
 
-        /* ── FOOTER ── */
-        .footer {
-            margin-top: 28px;
-            padding: 0 2px;
-            display: flex;
-            justify-content: space-between;
-            color: var(--muted);
-            font-size: 0.7rem;
-        }
+            /* ── MANAGE MODALS ── */
+            .manage-form {
+                background: var(--offwhite);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 16px;
+                margin-bottom: 20px;
+            }
 
+            .manage-form-title {
+                font-size: .8rem;
+                font-weight: 700;
+                margin-bottom: 12px;
+                color: var(--navy);
+            }
 
-            /* =========================================================
-                               SCROLLBAR
-                            ========================================================= */
+            .manage-form .form-grid {
+                gap: 12px;
+            }
 
+            .manage-form-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+                margin-top: 12px;
+            }
+
+            .manage-list-head {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 10px;
+            }
+
+            .manage-list-title {
+                font-size: .72rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .08em;
+                color: var(--muted);
+            }
+
+            .manage-list {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .manage-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                padding: 11px 14px;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                background: var(--white);
+                transition: border-color .15s ease, background .15s ease;
+            }
+
+                .manage-row:hover {
+                    border-color: #b9c5d3;
+                }
+
+                .manage-row.editing {
+                    border-color: var(--teal);
+                    background: var(--teal-light);
+                }
+
+            .manage-row-main {
+                min-width: 0;
+            }
+
+            .manage-row-name {
+                font-weight: 700;
+                font-size: .84rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .manage-row-meta {
+                font-size: .7rem;
+                color: var(--muted);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .manage-empty {
+                text-align: center;
+                font-size: .8rem;
+                color: var(--muted);
+                padding: 24px 10px;
+                border: 1px dashed var(--border);
+                border-radius: 10px;
+            }
+
+            /* ── DELETE MODAL ── */
+            .delete-content {
+                text-align: center;
+                padding: 10px 10px 5px;
+            }
+
+            .delete-icon {
+                width: 55px;
+                height: 55px;
+                margin: 0 auto 15px;
+                border-radius: 14px;
+                background: var(--red-light);
+                color: var(--red);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 25px;
+                font-weight: 800;
+            }
+
+            .delete-title {
+                font-size: 1.2rem;
+                font-weight: 700;
+                color: var(--navy);
+                font-family: 'DM Serif Display', serif;
+            }
+
+            .delete-message {
+                margin: 8px 0 0;
+                color: var(--muted);
+                font-size: 0.85rem;
+                line-height: 1.6;
+            }
+
+                .delete-message strong {
+                    color: var(--navy);
+                }
+
+            /* ── RESTORE LIST ── */
+            .restore-list {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .restore-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                padding: 12px 14px;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                background: var(--offwhite);
+            }
+
+                .restore-item .meta {
+                    font-size: .72rem;
+                    color: var(--muted);
+                }
+
+                .restore-item form {
+                    margin: 0;
+                }
+
+            /* ── FOOTER ── */
+            .footer {
+                margin-top: 28px;
+                padding: 0 2px;
+                display: flex;
+                justify-content: space-between;
+                color: var(--muted);
+                font-size: 0.7rem;
+            }
+
+            /* ── SCROLLBAR ── */
             .modal::-webkit-scrollbar,
             .sidebar::-webkit-scrollbar,
             .table-container::-webkit-scrollbar {
                 width: 7px;
                 height: 7px;
             }
-        /* ── SCROLLBAR ── */
-        .modal::-webkit-scrollbar,
-        .sidebar::-webkit-scrollbar,
-        .table-container::-webkit-scrollbar {
-            width: 7px;
-            height: 7px;
-        }
 
-        .modal::-webkit-scrollbar-track,
-        .sidebar::-webkit-scrollbar-track,
-        .table-container::-webkit-scrollbar-track {
-            background: var(--offwhite);
-        }
+            .modal::-webkit-scrollbar-track,
+            .sidebar::-webkit-scrollbar-track,
+            .table-container::-webkit-scrollbar-track {
+                background: var(--offwhite);
+            }
 
-        .modal::-webkit-scrollbar-thumb,
-        .sidebar::-webkit-scrollbar-thumb,
-        .table-container::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 20px;
-        }
+            .modal::-webkit-scrollbar-thumb,
+            .sidebar::-webkit-scrollbar-thumb,
+            .table-container::-webkit-scrollbar-thumb {
+                background: var(--border);
+                border-radius: 20px;
+            }
 
+            /* ── RESPONSIVE ── */
+            @@media (max-width: 768px) {
+                .topbar {
+                    padding: 0 20px;
+                }
 
-            /* =========================================================
-                               RESPONSIVE — TABLET
-                            ========================================================= */
-
-            @@media (max-width: 850px) {
+                .user-email {
+                    display: none;
+                }
 
                 .sidebar {
-                    width: 70px;
-                    padding: 20px 8px;
-                }
-
-                .nav-section-title,
-                .nav-text {
                     display: none;
                 }
-
-                .nav-item {
-                    justify-content: center;
-                    padding: 12px 8px;
-                }
-
-                    .nav-item.active {
-                        box-shadow: none;
-                    }
 
                 .main {
-                    margin-left: 70px;
-                    padding-left: 22px;
-                    padding-right: 22px;
+                    padding: 20px 16px;
                 }
 
-                .user-info {
-                    display: none;
+                .page-header {
+                    flex-direction: column;
+                    gap: 16px;
                 }
 
                 .page-title {
-                    font-size: 30px;
+                    font-size: 1.5rem;
                 }
-            }
 
-
-            /* =========================================================
-                               RESPONSIVE — MOBILE
-                            ========================================================= */
-
-            @@media (max-width: 650px) {
-
-                .topbar {
-                    padding: 0 16px;
+                .header-actions {
+                    width: 100%;
                 }
-        /* ── RESPONSIVE ── */
-        @@media (max-width: 768px) {
-            .topbar {
-                padding: 0 20px;
-            }
 
-            .user-email {
-                display: none;
-            }
+                    .header-actions .btn {
+                        flex: 1;
+                    }
 
-            .sidebar {
-                display: none;
-            }
+                .search-box input {
+                    width: 100%;
+                }
 
-            .main {
-                padding: 20px 16px;
-            }
-
-            .page-header {
-                flex-direction: column;
-                gap: 16px;
-            }
-
-            .page-title {
-                font-size: 1.5rem;
-            }
-
-            .header-actions {
-                width: 100%;
-            }
-
-                .header-actions .btn {
+                .search-box {
                     flex: 1;
+                    min-width: 160px;
                 }
 
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
+                .form-grid {
+                    grid-template-columns: 1fr;
+                }
 
-            .form-group.full {
-                grid-column: auto;
-            }
+                .form-group.full {
+                    grid-column: auto;
+                }
 
-            .modal-overlay {
-                padding: 12px;
-            }
+                .modal-overlay {
+                    padding: 12px;
+                }
 
-            .modal {
-                max-height: 94vh;
-            }
+                .modal {
+                    max-height: 94vh;
+                }
 
-            .modal-body {
-                padding: 18px;
-            }
+                .modal-body {
+                    padding: 18px;
+                }
 
-            .modal-header {
-                padding: 17px 18px;
-            }
+                .modal-header {
+                    padding: 17px 18px;
+                }
 
-            .modal-footer {
-                padding: 14px 18px;
-            }
+                .modal-footer {
+                    padding: 14px 18px;
+                }
 
-                .modal-footer .btn {
-                    flex: 1;
+                    .modal-footer .btn {
+                        flex: 1;
+                    }
+
+                .pagination-bar {
+                    padding: 12px 16px;
+                    justify-content: center;
                 }
 
                 .footer {
@@ -1380,76 +1310,10 @@
                     line-height: 1.5;
                 }
             }
-
-
-            /* =========================================================
-                               VERY SMALL SCREENS
-                            ========================================================= */
-
-            @@media (max-width: 420px) {
-
-                .topbar {
-                    height: 64px;
-                }
-
-                .sidebar {
-                    top: 64px;
-                }
-
-                .main {
-                    padding-top: 84px;
-                }
-
-                .brand-name {
-                    font-size: 17px;
-                }
-
-                .avatar {
-                    width: 36px;
-                    height: 36px;
-                }
-
-                .page-title {
-                    font-size: 25px;
-                }
-
-                .header-actions {
-                    flex-direction: column;
-                }
-
-                    .header-actions .btn {
-                        width: 100%;
-                    }
-
-                .card-header {
-                    padding: 15px 17px;
-                }
-
-                .record-count {
-                    font-size: 10px;
-                }
-            }
-
-            .footer {
-                flex-direction: column;
-                gap: 6px;
-                line-height: 1.5;
-            }
-        }
     </style>
 </head>
 <body>
 
-    <!-- =========================
-         TOPBAR
-    ========================= -->
-
-    <header class="topbar">
-
-        <div class="brand">
-
-            <div class="brand-icon">
-                🧪
     <!-- TOPBAR -->
     <div class="topbar">
         <a class="brand" asp-controller="Home" asp-action="Index">
@@ -1463,8 +1327,8 @@
         </a>
         <div class="topbar-right">
             <div class="user-chip">
-                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "M")</div>
-                <span class="user-email">@(ViewBag.Email ?? "Laboratory Manager")</span>
+                <div class="user-avatar">@initial</div>
+                <span class="user-email">@(string.IsNullOrEmpty(emailStr) ? "Laboratory Manager" : emailStr)</span>
             </div>
             <a asp-controller="Home" asp-action="Logout" class="logout-btn" id="logout-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -1479,16 +1343,6 @@
 
     <div class="page">
 
-        </div>
-
-    </header>
-
-
-    <!-- =========================
-         SIDEBAR
-    ========================= -->
-
-    <aside class="sidebar">
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="nav-section">
@@ -1532,7 +1386,7 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
                     </svg>
-                   User
+                    User
                 </a>
 
                 <a asp-controller="Report" asp-action="Index" class="nav-item">
@@ -1544,8 +1398,9 @@
                     </svg>
                     Reports
                 </a>
+            </div>
 
-                <div class="nav-section">
+            <div class="nav-section">
                 <div class="nav-label">System</div>
                 <a asp-controller="User" asp-action="Profile" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -1561,15 +1416,8 @@
                     Audit Log
                 </a>
             </div>
-            </div>
         </aside>
 
-
-    <!-- =========================
-         MAIN CONTENT
-    ========================= -->
-
-    <main class="main">
         <!-- MAIN -->
         <main class="main">
 
@@ -1578,8 +1426,8 @@
                 <div>
                     <h1 class="page-title">Test Catalogue</h1>
                     <p class="page-description">
-                        Manage laboratory test types, reference ranges,
-                        sample types and turnaround times.
+                        Manage laboratory test types, categories, sample types,
+                        reference ranges and turnaround times.
                     </p>
                 </div>
 
@@ -1591,11 +1439,11 @@
                             <span class="btn-badge">@deletedTests.Count()</span>
                         }
                     </button>
-                    <button type="button" class="btn btn-secondary" onclick="openModal('addSampleTypeModal')">
-                        <span>＋</span> Add Sample Type
+                    <button type="button" class="btn btn-secondary" onclick="openModal('manageSampleModal')">
+                        ⚙ Manage Sample Types
                     </button>
-                    <button type="button" class="btn btn-secondary" onclick="openModal('addCategoryModal')">
-                        <span>＋</span> Add Category
+                    <button type="button" class="btn btn-secondary" onclick="openModal('manageCategoryModal')">
+                        ⚙ Manage Categories
                     </button>
                     <button type="button" class="btn btn-primary" onclick="openModal('addModal')">
                         <span>＋</span> Add Test Type
@@ -1613,24 +1461,27 @@
                 <div class="alert alert-error">⚠ @TempData["Error"]</div>
             }
 
-
-        <!-- =========================
-             TEST TABLE
-        ========================= -->
-
-        <div class="card">
             <!-- TEST TABLE -->
             <div class="card">
 
                 <div class="card-header">
                     <div class="card-title">Laboratory Test Types</div>
-                    <div class="record-count">@(Model?.Count() ?? 0) test type(s)</div>
+                    <div class="card-tools">
+                        @if (testCount > 0)
+                        {
+                            <div class="search-box">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                                <input type="search" id="test-search" class="form-control" placeholder="Search tests, category, sample…" autocomplete="off" />
+                            </div>
+                        }
+                        <div class="record-count" id="test-count">@testCount test type(s)</div>
+                    </div>
                 </div>
 
-                @if (Model != null && Model.Any())
+                @if (testCount > 0)
                 {
                     <div class="table-container">
-                        <table>
+                        <table id="test-table">
                             <thead>
                                 <tr>
                                     <th>Test</th>
@@ -1645,68 +1496,75 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var test in Model)
+                                @foreach (var test in tests)
                                 {
-                                    <tr>
-                                        <td>
-                                            <div class="test-name">@test.TestName</div>
-                                        </td>
-                                        <td>
-                                            @{
-                                                var catList = ViewBag.Category as IEnumerable<SelectListItem>;
-                                                var categoryText = catList?.FirstOrDefault(c => c.Value == test.CategoryId.ToString())?.Text
-                                                    ?? categories.FirstOrDefault(c => c.CategoryID == test.CategoryId)?.CategoryName
-                                                    ?? "—";
-                                            }
-                                            <div>@categoryText</div>
-                                        </td>
-                                        <td>
-                                            @{
-                                                var sampleList = ViewBag.SampleType as IEnumerable<SelectListItem>;
-                                                var sampleText = sampleList?.FirstOrDefault(s => s.Value == test.SampleTypeId.ToString())?.Text
-                                                    ?? sampleTypes.FirstOrDefault(s => s.SampleTypeID.ToString() == test.SampleTypeId.ToString())?.SampleName
-                                                    ?? "—";
-                                            }
-                                            <div>@sampleText</div>
-                                        </td>
-                                        <td>@(System.Net.WebUtility.HtmlDecode(test.UnitMeasurement ?? "—"))</td>
-                                        <td>
-                                            <span class="range">@test.NormalRangeDisplay</span>
-                                        </td>
-                                        <td>
-                                            <span class="tat">@test.TurnaroundTime hrs</span>
-                                        </td>
-                                        <td>
-                                            @{
-                                                // ConsumablesUsed holds JSON like [{"id":11,"name":"RegeantA","quantity":12}].
-                                                // Older rows may hold plain text such as "Tubes", so handle both.
-                                                var consumableItems = new List<(string Name, int Qty)>();
-                                                var consumablesIsLegacy = false;
-                                                var rawConsumables = (test.ConsumablesUsed ?? "").Trim();
+                                    var categoryText = catNameById.TryGetValue(test.CategoryId.ToString(), out var cn) ? cn : "—";
+                                    var sampleText = sampleNameById.TryGetValue(test.SampleTypeId.ToString(), out var sn) ? sn : "—";
+                                    var unitText = System.Net.WebUtility.HtmlDecode(test.UnitMeasurement ?? "");
 
-                                                if (rawConsumables.StartsWith("["))
-                                                {
-                                                    JsonDocument consumableDoc = null;
-                                                    try
-                                                    {
-                                                        consumableDoc = JsonDocument.Parse(rawConsumables);
-                                                        foreach (var el in consumableDoc.RootElement.EnumerateArray())
-                                                        {
-                                                            string cName = el.TryGetProperty("name", out var cNameProp) ? cNameProp.GetString() : null;
-                                                            int cQty = 0;
-                                                            if (el.TryGetProperty("quantity", out var cQtyProp)) { cQtyProp.TryGetInt32(out cQty); }
-                                                            if (!string.IsNullOrWhiteSpace(cName)) { consumableItems.Add((cName, cQty)); }
-                                                        }
-                                                    }
-                                                    catch (JsonException) { consumablesIsLegacy = true; }
-                                                    catch (InvalidOperationException) { consumablesIsLegacy = true; }
-                                                    finally { consumableDoc?.Dispose(); }
-                                                }
-                                                else if (rawConsumables.Length > 0)
-                                                {
-                                                    consumablesIsLegacy = true;
-                                                }
+                                    // ConsumablesUsed holds JSON like [{"id":11,"name":"ReagentA","quantity":12}].
+                                    // Older rows may hold plain text such as "Tubes", so handle both.
+                                    var consumableItems = new List<(string Name, int Qty)>();
+                                    var consumablesIsLegacy = false;
+                                    var rawConsumables = (test.ConsumablesUsed ?? "").Trim();
+
+                                    if (rawConsumables.StartsWith("["))
+                                    {
+                                        JsonDocument consumableDoc = null;
+                                        try
+                                        {
+                                            consumableDoc = JsonDocument.Parse(rawConsumables);
+                                            foreach (var el in consumableDoc.RootElement.EnumerateArray())
+                                            {
+                                                string cName = el.TryGetProperty("name", out var cNameProp) ? cNameProp.GetString() : null;
+                                                int cQty = 0;
+                                                if (el.TryGetProperty("quantity", out var cQtyProp)) { cQtyProp.TryGetInt32(out cQty); }
+                                                if (!string.IsNullOrWhiteSpace(cName)) { consumableItems.Add((cName, cQty)); }
                                             }
+                                        }
+                                        catch (JsonException) { consumablesIsLegacy = true; }
+                                        catch (InvalidOperationException) { consumablesIsLegacy = true; }
+                                        finally { consumableDoc?.Dispose(); }
+                                    }
+                                    else if (rawConsumables.Length > 0)
+                                    {
+                                        consumablesIsLegacy = true;
+                                    }
+
+                                    // Technician names assigned to this test
+                                    var techNames = new List<string>();
+
+                                    if (rawTechMap is IDictionary<int, List<string>> techListMap
+                                        && techListMap.TryGetValue(test.TestId, out var techListValue)
+                                        && techListValue != null)
+                                    {
+                                        techNames = techListValue;
+                                    }
+                                    else if (rawTechMap is IDictionary<int, string> techStringMap
+                                        && techStringMap.TryGetValue(test.TestId, out var techStringValue)
+                                        && !string.IsNullOrWhiteSpace(techStringValue)
+                                        && techStringValue != "—")
+                                    {
+                                        techNames = techStringValue
+                                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                            .ToList();
+                                    }
+
+                                    techNames = techNames
+                                        .Where(n => !string.IsNullOrWhiteSpace(n))
+                                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                                        .ToList();
+
+                                    var searchText = (test.TestName + " " + categoryText + " " + sampleText + " " + unitText).ToLowerInvariant();
+
+                                    <tr class="test-row" data-search="@searchText">
+                                        <td><div class="test-name">@test.TestName</div></td>
+                                        <td>@categoryText</td>
+                                        <td>@sampleText</td>
+                                        <td>@(string.IsNullOrWhiteSpace(unitText) ? "—" : unitText)</td>
+                                        <td><span class="range">@test.NormalRangeDisplay</span></td>
+                                        <td><span class="tat">@test.TurnaroundTime hrs</span></td>
+                                        <td>
                                             @if (consumableItems.Count > 0)
                                             {
                                                 <div style="display:flex;flex-wrap:wrap;gap:4px;">
@@ -1726,72 +1584,6 @@
                                             }
                                         </td>
                                         <td>
-                                            @{
-                                                // Build the list of technician names assigned to this test
-                                                var techNames = new List<string>();
-
-                                                if (rawTechMap is IDictionary<int, List<string>> techListMap
-                                                    && techListMap.TryGetValue(test.TestId, out var techListValue)
-                                                    && techListValue != null)
-                                                {
-                                                    techNames = techListValue;
-                                                }
-                                                else if (rawTechMap is IDictionary<int, string> techStringMap
-                                                    && techStringMap.TryGetValue(test.TestId, out var techStringValue)
-                                                    && !string.IsNullOrWhiteSpace(techStringValue)
-                                                    && techStringValue != "—")
-                                                {
-                                                    techNames = techStringValue
-                                                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                                                        .ToList();
-                                                }
-
-                                        @if (!string.IsNullOrWhiteSpace(test.ConsumablesUsed))
-                                        {
-                                            @test.ConsumablesUsed
-                                        }
-                                        else
-                                        {
-                                            <span style="color:#94a3b8;">
-                                                None
-                                            </span>
-                                        }
-
-                                    </td>
-
-
-                                    <!-- ACTIONS -->
-
-                                    <td>
-
-                                        <div class="actions">
-
-
-                                            <!-- EDIT -->
-
-                                            <button type="button"
-                                                    class="action-btn edit-btn"
-                                                    title="Edit"
-                                                    onclick="openEditModal(
-                                                @test.TestId,
-                                                '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.TestName ?? ""))',
-                                                '@test.CategoryId',
-                                                '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.SampleTypeId ?? ""))',
-                                                '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.UnitMeasurement ?? ""))',
-                                                '@(test.NormalRangeMin?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")',
-                                                '@(test.NormalRangeMax?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")',
-                                                '@test.TurnaroundTime',
-                                                '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.ConsumablesUsed ?? ""))'
-                                                )">
-
-                                                ✎
-
-                                            </button>
-                                                techNames = techNames
-                                                    .Where(n => !string.IsNullOrWhiteSpace(n))
-                                                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                                                    .ToList();
-                                            }
                                             @if (techNames.Count > 0)
                                             {
                                                 <span class="tech-badge" title="@(string.Join(", ", techNames))">
@@ -1814,7 +1606,7 @@
                                                             data-testname="@test.TestName"
                                                             data-categoryid="@test.CategoryId"
                                                             data-sampletypeid="@test.SampleTypeId"
-                                                            data-unit="@(System.Net.WebUtility.HtmlDecode(test.UnitMeasurement ?? ""))"
+                                                            data-unit="@unitText"
                                                             data-normalmin="@(test.NormalRangeMin?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")"
                                                             data-normalmax="@(test.NormalRangeMax?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")"
                                                             data-tat="@test.TurnaroundTime"
@@ -1844,6 +1636,26 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <div id="no-results" class="empty-state" style="padding:40px 20px;" hidden>
+                        <div class="empty-title">No matching tests</div>
+                        <div>Try a different search term.</div>
+                    </div>
+
+                    <!-- PAGINATION -->
+                    <div class="pagination-bar" id="test-pagination">
+                        <div class="per-page">
+                            <span>Rows per page</span>
+                            <select id="test-per-page" class="form-control">
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        <div class="page-info" id="test-page-info"></div>
+                        <div class="pager" id="test-pager"></div>
+                    </div>
                 }
                 else
                 {
@@ -1860,22 +1672,6 @@
 
             </div>
 
-
-        <!-- =========================
-             FOOTER
-        ========================= -->
-
-        <div class="footer">
-
-            <span>
-                NMB-HLabSys · Haematology Laboratory System
-            </span>
-
-            <span>
-                Internal management system · @DateTime.Now.ToString("yyyy")
-            </span>
-
-        </div>
             <!-- FOOTER -->
             <div class="footer">
                 <span>NMB-HLabSys · Haematology Laboratory System</span>
@@ -1885,13 +1681,16 @@
         </main>
     </div>
 
+    <!-- Consumable option source for per-row dropdowns (never posted: no name, disabled) -->
+    <select id="consumable-source" hidden disabled aria-hidden="true">
+        <option value="">Select consumable</option>
+        @foreach (var c in consumableOptions)
+        {
+            <option value="@c.Value">@c.Text</option>
+        }
+    </select>
+
     <!-- =====================================================
-         ADD TEST TYPE MODAL
-    ====================================================== -->
-
-    <div id="addModal"
-         class="modal-overlay">
-
          ADD TEST TYPE MODAL
     ====================================================== -->
     <div id="addModal" class="modal-overlay">
@@ -1916,121 +1715,34 @@
                         </div>
 
                         <div class="form-group">
-
-                            <label class="form-label">
-
-                                Category
-
-                                <span class="required">*</span>
-
-                            </label>
-
-                            <select id="add-CategoryId"
-                                    name="CategoryId"
-                                    class="form-control"
-                                    required>
-
-                                <option value="">
-                                    Select category
-                                </option>
-
                             <label class="form-label">Category<span class="required">*</span></label>
-                            <select id="add-CategoryId" name="CategoryId" class="form-control" required
+                            <select name="CategoryId" class="form-control cat-select" required
                                     data-required="Please select a category.">
                                 <option value="">Select category</option>
-                                @if (ViewBag.Category != null)
+                                @foreach (var cat in catItems)
                                 {
-                                    @foreach (var sampleType in ViewBag.Category)
-                                    @foreach (var cat in ViewBag.Category)
-                                    {
-                                        <option value="@sampleType.Value">
-                                            @sampleType.Text
-                                        </option>
-                                        <option value="@cat.Value">@cat.Text</option>
-                                    }
+                                    <option value="@cat.Id">@cat.Name</option>
                                 }
                             </select>
                             <span class="field-error"></span>
                         </div>
 
                         <div class="form-group">
-
-                            <label class="form-label">
-
-                                Sample Type
-
-                                <span class="required">*</span>
-
-                            </label>
-
-                            <select id="add-SampleTypeId"
-                                    name="SampleTypeId"
-                                    class="form-control"
-                                    required>
-
-                                <option value="">
-                                    Select sample type
-                                </option>
-
                             <label class="form-label">Sample Type<span class="required">*</span></label>
-                            <select id="add-SampleTypeId" name="SampleTypeId" class="form-control" required
+                            <select name="SampleTypeId" class="form-control sample-select" required
                                     data-required="Please select a sample type.">
                                 <option value="">Select sample type</option>
-                                @if (ViewBag.SampleType != null)
+                                @foreach (var st in sampleItems)
                                 {
-                                    @foreach (var st in ViewBag.SampleType)
-                                    {
-                                        <option value="@st.Value">@st.Text</option>
-                                    }
+                                    <option value="@st.Id">@st.Name</option>
                                 }
                             </select>
                             <span class="field-error"></span>
                         </div>
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Unit Measurement
-                            </label>
-
-                            <select id="add-UnitMeasurement"
-                                    name="UnitMeasurement"
-                                    class="form-control">
-
-                                <option value="">
-                                    Select unit
-                                </option>
-
-                                <option value="µL">
-                                    µL
-                                </option>
-
-                                <option value="mcL">
-                                    mcL
-                                </option>
-
-                                <option value="g/dL">
-                                    g/dL
-                                </option>
-
-                                <option value="g/L">
-                                    g/L
-                                </option>
-
-                                <option value="g/mL">
-                                    g/mL
-                                </option>
-
-                                <option value="k/µL">
-                                    k/µL
-                                </option>
-
-                                <option value="x10³/µL">
-                                    x10³/µL
-                                </option>
-
                             <label class="form-label">Unit Measurement</label>
-                            <select id="add-UnitMeasurement" name="UnitMeasurement" class="form-control">
+                            <select name="UnitMeasurement" class="form-control unit-select">
                                 <option value="">Select unit</option>
                                 <option value="µL">µL</option>
                                 <option value="mcL">mcL</option>
@@ -2067,36 +1779,18 @@
                             <span class="field-error"></span>
                         </div>
 
-                        <!-- CONSUMABLES: name + quantity + remove on a single line per row -->
-                        <div class="form-group full">
+                        <div class="form-group full consumable-editor" data-empty-text="@(consumableOptions.Any() ? "No consumables added." : "No consumables available. Add them on the Consumables page first.")">
                             <label class="form-label">Consumables Used</label>
-
-                            <div id="consumables-head" class="consumable-head" style="display:none;">
-                                <span>Consumable</span>
-                                <span>Qty used</span>
-                                <span></span>
+                            <div class="consumable-head c-head" style="display:none;">
+                                <span>Consumable</span><span>Qty used</span><span></span>
                             </div>
-
-                            <div id="consumables-list" class="consumable-list"></div>
-
+                            <div class="consumable-list c-list"></div>
                             <div class="consumable-actions">
-                                <button type="button" class="btn btn-secondary" id="add-consumable-btn" @(consumableOptions.Any() ? "" : "disabled")>＋ Add Consumable</button>
-                                <span class="consumable-empty" id="consumables-empty">
-                                    @(consumableOptions.Any() ? "No consumables added." : "No consumables available. Add them on the Consumables page first.")
-                                </span>
+                                <button type="button" class="btn btn-secondary btn-sm c-add" @(consumableOptions.Any() ? "" : "disabled")>＋ Add Consumable</button>
+                                <span class="consumable-empty c-empty"></span>
                             </div>
-
-                            <input type="hidden" id="ConsumablesJson" name="ConsumablesJson" />
-
-                            <!-- option source for the per-row dropdowns (never posted: no name) -->
-                            <select id="consumable-source" hidden disabled aria-hidden="true">
-                                <option value="">Select consumable</option>
-                                @foreach (var c in consumableOptions)
-                                {
-                                    <option value="@c.Value">@c.Text</option>
-                                }
-                            </select>
-                            <span class="field-error" id="consumables-error"></span>
+                            <input type="hidden" name="ConsumablesJson" class="c-json" />
+                            <span class="field-error c-error"></span>
                         </div>
 
                     </div>
@@ -2112,99 +1806,6 @@
     </div>
 
     <!-- =====================================================
-         ADD CATEGORY MODAL
-    ====================================================== -->
-
-    <div id="addCategoryModal"
-         class="modal-overlay">
-
-        <div class="modal"
-             style="max-width:480px;">
-
-            <form asp-controller="TestCatalogue"
-                  asp-action="AddCategory"
-                  method="post">
-
-         ADD CATEGORY MODAL
-    ====================================================== -->
-    <div id="addCategoryModal" class="modal-overlay">
-        <div class="modal" style="max-width:480px;">
-            <form asp-controller="TestCatalogue" asp-action="AddCategory" method="post" novalidate data-validate>
-                @Html.AntiForgeryToken()
-
-                <div class="modal-header">
-                    <h2 class="modal-title">Add Category</h2>
-                    <button type="button" class="close-btn" onclick="closeModal('addCategoryModal')">×</button>
-                </div>
-
-                <div class="modal-body">
-                    <div class="form-grid">
-                        <div class="form-group full">
-                            <label class="form-label">Category Name<span class="required">*</span></label>
-                            <input type="text" name="CategoryName" class="form-control" placeholder="e.g. Haematology" required
-                                   data-required="Category name is required." data-minlength="2" data-maxlength="50" />
-                            <span class="field-error"></span>
-                        </div>
-                        <div class="form-group full">
-                            <label class="form-label">Description</label>
-                            <textarea name="Description" class="form-control" placeholder="Optional short description"
-                                      data-maxlength="200"></textarea>
-                            <span class="field-error"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('addCategoryModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">✓ Save Category</button>
-                </div>
-
-            </form>
-        </div>
-    </div>
-
-    <!-- =====================================================
-         ADD SAMPLE TYPE MODAL
-    ====================================================== -->
-    <div id="addSampleTypeModal" class="modal-overlay">
-        <div class="modal" style="max-width:480px;">
-            <form asp-controller="TestCatalogue" asp-action="AddSampleType" method="post" novalidate data-validate>
-                @Html.AntiForgeryToken()
-
-                <div class="modal-header">
-                    <h2 class="modal-title">Add Sample Type</h2>
-                    <button type="button" class="close-btn" onclick="closeModal('addSampleTypeModal')">×</button>
-                </div>
-
-                <div class="modal-body">
-                    <div class="form-grid">
-                        <div class="form-group full">
-                            <label class="form-label">Sample Type Name<span class="required">*</span></label>
-                            <input type="text" name="SampleName" class="form-control" placeholder="e.g. Whole Blood (EDTA)" required
-                                   data-required="Sample type name is required." data-minlength="2" data-maxlength="50"
-                                   data-pattern="^[A-Za-z0-9 ()/.,\-]+$"
-                                   data-pattern-msg="Only letters, numbers, spaces and ( ) / . , - are allowed." />
-                            <span class="field-error"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('addSampleTypeModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">✓ Save Sample Type</button>
-                </div>
-
-            </form>
-        </div>
-    </div>
-
-    <!-- =====================================================
-         EDIT TEST TYPE MODAL
-    ====================================================== -->
-
-    <div id="editModal"
-         class="modal-overlay">
-
          EDIT TEST TYPE MODAL
     ====================================================== -->
     <div id="editModal" class="modal-overlay">
@@ -2232,19 +1833,12 @@
 
                         <div class="form-group">
                             <label class="form-label">Category<span class="required">*</span></label>
-                            <select id="edit-CategoryId" name="CategoryId" class="form-control" required
+                            <select id="edit-CategoryId" name="CategoryId" class="form-control cat-select" required
                                     data-required="Please select a category.">
                                 <option value="">Select category</option>
-                                @if (ViewBag.Category != null)
+                                @foreach (var cat in catItems)
                                 {
-                                    @foreach (var sampleType in ViewBag.Category)
-                                    @foreach (var cat in ViewBag.Category)
-                                    {
-                                        <option value="@sampleType.Value">
-                                            @sampleType.Text
-                                        </option>
-                                        <option value="@cat.Value">@cat.Text</option>
-                                    }
+                                    <option value="@cat.Id">@cat.Name</option>
                                 }
                             </select>
                             <span class="field-error"></span>
@@ -2252,15 +1846,12 @@
 
                         <div class="form-group">
                             <label class="form-label">Sample Type<span class="required">*</span></label>
-                            <select id="edit-SampleTypeId" name="SampleTypeId" class="form-control" required
+                            <select id="edit-SampleTypeId" name="SampleTypeId" class="form-control sample-select" required
                                     data-required="Please select a sample type.">
                                 <option value="">Select sample type</option>
-                                @if (ViewBag.SampleType != null)
+                                @foreach (var st in sampleItems)
                                 {
-                                    @foreach (var st in ViewBag.SampleType)
-                                    {
-                                        <option value="@st.Value">@st.Text</option>
-                                    }
+                                    <option value="@st.Id">@st.Name</option>
                                 }
                             </select>
                             <span class="field-error"></span>
@@ -2268,9 +1859,16 @@
 
                         <div class="form-group">
                             <label class="form-label">Unit Measurement</label>
-                            <input type="text" id="edit-UnitMeasurement" name="UnitMeasurement" class="form-control"
-                                   data-maxlength="20" />
-                            <span class="field-error"></span>
+                            <select id="edit-UnitMeasurement" name="UnitMeasurement" class="form-control unit-select">
+                                <option value="">Select unit</option>
+                                <option value="µL">µL</option>
+                                <option value="mcL">mcL</option>
+                                <option value="g/dL">g/dL</option>
+                                <option value="g/L">g/L</option>
+                                <option value="g/mL">g/mL</option>
+                                <option value="k/µL">k/µL</option>
+                                <option value="x10³/µL">x10³/µL</option>
+                            </select>
                         </div>
 
                         <div class="form-group">
@@ -2278,6 +1876,7 @@
                             <input type="number" id="edit-TurnaroundTime" name="TurnaroundTime" class="form-control" min="0" max="8760" step="1"
                                    data-integer="Whole hours only." data-min="0" data-max="8760"
                                    data-range-msg="TAT must be between 0 and 8760 hours." />
+                            <span class="form-help">Enter TAT in hours.</span>
                             <span class="field-error"></span>
                         </div>
 
@@ -2297,11 +1896,21 @@
                             <span class="field-error"></span>
                         </div>
 
-                        <div class="form-group full">
+                        <div class="form-group full consumable-editor" id="edit-consumables" data-empty-text="@(consumableOptions.Any() ? "No consumables added." : "No consumables available. Add them on the Consumables page first.")">
                             <label class="form-label">Consumables Used</label>
-                            <textarea id="edit-ConsumablesUsed" name="ConsumablesUsed" class="form-control"
-                                      data-maxlength="500"></textarea>
-                            <span class="field-error"></span>
+                            <div class="legacy-note c-legacy" hidden></div>
+                            <div class="consumable-head c-head" style="display:none;">
+                                <span>Consumable</span><span>Qty used</span><span></span>
+                            </div>
+                            <div class="consumable-list c-list"></div>
+                            <div class="consumable-actions">
+                                <button type="button" class="btn btn-secondary btn-sm c-add" @(consumableOptions.Any() ? "" : "disabled")>＋ Add Consumable</button>
+                                <span class="consumable-empty c-empty"></span>
+                            </div>
+                            <!-- same JSON is posted under both names so either controller binding works -->
+                            <input type="hidden" name="ConsumablesJson" class="c-json" />
+                            <input type="hidden" name="ConsumablesUsed" class="c-json" />
+                            <span class="field-error c-error"></span>
                         </div>
 
                     </div>
@@ -2317,20 +1926,202 @@
     </div>
 
     <!-- =====================================================
-         DELETE CONFIRMATION MODAL
+         MANAGE CATEGORIES MODAL
     ====================================================== -->
+    <div id="manageCategoryModal" class="modal-overlay manage-modal"
+         data-label="category"
+         data-add-url="@Url.Action("AddCategory", "TestCatalogue")"
+         data-edit-url="@Url.Action("EditCategory", "TestCatalogue")"
+         data-delete-url="@Url.Action("DeleteCategory", "TestCatalogue")">
+        <div class="modal" style="max-width:640px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Manage Categories</h2>
+                <button type="button" class="close-btn" onclick="closeModal('manageCategoryModal')">×</button>
+            </div>
 
-    <div id="deleteModal"
-         class="modal-overlay">
+            <div class="modal-body">
+                <form class="manage-form" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" class="m-id" name="CategoryId" disabled />
+                    <div class="manage-form-title m-form-title">Add new category</div>
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label class="form-label">Category Name<span class="required">*</span></label>
+                            <input type="text" name="CategoryName" class="form-control m-name" placeholder="e.g. Haematology" maxlength="50" autocomplete="off" />
+                            <span class="field-error m-error"></span>
+                        </div>
+                        <div class="form-group full">
+                            <label class="form-label">Description</label>
+                            <textarea name="Description" class="form-control m-desc" placeholder="Optional short description" maxlength="200"></textarea>
+                        </div>
+                    </div>
+                    <div class="manage-form-actions">
+                        <button type="button" class="btn btn-secondary btn-sm m-cancel" hidden>Cancel edit</button>
+                        <button type="submit" class="btn btn-primary btn-sm m-save">✓ Save Category</button>
+                    </div>
+                </form>
 
-        <div class="modal"
-             style="max-width:450px;">
+                <div class="manage-list-head">
+                    <span class="manage-list-title">Existing categories (<span class="m-total">@catItems.Count</span>)</span>
+                </div>
 
-            <form asp-controller="TestCatalogue"
-                  asp-action="DeleteTest"
-                  method="post">
+                @if (catItems.Count > 0)
+                {
+                    <div class="manage-list">
+                        @foreach (var c in catItems)
+                        {
+                            var used = catUsage.TryGetValue(c.Id, out var u) ? u : 0;
+                            <div class="manage-row">
+                                <div class="manage-row-main">
+                                    <div class="manage-row-name">@c.Name</div>
+                                    <div class="manage-row-meta">
+                                        @used test@(used == 1 ? "" : "s")@(string.IsNullOrWhiteSpace(c.Desc) ? "" : " · " + c.Desc)
+                                    </div>
+                                </div>
+                                <div class="actions">
+                                    <button type="button" class="action-icon-btn edit-btn m-edit" title="Edit"
+                                            data-id="@c.Id" data-name="@c.Name" data-desc="@c.Desc">
+                                        ✎
+                                    </button>
+                                    <button type="button" class="action-icon-btn delete-btn m-delete"
+                                            title="@(used > 0 ? "In use by " + used + " test(s) — reassign them first" : "Delete")"
+                                            data-id="@c.Id" data-name="@c.Name" @(used > 0 ? "disabled" : "")>
+                                        🗑
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="pagination-bar compact m-pagination">
+                        <div class="page-info m-info"></div>
+                        <div class="pager m-pager"></div>
+                    </div>
+                }
+                else
+                {
+                    <div class="manage-empty">No categories yet. Add your first one above.</div>
+                }
+            </div>
 
-         DELETE CONFIRMATION MODAL (soft delete)
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('manageCategoryModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         MANAGE SAMPLE TYPES MODAL
+    ====================================================== -->
+    <div id="manageSampleModal" class="modal-overlay manage-modal"
+         data-label="sample type"
+         data-add-url="@Url.Action("AddSampleType", "TestCatalogue")"
+         data-edit-url="@Url.Action("EditSampleType", "TestCatalogue")"
+         data-delete-url="@Url.Action("DeleteSampleType", "TestCatalogue")">
+        <div class="modal" style="max-width:640px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Manage Sample Types</h2>
+                <button type="button" class="close-btn" onclick="closeModal('manageSampleModal')">×</button>
+            </div>
+
+            <div class="modal-body">
+                <form class="manage-form" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" class="m-id" name="SampleTypeId" disabled />
+                    <div class="manage-form-title m-form-title">Add new sample type</div>
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label class="form-label">Sample Type Name<span class="required">*</span></label>
+                            <input type="text" name="SampleName" class="form-control m-name" placeholder="e.g. Whole Blood (EDTA)" maxlength="50" autocomplete="off" />
+                            <span class="field-error m-error"></span>
+                        </div>
+                    </div>
+                    <div class="manage-form-actions">
+                        <button type="button" class="btn btn-secondary btn-sm m-cancel" hidden>Cancel edit</button>
+                        <button type="submit" class="btn btn-primary btn-sm m-save">✓ Save Sample Type</button>
+                    </div>
+                </form>
+
+                <div class="manage-list-head">
+                    <span class="manage-list-title">Existing sample types (<span class="m-total">@sampleItems.Count</span>)</span>
+                </div>
+
+                @if (sampleItems.Count > 0)
+                {
+                    <div class="manage-list">
+                        @foreach (var s in sampleItems)
+                        {
+                            var used = sampleUsage.TryGetValue(s.Id, out var u) ? u : 0;
+                            <div class="manage-row">
+                                <div class="manage-row-main">
+                                    <div class="manage-row-name">@s.Name</div>
+                                    <div class="manage-row-meta">@used test@(used == 1 ? "" : "s")</div>
+                                </div>
+                                <div class="actions">
+                                    <button type="button" class="action-icon-btn edit-btn m-edit" title="Edit"
+                                            data-id="@s.Id" data-name="@s.Name" data-desc="">
+                                        ✎
+                                    </button>
+                                    <button type="button" class="action-icon-btn delete-btn m-delete"
+                                            title="@(used > 0 ? "In use by " + used + " test(s) — reassign them first" : "Delete")"
+                                            data-id="@s.Id" data-name="@s.Name" @(used > 0 ? "disabled" : "")>
+                                        🗑
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="pagination-bar compact m-pagination">
+                        <div class="page-info m-info"></div>
+                        <div class="pager m-pager"></div>
+                    </div>
+                }
+                else
+                {
+                    <div class="manage-empty">No sample types yet. Add your first one above.</div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('manageSampleModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         DELETE CATEGORY / SAMPLE TYPE CONFIRMATION
+    ====================================================== -->
+    <div id="manageDeleteModal" class="modal-overlay top">
+        <div class="modal" style="max-width:450px;">
+            <form id="manageDeleteForm" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="manage-delete-id" name="id" />
+
+                <div class="modal-header">
+                    <h2 class="modal-title" id="manage-delete-title">Delete</h2>
+                    <button type="button" class="close-btn" onclick="closeModal('manageDeleteModal')">×</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="delete-content">
+                        <div class="delete-icon">!</div>
+                        <div class="delete-title">Are you sure?</div>
+                        <p class="delete-message">
+                            You are about to delete <strong id="manage-delete-name">this item</strong>.
+                            This action cannot be undone.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('manageDeleteModal')">Cancel</button>
+                    <button type="submit" class="btn btn-danger">🗑 Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         DELETE TEST CONFIRMATION MODAL (soft delete)
     ====================================================== -->
     <div id="deleteModal" class="modal-overlay">
         <div class="modal" style="max-width:450px;">
@@ -2366,8 +2157,6 @@
     </div>
 
     <!-- =====================================================
-         JAVASCRIPT
-    ====================================================== -->
          RESTORE DELETED TESTS MODAL
     ====================================================== -->
     <div id="restoreModal" class="modal-overlay">
@@ -2380,7 +2169,7 @@
             <div class="modal-body">
                 @if (deletedTests.Any())
                 {
-                    <div class="restore-list">
+                    <div class="restore-list" id="restore-list">
                         @foreach (var d in deletedTests)
                         {
                             <div class="restore-item">
@@ -2391,10 +2180,14 @@
                                 <form asp-controller="TestCatalogue" asp-action="RestoreTest" method="post">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@d.TestId" />
-                                    <button type="submit" class="btn btn-primary" style="padding:7px 12px;">↺ Restore</button>
+                                    <button type="submit" class="btn btn-primary btn-sm">↺ Restore</button>
                                 </form>
                             </div>
                         }
+                    </div>
+                    <div class="pagination-bar compact" id="restore-pagination">
+                        <div class="page-info" id="restore-info"></div>
+                        <div class="pager" id="restore-pager"></div>
                     </div>
                 }
                 else
@@ -2433,344 +2226,652 @@
     </div>
 
     <script>
-        /* ═════════════ MODAL HELPERS ═════════════ */
-        function clearErrors(modal) {
-            modal.querySelectorAll(".is-invalid").forEach(function (i) { i.classList.remove("is-invalid"); });
-            modal.querySelectorAll(".field-error").forEach(function (s) { s.classList.remove("show"); s.textContent = ""; });
-        }
+            /* ═════════════ MODAL HELPERS ═════════════ */
+            var consumableEditors = {};
 
-        function hideModal(modal) {
-            modal.classList.remove("show");
-            clearErrors(modal);
-            if (modal.id === "addModal" && window.resetConsumables) window.resetConsumables();
-            if (!document.querySelector(".modal-overlay.show")) document.body.style.overflow = "";
-        }
+            function clearErrors(modal) {
+                modal.querySelectorAll(".is-invalid").forEach(function (i) { i.classList.remove("is-invalid"); });
+                modal.querySelectorAll(".field-error").forEach(function (s) { s.classList.remove("show"); s.textContent = ""; });
+            }
 
-        function openModal(modalId) {
-            document.getElementById(modalId).classList.add("show");
-            document.body.style.overflow = "hidden";
-        }
+            function hideModal(modal) {
+                modal.classList.remove("show");
+                clearErrors(modal);
+                if (modal.id === "addModal") {
+                    var f = modal.querySelector("form");
+                    if (f) f.reset();
+                    if (consumableEditors.addModal) consumableEditors.addModal.reset();
+                }
+                if (modal.classList.contains("manage-modal") && modal._manager) modal._manager.resetForm();
+                if (!document.querySelector(".modal-overlay.show")) document.body.style.overflow = "";
+            }
 
-        function closeModal(modalId) {
-            hideModal(document.getElementById(modalId));
-        }
+            function openModal(modalId) {
+                document.getElementById(modalId).classList.add("show");
+                document.body.style.overflow = "hidden";
+            }
 
-        function populateEditModal(button) {
-            if (!button) return;
-            var d = button.dataset || {};
+            function closeModal(modalId) {
+                hideModal(document.getElementById(modalId));
+            }
 
-            document.getElementById("edit-TestId").value = d.testid || "";
-            document.getElementById("edit-TestName").value = d.testname || "";
-            document.getElementById("edit-CategoryId").value = d.categoryid || "";
-            document.getElementById("edit-SampleTypeId").value = d.sampletypeid || "";
-            document.getElementById("edit-UnitMeasurement").value = d.unit || "";
-            document.getElementById("edit-NormalRangeMin").value = d.normalmin || "";
-            document.getElementById("edit-NormalRangeMax").value = d.normalmax || "";
-            document.getElementById("edit-TurnaroundTime").value = d.tat || "";
-            document.getElementById("edit-ConsumablesUsed").value = d.consumables || "";
+            function setSelectValue(sel, value) {
+                if (!sel) return;
+                value = value == null ? "" : String(value);
+                if (value !== "" && !Array.prototype.some.call(sel.options, function (o) { return o.value === value; })) {
+                    var opt = document.createElement("option");
+                    opt.value = value;
+                    opt.textContent = value;
+                    sel.appendChild(opt);
+                }
+                sel.value = value;
+            }
 
-            openModal("editModal");
-        }
+            function populateEditModal(button) {
+                if (!button) return;
+                var d = button.dataset || {};
 
-        function populateDeleteModal(button) {
-            if (!button) return;
-            var d = button.dataset || {};
+                document.getElementById("edit-TestId").value = d.testid || "";
+                document.getElementById("edit-TestName").value = d.testname || "";
+                setSelectValue(document.getElementById("edit-CategoryId"), d.categoryid);
+                setSelectValue(document.getElementById("edit-SampleTypeId"), d.sampletypeid);
+                setSelectValue(document.getElementById("edit-UnitMeasurement"), d.unit);
+                document.getElementById("edit-NormalRangeMin").value = d.normalmin || "";
+                document.getElementById("edit-NormalRangeMax").value = d.normalmax || "";
+                document.getElementById("edit-TurnaroundTime").value = d.tat || "";
 
-            document.getElementById("delete-TestId").value = d.testid || "";
-            document.getElementById("delete-TestName").textContent = d.testname || "this test";
+                consumableEditors.editModal.load(d.consumables || "");
 
-            openModal("deleteModal");
-        }
+                openModal("editModal");
+            }
 
-        document.querySelectorAll(".modal-overlay").forEach(function (modal) {
-            modal.addEventListener("click", function (event) {
-                if (event.target === modal) hideModal(modal);
+            function populateDeleteModal(button) {
+                if (!button) return;
+                var d = button.dataset || {};
+
+                document.getElementById("delete-TestId").value = d.testid || "";
+                document.getElementById("delete-TestName").textContent = d.testname || "this test";
+
+                openModal("deleteModal");
+            }
+
+            document.querySelectorAll(".modal-overlay").forEach(function (modal) {
+                modal.addEventListener("click", function (event) {
+                    if (event.target === modal) hideModal(modal);
+                });
             });
-        });
 
-        document.addEventListener("keydown", function (event) {
-            if (event.key === "Escape") {
-                document.querySelectorAll(".modal-overlay.show").forEach(hideModal);
-            }
-        });
-
-        setTimeout(function () {
-            document.querySelectorAll(".alert").forEach(function (alert) {
-                alert.style.transition = "opacity .4s ease";
-                alert.style.opacity = "0";
-                setTimeout(function () { alert.remove(); }, 400);
+            document.addEventListener("keydown", function (event) {
+                if (event.key !== "Escape") return;
+                var open = Array.prototype.slice.call(document.querySelectorAll(".modal-overlay.show"));
+                if (!open.length) return;
+                var top = open.filter(function (m) { return m.classList.contains("top"); })[0] || open[open.length - 1];
+                hideModal(top);
             });
-        }, 5000);
 
-        /* ═════════════ CONSUMABLES (Add Test Type) ═════════════
-           - name + quantity + remove button sit on ONE line
-           - the same consumable cannot be added twice (case/space-insensitive)
-           - rows are serialised into the hidden ConsumablesJson field on submit
-        */
-        (function () {
-            var list = document.getElementById("consumables-list");
-            var head = document.getElementById("consumables-head");
-            var empty = document.getElementById("consumables-empty");
-            var errBox = document.getElementById("consumables-error");
-            var addBtn = document.getElementById("add-consumable-btn");
-            var hidden = document.getElementById("ConsumablesJson");
-            var form = document.querySelector("#addModal form");
+            setTimeout(function () {
+                document.querySelectorAll(".alert").forEach(function (alert) {
+                    alert.style.transition = "opacity .4s ease";
+                    alert.style.opacity = "0";
+                    setTimeout(function () { alert.remove(); }, 400);
+                });
+            }, 5000);
 
-            if (!list || !form) return;
+            /* ═════════════ GENERIC PAGINATION ═════════════
+               createPager({ getRows, perPage, info, nav, label, onRender })
+               Rows are shown/hidden via the [hidden] attribute.
+            */
+            function createPager(opts) {
+                var state = { page: 1, per: opts.perPage || 10, filter: function () { return true; } };
 
-            function normalise(s) {
-                return (s || "").trim().replace(/\s+/g, " ").toLowerCase();
+                function pageList(current, total) {
+                    var out = [];
+                    if (total <= 7) {
+                        for (var i = 1; i <= total; i++) out.push(i);
+                        return out;
+                    }
+                    out.push(1);
+                    var start = Math.max(2, current - 1), end = Math.min(total - 1, current + 1);
+                    if (current <= 3) { start = 2; end = 4; }
+                    if (current >= total - 2) { start = total - 3; end = total - 1; }
+                    if (start > 2) out.push("…");
+                    for (var p = start; p <= end; p++) out.push(p);
+                    if (end < total - 1) out.push("…");
+                    out.push(total);
+                    return out;
+                }
+
+                function button(text, page, opts2) {
+                    var b = document.createElement("button");
+                    b.type = "button";
+                    b.className = "pg-btn" + (opts2 && opts2.active ? " active" : "");
+                    b.textContent = text;
+                    if (opts2 && opts2.label) b.setAttribute("aria-label", opts2.label);
+                    if (opts2 && opts2.disabled) b.disabled = true;
+                    if (opts2 && opts2.active) b.setAttribute("aria-current", "page");
+                    b.addEventListener("click", function () { state.page = page; render(); });
+                    return b;
+                }
+
+                function render() {
+                    var all = opts.getRows();
+                    var visible = all.filter(state.filter);
+                    var total = visible.length;
+                    var pages = Math.max(1, Math.ceil(total / state.per));
+                    if (state.page > pages) state.page = pages;
+                    if (state.page < 1) state.page = 1;
+
+                    var from = (state.page - 1) * state.per;
+                    var to = Math.min(from + state.per, total);
+
+                    all.forEach(function (r) { r.hidden = true; });
+                    visible.slice(from, to).forEach(function (r) { r.hidden = false; });
+
+                    if (opts.info) {
+                        opts.info.innerHTML = total === 0
+                            ? "No " + (opts.label || "records")
+                            : "Showing <strong>" + (from + 1) + "–" + to + "</strong> of <strong>" + total + "</strong> " + (opts.label || "records");
+                    }
+
+                    if (opts.nav) {
+                        opts.nav.innerHTML = "";
+                        opts.nav.parentElement.hidden = false;
+                        if (pages > 1) {
+                            opts.nav.appendChild(button("‹", state.page - 1, { disabled: state.page === 1, label: "Previous page" }));
+                            pageList(state.page, pages).forEach(function (p) {
+                                if (p === "…") {
+                                    var gap = document.createElement("span");
+                                    gap.className = "pg-gap";
+                                    gap.textContent = "…";
+                                    opts.nav.appendChild(gap);
+                                } else {
+                                    opts.nav.appendChild(button(p, p, { active: p === state.page, label: "Page " + p }));
+                                }
+                            });
+                            opts.nav.appendChild(button("›", state.page + 1, { disabled: state.page === pages, label: "Next page" }));
+                        }
+                    }
+
+                    if (opts.onRender) opts.onRender(total, all.length);
+                }
+
+                return {
+                    render: render,
+                    setFilter: function (fn) { state.filter = fn || function () { return true; }; state.page = 1; render(); },
+                    setPerPage: function (n) { state.per = n; state.page = 1; render(); },
+                    goFirst: function () { state.page = 1; render(); }
+                };
             }
 
-            function showError(msg) {
-                errBox.textContent = msg || "";
-                errBox.classList.toggle("show", !!msg);
-            }
+            /* ═════════════ TEST TABLE: SEARCH + PAGINATION ═════════════ */
+            (function () {
+                var table = document.getElementById("test-table");
+                if (!table) return;
 
-            function refreshChrome() {
-                var has = list.children.length > 0;
-                head.style.display = has ? "grid" : "none";
-                empty.style.display = has ? "none" : "";
-            }
+                var search = document.getElementById("test-search");
+                var perSel = document.getElementById("test-per-page");
+                var noResults = document.getElementById("no-results");
+                var count = document.getElementById("test-count");
+                var tableWrap = table.parentElement;
+                var bar = document.getElementById("test-pagination");
 
-            var source = document.getElementById("consumable-source");
+                var pager = createPager({
+                    getRows: function () { return Array.prototype.slice.call(table.querySelectorAll("tbody .test-row")); },
+                    perPage: parseInt(perSel.value, 10) || 10,
+                    info: document.getElementById("test-page-info"),
+                    nav: document.getElementById("test-pager"),
+                    label: "test types",
+                    onRender: function (matching, total) {
+                        count.textContent = (matching === total ? total : matching + " of " + total) + " test type(s)";
+                        var none = matching === 0;
+                        noResults.hidden = !none;
+                        tableWrap.hidden = none;
+                        bar.hidden = none;
+                    }
+                });
 
-            function selectedText(sel) {
-                return sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : "";
-            }
+                perSel.addEventListener("change", function () { pager.setPerPage(parseInt(perSel.value, 10) || 10); });
 
-            // Grey out options already chosen in other rows so they can't be picked twice
-            function syncOptions() {
-                var rows = list.querySelectorAll(".consumable-row");
-                rows.forEach(function (row) {
-                    var mine = row.querySelector(".c-name");
-                    Array.prototype.forEach.call(mine.options, function (opt) {
-                        if (!opt.value) return;
-                        var takenElsewhere = false;
-                        rows.forEach(function (other) {
-                            var s = other.querySelector(".c-name");
-                            if (s !== mine && s.value === opt.value) takenElsewhere = true;
+                if (search) {
+                    var t;
+                    search.addEventListener("input", function () {
+                        clearTimeout(t);
+                        t = setTimeout(function () {
+                            var q = search.value.trim().toLowerCase();
+                            pager.setFilter(q ? function (r) { return (r.dataset.search || "").indexOf(q) !== -1; } : null);
+                        }, 120);
+                    });
+                }
+
+                pager.render();
+            })();
+
+            /* ═════════════ RESTORE LIST PAGINATION ═════════════ */
+            (function () {
+                var list = document.getElementById("restore-list");
+                if (!list) return;
+                var pager = createPager({
+                    getRows: function () { return Array.prototype.slice.call(list.querySelectorAll(".restore-item")); },
+                    perPage: 5,
+                    info: document.getElementById("restore-info"),
+                    nav: document.getElementById("restore-pager"),
+                    label: "deleted tests"
+                });
+                pager.render();
+            })();
+
+            /* ═════════════ MANAGE CATEGORIES / SAMPLE TYPES ═════════════
+               - one form per modal: adds by default, switches to edit when ✎ is clicked
+               - duplicate names are rejected client-side (case/space-insensitive)
+               - items in use by a test cannot be deleted (button disabled)
+               - list is paginated, 5 per page
+            */
+            (function () {
+                var delModal = document.getElementById("manageDeleteModal");
+                var delForm = document.getElementById("manageDeleteForm");
+                var delId = document.getElementById("manage-delete-id");
+                var delName = document.getElementById("manage-delete-name");
+                var delTitle = document.getElementById("manage-delete-title");
+
+                function norm(s) { return (s || "").trim().replace(/\s+/g, " ").toLowerCase(); }
+
+                document.querySelectorAll(".manage-modal").forEach(function (modal) {
+                    var label = modal.dataset.label;
+                    var cap = label.charAt(0).toUpperCase() + label.slice(1);
+                    var form = modal.querySelector(".manage-form");
+                    var idF = form.querySelector(".m-id");
+                    var nameF = form.querySelector(".m-name");
+                    var descF = form.querySelector(".m-desc");
+                    var errF = form.querySelector(".m-error");
+                    var title = form.querySelector(".m-form-title");
+                    var saveBtn = form.querySelector(".m-save");
+                    var cancelBtn = form.querySelector(".m-cancel");
+                    var listEl = modal.querySelector(".manage-list");
+
+                    function rows() { return listEl ? Array.prototype.slice.call(listEl.querySelectorAll(".manage-row")) : []; }
+
+                    var pager = listEl ? createPager({
+                        getRows: rows,
+                        perPage: 5,
+                        info: modal.querySelector(".m-info"),
+                        nav: modal.querySelector(".m-pager"),
+                        label: label + (label.slice(-1) === "y" ? "" : "") + "s"
+                    }) : null;
+                    if (pager) pager.render();
+
+                    function setError(msg) {
+                        errF.textContent = msg || "";
+                        errF.classList.toggle("show", !!msg);
+                        nameF.classList.toggle("is-invalid", !!msg);
+                    }
+
+                    function resetForm() {
+                        form.action = modal.dataset.addUrl;
+                        idF.value = "";
+                        idF.disabled = true;
+                        nameF.value = "";
+                        if (descF) descF.value = "";
+                        title.textContent = "Add new " + label;
+                        saveBtn.textContent = "✓ Save " + cap;
+                        cancelBtn.hidden = true;
+                        setError("");
+                        rows().forEach(function (r) { r.classList.remove("editing"); });
+                    }
+
+                    modal._manager = { resetForm: resetForm };
+                    resetForm();
+
+                    modal.addEventListener("click", function (e) {
+                        var edit = e.target.closest(".m-edit");
+                        var del = e.target.closest(".m-delete");
+
+                        if (edit) {
+                            resetForm();
+                            form.action = modal.dataset.editUrl;
+                            idF.disabled = false;
+                            idF.value = edit.dataset.id;
+                            nameF.value = edit.dataset.name || "";
+                            if (descF) descF.value = edit.dataset.desc || "";
+                            title.textContent = "Edit " + label;
+                            saveBtn.textContent = "✓ Update " + cap;
+                            cancelBtn.hidden = false;
+                            edit.closest(".manage-row").classList.add("editing");
+                            form.scrollIntoView({ block: "nearest", behavior: "smooth" });
+                            nameF.focus();
+                        }
+
+                        if (del && !del.disabled) {
+                            delForm.action = modal.dataset.deleteUrl;
+                            delId.value = del.dataset.id;
+                            delName.textContent = del.dataset.name;
+                            delTitle.textContent = "Delete " + cap;
+                            openModal("manageDeleteModal");
+                        }
+                    });
+
+                    cancelBtn.addEventListener("click", resetForm);
+                    nameF.addEventListener("input", function () { if (nameF.classList.contains("is-invalid")) validate(); });
+
+                    function validate() {
+                        var v = nameF.value.trim().replace(/\s+/g, " ");
+                        if (!v) { setError("Name is required."); return false; }
+                        if (v.length < 2) { setError("Must be at least 2 characters."); return false; }
+                        if (v.length > 50) { setError("Must be at most 50 characters."); return false; }
+                        if (!/^[A-Za-z0-9 ()\/.,&+\-]+$/.test(v)) { setError("Only letters, numbers, spaces and ( ) / . , & + - are allowed."); return false; }
+
+                        var editingId = idF.disabled ? "" : idF.value;
+                        var clash = rows().some(function (r) {
+                            var b = r.querySelector(".m-edit");
+                            return b && b.dataset.id !== editingId && norm(b.dataset.name) === norm(v);
                         });
-                        opt.disabled = takenElsewhere;
+                        if (clash) { setError('A ' + label + ' named "' + v + '" already exists.'); return false; }
+
+                        setError("");
+                        return true;
+                    }
+
+                    form.addEventListener("submit", function (e) {
+                        if (!validate()) {
+                            e.preventDefault();
+                            nameF.focus();
+                            return;
+                        }
+                        nameF.value = nameF.value.trim().replace(/\s+/g, " ");
                     });
                 });
-            }
+            })();
 
-            function addRow() {
-                var optionsHtml = source ? source.innerHTML : '<option value="">Select consumable</option>';
-                var row = document.createElement("div");
-                row.className = "consumable-row";
-                row.innerHTML =
-                    '<select class="form-control c-name">' + optionsHtml + '</select>' +
-                    '<input type="number" class="form-control c-qty" min="1" step="1" value="1" title="Quantity used" />' +
-                    '<button type="button" class="c-remove" title="Remove" aria-label="Remove consumable">✕</button>';
-                list.appendChild(row);
-                refreshChrome();
-                row.querySelector(".c-name").focus();
-            }
+            /* ═════════════ CONSUMABLE EDITORS (Add + Edit) ═════════════
+               - name + quantity + remove button sit on ONE line
+               - the same consumable cannot be added twice
+               - rows are serialised into the hidden JSON field(s) on submit
+            */
+            (function () {
+                var source = document.getElementById("consumable-source");
 
-            // Returns the first offending input (or null) and shows a message
-            function checkConsumables() {
-                var seen = Object.create(null);
-                var firstBad = null;
-                var msg = "";
+                function createEditor(root) {
+                    var list = root.querySelector(".c-list");
+                    var head = root.querySelector(".c-head");
+                    var empty = root.querySelector(".c-empty");
+                    var errBox = root.querySelector(".c-error");
+                    var addBtn = root.querySelector(".c-add");
+                    var hiddens = root.querySelectorAll(".c-json");
+                    var legacy = root.querySelector(".c-legacy");
+                    var form = root.closest("form");
+                    var emptyText = root.dataset.emptyText || "No consumables added.";
 
-                list.querySelectorAll(".consumable-row").forEach(function (row) {
-                    var n = row.querySelector(".c-name");
-                    var q = row.querySelector(".c-qty");
-                    n.classList.remove("is-invalid");
-                    q.classList.remove("is-invalid");
-
-                    var key = n.value;      // consumable id from the dropdown
-                    if (!key) return;       // rows with nothing selected are ignored on save
-
-                    if (seen[key]) {
-                        n.classList.add("is-invalid");
-                        if (!firstBad) {
-                            firstBad = n;
-                            msg = '"' + selectedText(n) + '" has already been added. Increase its quantity instead.';
-                        }
-                    } else {
-                        seen[key] = true;
+                    function showError(msg) {
+                        errBox.textContent = msg || "";
+                        errBox.classList.toggle("show", !!msg);
                     }
 
-                    var qty = Number(q.value);
-                    if (q.value.trim() === "" || !Number.isInteger(qty) || qty < 1) {
-                        q.classList.add("is-invalid");
-                        if (!firstBad) {
-                            firstBad = q;
-                            msg = "Quantity must be a whole number of at least 1.";
-                        }
+                    function refreshChrome() {
+                        var has = list.children.length > 0;
+                        head.style.display = has ? "grid" : "none";
+                        empty.style.display = has ? "none" : "";
+                        empty.textContent = emptyText;
                     }
-                });
 
-                syncOptions();
-                showError(msg);
-                return firstBad;
-            }
+                    function selectedText(sel) {
+                        return sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : "";
+                    }
 
-            window.resetConsumables = function () {
-                list.innerHTML = "";
-                showError("");
-                refreshChrome();
-            };
-
-            addBtn.addEventListener("click", addRow);
-
-            list.addEventListener("click", function (e) {
-                var btn = e.target.closest(".c-remove");
-                if (!btn) return;
-                btn.closest(".consumable-row").remove();
-                refreshChrome();
-                checkConsumables();
-            });
-
-            // live duplicate / quantity feedback while typing
-            list.addEventListener("input", checkConsumables);
-            list.addEventListener("focusout", checkConsumables);
-
-            form.addEventListener("submit", function (e) {
-                var bad = checkConsumables();
-                if (bad) {
-                    e.preventDefault();
-                    bad.focus();
-                    return;
-                }
-
-                var items = [];
-                list.querySelectorAll(".consumable-row").forEach(function (row) {
-                    var sel = row.querySelector(".c-name");
-                    var qty = parseInt(row.querySelector(".c-qty").value, 10);
-                    if (sel.value) {
-                        items.push({
-                            id: parseInt(sel.value, 10) || sel.value,
-                            name: selectedText(sel),
-                            quantity: qty
+                    function syncOptions() {
+                        var rows = list.querySelectorAll(".consumable-row");
+                        rows.forEach(function (row) {
+                            var mine = row.querySelector(".c-name");
+                            Array.prototype.forEach.call(mine.options, function (opt) {
+                                if (!opt.value) return;
+                                var taken = false;
+                                rows.forEach(function (other) {
+                                    var s = other.querySelector(".c-name");
+                                    if (s !== mine && s.value === opt.value) taken = true;
+                                });
+                                opt.disabled = taken;
+                            });
                         });
                     }
-                });
 
-                // a test can be saved without consumables
-                hidden.value = JSON.stringify(items);
-            });
+                    function addRow(id, name, qty) {
+                        var row = document.createElement("div");
+                        row.className = "consumable-row";
+                        row.innerHTML =
+                            '<select class="form-control c-name">' + (source ? source.innerHTML : '<option value="">Select consumable</option>') + '</select>' +
+                            '<input type="number" class="form-control c-qty" min="1" step="1" value="1" title="Quantity used" />' +
+                            '<button type="button" class="c-remove" title="Remove" aria-label="Remove consumable">✕</button>';
+                        list.appendChild(row);
 
-            refreshChrome();
-        })();
-
-        /* ═════════════ FORM VALIDATION (forms marked data-validate) ═════════════ */
-        (function () {
-            function setError(input, msg) {
-                var err = input.parentElement.querySelector(".field-error");
-                input.classList.toggle("is-invalid", !!msg);
-                if (err) {
-                    err.textContent = msg || "";
-                    err.classList.toggle("show", !!msg);
-                }
-                return !msg;
-            }
-
-            function validateField(input, form) {
-                var d = input.dataset;
-                var v = (input.value || "").trim();
-
-                if (d.required !== undefined && v === "") return setError(input, d.required);
-                if (v === "") return setError(input, "");   // optional + empty = OK
-
-                if (d.minlength && v.length < +d.minlength)
-                    return setError(input, "Must be at least " + d.minlength + " characters.");
-                if (d.maxlength && v.length > +d.maxlength)
-                    return setError(input, "Must be at most " + d.maxlength + " characters.");
-                if (d.pattern && !new RegExp(d.pattern).test(v))
-                    return setError(input, d.patternMsg || "Invalid format.");
-
-                if (input.type === "number") {
-                    var n = parseFloat(v);
-                    if (isNaN(n)) return setError(input, "Enter a valid number.");
-                    if (d.integer !== undefined && !Number.isInteger(n)) return setError(input, d.integer);
-                    if ((d.min !== undefined && n < +d.min) || (d.max !== undefined && n > +d.max))
-                        return setError(input, d.rangeMsg || "Value out of range.");
-
-                    if (d.lte) {
-                        var other = form.querySelector('[name="' + d.lte + '"]');
-                        if (other && other.value !== "" && n > parseFloat(other.value))
-                            return setError(input, "Minimum cannot exceed maximum.");
-                    }
-                    if (d.gte) {
-                        var other2 = form.querySelector('[name="' + d.gte + '"]');
-                        if (other2 && other2.value !== "" && n < parseFloat(other2.value))
-                            return setError(input, "Maximum cannot be less than minimum.");
-                    }
-                }
-                return setError(input, "");
-            }
-
-            document.querySelectorAll("form[data-validate]").forEach(function (form) {
-                var fields = form.querySelectorAll("input[name], select[name], textarea[name]");
-
-                fields.forEach(function (f) {
-                    if (f.type === "hidden") return;
-
-                    f.addEventListener("blur", function () { validateField(f, form); });
-                    f.addEventListener("change", function () { validateField(f, form); });
-                    f.addEventListener("input", function () {
-                        if (f.classList.contains("is-invalid")) validateField(f, form);
-                        var pair = f.dataset.lte || f.dataset.gte;
-                        if (pair) {
-                            var p = form.querySelector('[name="' + pair + '"]');
-                            if (p && p.classList.contains("is-invalid")) validateField(p, form);
+                        var sel = row.querySelector(".c-name");
+                        if (id != null && id !== "") {
+                            var sid = String(id);
+                            if (!Array.prototype.some.call(sel.options, function (o) { return o.value === sid; })) {
+                                var opt = document.createElement("option");
+                                opt.value = sid;
+                                opt.textContent = name || sid;
+                                sel.appendChild(opt);
+                            }
+                            sel.value = sid;
                         }
-                    });
-                });
+                        if (qty != null) row.querySelector(".c-qty").value = qty;
 
-                form.addEventListener("submit", function (e) {
-                    var ok = true, first = null;
+                        refreshChrome();
+                        syncOptions();
+                        return row;
+                    }
+
+                    function check() {
+                        var seen = Object.create(null);
+                        var firstBad = null, msg = "";
+
+                        list.querySelectorAll(".consumable-row").forEach(function (row) {
+                            var n = row.querySelector(".c-name");
+                            var q = row.querySelector(".c-qty");
+                            n.classList.remove("is-invalid");
+                            q.classList.remove("is-invalid");
+
+                            var key = n.value;
+                            if (!key) return;
+
+                            if (seen[key]) {
+                                n.classList.add("is-invalid");
+                                if (!firstBad) { firstBad = n; msg = '"' + selectedText(n) + '" has already been added. Increase its quantity instead.'; }
+                            } else {
+                                seen[key] = true;
+                            }
+
+                            var qn = Number(q.value);
+                            if (q.value.trim() === "" || !Number.isInteger(qn) || qn < 1) {
+                                q.classList.add("is-invalid");
+                                if (!firstBad) { firstBad = q; msg = "Quantity must be a whole number of at least 1."; }
+                            }
+                        });
+
+                        syncOptions();
+                        showError(msg);
+                        return firstBad;
+                    }
+
+                    function reset() {
+                        list.innerHTML = "";
+                        showError("");
+                        if (legacy) { legacy.hidden = true; legacy.textContent = ""; }
+                        refreshChrome();
+                    }
+
+                    // Load existing consumables (JSON array, or legacy plain text)
+                    function load(raw) {
+                        reset();
+                        raw = (raw || "").trim();
+                        if (!raw) return;
+
+                        var items = null;
+                        if (raw.charAt(0) === "[") {
+                            try { items = JSON.parse(raw); } catch (e) { items = null; }
+                        }
+
+                        if (Array.isArray(items)) {
+                            items.forEach(function (it) {
+                                if (it && (it.id != null || it.name)) addRow(it.id, it.name, it.quantity);
+                            });
+                        } else if (legacy) {
+                            legacy.textContent = 'Previously recorded as free text: "' + raw + '". Pick consumables below to replace it (leave empty to clear).';
+                            legacy.hidden = false;
+                        }
+                    }
+
+                    addBtn.addEventListener("click", function () {
+                        var row = addRow();
+                        row.querySelector(".c-name").focus();
+                    });
+
+                    list.addEventListener("click", function (e) {
+                        var btn = e.target.closest(".c-remove");
+                        if (!btn) return;
+                        btn.closest(".consumable-row").remove();
+                        refreshChrome();
+                        check();
+                    });
+
+                    list.addEventListener("input", check);
+                    list.addEventListener("focusout", check);
+
+                    form.addEventListener("submit", function (e) {
+                        var bad = check();
+                        if (bad) { e.preventDefault(); bad.focus(); return; }
+
+                        var items = [];
+                        list.querySelectorAll(".consumable-row").forEach(function (row) {
+                            var sel = row.querySelector(".c-name");
+                            var qn = parseInt(row.querySelector(".c-qty").value, 10);
+                            if (sel.value) {
+                                items.push({ id: parseInt(sel.value, 10) || sel.value, name: selectedText(sel), quantity: qn });
+                            }
+                        });
+
+                        var json = JSON.stringify(items);   // a test can be saved without consumables
+                        hiddens.forEach(function (h) { h.value = json; });
+                    });
+
+                    refreshChrome();
+                    return { reset: reset, load: load };
+                }
+
+                var addRoot = document.querySelector("#addModal .consumable-editor");
+                var editRoot = document.querySelector("#editModal .consumable-editor");
+                if (addRoot) consumableEditors.addModal = createEditor(addRoot);
+                if (editRoot) consumableEditors.editModal = createEditor(editRoot);
+            })();
+
+            /* ═════════════ FORM VALIDATION (forms marked data-validate) ═════════════ */
+            (function () {
+                function setError(input, msg) {
+                    var err = input.parentElement.querySelector(".field-error");
+                    input.classList.toggle("is-invalid", !!msg);
+                    if (err) {
+                        err.textContent = msg || "";
+                        err.classList.toggle("show", !!msg);
+                    }
+                    return !msg;
+                }
+
+                function validateField(input, form) {
+                    var d = input.dataset;
+                    var v = (input.value || "").trim();
+
+                    if (d.required !== undefined && v === "") return setError(input, d.required);
+                    if (v === "") return setError(input, "");   // optional + empty = OK
+
+                    if (d.minlength && v.length < +d.minlength)
+                        return setError(input, "Must be at least " + d.minlength + " characters.");
+                    if (d.maxlength && v.length > +d.maxlength)
+                        return setError(input, "Must be at most " + d.maxlength + " characters.");
+                    if (d.pattern && !new RegExp(d.pattern).test(v))
+                        return setError(input, d.patternMsg || "Invalid format.");
+
+                    if (input.type === "number") {
+                        var n = parseFloat(v);
+                        if (isNaN(n)) return setError(input, "Enter a valid number.");
+                        if (d.integer !== undefined && !Number.isInteger(n)) return setError(input, d.integer);
+                        if ((d.min !== undefined && n < +d.min) || (d.max !== undefined && n > +d.max))
+                            return setError(input, d.rangeMsg || "Value out of range.");
+
+                        if (d.lte) {
+                            var other = form.querySelector('[name="' + d.lte + '"]');
+                            if (other && other.value !== "" && n > parseFloat(other.value))
+                                return setError(input, "Minimum cannot exceed maximum.");
+                        }
+                        if (d.gte) {
+                            var other2 = form.querySelector('[name="' + d.gte + '"]');
+                            if (other2 && other2.value !== "" && n < parseFloat(other2.value))
+                                return setError(input, "Maximum cannot be less than minimum.");
+                        }
+                    }
+                    return setError(input, "");
+                }
+
+                document.querySelectorAll("form[data-validate]").forEach(function (form) {
+                    var fields = form.querySelectorAll("input[name], select[name], textarea[name]");
+
                     fields.forEach(function (f) {
                         if (f.type === "hidden") return;
-                        if (!validateField(f, form)) { ok = false; first = first || f; }
+
+                        f.addEventListener("blur", function () { validateField(f, form); });
+                        f.addEventListener("change", function () { validateField(f, form); });
+                        f.addEventListener("input", function () {
+                            if (f.classList.contains("is-invalid")) validateField(f, form);
+                            var pair = f.dataset.lte || f.dataset.gte;
+                            if (pair) {
+                                var p = form.querySelector('[name="' + pair + '"]');
+                                if (p && p.classList.contains("is-invalid")) validateField(p, form);
+                            }
+                        });
                     });
-                    if (!ok) {
-                        e.preventDefault();
-                        first.focus();
-                    }
+
+                    form.addEventListener("submit", function (e) {
+                        var ok = true, first = null;
+                        fields.forEach(function (f) {
+                            if (f.type === "hidden") return;
+                            if (!validateField(f, form)) { ok = false; first = first || f; }
+                        });
+                        if (!ok) {
+                            e.preventDefault();
+                            first.focus();
+                        }
+                    });
                 });
-            });
-        })();
+            })();
 
-        /* ═════════════ LOGOUT MODAL ═════════════ */
-        (function () {
-            var logoutBtn = document.getElementById("logout-btn");
-            var logoutModal = document.getElementById("logout-modal");
-            var logoutCancel = document.getElementById("logout-cancel");
-            var logoutConfirm = document.getElementById("logout-confirm");
+            /* ═════════════ LOGOUT MODAL ═════════════ */
+            (function () {
+                var logoutBtn = document.getElementById("logout-btn");
+                var logoutModal = document.getElementById("logout-modal");
+                var logoutCancel = document.getElementById("logout-cancel");
+                var logoutConfirm = document.getElementById("logout-confirm");
 
-            if (!logoutBtn || !logoutModal) return;
+                if (!logoutBtn || !logoutModal) return;
 
-            logoutConfirm.href = logoutBtn.href;
+                logoutConfirm.href = logoutBtn.href;
 
-            logoutBtn.addEventListener("click", function (e) {
-                e.preventDefault();
-                logoutModal.style.display = "flex";
-                logoutCancel.focus();
-            });
+                logoutBtn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    logoutModal.style.display = "flex";
+                    logoutCancel.focus();
+                });
 
-            function closeLogoutModal() {
-                logoutModal.style.display = "none";
-                logoutBtn.focus();
-            }
+                function closeLogoutModal() {
+                    logoutModal.style.display = "none";
+                    logoutBtn.focus();
+                }
 
-            logoutCancel.addEventListener("click", closeLogoutModal);
-            logoutModal.addEventListener("click", function (e) {
-                if (e.target === logoutModal) closeLogoutModal();
-            });
-            document.addEventListener("keydown", function (e) {
-                if (e.key === "Escape" && logoutModal.style.display === "flex") closeLogoutModal();
-            });
-        })();
+                logoutCancel.addEventListener("click", closeLogoutModal);
+                logoutModal.addEventListener("click", function (e) {
+                    if (e.target === logoutModal) closeLogoutModal();
+                });
+                document.addEventListener("keydown", function (e) {
+                    if (e.key === "Escape" && logoutModal.style.display === "flex") closeLogoutModal();
+                });
+            })();
     </script>
 
-
-
 </body>
-
-</html>
 </html>

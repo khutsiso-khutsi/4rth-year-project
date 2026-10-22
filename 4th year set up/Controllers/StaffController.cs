@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Text.RegularExpressions;
 using BCrypt.Net;
 using LabManager.Models;
@@ -6,6 +6,7 @@ using LabManager.Repositories;
 using LabManager.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using DoctorModel = LabManager.Models.Doctor;
 
 namespace LabManager.Controllers
 {
@@ -43,7 +44,7 @@ namespace LabManager.Controllers
 
                 var model = new StaffViewModel
                 {
-                    Doctors = doctors?.ToList() ?? new List<Doctor>(),
+                    Doctors = doctors?.ToList() ?? new List<DoctorModel>(),
                     Technicians = technicians?.ToList() ?? new List<Technician>(),
                 };
 
@@ -79,7 +80,7 @@ namespace LabManager.Controllers
 
                 return View(new StaffViewModel
                 {
-                    Doctors = new List<Doctor>(),
+                    Doctors = new List<DoctorModel>(),
                     Technicians = new List<Technician>(),
                     TestTypes = new List<TestType>()
                 });
@@ -109,7 +110,7 @@ namespace LabManager.Controllers
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(temporaryPassword);
             DateTime expiryUtc = DateTime.UtcNow.AddMinutes(30);
 
-            Doctor doctor = null;
+            DoctorModel doctor = null;
             int userId = 0;
 
             await _numberLock.WaitAsync();
@@ -117,7 +118,7 @@ namespace LabManager.Controllers
             {
                 var existing = await _staffRepository.GetAllDoctor();
 
-                doctor = new Doctor
+                doctor = new DoctorModel
                 {
                     FirstName = firstName.Trim(),
                     LastName = lastName.Trim(),
@@ -200,7 +201,7 @@ namespace LabManager.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                var doctor = new Doctor
+                var doctor = new DoctorModel
                 {
                     Id = id,
                     FirstName = firstName.Trim(),
@@ -370,6 +371,7 @@ namespace LabManager.Controllers
 
                 await _staffRepository.UpdateTechnician(technician);
                 await _staffRepository.SetTechnicianTestTypes(id, selected);
+
                 TempData["Success"] = "Technician updated successfully.";
             }
             catch (Exception ex)
@@ -435,7 +437,6 @@ namespace LabManager.Controllers
             var details = new StringBuilder();
             details.Append($"<p><strong>Role:</strong> {Enc(role)}</p>");
             details.Append($"<p><strong>{Enc(numberLabel)}:</strong> {Enc(numberValue)}</p>");
-
 
             if (testTypes != null && testTypes.Any())
             {

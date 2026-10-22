@@ -1,7 +1,6 @@
 ﻿using LabManager.Models;
 using LabManager.Repository;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
@@ -25,16 +24,29 @@ namespace LabManager.Controllers
         // login uses. If login hashes differently, ChangePassword will
         // reject the correct current password or lock the user out.
         // =====================================================
-        private static readonly PasswordHasher<object> Hasher = new PasswordHasher<object>();
+      
         private static readonly object HashUser = new object();
 
-        private static string HashPassword(string password) =>
-            Hasher.HashPassword(HashUser, password);
+        private static string HashPassword(string password)
+        {
+            return BCrypt.Net.BCrypt.HashPassword(password);
+        }
 
-        private static bool VerifyPassword(string hash, string password) =>
-            !string.IsNullOrEmpty(hash) &&
-            Hasher.VerifyHashedPassword(HashUser, hash, password) != PasswordVerificationResult.Failed;
+        private static bool VerifyPassword(string hash, string password)
+        {
+            if (string.IsNullOrWhiteSpace(hash))
+                return false;
 
+            try
+            {
+                return BCrypt.Net.BCrypt.Verify(password, hash);
+            }
+            catch (ArgumentException)
+            {
+                // The stored hash is malformed or is not a valid BCrypt hash.
+                return false;
+            }
+        }
         // =====================================================
         // HELPERS
         // =====================================================
