@@ -1,0 +1,166 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model _4th_year_set_up.Models.ReportDoc
+@using _4th_year_set_up.Models
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = null;
+    var auto = ViewBag.Print is bool b && b;
+    var svg = ReportSvg.Render(Model.Chart);
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@Model.Title — NMB-HLabSys</title>
+    <style>
+        /* A4, white page, navy headings, Arial. The page header and footer repeat on every printed page. */
+        @@page { size: A4; margin: 22mm 16mm 20mm 16mm;
+            @@top-left { content: "NMB-HLabSys · Haematology Laboratory"; font: 9pt Arial, sans-serif; color: #1f3a5f; }
+            @@top-right { content: "@Model.Title"; font: 9pt Arial, sans-serif; color: #1f3a5f; }
+            @@bottom-left { content: "Confidential · generated @Model.GeneratedAt.ToString("d MMM yyyy, HH:mm")"; font: 9pt Arial, sans-serif; color: #444; }
+            @@bottom-right { content: "Page " counter(page) " of " counter(pages); font: 9pt Arial, sans-serif; color: #444; }
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #e9edf3; font-family: Arial, Helvetica, sans-serif; color: #111; font-size: 11pt; line-height: 1.4; }
+        .toolbar { position: sticky; top: 0; background: #1f3a5f; color: #fff; padding: 10px 24px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; z-index: 5; }
+        .toolbar button, .toolbar a { background: #c2410c; color: #fff; border: 0; border-radius: 6px; padding: 8px 16px; font: 600 13px Arial, sans-serif; cursor: pointer; text-decoration: none; }
+        .toolbar a.ghost { background: transparent; border: 1px solid rgba(255,255,255,.5); }
+        .toolbar .tip { font-size: 12px; opacity: .85; }
+        .sheet { width: 210mm; min-height: 297mm; margin: 18px auto; background: #fff; padding: 18mm 16mm; box-shadow: 0 2px 16px rgba(0,0,0,.18); }
+        .runhead, .runfoot { display: flex; justify-content: space-between; font-size: 9pt; color: #444; }
+        .runhead { color: #1f3a5f; border-bottom: 1px solid #1f3a5f; padding-bottom: 6px; margin-bottom: 18px; }
+        .runfoot { border-top: 1px solid #ccc; padding-top: 6px; margin-top: 24px; }
+        h1 { font-size: 22pt; color: #1f3a5f; margin: 0 0 6px; line-height: 1.15; }
+        h2 { font-size: 13pt; color: #1f3a5f; margin: 22px 0 8px; }
+        .meta { width: 100%; border-collapse: collapse; margin: 10px 0 4px; font-size: 10pt; }
+        .meta td { padding: 3px 0; vertical-align: top; }
+        .meta td:first-child { width: 32mm; color: #444; }
+        .summary { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 6px; }
+        .sum { border: 1px solid #1f3a5f; border-radius: 4px; padding: 8px 12px; min-width: 38mm; flex: 1; }
+        .sum b { display: block; font-size: 16pt; color: #1f3a5f; }
+        .sum span { font-size: 9pt; color: #444; }
+        figure { margin: 14px 0 0; page-break-inside: avoid; }
+        figcaption { font-size: 9.5pt; color: #444; margin-top: 6px; }
+        figure svg { max-width: 100%; height: auto; }
+        table.data { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin-top: 6px; }
+        table.data th { background: #1f3a5f; color: #fff; text-align: left; padding: 6px 8px; border: 1px solid #1f3a5f; }
+        table.data td { padding: 5px 8px; border: 1px solid #c9d1de; vertical-align: top; }
+        table.data tbody tr:nth-child(even) td { background: #f3f6fa; }
+        table.data tfoot td { font-weight: 700; border-top: 2px solid #1f3a5f; background: #e9eef6; }
+        .num { text-align: right; white-space: nowrap; }
+        thead { display: table-header-group; }      /* heading row repeats on each printed page */
+        tfoot { display: table-row-group; }
+        tr { page-break-inside: avoid; }
+        .note { font-size: 9pt; color: #444; margin: 4px 0 0; }
+        .empty { border: 1px dashed #1f3a5f; border-radius: 6px; padding: 28px; text-align: center; color: #1f3a5f; margin-top: 24px; }
+        .empty strong { display: block; font-size: 13pt; margin-bottom: 4px; }
+        @@media print {
+            body { background: #fff; }
+            .toolbar, .runhead, .runfoot { display: none; }
+            .sheet { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <span class="tip">In the print box choose <strong>Save as PDF</strong> and switch off “Headers and footers”.</span>
+        <span style="display:flex; gap:8px">
+            <a class="ghost" href="javascript:window.close()">Close</a>
+            <button type="button" onclick="window.print()">Print / Save as PDF</button>
+        </span>
+    </div>
+
+    <div class="sheet">
+        <div class="runhead"><span>NMB-HLabSys · Haematology Laboratory</span><span>@Model.Title</span></div>
+
+        <h1>@Model.Title</h1>
+        <table class="meta">
+            <tr><td>Period</td><td>@Model.Period</td></tr>
+            <tr><td>Filters</td><td>@(string.IsNullOrWhiteSpace(Model.FilterText) ? "None" : Model.FilterText)</td></tr>
+            <tr><td>Generated</td><td>@Model.GeneratedAt.ToString("d MMMM yyyy, HH:mm")@(string.IsNullOrWhiteSpace(Model.GeneratedBy) ? "" : " by " + Model.GeneratedBy)</td></tr>
+        </table>
+
+        @if (Model.IsEmpty)
+        {
+            <div class="empty"><strong>No records found</strong>@Model.EmptyMessage</div>
+        }
+        else
+        {
+            if (Model.Summary.Count > 0)
+            {
+                <h2>Summary</h2>
+                <div class="summary">
+                    @foreach (var s in Model.Summary)
+                    {
+                        <div class="sum"><b>@s.Value</b><span>@s.Key</span></div>
+                    }
+                </div>
+            }
+
+            if (!string.IsNullOrEmpty(svg))
+            {
+                <h2>@Model.Chart.Title</h2>
+                <figure>
+                    @Html.Raw(svg)
+                    @if (!string.IsNullOrWhiteSpace(Model.Chart.Caption))
+                    {
+                        <figcaption>@Model.Chart.Caption</figcaption>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Chart.Note))
+                    {
+                        <figcaption>@Model.Chart.Note</figcaption>
+                    }
+                </figure>
+            }
+
+            foreach (var t in Model.Tables)
+            {
+                <h2>@t.Heading</h2>
+                if (!string.IsNullOrWhiteSpace(t.Note)) { <p class="note">@t.Note</p> }
+                <table class="data">
+                    <thead>
+                        <tr>
+                            @for (var i = 0; i < t.Columns.Count; i++)
+                            {
+                                <th class="@(i < t.Numeric.Count && t.Numeric[i] ? "num" : "")">@t.Columns[i]</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in t.Rows)
+                        {
+                            <tr>
+                                @for (var i = 0; i < row.Length; i++)
+                                {
+                                    <td class="@(i < t.Numeric.Count && t.Numeric[i] ? "num" : "")">@row[i]</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                    @if (t.Total != null)
+                    {
+                        <tfoot>
+                            <tr>
+                                @for (var i = 0; i < t.Total.Length; i++)
+                                {
+                                    <td class="@(i < t.Numeric.Count && t.Numeric[i] ? "num" : "")">@t.Total[i]</td>
+                                }
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+            }
+        }
+
+        <div class="runfoot"><span>Confidential · request numbers only, no patient identifiers</span><span>End of report</span></div>
+    </div>
+
+    @if (auto)
+    {
+        <script>window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 300); });</script>
+    }
+</body>
+</html>

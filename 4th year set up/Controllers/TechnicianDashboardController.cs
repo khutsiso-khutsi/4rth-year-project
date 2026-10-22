@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json;
+using System.Net;
+using System.Net.Mail;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using _4th_year_set_up.Repository;
 using _4th_year_set_up.Models;
 
@@ -12,25 +16,156 @@ namespace _4th_year_set_up.Controllers
 public class TechnicianDashboardController : Controller
 {
     private readonly TechnicianRepository _db;
+    private readonly IConfiguration _config;
 
-    public TechnicianDashboardController(TechnicianRepository db)
+    public TechnicianDashboardController(TechnicianRepository db, IConfiguration config)
     {
         _db = db;
-        // The test types the laboratory manager assigned to this technician (TechnicianTestTypes).
-        CurrentUser.VerifiableTests = _db.GetAssignedTestNames(CurrentUser.Id);
+        _config = config;
+        // No technician roles: every technician can do every step, so nothing is looked up here.
     }
 
     public IActionResult Index()
     {
         ViewBag.Email = User?.Identity?.Name;           // keep whatever you already use to set this
-        return View(DashboardViewModel.Build(_db));
+        var vm = DashboardViewModel.Build(_db);
+
+        // Notification: tests the lab manager assigned to you that you have not acknowledged yet.
+        // A test you picked up yourself is not "new": it has your own "Test picked up" event.
+        var ack = AcknowledgedIds();
+        vm.NewlyAssigned = vm.MyTestsPreview
+            .Where(t => t.Stage == TestStage.Assigned && !ack.Contains(t.TestId)
+                        && !t.Events.Any(e => e.Action == "Test picked up" && e.By == CurrentUser.Id))
+            .ToList();
+        return View(vm);
+    }
+
+
+
+    // "Got it" on the new-assignment banner: remembers these tests so the banner goes away.
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult AcknowledgeAssigned()
+    {
+        var ids = AcknowledgedIds();
+        foreach (var t in _db.GetTests().Where(t => t.AssignedToMe)) ids.Add(t.TestId);
+        var value = string.Join(",", ids.TakeLast(300));
+        Response.Cookies.Append("tech_ack_" + CurrentUser.Id, value,
+            new CookieOptions { Expires = DateTimeOffset.Now.AddDays(30), HttpOnly = true, SameSite = SameSiteMode.Lax });
+        return RedirectToAction("Index");
+    }
+
+    private HashSet<string> AcknowledgedIds()
+    {
+        var raw = Request.Cookies["tech_ack_" + CurrentUser.Id] ?? "";
+        return new HashSet<string>(raw.Split(',', StringSplitOptions.RemoveEmptyEntries));
     }
 
     // ---------------------------------------------------------------- your other screens (views you already have)
     // These just open their view. If yours does more, keep your own version of the action.
 
-    public IActionResult ReceiveSamples() { ViewBag.Email = User?.Identity?.Name; return View(); }
-    public IActionResult Reports()        { ViewBag.Email = User?.Identity?.Name; return View(); }
+    // ---------------------------------------------------------------- receive samples
+
+    // Tubes the doctor's request has created that have not reached the lab yet.
+    public IActionResult ReceiveSamples()
+    {
+        ViewBag.Email = User?.Identity?.Name;
+        var rows = _db.GetRequests().SelectMany(r => r.Tubes)
+                      .Where(t => t.Status == TubeStatus.NotReceived && t.BarcodeId > 0 && t.Request != null)
+                      .OrderBy(t => t.Request.Priority == "STAT" ? 0 : t.Request.Priority == "Urgent" ? 1 : 2)
+                      .ThenBy(t => t.CollectedAt)
+                      .Select(t => new ReceiveRow
+                      {
+                          Barcode = t.TubeId ?? "",
+                          ReqNum = t.Request.ReqNum ?? "—",
+                          Tests = string.IsNullOrWhiteSpace(t.TestsLabel) ? "—" : t.TestsLabel,
+                          Sample = t.Type ?? t.SampleType ?? "—",
+                          Priority = t.Request.Priority ?? "Routine",
+                          Waited = Waited(t.CollectedAt)
+                      }).ToList();
+        return View(rows);
+    }
+
+    private static string Waited(DateTime collected)
+    {
+        if (collected.Year < 2000) return "—";
+        var m = (int)(DateTime.Now - collected).TotalMinutes;
+        if (m < 0) return "just now";
+        return m < 60 ? m + " min ago" : m < 1440 ? (m / 60) + " h ago" : (m / 1440) + " d ago";
+    }
+
+    // The barcode is the tube number printed on the label. Typing or scanning it does the same as pressing Receive.
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ReceiveSample(string barcode)
+    {
+        barcode = (barcode ?? "").Trim();
+        if (barcode.Length == 0)
+        {
+            Flash("Scan or type the tube barcode first.", "warn");
+            return RedirectToAction("ReceiveSamples");
+        }
+        var tube = _db.GetRequests().SelectMany(r => r.Tubes)
+                      .FirstOrDefault(t => t.BarcodeId > 0 && string.Equals(t.TubeId, barcode, StringComparison.OrdinalIgnoreCase));
+        if (tube == null)
+        {
+            Flash($"No tube with the barcode {barcode} was found.", "warn");
+            return RedirectToAction("ReceiveSamples");
+        }
+        if (tube.Status != TubeStatus.NotReceived)
+        {
+            Flash($"{tube.TubeId} has already been received.", "warn");
+            return RedirectToAction("ReceiveSamples");
+        }
+
+        var ev = tube.Log("Sample received", CurrentUser.Id, EventTone.Good, $"{tube.Type} · {tube.SampleType}");
+        if (!_db.ReceiveSample(tube, CurrentUser.Id, ev))
+        {
+            Flash($"{tube.TubeId} has already been received.", "warn");
+            return RedirectToAction("ReceiveSamples");
+        }
+        Flash($"{tube.Request.ReqNum}: tube {tube.TubeId} received. It is now waiting in Sample Verification.", "ok");
+        return RedirectToAction("ReceiveSamples");
+
+            var checks = _db.GetConsumableChecks();
+        
+        }
+
+    // ---------------------------------------------------------------- reports
+
+    public IActionResult Reports()
+    {
+        ViewBag.Email = User?.Identity?.Name;
+        ViewBag.Counts = DashboardViewModel.Build(_db);
+        var tests = _db.GetTests();
+        return View(new ReportsPageViewModel
+        {
+            TestTypes = tests.GroupBy(t => t.TestTypeId).Select(g => new KeyValuePair<int, string>(g.Key, g.First().Test)).OrderBy(k => k.Value).ToList(),
+            Technicians = TechnicianNames.All.Where(k => int.TryParse(k.Key, out _)).Select(k => new KeyValuePair<int, string>(int.Parse(k.Key), k.Value)).OrderBy(k => k.Value).ToList(),
+            From = DateTime.Today.AddDays(-29),
+            To = DateTime.Today
+        });
+    }
+
+    // Shows the finished report as a clean A4 page. "Save as PDF" in the browser's print box makes the PDF.
+    public IActionResult ReportDocument(ReportKind kind, DateTime? from, DateTime? to, int? testTypeId, string priority,
+                                        int? technicianId, bool onlyMine, string graph = "bar", bool print = false)
+    {
+        var start = (from ?? DateTime.Today.AddDays(-29)).Date;
+        var end = (to ?? DateTime.Today).Date;
+        if (end < start) (start, end) = (end, start);
+
+        var req = new ReportRequest
+        {
+            Kind = kind, From = start, To = end, TestTypeId = testTypeId,
+            Priority = string.IsNullOrWhiteSpace(priority) ? null : priority,
+            TechnicianId = technicianId, OnlyMine = onlyMine, Graph = graph == "line" ? "line" : "bar"
+        };
+        _db.GetTests();   // makes sure the technician names are loaded
+        var doc = TechnicianReportBuilder.Build(_db.GetRequests(), req, CurrentUser.Name, CurrentUser.Id, TechnicianNames.Of);
+        ViewBag.Print = print;
+        return View(doc);
+    }
 
     // ---------------------------------------------------------------- profile
 
@@ -119,8 +254,17 @@ public class TechnicianDashboardController : Controller
         return View(item);
     }
 
-    // Accepting or rejecting works on the TUBE of the test that was opened, so it covers every test on that tube.
-    [HttpPost]
+        // After accepting or rejecting, go straight to the next tube waiting for verification, or back to the list when none is left.
+        private IActionResult NextSampleOrList()
+        {
+            var next = _db.GetRequests().SelectMany(r => r.Tubes)
+                          .Where(t => t.Status == TubeStatus.AwaitingVerification && t.Tests.Count > 0)
+                          .Select(t => t.Tests.First()).FirstOrDefault();
+            return next != null ? RedirectToAction("VerifySample", new { id = next.TestId }) : RedirectToAction("SampleVerification");
+        }
+
+        // Accepting or rejecting works on the TUBE of the test that was opened, so it covers every test on that tube.
+        [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult AcceptSample(string id, string[] checks)
     {
@@ -191,6 +335,7 @@ public class TechnicianDashboardController : Controller
                     "Captured results waiting for a second technician to verify before release.",
                     _db.GetTests().Where(t => t.Stage == TestStage.Complete), filter);
     }
+
 
     public IActionResult VerifyResult(string id)
     {
@@ -378,18 +523,7 @@ public class TechnicianDashboardController : Controller
         item.Results = lines;
         item.CaptureNote = comments.Count == 0 ? null : string.Join("; ", comments);
 
-        // Draft: saved against this attempt, not logged. Saving counts as starting the test.
-        if (!finalise)
-        {
-            if (!_db.SaveDraft(item, CurrentUser.Id, item.Attempt, item.CaptureNote))
-            {
-                Flash($"{Label(item)} isn't available for result capture.", "warn");
-                return RedirectToAction("MyTests");
-            }
-            Flash($"{Label(item)}: draft saved. It stays in your tests until you submit it.", "ok");
-            return RedirectToAction("CaptureResults", new { id });
-        }
-
+        
         // Submit: one audit entry per submission. A re-entry shows what changed since the returned attempt.
         var changes = wasReturned ? TestItem.Diff(previousAttempt, lines) : null;
         var detail = TestItem.Summarise(lines) + (item.CaptureNote != null ? $" — {item.CaptureNote}" : "");
@@ -425,12 +559,79 @@ public class TechnicianDashboardController : Controller
 
     // ---------------------------------------------------------------- release status (read-only)
 
-    // The doctor releases a request to the patient once every test on it is verified.
-    // This page only shows which requests are ready, which are held back, and which have been released.
+    // Every test on a request is verified: the technician releases it and the requesting doctor is e-mailed.
     public IActionResult ReleaseResults()
     {
         ViewBag.Email = User?.Identity?.Name;
         return View(ReleaseViewModel.Build(_db));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ReleaseRequest(string reqNum)
+    {
+        var req = _db.GetRequest(reqNum);
+        if (req == null) return NotFound();
+        if (req.IsReleased) { Flash($"{req.ReqNum} has already been released.", "warn"); return RedirectToAction("ReleaseResults"); }
+        if (!req.IsReadyToRelease) { Flash($"{req.ReqNum} cannot be released yet: {req.HoldReason}.", "warn"); return RedirectToAction("ReleaseResults"); }
+
+        var email = _db.GetDoctorEmail(req);
+        var ev = req.Log("Results released", CurrentUser.Id, EventTone.Good,
+                         string.IsNullOrWhiteSpace(email) ? "Released. No doctor e-mail on record." : "Released. Doctor notified by e-mail.");
+        if (!_db.ReleaseRequest(req, CurrentUser.Id, ev))
+        {
+            Flash($"{req.ReqNum} could not be released. It may already have been released.", "warn");
+            return RedirectToAction("ReleaseResults");
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+            Flash($"{req.ReqNum} released, but no e-mail address is on record for {req.RequestingDoctor}, so nobody was notified.", "warn");
+        else
+        {
+            var error = SendReleaseEmail(email, req);
+            Flash(error == null
+                ? $"{req.ReqNum} released. {req.RequestingDoctor} has been e-mailed."
+                : $"{req.ReqNum} released, but the e-mail to {req.RequestingDoctor} failed: {error}", error == null ? "ok" : "warn");
+        }
+        return RedirectToAction("ReleaseResults");
+    }
+
+    // Plain SMTP. Reads  Email:Host, Email:Port, Email:User, Email:Password, Email:From  from appsettings
+    // (use the same Gmail settings your team already uses; rename the keys below if yours differ).
+    // The e-mail carries the request number and test names only. No patient name or ID, so nothing confidential leaves the system.
+    private string SendReleaseEmail(string to, LabRequest req)
+    {
+        try
+        {
+            var user = _config["Email:User"];
+            var password = _config["Email:Password"];
+            if (string.IsNullOrWhiteSpace(user) || string.IsNullOrWhiteSpace(password))
+                return "e-mail settings are missing in appsettings.json";
+
+            var tests = string.Join("\n", req.Tests.Select(t => " - " + t.Test));
+            var body = $"Good day,\n\nThe results for request {req.ReqNum} have been verified and released by the haematology laboratory.\n\n" +
+                       $"Tests:\n{tests}\n\nPlease sign in to NMB-HLabSys to view them.\n\nReleased by {CurrentUser.Name} on {DateTime.Now:d MMM yyyy, HH:mm}.\n\nNMB-HLabSys · Haematology Laboratory";
+
+            using var msg = new MailMessage
+            {
+                From = new MailAddress(_config["Email:From"] ?? user, "NMB-HLabSys"),
+                Subject = $"Results released: {req.ReqNum}",
+                Body = body
+            };
+            msg.To.Add(to);
+
+            using var smtp = new SmtpClient(_config["Email:Host"] ?? "smtp.gmail.com", int.TryParse(_config["Email:Port"], out var port) ? port : 587)
+            {
+                EnableSsl = true,
+                Credentials = new NetworkCredential(user, password)
+            };
+            smtp.Send(msg);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            return ex.Message;
+        }
     }
 
     // ---------------------------------------------------------------- test details

@@ -3,6 +3,15 @@
 @using _4th_year_set_up.Models
 @* The action buttons for a test, based on its stage. Used by the list rows and the details page. *@
 @{
+    var stock = ViewBag.Consumables as Dictionary<int, ConsumableCheck>;
+    string NeedsJson()
+    {
+        var list = stock != null && Model.Sample != null && stock.TryGetValue(Model.Sample.BarcodeId, out var cc) ? cc.Needs : new List<ConsumableNeed>();
+        return System.Text.Json.JsonSerializer.Serialize(list.Select(n => new { name = n.Name, needed = n.Needed, onHand = n.OnHand }));
+    }
+    var pt = Model.PatientDetails;
+    var medsText = pt == null ? "" : string.Join("||", pt.Medications.Select(m => $"{m.Name} {m.Dose}"));
+
     var returnUrl = Context.Request.Path + Context.Request.QueryString;
     var inDetails = (ViewContext.RouteData.Values["action"] as string) == "TestDetails";
     var enterCss = Model.IsUrgent ? "btn-orange" : "btn-ghost";

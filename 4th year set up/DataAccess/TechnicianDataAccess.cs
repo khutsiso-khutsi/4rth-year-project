@@ -346,6 +346,15 @@ namespace _4th_year_set_up.DataAccess
         // false = the state had already changed (somebody else got there first).
         // =====================================================================================
 
+        public bool ReceiveSample(SampleTube tube, string by, TestEvent ev)
+            => _sample ? TechnicianSampleData.Receive(tube) : Run("dbo.sp_Tech_ReceiveSample", new
+            {
+                BarcodeID = tube.BarcodeId,
+                RequestID = tube.Request.RequestId,
+                By = Tech(by),
+                EventsJson = EventsJson(new[] { ev })
+            });
+
         public bool AcceptSample(SampleTube tube, string by, TestEvent ev)
             => _sample ? TechnicianSampleData.Accept(tube, by) : Run("dbo.sp_Tech_AcceptSample", new
             {
@@ -419,6 +428,46 @@ namespace _4th_year_set_up.DataAccess
                 ValuesJson = ValuesJson(item.Results),
                 EventsJson = EventsJson(events)
             });
+        }
+
+        // Releases a request whose every test is verified. The procedure checks that again and releases only once.
+        public bool ReleaseRequest(LabRequest req, string by, TestEvent ev)
+            => _sample ? TechnicianSampleData.Release(req) : Run("dbo.sp_Tech_ReleaseRequest", new
+            {
+                RequestID = req.RequestId,
+                By = Tech(by),
+                EventsJson = EventsJson(new[] { ev })
+            });
+        public Dictionary<int, ConsumableCheck> GetConsumableChecks()
+        {
+            if (_sample) return new Dictionary<int, ConsumableCheck>();
+            try
+            {
+                using var db = Open();
+                return db.Query<ConsumableRow>("dbo.sp_Tech_GetTubeConsumables", commandType: CommandType.StoredProcedure)
+                         .GroupBy(r => r.BarcodeID)
+                         .ToDictionary(g => g.Key, g => new ConsumableCheck
+                         {
+                             Needs = g.Select(r => new ConsumableNeed { Name = r.Name, Needed = r.Needed, OnHand = r.OnHand }).ToList()
+                         });
+            }
+            catch (SqlException) { return new Dictionary<int, ConsumableCheck>(); }
+        }
+
+        private class ConsumableRow
+        {
+            public int BarcodeID { get; set; }
+            public string Name { get; set; }
+            public int Needed { get; set; }
+            public int OnHand { get; set; }
+        }
+        // The e-mail address of the doctor who requested the tests (null if none is on record).
+        public string GetDoctorEmail(LabRequest req)
+        {
+            if (_sample) return null;
+            using var db = Open();
+            return db.QueryFirstOrDefault<string>("dbo.sp_Tech_GetDoctorEmail", new { RequestID = req.RequestId },
+                                                  commandType: CommandType.StoredProcedure);
         }
 
         // Second technician verifies. A technician can never verify their own capture (the procedure checks it).

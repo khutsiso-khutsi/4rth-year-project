@@ -19,7 +19,6 @@
     <link rel="stylesheet" href="~/css/technician.css" />
 </head>
 <body>
-//mmmmm
     @* ===== TOPBAR + SIDEBAR: copy this block unchanged into every technician screen. Only move the "active" class. ===== *@
     <div class="topbar">
         <a class="brand" asp-controller="Home" asp-action="Index">
@@ -73,17 +72,10 @@
             </a>
 
             <div class="nav-label">Results</div>
-            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2" /><line x1="8" y1="8" x2="16" y2="8" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="8" y1="16" x2="13" y2="16" /></svg>
-                Capture Results
-            </a>
+          
             <a asp-controller="TechnicianDashboard" asp-action="Verification" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
                 Result Verification
-            </a>
-            <a asp-controller="TechnicianDashboard" asp-action="ReleaseResults" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></svg>
-                Release Results
             </a>
 
             <div class="nav-label">Reports</div>
@@ -101,6 +93,21 @@
         @* ===== END shared topbar + sidebar ===== *@
 
         <main class="main">
+
+            @if (Model.NewlyAssigned.Count > 0)
+            {
+                <div class="flash flash-ok" role="status" style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                    <span>
+                        <strong>@(Model.NewlyAssigned.Count == 1 ? "1 test has" : Model.NewlyAssigned.Count + " tests have") been assigned to you by the lab manager:</strong>
+                        @(string.Join(", ", Model.NewlyAssigned.Take(5).Select(t => t.ReqNum + " " + t.Test)) + (Model.NewlyAssigned.Count > 5 ? " and " + (Model.NewlyAssigned.Count - 5) + " more" : "") + ".")
+                    </span>
+                    <form method="post" asp-controller="TechnicianDashboard" asp-action="AcknowledgeAssigned" class="inline-form">
+                        <button type="submit" class="btn btn-ghost">Got it</button>
+                    </form>
+                </div>
+            }
+
+
 
             @if (!string.IsNullOrEmpty(flash))
             {
@@ -167,7 +174,6 @@
                 </a>
             </div>
 
-                <div class="section-label">Senior technician tasks</div>
                 <div class="stats-grid senior">
                     <a asp-controller="TechnicianDashboard" asp-action="SampleVerification" class="stat-card">
                         <div class="stat-top">
@@ -191,18 +197,6 @@
                         <div class="stat-value">@Model.ResultsToVerifyCount</div>
                         <div class="stat-label">Results to verify</div>
                         <div class="stat-go">Verify results →</div>
-                    </a>
-
-                    <a asp-controller="TechnicianDashboard" asp-action="ReleaseResults" class="stat-card">
-                        <div class="stat-top">
-                            <div class="stat-icon" style="background:var(--green-light)">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></svg>
-                            </div>
-                            <span class="stat-trend trend-up">Final step</span>
-                        </div>
-                        <div class="stat-value">@Model.ReadyToReleaseCount</div>
-                        <div class="stat-label">Ready for doctor release</div>
-                        <div class="stat-go">Release results →</div>
                     </a>
                 </div>
 
@@ -278,6 +272,14 @@
                         </table>
                     </div>
                     <div id="noResultsMsg" class="empty-state" style="display:none;">No matching tests found.</div>
+                    <div class="pager" id="minePager" style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:14px; font-size:.82rem; color:var(--muted);">
+                        <span id="pagerInfo"></span>
+                        <span style="display:flex; gap:6px; align-items:center;">
+                            <button type="button" class="btn btn-ghost" id="pagerPrev">← Previous</button>
+                            <span id="pagerPage"></span>
+                            <button type="button" class="btn btn-ghost" id="pagerNext">Next →</button>
+                        </span>
+                    </div>
                 }
             </div>
 
@@ -286,29 +288,50 @@
 
     <script>
         var mineFilter = 'all';
+        var minePage = 1;
+        var PAGE_SIZE = 8;
         function setMineFilter(f, clearSearch) {
             mineFilter = f;
+            minePage = 1;
             if (clearSearch) document.getElementById('filterReqNum').value = '';
             filterMine();
         }
-        function filterMine() {
+        function filterMine(keepPage) {
             var table = document.getElementById('myTestsTable');
             if (!table) return;
+            if (keepPage !== true) minePage = 1;
             var q = document.getElementById('filterReqNum').value.trim().toLowerCase();
-            var visible = 0;
+            var matches = [];
             table.querySelectorAll('tbody tr').forEach(function (row) {
                 var okFilter = mineFilter === 'all' ||
                     (mineFilter === 'urgent' && row.dataset.urgent === '1') ||
                     mineFilter === row.dataset.tat;
                 var show = okFilter && (!q || row.dataset.search.indexOf(q) !== -1);
-                row.style.display = show ? '' : 'none';
-                if (show) visible++;
+                row.style.display = 'none';
+                if (show) matches.push(row);
             });
+            var visible = matches.length;
+            var pages = Math.max(1, Math.ceil(visible / PAGE_SIZE));
+            if (minePage > pages) minePage = pages;
+            var start = (minePage - 1) * PAGE_SIZE;
+            matches.slice(start, start + PAGE_SIZE).forEach(function (row) { row.style.display = ''; });
+            document.getElementById('pagerInfo').textContent = visible === 0 ? '' :
+                'Showing ' + (start + 1) + '–' + Math.min(start + PAGE_SIZE, visible) + ' of ' + visible + ' tests';
+            document.getElementById('pagerPage').textContent = 'Page ' + minePage + ' of ' + pages;
+            document.getElementById('pagerPrev').disabled = minePage <= 1;
+            document.getElementById('pagerNext').disabled = minePage >= pages;
+            document.getElementById('minePager').style.display = visible <= PAGE_SIZE ? 'none' : 'flex';
             document.querySelectorAll('.filter-bar .chip[data-filter]').forEach(function (c) {
                 c.classList.toggle('active', c.dataset.filter === mineFilter);
             });
             document.getElementById('noResultsMsg').style.display = visible === 0 ? 'block' : 'none';
         }
+        (function () {
+            var prev = document.getElementById('pagerPrev'), next = document.getElementById('pagerNext');
+            if (prev) prev.addEventListener('click', function () { minePage--; filterMine(true); });
+            if (next) next.addEventListener('click', function () { minePage++; filterMine(true); });
+            if (document.getElementById('myTestsTable')) filterMine();
+        })();
     </script>
     <partial name="_TestModal" />
     <script src="~/js/test-modal.js"></script>

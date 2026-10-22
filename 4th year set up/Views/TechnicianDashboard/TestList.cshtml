@@ -22,6 +22,14 @@
     var flash = TempData["Flash"] as string;
     var flashType = TempData["FlashType"] as string ?? "ok";
     var showTat = Model.Mode != "verified";   // TAT filters make no sense for verified tests
+
+    var isResults = Model.Mode == "results";
+    string Ago(DateTime? d)
+    {
+        if (!d.HasValue) return "—";
+        var m = (int)(DateTime.Now - d.Value).TotalMinutes;
+        return m < 1 ? "just now" : m < 60 ? m + " min ago" : m < 1440 ? (m / 60) + " h ago" : (m / 1440) + " d ago";
+    }
 }
 
 <!DOCTYPE html>
@@ -88,10 +96,7 @@
             </a>
 
             <div class="nav-label">Results</div>
-            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2" /><line x1="8" y1="8" x2="16" y2="8" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="8" y1="16" x2="13" y2="16" /></svg>
-                Capture Results
-            </a>
+         
             <a asp-controller="TechnicianDashboard" asp-action="Verification" class="nav-item @resultActive">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
                 Result Verification
@@ -151,15 +156,14 @@
                 <div class="table-wrap">
                     <table class="table" id="testTable">
                         <thead>
-                            <tr>
-                                <th>Request #</th>
-                                <th>Patient</th>
-                                <th>Test</th>
-                                <th>Priority</th>
-                                <th>Turnaround</th>
-                                <th>Stage</th>
-                                <th></th>
-                            </tr>
+                            @if (isResults)
+                            {
+                                <tr><th>Request #</th><th>Test</th><th>Priority</th><th>Captured by</th><th>Waiting</th><th></th></tr>
+                            }
+                            else
+                            {
+                                <tr><th>Request #</th><th>Patient</th><th>Test</th><th>Priority</th><th>Turnaround</th><th>Stage</th><th></th></tr>
+                            }
                         </thead>
                         <tbody>
                             @foreach (var t in Model.Items)
@@ -171,86 +175,85 @@
                                     TatStatus.NearingTat => "badge-nearing",
                                     _ => "badge-ontrack"
                                 };
-                                <tr class="@(t.Tat == TatStatus.Overdue && t.IsActive ? "row-overdue" : "")"
-                                    data-search="@((t.ReqNum + " " + t.Patient).ToLower())"
-                                    data-urgent="@(t.IsUrgent ? "1" : "0")"
-                                    data-tat="@(t.Tat == TatStatus.Overdue ? "overdue" : t.Tat == TatStatus.NearingTat ? "nearing" : "ontrack")">
-                                    <td><partial name="_ReqLink" model="t" /></td>
-                                    <td>@t.Patient</td>
-                                    <td>@t.Test</td>
-                                    <td>
-                                        @if (t.IsUrgent)
-                                        {
-                                            <span class="badge badge-urgent">Urgent</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge badge-routine">Routine</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (t.IsActive)
-                                        {
-                                            <span class="badge @tatCss">@t.TatLabel</span>
-                                        }
-                                        <span class="due-text">@t.DueText</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge @stageCss">@t.StageLabel</span>
-                                        @if (t.Stage == TestStage.ToBeReviewed && !string.IsNullOrEmpty(t.ReviewNote))
-                                        {
-                                            <span class="due-text" title="@t.ReviewNote">Note: @t.ReviewNote</span>
-                                        }
-                                        @if (t.AssignedToMe && t.IsInQueue)
-                                        {
-                                            <span class="badge badge-mine">Mine</span>
-                                        }
-                                    </td>
-                                    <td class="actions-cell"><partial name="_TestActions" model="t" /></td>
-                                </tr>
+                                @if (isResults)
+                                {
+                                <td><strong>@t.ReqNum</strong>@if (t.InMultiTestRequest) {
+                                <span class="req-chip">@t.PositionLabel</span>
+                            } </td>
+                            <td>@t.Test</td>
+                            <td><span class="badge @(t.IsUrgent ? "badge-urgent" : "badge-routine")">@(t.IsUrgent ? "Urgent" : "Routine")</span></td>
+                            <td>@TechnicianNames.Of(t.CapturedBy)@(t.CapturedBy == CurrentUser.Id ? " (you)" : "")</td>
+                            <td>@Ago(t.CapturedAt)</td>
+                            <td class="actions-cell">
+                                @if (CurrentUser.CanVerifyResult(t))
+                                {
+                                    <a class="btn btn-orange" asp-controller="TechnicianDashboard" asp-action="VerifyResult" asp-route-id="@t.TestId">Verify result</a>
+                                }
+                                else
+                                {
+                                    <span class="muted-note">Needs another technician</span>
+                                }
+                            </td>
+                        }
+                                                else
+                        {
+                            @* …your existing <td> cells, unchanged… *@
+                        }
                             }
                         </tbody>
                     </table>
                 </div>
 
                 <div id="noResultsMsg" class="empty-state" style="display:none;">No matching tests found.</div>
+                <div id="listPager" style="display:none; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:14px; font-size:.82rem; color:var(--muted);">
+                    <span id="pagerInfo"></span>
+                    <span style="display:flex; gap:6px; align-items:center;">
+                        <button type="button" class="btn btn-ghost" id="pagerPrev">← Previous</button>
+                        <span id="pagerPage"></span>
+                        <button type="button" class="btn btn-ghost" id="pagerNext">Next →</button>
+                    </span>
+                </div>
             </div>
 
         </main>
     </div>
 
     <script>
-        var currentFilter = '@Model.InitialFilter';
+                var currentFilter = '@Model.InitialFilter';
         if (['all', 'urgent', 'overdue', 'nearing'].indexOf(currentFilter) === -1) currentFilter = 'all';
+        var page = 1, PAGE_SIZE = 10;
 
         function setFilter(f, clearSearch) {
-            currentFilter = f;
+            currentFilter = f; page = 1;
             if (clearSearch) document.getElementById('filterReqNum').value = '';
             filterList();
         }
 
-        function filterList() {
+        function filterList(keepPage) {
+            if (keepPage !== true) page = 1;
             var q = document.getElementById('filterReqNum').value.trim().toLowerCase();
-            var rows = document.querySelectorAll('#testTable tbody tr');
-            var visible = 0;
-
-            rows.forEach(function (row) {
-                var matchFilter =
-                    currentFilter === 'all' ||
-                    (currentFilter === 'urgent' && row.dataset.urgent === '1') ||
-                    (currentFilter === row.dataset.tat);
-                var matchSearch = !q || row.dataset.search.indexOf(q) !== -1;
-                var show = matchFilter && matchSearch;
-                row.style.display = show ? '' : 'none';
-                if (show) visible++;
+            var matches = [];
+            document.querySelectorAll('#testTable tbody tr').forEach(function (row) {
+                var show = (currentFilter === 'all' || (currentFilter === 'urgent' && row.dataset.urgent === '1') || currentFilter === row.dataset.tat)
+                           && (!q || row.dataset.search.indexOf(q) !== -1);
+                row.style.display = 'none';
+                if (show) matches.push(row);
             });
+            var pages = Math.max(1, Math.ceil(matches.length / PAGE_SIZE));
+            if (page > pages) page = pages;
+            var start = (page - 1) * PAGE_SIZE;
+            matches.slice(start, start + PAGE_SIZE).forEach(function (r) { r.style.display = ''; });
 
-            document.querySelectorAll('.filter-bar .chip[data-filter]').forEach(function (c) {
-                c.classList.toggle('active', c.dataset.filter === currentFilter);
-            });
-            document.getElementById('noResultsMsg').style.display = visible === 0 ? 'block' : 'none';
+            document.getElementById('pagerInfo').textContent = matches.length ? 'Showing ' + (start + 1) + '–' + Math.min(start + PAGE_SIZE, matches.length) + ' of ' + matches.length : '';
+            document.getElementById('pagerPage').textContent = 'Page ' + page + ' of ' + pages;
+            document.getElementById('pagerPrev').disabled = page <= 1;
+            document.getElementById('pagerNext').disabled = page >= pages;
+            document.getElementById('listPager').style.display = matches.length > PAGE_SIZE ? 'flex' : 'none';
+            document.querySelectorAll('.filter-bar .chip[data-filter]').forEach(function (c) { c.classList.toggle('active', c.dataset.filter === currentFilter); });
+            document.getElementById('noResultsMsg').style.display = matches.length === 0 ? 'block' : 'none';
         }
-
+        document.getElementById('pagerPrev').addEventListener('click', function () { page--; filterList(true); });
+        document.getElementById('pagerNext').addEventListener('click', function () { page++; filterList(true); });
         filterList();
     </script>
 </body>

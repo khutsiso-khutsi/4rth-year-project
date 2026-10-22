@@ -1,10 +1,20 @@
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
-@model _4th_year_set_up.Models.ReceiveSamplesViewModel
+@model System.Collections.Generic.List<_4th_year_set_up.Models.ReceiveRow>
+@using _4th_year_set_up.Models
 @{
     ViewData["Title"] = "Receive Samples";
     Layout = null;
     var email = ViewBag.Email?.ToString();
     var initial = string.IsNullOrEmpty(email) ? "T" : email.Substring(0, 1).ToUpper();
+
+    var queueActive = "";
+    var mineActive = "";
+    var sampleActive = "";
+    var resultActive = "";
+
+    var flash = TempData["Flash"] as string;
+    var flashType = TempData["FlashType"] as string ?? "ok";
+
 }
 
 <!DOCTYPE html>
@@ -12,717 +22,23 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Receive Samples — NMB-HLabSys</title>
+    <title>@ViewData["Title"] — NMB-HLabSys</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/technician.css" />
     <style>
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        :root {
-            --navy: #0b1f3a;
-            --navy2: #122848;
-            --teal: #0d9488;
-            --teal-light: rgba(13,148,136,0.1);
-            --orange: #ea580c;
-            --orange-light: rgba(234,88,12,0.1);
-            --amber: #d97706;
-            --amber-light: rgba(217,119,6,0.1);
-            --red: #dc2626;
-            --red-light: rgba(220,38,38,0.1);
-            --green: #16a34a;
-            --green-light: rgba(22,163,74,0.1);
-            --blue: #2563eb;
-            --blue-light: rgba(37,99,235,0.1);
-            --purple: #7c3aed;
-            --purple-light: rgba(124,58,237,0.1);
-            --slate: #475569;
-            --slate-light: rgba(71,85,105,0.1);
-            --white: #ffffff;
-            --offwhite: #f4f7fb;
-            --muted: #6b7a99;
-            --muted-light: rgba(107,122,153,0.12);
-            --border: #dde4f0;
-        }
-
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--offwhite);
-            color: var(--navy);
-            min-height: 100vh;
-        }
-
-        .topbar {
-            background: var(--navy);
-            padding: 0 40px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 64px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-        }
-
-        .brand-logo {
-            width: 34px;
-            height: 34px;
-            background: var(--teal);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-            .brand-logo svg {
-                width: 18px;
-                height: 18px;
-                fill: white;
-            }
-
-        .brand-name {
-            font-family: 'DM Serif Display', serif;
-            color: white;
-            font-size: 1.1rem;
-            line-height: 1.1;
-        }
-
-            .brand-name span {
-                display: block;
-                font-family: 'DM Sans', sans-serif;
-                font-size: 0.6rem;
-                font-weight: 300;
-                color: rgba(255,255,255,0.4);
-                letter-spacing: 0.1em;
-                text-transform: uppercase;
-            }
-
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .user-chip {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 100px;
-            padding: 6px 14px 6px 8px;
-        }
-
-        .user-avatar {
-            width: 28px;
-            height: 28px;
-            background: var(--orange);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: white;
-        }
-
-        .user-email {
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.75);
-            max-width: 160px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .logout-btn {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            color: rgba(255,255,255,0.8);
-            padding: 8px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 0.82rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-        }
-
-            .logout-btn:hover {
-                background: rgba(255,255,255,0.15);
-                color: white;
-            }
-
-            .logout-btn svg {
-                width: 14px;
-                height: 14px;
-            }
-
-        .page {
-            display: flex;
-            min-height: calc(100vh - 64px);
-        }
-
-        .sidebar {
-            width: 220px;
-            background: white;
-            border-right: 1px solid var(--border);
-            padding: 24px 0;
-            flex-shrink: 0;
-            position: sticky;
-            top: 64px;
-            height: calc(100vh - 64px);
-            overflow-y: auto;
-        }
-
-        .nav-label {
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: var(--muted);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            padding: 0 20px;
-            margin-bottom: 4px;
-            margin-top: 16px;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 20px;
-            color: var(--muted);
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            border-left: 3px solid transparent;
-            transition: all 0.15s;
-        }
-
-            .nav-item:hover {
-                background: var(--offwhite);
-                color: var(--navy);
-            }
-
-            .nav-item.active {
-                background: var(--orange-light);
-                color: var(--orange);
-                border-left-color: var(--orange);
-            }
-
-            .nav-item svg {
-                width: 16px;
-                height: 16px;
-                flex-shrink: 0;
-            }
-
-        .main {
-            flex: 1;
-            padding: 32px 40px;
-        }
-
-        .welcome-banner {
-            background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
-            border-radius: 20px;
-            padding: 32px 36px;
-            margin-bottom: 28px;
-            position: relative;
-            overflow: hidden;
-        }
-
-            .welcome-banner::before {
-                content: '';
-                position: absolute;
-                inset: 0;
-                background: radial-gradient(ellipse 60% 80% at 90% 50%, rgba(234,88,12,0.2) 0%, transparent 60%);
-            }
-
-            .welcome-banner::after {
-                content: '';
-                position: absolute;
-                inset: 0;
-                background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-                background-size: 40px 40px;
-            }
-
-        .welcome-inner {
-            position: relative;
-            z-index: 2;
-        }
-
-        .welcome-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(234,88,12,0.2);
-            border: 1px solid rgba(234,88,12,0.3);
-            color: #fdba74;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            padding: 4px 10px;
-            border-radius: 100px;
-            margin-bottom: 12px;
-        }
-
-            .welcome-tag::before {
-                content: '';
-                width: 5px;
-                height: 5px;
-                background: #fdba74;
-                border-radius: 50%;
-            }
-
-        .welcome-banner h1 {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.8rem;
-            color: white;
-            margin-bottom: 6px;
-        }
-
-            .welcome-banner h1 em {
-                font-style: italic;
-                color: #fdba74;
-            }
-
-        .welcome-banner p {
-            color: rgba(255,255,255,0.5);
-            font-size: 0.875rem;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 28px;
-        }
-
-        .stat-card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
-        }
-
-        .stat-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 14px;
-        }
-
-        .stat-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-            .stat-icon svg {
-                width: 18px;
-                height: 18px;
-            }
-
-        .stat-trend {
-            font-size: 0.72rem;
-            font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 100px;
-        }
-
-        .trend-up {
-            background: var(--green-light);
-            color: var(--green);
-        }
-
-        .trend-warn {
-            background: var(--amber-light);
-            color: var(--amber);
-        }
-
-        .trend-danger {
-            background: var(--red-light);
-            color: var(--red);
-        }
-
-        .stat-value {
-            font-family: 'DM Serif Display', serif;
-            font-size: 2rem;
-            color: var(--navy);
-            line-height: 1;
-            margin-bottom: 4px;
-        }
-
-        .stat-label {
-            font-size: 0.78rem;
-            color: var(--muted);
-            font-weight: 500;
-        }
-
-        .card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .card-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.05rem;
-            color: var(--navy);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-            .card-title svg {
-                width: 17px;
-                height: 17px;
-                stroke: var(--orange);
-            }
-
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-            .table th {
-                font-size: 0.7rem;
-                font-weight: 600;
-                color: var(--muted);
-                text-transform: uppercase;
-                letter-spacing: 0.08em;
-                padding: 0 0 10px;
-                text-align: left;
-                border-bottom: 1px solid var(--border);
-            }
-
-            .table td {
-                padding: 12px 0;
-                font-size: 0.83rem;
-                color: var(--navy);
-                border-bottom: 1px solid var(--offwhite);
-                vertical-align: middle;
-            }
-
-            .table tr:last-child td {
-                border-bottom: none;
-            }
-
-        .badge {
-            display: inline-block;
-            padding: 3px 9px;
-            border-radius: 100px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-
-        .badge-stat {
-            background: var(--red-light);
-            color: var(--red);
-        }
-
-        .badge-urgent {
-            background: var(--amber-light);
-            color: var(--amber);
-        }
-
-        .badge-routine {
-            background: var(--slate-light);
-            color: var(--slate);
-        }
-
-        .btn {
-            padding: 6px 14px;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.78rem;
-            cursor: pointer;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 600;
-            transition: all 0.15s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-            .btn:disabled {
-                opacity: 0.6;
-                cursor: not-allowed;
-            }
-
-        .btn-primary {
-            background: var(--teal);
-            color: white;
-        }
-
-            .btn-primary:hover {
-                background: #0b7a70;
-            }
-
-        .btn-danger {
-            background: white;
-            border: 1px solid var(--red);
-            color: var(--red);
-        }
-
-            .btn-danger:hover {
-                background: var(--red-light);
-            }
-
-        .btn-ghost {
-            background: var(--offwhite);
-            border: 1px solid var(--border);
-            color: var(--navy);
-        }
-
-            .btn-ghost:hover {
-                border-color: var(--teal);
-                color: var(--teal);
-            }
-
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--muted);
-            text-decoration: none;
-            margin-bottom: 20px;
-            padding: 7px 12px;
-            border: 1px solid var(--border);
-            border-radius: 7px;
-            background: var(--white);
-            transition: all 0.15s;
-        }
-
-            .back-link:hover {
-                color: var(--navy);
-                border-color: var(--teal);
-                background: var(--teal-light);
-            }
-
-            .back-link svg {
-                width: 14px;
-                height: 14px;
-            }
-
-        .empty-state {
-            padding: 40px 20px;
-            text-align: center;
-            font-size: 14px;
-            color: var(--muted);
-        }
-
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(11,31,58,0.5);
-            z-index: 200;
-            align-items: center;
-            justify-content: center;
-        }
-
-            .modal-overlay.open {
-                display: flex;
-            }
-
-        .modal {
-            background: white;
-            border-radius: 20px;
-            padding: 32px;
-            width: 100%;
-            max-width: 480px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-        }
-
-        .modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .modal-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.2rem;
-            color: var(--navy);
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--muted);
-            font-size: 1.2rem;
-            padding: 4px;
-        }
-
-            .modal-close:hover {
-                color: var(--navy);
-            }
-
-        .field {
-            margin-bottom: 14px;
-        }
-
-            .field label {
-                display: block;
-                font-size: 0.7rem;
-                font-weight: 600;
-                color: var(--muted);
-                text-transform: uppercase;
-                letter-spacing: 0.07em;
-                margin-bottom: 6px;
-            }
-
-            .field textarea, .field input, .field select {
-                width: 100%;
-                padding: 10px;
-                border: 1px solid var(--border);
-                border-radius: 8px;
-                font-size: 0.85rem;
-                font-family: 'DM Sans', sans-serif;
-                color: var(--navy);
-                resize: vertical;
-            }
-
-                .field textarea:focus, .field input:focus, .field select:focus {
-                    outline: none;
-                    border-color: var(--teal);
-                }
-
-        .field-hint {
-            font-size: 0.72rem;
-            color: var(--muted);
-            margin-top: 4px;
-        }
-
-        .field-error {
-            font-size: 0.75rem;
-            color: var(--red);
-            margin-top: 6px;
-            display: none;
-        }
-
-            .field-error.show {
-                display: block;
-            }
-
-        .toast {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background: var(--navy);
-            color: white;
-            padding: 14px 20px;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-            z-index: 300;
-            display: none;
-            max-width: 340px;
-        }
-
-            .toast.show {
-                display: block;
-            }
-
-            .toast.success {
-                border-left: 4px solid var(--green);
-            }
-
-            .toast.error {
-                border-left: 4px solid var(--red);
-            }
-
-        .sample-row {
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 12px;
-            background: var(--offwhite);
-        }
-
-        .sample-row-title {
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: var(--teal);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 10px;
-        }
-
-        .sample-row .field {
-            margin-bottom: 10px;
-        }
-
-            .sample-row .field:last-child {
-                margin-bottom: 0;
-            }
-
-        @@media (max-width: 1100px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @@media (max-width: 768px) {
-            .topbar {
-                padding: 0 20px;
-            }
-
-            .user-email {
-                display: none;
-            }
-
-            .sidebar {
-                display: none;
-            }
-
-            .main {
-                padding: 20px 16px;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-        }
+        .scan-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 8px; }
+        .scan-input { height: 40px; min-width: 260px; font-size: 15px; }
+        .scan-row .btn { height: 40px; padding: 0 20px; }
     </style>
 </head>
 <body>
 
-    @* ===== TOPBAR + SIDEBAR: identical to the dashboard. Only the "active" class moves. ===== *@
+    @* ===== TOPBAR + SIDEBAR: identical to Index.cshtml. Only the "active" class moves. ===== *@
     <div class="topbar">
         <a class="brand" asp-controller="Home" asp-action="Index">
-            <div class="brand-logo"><svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg></div>
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
+            </div>
             <div class="brand-name">NMB-HLabSys<span>Haematology Lab System</span></div>
         </a>
         <div class="topbar-right">
@@ -731,14 +47,17 @@
                 <span class="user-email">@email</span>
             </div>
             <a asp-controller="Home" asp-action="Logout" class="logout-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
                 Sign Out
             </a>
         </div>
     </div>
 
     <div class="page">
-
         <aside class="sidebar">
             <a asp-controller="TechnicianDashboard" asp-action="Index" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /><path d="M9 21v-6h6v6" /></svg>
@@ -746,33 +65,35 @@
             </a>
 
             <div class="nav-label">Samples and Requests</div>
-            <a asp-controller="TechnicianDashboard" asp-action="ReceiveSamples" class="nav-item active">
+            <a asp-controller="TechnicianDashboard" asp-action="ReceiveSamples" class="nav-item @sampleActive">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6" /><polyline points="16 6 12 10 8 6" /><line x1="12" y1="10" x2="12" y2="2" /></svg>
                 Receive Samples
             </a>
-            <a asp-controller="TechnicianDashboard" asp-action="SampleVerification" class="nav-item">
+
+            <a asp-controller="TechnicianDashboard" asp-action="SampleVerification" class="nav-item @sampleActive">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" /><polyline points="9 14 11 16 15 12" /></svg>
                 Sample Verification
             </a>
 
             <div class="nav-label">Tests</div>
-            <a asp-controller="TechnicianDashboard" asp-action="TestQueue" class="nav-item">
+            <a asp-controller="TechnicianDashboard" asp-action="TestQueue" class="nav-item @queueActive">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" /><line x1="9" y1="2" x2="15" y2="2" /></svg>
                 Testing Queue
             </a>
-            <a asp-controller="TechnicianDashboard" asp-action="MyTests" class="nav-item">
+            <a asp-controller="TechnicianDashboard" asp-action="MyTests" class="nav-item @mineActive">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                 My Tests
             </a>
 
             <div class="nav-label">Results</div>
-            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2" /><line x1="8" y1="8" x2="16" y2="8" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="8" y1="16" x2="13" y2="16" /></svg>
-                Capture Results
-            </a>
-            <a asp-controller="TechnicianDashboard" asp-action="Verification" class="nav-item">
+    
+            <a asp-controller="TechnicianDashboard" asp-action="Verification" class="nav-item @resultActive">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
                 Result Verification
+            </a>
+            <a asp-controller="TechnicianDashboard" asp-action="ReleaseResults" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></svg>
+                Release Results
             </a>
 
             <div class="nav-label">Reports</div>
@@ -790,361 +111,113 @@
         @* ===== END shared topbar + sidebar ===== *@
 
         <main class="main">
-            <a asp-controller="TechnicianDashboard" asp-action="Index" class="back-link">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12" />
-                    <polyline points="12 19 5 12 12 5" />
-                </svg>
-                Back to Dashboard
-            </a>
 
-            <div class="welcome-banner">
-                <div class="welcome-inner">
-                    <div class="welcome-tag">Receiving Technician</div>
-                    <h1>Welcome back, <em>Technician</em></h1>
-                    <p>Samples waiting to be checked in — @DateTime.Now.ToString("dddd, dd MMMM yyyy")</p>
-                </div>
-            </div>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-top">
-                        <div class="stat-icon" style="background:var(--slate-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--slate)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg></div>
-                        <span class="stat-trend trend-warn">Awaiting</span>
-                    </div>
-                    <div class="stat-value">@Model.AwaitingReceiptCount</div>
-                    <div class="stat-label">Awaiting Receipt</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-top">
-                        <div class="stat-icon" style="background:var(--teal-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12" /></svg></div>
-                        <span class="stat-trend trend-up">Today</span>
-                    </div>
-                    <div class="stat-value">@Model.ReceivedTodayCount</div>
-                    <div class="stat-label">Received Today</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-top">
-                        <div class="stat-icon" style="background:var(--red-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg></div>
-                        <span class="stat-trend trend-danger">Today</span>
-                    </div>
-                    <div class="stat-value">@Model.RejectedTodayCount</div>
-                    <div class="stat-label">Rejected Today</div>
-                </div>
-            </div>
-
+            @if (!string.IsNullOrEmpty(flash))
+            {
+                <div class="flash flash-@flashType" role="status">@flash</div>
+            }
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 2v6l-5 10a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-10V2" /><line x1="9" y1="2" x2="15" y2="2" /></svg>
-                        Samples Awaiting Check-In
+                    <div>
+                        <div class="card-title">Expected tubes</div>
+                        <div class="card-sub">@Model.Count tube@(Model.Count == 1 ? "" : "s") not yet received. Urgent requests first, then oldest collection.</div>
                     </div>
                 </div>
 
-                @if (!Model.PendingSamples.Any())
+                @if (Model.Count == 0)
                 {
-                    <div class="empty-state">No samples currently awaiting check-in.</div>
+                    <div class="empty-state">No tubes are waiting to be received. New tubes appear here as soon as a doctor submits a request.</div>
                 }
                 else
                 {
-                    <table class="table">
-                        <thead>
-                            <tr><th>Request #</th><th>Patient</th><th>Tests</th><th>Ordering Doctor</th><th>Urgency</th><th></th></tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var s in Model.PendingSamples)
-                            {
-                                var urgencyClass = s.Urgency switch
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr><th>Barcode</th><th>Request #</th><th>Tests</th><th>Sample</th><th>Priority</th><th>Collected</th><th></th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var t in Model)
                                 {
-                                    "Stat" => "badge-stat",
-                                    "Urgent" => "badge-urgent",
-                                    _ => "badge-routine"
-                                };
-                                <tr data-sample-id="@s.SampleId">
-                                    <td><strong>@s.RequestNumber</strong></td>
-                                    <td>@s.PatientName, @s.PatientAge</td>
-                                    <td>@s.TestTypeNames</td>
-                                    <td>@s.OrderingDoctorName</td>
-                                    <td><span class="badge @urgencyClass">@s.Urgency</span></td>
-                                    <td style="text-align:right; white-space:nowrap;">
-                                        <button class="btn btn-danger"
-                                                onclick="openReject(@s.SampleId, '@s.RequestNumber', '@s.PatientName')">
-                                            Reject Sample
-                                        </button>
-                                        <button class="btn btn-primary"
-                                                onclick="openReceive(@s.SampleId, '@s.RequestNumber', '@s.PatientName', '@s.ExpectedSampleType')">
-                                            Receive Sample
-                                        </button>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+                                    <tr>
+                                        <td><strong>@t.Barcode</strong></td>
+                                        <td>@t.ReqNum</td>
+                                        <td>@t.Tests</td>
+                                        <td>@t.Sample</td>
+                                        <td><span class="badge @(t.IsUrgent ? "badge-urgent" : "badge-routine")">@t.Priority</span></td>
+                                        <td>@t.Waited</td>
+                                        <td>
+                                            <form method="post" asp-controller="TechnicianDashboard" asp-action="ReceiveSample" class="inline-form">
+                                                <input type="hidden" name="barcode" value="@t.Barcode" />
+                                                <button type="submit" class="btn btn-primary">Receive</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 }
             </div>
+
         </main>
     </div>
 
-    <!-- Receive Sample Modal -->
-    <div class="modal-overlay" id="receiveModal">
-        <div class="modal">
+    <div class="modal-overlay" id="rcModal" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rcTitle">
             <div class="modal-header">
-                <div class="modal-title" id="receiveModalTitle">Receive Sample</div>
-                <button class="modal-close" onclick="closeReceive()">✕</button>
+                <div><div class="modal-title" id="rcTitle"></div><div class="card-sub" id="rcSub"></div></div>
+                <button type="button" class="modal-close" id="rcClose" aria-label="Close">✕</button>
             </div>
-            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;" id="receiveModalSubtitle"></p>
-
-            <div id="receiveSamplesList"></div>
-            <div class="field-hint">Each barcode must match the one logged by the ordering doctor.</div>
-
-
-            <div class="field-error" id="receiveError"></div>
-
-            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
-                <button class="btn btn-ghost" onclick="closeReceive()">Cancel</button>
-                <button class="btn btn-primary" id="confirmReceiveBtn" onclick="confirmReceive()">Confirm Receipt</button>
+            <div class="detail-card-title">Consumables needed for these tests</div>
+            <p class="muted-note" id="rcNone" hidden>No consumables are linked to these tests yet, so there is nothing to check. The tube can be received.</p>
+            <div class="table-wrap" id="rcTableWrap" hidden>
+                <table class="table">
+                    <thead><tr><th>Consumable</th><th>Needed</th><th>In stock</th><th></th></tr></thead>
+                    <tbody id="rcRows"></tbody>
+                </table>
             </div>
+            <div class="alert-box alert-danger" id="rcShort" hidden></div>
+            <form method="post" asp-controller="TechnicianDashboard" asp-action="ReceiveSample">
+                <input type="hidden" name="barcode" id="rcBarcode" />
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" id="rcCancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="rcConfirm">Receive tube</button>
+                </div>
+            </form>
         </div>
     </div>
-
-    <!-- Reject Sample Modal -->
-    <div class="modal-overlay" id="rejectModal">
-        <div class="modal">
-            <div class="modal-header">
-                <div class="modal-title" id="rejectModalTitle">Reject Sample</div>
-                <button class="modal-close" onclick="closeReject()">✕</button>
-            </div>
-            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;" id="rejectModalSubtitle"></p>
-            <div class="field">
-                <label>Reason for rejection</label>
-                <textarea rows="3" id="rejectReasonInput" placeholder="e.g. Sample haemolysed, insufficient volume, mislabeled tube..."></textarea>
-            </div>
-            <div class="field-error" id="rejectError"></div>
-            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
-                <button class="btn btn-ghost" onclick="closeReject()">Cancel</button>
-                <button class="btn btn-danger" style="background:var(--red);color:white;border:none" id="confirmRejectBtn" onclick="confirmReject()">Confirm Rejection</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="toast" id="toast"></div>
-
-    @Html.AntiForgeryToken()
-
     <script>
-        let activeSampleId = null;
-
-        // ---------- Receive modal ----------
-        function openReceive(sampleId, reqNum, patient, expectedType) {
-            activeSampleId = sampleId;
-            document.getElementById('receiveModalTitle').textContent = 'Receive Sample — ' + reqNum;
-            document.getElementById('receiveModalSubtitle').textContent = 'Patient: ' + patient + '. Confirm the physical sample matches the request before receiving.';
-            document.getElementById('receiveError').classList.remove('show');
-            buildSampleRows(expectedType);
-            document.getElementById('receiveModal').classList.add('open');
-        }
-
-        // One row per physical sample. A request that needs "Whole blood + Bone marrow" gets two rows.
-        const SAMPLE_TYPES = ['Whole Blood', 'Plasma', 'Serum', 'Bone Marrow'];
-
-        function buildSampleRows(expectedType) {
-            const list = document.getElementById('receiveSamplesList');
-            list.textContent = '';
-            const expected = expectedType ? expectedType.split(' + ') : [''];
-
-            expected.forEach(function (type, i) {
-                const row = document.createElement('div');
-                row.className = 'sample-row';
-
-                const title = document.createElement('div');
-                title.className = 'sample-row-title';
-                title.textContent = expected.length > 1 ? 'Sample ' + (i + 1) + ' of ' + expected.length : 'Sample';
-                row.appendChild(title);
-
-                const typeField = document.createElement('div');
-                typeField.className = 'field';
-                const typeLabel = document.createElement('label');
-                typeLabel.textContent = 'Sample type received';
-                const select = document.createElement('select');
-                SAMPLE_TYPES.forEach(function (t) {
-                    const opt = document.createElement('option');
-                    opt.value = t;
-                    opt.textContent = t;
-                    if (t.toLowerCase() === type.trim().toLowerCase()) opt.selected = true;
-                    select.appendChild(opt);
+        (function () {
+            var overlay = document.getElementById('rcModal');
+            function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : t; return d.innerHTML; }
+            function close() { overlay.classList.remove('open'); overlay.setAttribute('aria-hidden', 'true'); }
+            document.addEventListener('click', function (e) {
+                var b = e.target.closest('.js-receive'); if (!b) return;
+                var d = b.dataset, needs = [];
+                try { needs = JSON.parse(d.needs || '[]'); } catch (x) { }
+                document.getElementById('rcTitle').textContent = 'Receive tube ' + d.barcode;
+                document.getElementById('rcSub').textContent = d.req + ' · ' + d.tests + ' · ' + d.sample;
+                document.getElementById('rcBarcode').value = d.barcode;
+                var rows = document.getElementById('rcRows'), shortList = []; rows.innerHTML = '';
+                needs.forEach(function (n) {
+                    var short = n.onHand < n.needed;
+                    if (short) shortList.push(n.name + ' (need ' + n.needed + ', have ' + n.onHand + ')');
+                    rows.insertAdjacentHTML('beforeend', '<tr><td>' + esc(n.name) + '</td><td>' + n.needed + '</td><td><strong>' + n.onHand +
+                        '</strong></td><td><span class="badge ' + (short ? 'badge-overdue">Short' : 'badge-ontrack">OK') + '</span></td></tr>');
                 });
-                typeField.appendChild(typeLabel);
-                typeField.appendChild(select);
-                row.appendChild(typeField);
-
-                const codeField = document.createElement('div');
-                codeField.className = 'field';
-                const codeLabel = document.createElement('label');
-                codeLabel.textContent = 'Scan or enter sample barcode';
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.placeholder = 'e.g. BC-00214';
-                input.autocomplete = 'off';
-                codeField.appendChild(codeLabel);
-                codeField.appendChild(input);
-                row.appendChild(codeField);
-
-                list.appendChild(row);
+                document.getElementById('rcNone').hidden = needs.length > 0;
+                document.getElementById('rcTableWrap').hidden = needs.length === 0;
+                var warn = document.getElementById('rcShort');
+                warn.hidden = shortList.length === 0;
+                warn.textContent = shortList.length ? 'Not enough stock: ' + shortList.join(', ') + '. Ask the lab manager to restock before receiving this tube.' : '';
+                document.getElementById('rcConfirm').disabled = shortList.length > 0;
+                overlay.classList.add('open'); overlay.setAttribute('aria-hidden', 'false');
             });
-        }
-
-        function closeReceive() {
-            document.getElementById('receiveModal').classList.remove('open');
-            activeSampleId = null;
-        }
-
-        async function confirmReceive() {
-            const sampleId = activeSampleId;   // keep a copy: closeReceive() clears activeSampleId
-            const rows = Array.from(document.querySelectorAll('#receiveSamplesList .sample-row'));
-            const samples = rows.map(function (r) {
-                return {
-                    scannedBarcode: r.querySelector('input').value.trim(),
-                    confirmedSampleType: r.querySelector('select').value
-                };
-            });
-            const errorEl = document.getElementById('receiveError');
-            const btn = document.getElementById('confirmReceiveBtn');
-
-            if (samples.some(function (s) { return !s.scannedBarcode; })) {
-                errorEl.textContent = samples.length > 1
-                    ? 'Scan or enter a barcode for every sample.'
-                    : 'Please scan or enter the sample barcode.';
-                errorEl.classList.add('show');
-                return;
-            }
-
-            const codes = samples.map(function (s) { return s.scannedBarcode.toLowerCase(); });
-            if (new Set(codes).size !== codes.length) {
-                errorEl.textContent = 'Each sample needs its own barcode.';
-                errorEl.classList.add('show');
-                return;
-            }
-
-            btn.disabled = true;
-            btn.textContent = 'Checking...';
-
-            try {
-                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-                const response = await fetch('@Url.Action("ReceiveSample", "TechnicianDashboard")', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': token
-                    },
-                    body: JSON.stringify({
-                        sampleId: sampleId,
-                        samples: samples
-                    })
-                });
-                const result = await response.json();
-
-                if (!result.success) {
-                    errorEl.textContent = result.message;
-                    errorEl.classList.add('show');
-                    return;
-                }
-
-                closeReceive();
-                showToast(result.message + (result.requestStatus ? ' Request status: ' + result.requestStatus + '.' : ''), 'success');
-                removeRowFromTable(sampleId);
-            } catch (e) {
-                errorEl.textContent = 'Something went wrong. Please try again.';
-                errorEl.classList.add('show');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Confirm Receipt';
-            }
-        }
-
-        // ---------- Reject modal ----------
-        function openReject(sampleId, reqNum, patient) {
-            activeSampleId = sampleId;
-            document.getElementById('rejectModalTitle').textContent = 'Reject Sample — ' + reqNum;
-            document.getElementById('rejectModalSubtitle').textContent = 'Patient: ' + patient + '. This will notify the ordering doctor by email.';
-            document.getElementById('rejectReasonInput').value = '';
-            document.getElementById('rejectError').classList.remove('show');
-            document.getElementById('rejectModal').classList.add('open');
-        }
-
-        function closeReject() {
-            document.getElementById('rejectModal').classList.remove('open');
-            activeSampleId = null;
-        }
-
-        async function confirmReject() {
-            const sampleId = activeSampleId;   // keep a copy: closeReject() clears activeSampleId
-            const reason = document.getElementById('rejectReasonInput').value.trim();
-            const errorEl = document.getElementById('rejectError');
-            const btn = document.getElementById('confirmRejectBtn');
-
-            if (!reason) {
-                errorEl.textContent = 'A rejection reason is required.';
-                errorEl.classList.add('show');
-                return;
-            }
-
-            btn.disabled = true;
-            btn.textContent = 'Submitting...';
-
-            try {
-                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-                // Renamed from RejectSample so it no longer clashes with the senior technician's RejectSample action
-                const response = await fetch('@Url.Action("RejectReceivedSample", "TechnicianDashboard")', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': token
-                    },
-                    body: JSON.stringify({
-                        sampleId: sampleId,
-                        reason: reason
-                    })
-                });
-                const result = await response.json();
-
-                if (!result.success) {
-                    errorEl.textContent = result.message;
-                    errorEl.classList.add('show');
-                    return;
-                }
-
-                closeReject();
-                showToast(result.message, 'success');
-                removeRowFromTable(sampleId);
-            } catch (e) {
-                errorEl.textContent = 'Something went wrong. Please try again.';
-                errorEl.classList.add('show');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Confirm Rejection';
-            }
-        }
-
-        // ---------- Shared helpers ----------
-        function removeRowFromTable(sampleId) {
-            const row = document.querySelector('tr[data-sample-id="' + sampleId + '"]');
-            if (row) row.remove();
-        }
-
-        function showToast(message, type) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = 'toast show ' + type;
-            setTimeout(() => { toast.className = 'toast'; }, 4000);
-        }
-
-        document.getElementById('receiveModal').addEventListener('click', function (e) {
-            if (e.target === this) closeReceive();
-        });
-        document.getElementById('rejectModal').addEventListener('click', function (e) {
-            if (e.target === this) closeReject();
-        });
+            document.getElementById('rcClose').addEventListener('click', close);
+            document.getElementById('rcCancel').addEventListener('click', close);
+            overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+        })();
     </script>
-
 </body>
 </html>

@@ -192,7 +192,7 @@ a.stat-card:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px;
 .actions-cell { white-space: nowrap; }
 .actions-cell .inline-form { margin-left: 6px; }
 .section-label { font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
-.stats-grid.senior { grid-template-columns: repeat(2, 1fr); max-width: 50%; }
+.stats-grid.senior { grid-template-columns: repeat(4, 1fr); max-width: 50%; }
 .checklist { border: none; margin-bottom: 18px; }
 .checklist legend { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
 .check-row { display: flex; gap: 10px; align-items: flex-start; padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; font-size: 0.85rem; cursor: pointer; }
@@ -202,7 +202,8 @@ a.stat-card:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px;
 .form-textarea { width: 100%; height: auto; padding: 10px; line-height: 1.4; resize: vertical; }
 .btn-danger-outline { color: var(--red); border-color: rgba(220,38,38,0.4); }
 .btn-danger-outline:hover { border-color: var(--red); color: var(--red); }
-@media (max-width: 1100px) { .stats-grid.senior { max-width: none; } }
+@media (max-width: 900px) { .stats-grid.senior { grid-template-columns: 1fr;
+                            } }
 
 /* SAMPLE REJECTION PANEL */
 .btn-danger { background: var(--red); color: white; }

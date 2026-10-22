@@ -43,6 +43,12 @@
     <title>Release Results — NMB-HLabSys</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/technician.css" />
+    <style>
+        .rel-test { font-size: .85rem; margin-bottom: 3px; }
+        .rel-stage { font-size: .72rem; font-weight: 600; margin-left: 6px; color: var(--muted); }
+        .rel-stage.tc-ok { color: var(--green); }
+        .rel-stage.tc-return, .rel-stage.tc-bad { color: var(--red); }
+    </style>
 </head>
 <body>
 
@@ -137,7 +143,8 @@
                 <div class="card-header">
                     <div>
                         <div class="card-title">Release Results</div>
-                        <div class="card-sub">The doctor releases a request to the patient once every test on it is verified. This page shows what is ready and what is held.</div>
+                        <div class="card-sub">Release a request once every test on it is verified. The requesting doctor is notified by e-mail.</div>
+                    </div>
                     </div>
                     <a class="btn btn-ghost" asp-controller="TechnicianDashboard" asp-action="Index">← Dashboard</a>
                 </div>
@@ -153,9 +160,10 @@
                             <thead>
                                 <tr>
                                     <th>Request #</th>
-                                    <th>Patient</th>
+                                    <th>Doctor</th>
                                     <th>Tests</th>
                                     <th>Status</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -163,27 +171,45 @@
                                 {
                                     <tr class="@(r.IsHeld ? "row-held" : "")">
                                         <td><strong>@r.ReqNum</strong>@(r.IsUrgent ? Html.Raw(" <span class=\"badge badge-urgent\">Urgent</span>") : null)</td>
-                                        <td>@r.Patient.FullName</td>
+                                        <td>@r.RequestingDoctor</td>
                                         <td>
-                                            <div class="test-chips">
-                                                @foreach (var t in r.Tests)
-                                                {
-                                                    <a class="test-chip @ChipCss(t)" asp-controller="TechnicianDashboard" asp-action="TestDetails" asp-route-id="@t.TestId">@ChipText(t)</a>
-                                                }
-                                            </div>
+                                            @foreach (var t in r.Tests)
+                                            {
+                                                <div class="rel-test">@t.Test <span class="rel-stage @ChipCss(t)">@(t.Stage == TestStage.Verified ? "Verified" : t.StageLabel)</span></div>
+                                            }
                                         </td>
                                         <td>
                                             @if (r.IsReleased)
                                             {
-                                                <span class="release-status">Released · @r.ReleasedAt?.ToString("dd MMM, HH:mm")</span>
+                                                <span class="badge badge-ontrack">Released</span>
+                                                <span class="due-text">@r.ReleasedAt?.ToString("dd MMM, HH:mm")</span>
                                             }
                                             else if (r.IsReadyToRelease)
                                             {
-                                                <span class="release-status release-ok">Complete: @(r.Tests.Count == 1 ? "1 result" : "all " + r.Tests.Count + " results") verified. Waiting for the doctor to release.</span>
+                                                <span class="badge badge-ontrack">Ready to release</span>
                                             }
                                             else
                                             {
-                                                <span class="release-status release-held">Held: @r.HoldReason</span>
+                                                <span class="badge badge-nearing">Held</span>
+                                                <span class="due-text">@r.HoldReason</span>
+                                            }
+                                        </td>
+                                        <td class="actions-cell">
+                                            @if (r.IsReadyToRelease)
+                                            {
+                                                <form method="post" asp-controller="TechnicianDashboard" asp-action="ReleaseRequest" class="inline-form"
+                                                      onsubmit="return confirm('Release @r.ReqNum and e-mail @r.RequestingDoctor?');">
+                                                    <input type="hidden" name="reqNum" value="@r.ReqNum" />
+                                                    <button type="submit" class="btn btn-orange">Release results</button>
+                                                </form>
+                                            }
+                                            else if (r.IsReleased)
+                                            {
+                                                <span class="muted-note">Doctor notified</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="muted-note">Waiting for verification</span>
                                             }
                                         </td>
                                     </tr>

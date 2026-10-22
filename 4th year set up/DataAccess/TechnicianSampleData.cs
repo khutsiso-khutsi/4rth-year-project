@@ -179,7 +179,19 @@ namespace _4th_year_set_up.DataAccess
             r9.ReleasedBy = "Doctor";
             r9.ReleasedAt = now.AddDays(-9);
 
-            list.AddRange(new[] { r1, r2, r3, r4, r5, r6, r7, r8, r9 });
+            // 10. Tube still on its way to the lab (Receive Samples screen).
+            var r10 = Request("REQ-20261021-910", sarah, "Dr M. Pillay", "Follow-up counts.", "Routine", now.AddMinutes(-30));
+            var t10 = Tube(r10, "EDTA (purple top)", "EDTA", TubeStatus.NotReceived, now);
+            t10.ReceivedAt = DateTime.MinValue; t10.CollectedAt = now.AddMinutes(-20);
+            Test(r10, t10, "Haemoglobin", TestStage.AwaitingSampleReceipt, 180);
+
+            // 11. A rejected sample from last week (feeds the Rejections report).
+            var r11 = Request("REQ-20261014-911", pieter, "Dr M. Pillay", "Warfarin monitoring.", "Routine", now.AddDays(-7).AddHours(-2));
+            var t11 = Tube(r11, "Citrate (blue top)", "Citrate", TubeStatus.Rejected, now.AddDays(-7), "2", now.AddDays(-7).AddMinutes(15));
+            t11.Condition = "Clotted"; t11.RejectReason = "Clot visible in the tube";
+            Test(r11, t11, "Prothrombin time", TestStage.SampleRejected, 240);
+
+            list.AddRange(new[] { r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11 });
 
             // a plain audit trail for every request, tube and test, built from the dates above
             foreach (var r in list)
@@ -247,12 +259,19 @@ namespace _4th_year_set_up.DataAccess
             var id = ++_nextId;
             var i = new TestItem
             {
-                TestId = id.ToString(), ItemId = id, TestTypeId = id, Request = r, Sample = tube, Test = name, Stage = stage,
+                TestId = id.ToString(), ItemId = id, TestTypeId = TypeId(name), Request = r, Sample = tube, Test = name, Stage = stage,
                 TargetMinutes = targetMinutes, PreviousResult = "None on record"
             };
             r.Tests.Add(i);
             tube.Tests.Add(i);
             return i;
+        }
+
+        private static readonly Dictionary<string, int> _typeIds = new();
+        private static int TypeId(string name)
+        {
+            if (!_typeIds.TryGetValue(name, out var id)) _typeIds[name] = id = _typeIds.Count + 1;
+            return id;
         }
 
         private static void Hold(TestItem t, string tech, DateTime at)
@@ -281,6 +300,27 @@ namespace _4th_year_set_up.DataAccess
         // ------------------------------------------------------------------ the writes (same rules as the stored procedures)
 
         private static bool IsMe(string by) => by == CurrentUser.Id;
+
+        public static bool Release(LabRequest req)
+        {
+            lock (Gate)
+            {
+                if (req.IsReleased || !req.AllVerified) return false;
+                req.ReleasedAt = DateTime.Now; req.ReleasedBy = CurrentUser.Id;
+                return true;
+            }
+        }
+
+        public static bool Receive(SampleTube tube)
+        {
+            lock (Gate)
+            {
+                if (tube.Status != TubeStatus.NotReceived) return false;
+                tube.Status = TubeStatus.AwaitingVerification; tube.ReceivedAt = DateTime.Now;
+                foreach (var t in tube.Tests.Where(x => x.Stage == TestStage.AwaitingSampleReceipt)) t.Stage = TestStage.AwaitingSampleVerification;
+                return true;
+            }
+        }
 
         public static bool Accept(SampleTube tube, string by)
         {

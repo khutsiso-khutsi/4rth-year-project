@@ -24,6 +24,7 @@ namespace _4th_year_set_up.Repository
         public HashSet<string> GetAssignedTestNames(string technicianId) => _dataAccess.GetAssignedTestNames(technicianId);
 
         // ── SAMPLES ───────────────────────────────────────────────────
+        public bool ReceiveSample(SampleTube tube, string by, TestEvent ev) => _dataAccess.ReceiveSample(tube, by, ev);
         public bool AcceptSample(SampleTube tube, string by, TestEvent ev) => _dataAccess.AcceptSample(tube, by, ev);
         public bool RejectSample(SampleTube tube, string by, string condition, string reason, TestEvent ev) => _dataAccess.RejectSample(tube, by, condition, reason, ev);
 
@@ -37,9 +38,14 @@ namespace _4th_year_set_up.Repository
         public bool ApproveResult(TestItem item, string by, TestEvent ev) => _dataAccess.ApproveResult(item, by, ev);
         public bool ReturnResult(TestItem item, string by, string note, TestEvent ev) => _dataAccess.ReturnResult(item, by, note, ev);
 
+        public bool ReleaseRequest(LabRequest req, string by, TestEvent ev) => _dataAccess.ReleaseRequest(req, by, ev);
+        public string GetDoctorEmail(LabRequest req) => _dataAccess.GetDoctorEmail(req);
+
         // ── PROFILE ───────────────────────────────────────────────────
         public TechProfileViewModel GetProfile(string technicianId) => _dataAccess.GetProfile(technicianId);
         public bool UpdateProfile(string technicianId, string firstName, string lastName, string contactNumber) => _dataAccess.UpdateProfile(technicianId, firstName, lastName, contactNumber);
         public string ChangePassword(string technicianId, string currentPassword, string newPassword) => _dataAccess.ChangePassword(technicianId, currentPassword, newPassword);
+
+        public Dictionary<int, ConsumableCheck> GetConsumableChecks() => _dataAccess.GetConsumableChecks();
     }
 }

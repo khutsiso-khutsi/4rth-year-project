@@ -435,6 +435,7 @@ namespace _4th_year_set_up.Models
         private static Dictionary<string, string> _names = new();
 
         public static void Set(Dictionary<string, string> names) => _names = names ?? new();
+        public static IEnumerable<KeyValuePair<string, string>> All => _names;
 
         public static string Of(string id)
             => string.IsNullOrEmpty(id) ? "—" : _names.TryGetValue(id, out var n) ? n : $"Technician {id}";
@@ -454,6 +455,7 @@ namespace _4th_year_set_up.Models
         public int SamplesToVerifyCount { get; set; }       // tubes waiting for verification
         public int ResultsToVerifyCount { get; set; }
         public int ReadyToReleaseCount { get; set; }        // requests with every test verified
+        public List<TestItem> NewlyAssigned { get; set; } = new();   // tests the lab manager assigned that you have not acknowledged yet
 
         // All of this technician's tests in the queue for the dashboard card (most pressing first)
         public List<TestItem> MyTestsPreview { get; set; } = new();
@@ -494,6 +496,20 @@ namespace _4th_year_set_up.Models
         public string InitialFilter { get; set; } // all | urgent | overdue | nearing
         public List<TestItem> Items { get; set; } = new();
         public DashboardViewModel Counts { get; set; }
+    }
+
+    // One row of the Receive Samples table. Every value is already text, so the view has nothing to dereference.
+    public class ReceiveRow
+    {
+        public string Barcode { get; set; } = "";
+        public string ReqNum { get; set; } = "—";
+        public string Tests { get; set; } = "—";
+        public string Sample { get; set; } = "—";
+        public string Priority { get; set; } = "Routine";
+        public string Waited { get; set; } = "—";
+        public bool IsUrgent => Priority != "Routine";
+        public List<ConsumableNeed> Needs { get; set; } = new();
+        public bool HasShortage => Needs.Any(n => n.IsShort);
     }
 
     // The Release Results screen: requests that are ready, requests held back, and requests already released.
