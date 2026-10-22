@@ -60,8 +60,6 @@ namespace LabManager.Controllers
         // =========================================================
 
         [HttpGet]
-        public async Task<IActionResult> Index(
-            string status = "All Statuses")
         public async Task<IActionResult> Index(string status = "All Statuses")
         {
             if (string.IsNullOrWhiteSpace(status))
@@ -125,7 +123,6 @@ namespace LabManager.Controllers
             {
                 var consumables = await _orderRepository.GetConsumablesBySupplier(supplierId);
 
-                return RedirectToAction(nameof(Index));
                 return Json(consumables.Select(c => new
                 {
                     consumableID = c.ConsumableID,
@@ -152,8 +149,6 @@ namespace LabManager.Controllers
             if (supplierId <= 0)
                 return Fail("Please select a supplier.");
 
-                return RedirectToAction(nameof(Index));
-            }
             if (string.IsNullOrWhiteSpace(items))
                 return Fail("Please add at least one consumable.");
 
@@ -401,8 +396,6 @@ namespace LabManager.Controllers
                     quantityReceived = i.QuantityReceived
                 }).ToList();
 
-                return RedirectToAction(nameof(Index));
-            }
                 return Json(new { success = true, items });
             }
             catch (Exception ex)
@@ -443,7 +436,6 @@ namespace LabManager.Controllers
                 if (requested.QuantityOrdered <= 0)
                     return (false, "Quantities must be greater than zero.");
 
-                return RedirectToAction(nameof(Index));
                 selectedItems.Add((consumable, requested.QuantityOrdered));
             }
 
@@ -522,7 +514,6 @@ namespace LabManager.Controllers
             }
         }
 
-            return RedirectToAction(nameof(Index ));
         private List<CreateOrderItemRequest>? ParseItems(string items)
         {
             try

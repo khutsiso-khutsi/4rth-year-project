@@ -4,22 +4,31 @@ using LabManager.Repositories;
 using LabManager.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace LabManager.Controllers
 {
     public class TestCatalogueController : Controller
     {
+        // Same rule as the client-side check in the view
+        private static readonly Regex NamePattern =
+            new(@"^[A-Za-z0-9 ()/.,&+\-]+$", RegexOptions.Compiled);
+
         private readonly ITestCatalogueRepository _repository;
+        private readonly ICatalogueLookupRepository _lookups;
         private readonly LabManager.Repository.IOrderRepository _orderRepository;
         private readonly LabManager.Repository.IStaffRepository _staffRepository;
 
         public TestCatalogueController(
             ITestCatalogueRepository repository,
+            ICatalogueLookupRepository lookups,
             LabManager.Repository.IOrderRepository orderRepository,
             LabManager.Repository.IStaffRepository staffRepository)
         {
             _repository = repository;
+            _lookups = lookups;
             _orderRepository = orderRepository;
             _staffRepository = staffRepository;
         }
@@ -30,47 +39,48 @@ namespace LabManager.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            
+            // Categories + sample types come from the lookup repository.
+            // The view reads ViewBag.Categories / ViewBag.SampleTypes (Manage modals)
+            // and ViewBag.Category / ViewBag.SampleType (dropdowns).
+            var categories = await _lookups.GetCategoriesAsync();
+            var sampleTypes = await _lookups.GetSampleTypesAsync();
 
-                IEnumerable<TestCategory> category = await _repository.GetCategory();
-                ViewBag.Category = category.Select(c => new SelectListItem { Value = c.CategoryID.ToString(), Text = c.CategoryName });
+            ViewBag.Categories = categories;
+            ViewBag.SampleTypes = sampleTypes;
 
-                IEnumerable<TestType> sample = await _repository.GetSampleType();
-                // expose raw sample types for views that expect them
-                ViewBag.SampleTypes = sample;
-            // build a SelectListItem list for dropdowns; ensure Text falls back to the id when name is missing
-            ViewBag.SampleType = sample
-                .Select(c => new SelectListItem { Value = c.SampleTypeId.ToString(), Text = c.SampleName ?? c.SampleTypeId.ToString() })
+            ViewBag.Category = categories
+                .Select(c => new SelectListItem { Value = c.CategoryID.ToString(), Text = c.CategoryName })
+                .ToList();
+
+            ViewBag.SampleType = sampleTypes
+                .Select(s => new SelectListItem { Value = s.SampleTypeId.ToString(), Text = s.SampleName })
                 .ToList();
 
             IEnumerable<Consumable> consumables = await _repository.GetConsumables();
             ViewBag.Consumables = consumables.Select(c => new SelectListItem { Value = c.ConsumableID.ToString(), Text = c.ConsumableName });
 
-
             var tests = await _repository.GetAllTestTypes();
 
-                // Provide a simple map of TestTypeId -> assigned technician name (first assigned)
-                try
-                {
-                    var technicians = await _staffRepository.GetTechnician();
-                    var techMap = technicians
-                        .Where(t => t.TestTypeID > 0)
-                        .GroupBy(t => t.TestTypeID)
-                        .ToDictionary(g => g.Key, g => g.First().FullName);
+            // Provide a simple map of TestTypeId -> assigned technician name (first assigned)
+            try
+            {
+                var technicians = await _staffRepository.GetTechnician();
+                var techMap = technicians
+                    .Where(t => t.TestTypeID > 0)
+                    .GroupBy(t => t.TestTypeID)
+                    .ToDictionary(g => g.Key, g => g.First().FullName);
 
-                    ViewBag.TechnicianMap = techMap;
-                }
-                catch
-                {
-                    ViewBag.TechnicianMap = new Dictionary<int, string>();
-                }
+                ViewBag.TechnicianMap = techMap;
+            }
+            catch
+            {
+                ViewBag.TechnicianMap = new Dictionary<int, string>();
+            }
 
-                ViewBag.Email = HttpContext.Session.GetString("Email");
+            ViewBag.Email = HttpContext.Session.GetString("Email");
 
             ViewBag.DeletedTests = await _repository.GetDeletedTestTypesAsync();
             return View(tests);
-            
-            
         }
 
         // =========================================================
@@ -104,43 +114,24 @@ namespace LabManager.Controllers
                     }
                 }
 
-                // if SampleTypeId posted as text (e.g. from legacy hardcoded options), try parse to int
+                // if SampleTypeId posted as text, try parse to int
                 var sampleStr = Request.Form["SampleTypeId"].FirstOrDefault();
                 if (!string.IsNullOrWhiteSpace(sampleStr) && int.TryParse(sampleStr, out var sampleId))
                 {
                     test.SampleTypeId = sampleId;
                 }
+
                 if (string.IsNullOrWhiteSpace(test.TestName))
                 {
-                    TempData["Error"] =
-                        "Test name is required.";
-
+                    TempData["Error"] = "Test name is required.";
                     return RedirectToAction(nameof(Index));
                 }
-
-                //if (!test.CategoryId.HasValue)
-                //{
-                //    TempData["Error"] =
-                //        "Please select a category.";
-
-                //    return RedirectToAction(nameof(Index));
-                //}
-
-                //if (string.IsNullOrWhiteSpace(test.SampleTypeId))
-                //{
-                //    TempData["Error"] =
-                //        "Please select a sample type.";
-
-                //    return RedirectToAction(nameof(Index));
-                //}
 
                 if (test.NormalRangeMin.HasValue &&
                     test.NormalRangeMax.HasValue &&
                     test.NormalRangeMin > test.NormalRangeMax)
                 {
-                    TempData["Error"] =
-                        "Normal range minimum cannot be greater than maximum.";
-
+                    TempData["Error"] = "Normal range minimum cannot be greater than maximum.";
                     return RedirectToAction(nameof(Index));
                 }
 
@@ -151,65 +142,20 @@ namespace LabManager.Controllers
                     test.ConsumablesUsed = consumablesJson;
                 }
 
-                var result =
-                    await _repository.AddTestType(test);
+                var result = await _repository.AddTestType(test);
 
                 if (result)
                 {
-                    TempData["Success"] =
-                        "Test type added successfully.";
+                    TempData["Success"] = "Test type added successfully.";
                 }
                 else
                 {
-                    TempData["Error"] =
-                        "Unable to add the test type.";
+                    TempData["Error"] = "Unable to add the test type.";
                 }
             }
             catch (Exception)
             {
-                TempData["Error"] =
-                    "An error occurred while adding the test type.";
-            }
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        // =========================================================
-        // ADD CATEGORY
-        // =========================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddCategory(
-            TestCategory category)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(category.CategoryName))
-                {
-                    TempData["Error"] =
-                        "Category name is required.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                var result =
-                    await _repository.AddCategory(category);
-
-                if (result)
-                {
-                    TempData["Success"] =
-                        "Category added successfully.";
-                }
-                else
-                {
-                    TempData["Error"] =
-                        "Unable to add the category.";
-                }
-            }
-            catch (Exception)
-            {
-                TempData["Error"] =
-                    "An error occurred while adding the category.";
+                TempData["Error"] = "An error occurred while adding the test type.";
             }
 
             return RedirectToAction(nameof(Index));
@@ -224,9 +170,8 @@ namespace LabManager.Controllers
         {
             try
             {
-                // ensure we pick up values that the model binder may have missed (e.g. TestId, numeric fields)
-                var idStr = Request.Form["TestId"].FirstOrDefault();
                 // prefer the posted TestId when present (model binder may miss it)
+                var idStr = Request.Form["TestId"].FirstOrDefault();
                 if (!string.IsNullOrWhiteSpace(idStr) && int.TryParse(idStr, out var idVal) && idVal > 0)
                 {
                     test.TestId = idVal;
@@ -261,84 +206,55 @@ namespace LabManager.Controllers
                     test.SampleTypeId = sampleId;
                 }
 
+                // the Edit modal now posts the consumable rows as JSON (same as Add)
+                var consumablesJson = Request.Form["ConsumablesJson"].FirstOrDefault();
+                if (consumablesJson != null)
+                {
+                    test.ConsumablesUsed = consumablesJson;
+                }
+
                 if (test.TestId <= 0)
                 {
-                    TempData["Error"] =
-                        "Invalid test type.";
-
+                    TempData["Error"] = "Invalid test type.";
                     return RedirectToAction(nameof(Index));
                 }
 
                 if (string.IsNullOrWhiteSpace(test.TestName))
                 {
-                    TempData["Error"] =
-                        "Test name is required.";
-
+                    TempData["Error"] = "Test name is required.";
                     return RedirectToAction(nameof(Index));
                 }
-
-               
 
                 if (test.NormalRangeMin.HasValue &&
                     test.NormalRangeMax.HasValue &&
                     test.NormalRangeMin > test.NormalRangeMax)
                 {
-                    TempData["Error"] =
-                        "Normal range minimum cannot be greater than maximum.";
-
+                    TempData["Error"] = "Normal range minimum cannot be greater than maximum.";
                     return RedirectToAction(nameof(Index));
                 }
 
-                var result =
-                    await _repository.UpdateTestType(test);
+                var result = await _repository.UpdateTestType(test);
 
                 if (result)
                 {
-                    TempData["Success"] =
-                        "Test type updated successfully.";
+                    TempData["Success"] = "Test type updated successfully.";
                 }
                 else
                 {
-                    TempData["Error"] =
-                        "Unable to update the test type.";
+                    TempData["Error"] = "Unable to update the test type.";
                 }
             }
             catch (Exception)
             {
-                TempData["Error"] =
-                    "An error occurred while updating the test type.";
+                TempData["Error"] = "An error occurred while updating the test type.";
             }
 
             return RedirectToAction(nameof(Index));
         }
 
         // =========================================================
-        // DELETE TEST TYPE
+        // DELETE / RESTORE TEST TYPE
         // =========================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddSampleType(SampleType sampleType)
-        {
-            if (string.IsNullOrWhiteSpace(sampleType.SampleName))
-            {
-                TempData["Error"] = "Sample type name is required.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            try
-            {
-                await _repository.AddSampleTypeAsync(sampleType);
-                TempData["Success"] = "Sample type added successfully.";
-            }
-            catch (Exception)
-            {
-                TempData["Error"] =
-                    "Unable to add sample type. Check whether it already exists.";
-            }
-
-            return RedirectToAction(nameof(Index));
-        }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteTest(int id)
@@ -352,8 +268,7 @@ namespace LabManager.Controllers
             try
             {
                 await _repository.DeleteTestTypeAsync(id);
-                TempData["Success"] =
-                    "Test type deleted. You can restore it later.";
+                TempData["Success"] = "Test type deleted. You can restore it later.";
             }
             catch (Exception)
             {
@@ -384,6 +299,117 @@ namespace LabManager.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        // =========================================================
+        // CATEGORIES (Manage Categories modal)
+        // =========================================================
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddCategory(string categoryName, string? description)
+        {
+            if (!TryCleanName(categoryName, "Category name", out var name, out var error) ||
+                !TryCleanDescription(description, out var desc, out error))
+                return Fail(error!);
+
+            var (result, _) = await _lookups.AddCategoryAsync(name, desc);
+            return Report(result, $"Category \"{name}\" added.", $"A category named \"{name}\" already exists.");
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditCategory(int categoryId, string categoryName, string? description)
+        {
+            if (categoryId <= 0) return Fail("Invalid category.");
+            if (!TryCleanName(categoryName, "Category name", out var name, out var error) ||
+                !TryCleanDescription(description, out var desc, out error))
+                return Fail(error!);
+
+            var result = await _lookups.UpdateCategoryAsync(categoryId, name, desc);
+            return Report(result, $"Category \"{name}\" updated.", $"A category named \"{name}\" already exists.");
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteCategory(int id)
+        {
+            if (id <= 0) return Fail("Invalid category.");
+
+            var result = await _lookups.DeleteCategoryAsync(id);
+            return Report(result, "Category deleted.", null,
+                inUseMessage: "This category is used by one or more test types. Reassign or delete those tests first.");
+        }
+
+        // =========================================================
+        // SAMPLE TYPES (Manage Sample Types modal)
+        // =========================================================
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddSampleType(string sampleName)
+        {
+            if (!TryCleanName(sampleName, "Sample type name", out var name, out var error))
+                return Fail(error!);
+
+            var (result, _) = await _lookups.AddSampleTypeAsync(name);
+            return Report(result, $"Sample type \"{name}\" added.", $"A sample type named \"{name}\" already exists.");
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditSampleType(int sampleTypeId, string sampleName)
+        {
+            if (sampleTypeId <= 0) return Fail("Invalid sample type.");
+            if (!TryCleanName(sampleName, "Sample type name", out var name, out var error))
+                return Fail(error!);
+
+            var result = await _lookups.UpdateSampleTypeAsync(sampleTypeId, name);
+            return Report(result, $"Sample type \"{name}\" updated.", $"A sample type named \"{name}\" already exists.");
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteSampleType(int id)
+        {
+            if (id <= 0) return Fail("Invalid sample type.");
+
+            var result = await _lookups.DeleteSampleTypeAsync(id);
+            return Report(result, "Sample type deleted.", null,
+                inUseMessage: "This sample type is used by one or more test types. Reassign or delete those tests first.");
+        }
+
+        // ───────────── helpers ─────────────
+
+        private IActionResult Fail(string message)
+        {
+            TempData["Error"] = message;
+            return RedirectToAction(nameof(Index));
+        }
+
+        private IActionResult Report(CatalogueResult result, string success, string? duplicate, string? inUseMessage = null)
+        {
+            switch (result)
+            {
+                case CatalogueResult.Success: TempData["Success"] = success; break;
+                case CatalogueResult.Duplicate: TempData["Error"] = duplicate ?? "That name already exists."; break;
+                case CatalogueResult.NotFound: TempData["Error"] = "The item no longer exists. Refresh and try again."; break;
+                case CatalogueResult.InUse: TempData["Error"] = inUseMessage ?? "The item is in use."; break;
+                default: TempData["Error"] = "Something went wrong. Please try again."; break;
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Mirrors the client-side rules in the view (2-50 chars, allowed characters)
+        private static bool TryCleanName(string? raw, string label, out string name, out string? error)
+        {
+            name = Regex.Replace((raw ?? "").Trim(), @"\s+", " ");
+            error = null;
+
+            if (name.Length == 0) error = $"{label} is required.";
+            else if (name.Length < 2 || name.Length > 50) error = $"{label} must be 2-50 characters.";
+            else if (!NamePattern.IsMatch(name)) error = $"{label} contains invalid characters.";
+
+            return error == null;
+        }
+
+        private static bool TryCleanDescription(string? raw, out string? description, out string? error)
+        {
+            description = string.IsNullOrWhiteSpace(raw) ? null : raw.Trim();
+            error = description?.Length > 200 ? "Description must be at most 200 characters." : null;
+            return error == null;
         }
     }
 }

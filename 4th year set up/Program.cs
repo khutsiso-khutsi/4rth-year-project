@@ -30,7 +30,7 @@ builder.Services.AddSession(options =>
 // Patient class library
 builder.Services.AddScoped<Patient.Repository.UserRepository>(provider =>
     new Patient.Repository.UserRepository(
-        builder.Configuration.GetConnectionString("DefaultConnection")!));
+        builder.Configuration.GetConnectionString("conn")!));
 
 // Admin class library
 builder.Services.AddScoped<AdminRepository>(provider =>
@@ -44,8 +44,8 @@ builder.Services.AddScoped<DoctorRepository>(provider =>
         builder.Configuration.GetConnectionString("conn")!));
 
 
-builder.Services.AddScoped<TechnicianDataAccess>(provider =>
-    new TechnicianDataAccess(builder.Configuration.GetConnectionString("conn")!));
+//builder.Services.AddScoped<TechnicianDataAccess>(provider =>
+//    new TechnicianDataAccess(builder.Configuration.GetConnectionString("conn")!));
 
 
 builder.Services.Configure<EmailSettings>(
@@ -58,6 +58,7 @@ builder.Services.AddTransient<ITestCatalogueRepository, TestCatalogueRepository>
 builder.Services.AddTransient<IStaffRepository, StaffRepository>();
 builder.Services.AddTransient<IUserRepository, LabManager.Repository.UserRepository>();
 builder.Services.AddTransient<IEmailService, LabManager.Repository.EmailService>();
+builder.Services.AddTransient<ICatalogueLookupRepository, CatalogueLookupRepository>();
 // Register the concrete EmailService used by HomeController so the DI container can resolve it
 builder.Services.AddTransient<_4th_year_set_up.Services.EmailService>();
 builder.Services.AddTransient<

@@ -13,10 +13,10 @@
 		<None Remove="Controllers\LabManager\**" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
+		<PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
 		<PackageReference Include="MailKit" Version="4.18.1" />
-		<PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.0" />
-		<PackageReference Include="Rotativa.AspNetCore" Version="1.4.0" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
+		<PackageReference Include="Rotativa.AspNetCore" Version="1.5.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\admin\admin.csproj" />
