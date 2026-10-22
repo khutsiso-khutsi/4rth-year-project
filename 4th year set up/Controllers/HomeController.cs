@@ -4,7 +4,7 @@ using Patient.Repository;
 using Patient.Models;
 using _4th_year_set_up.Models;
 using _4th_year_set_up.Services;
-   
+
 
 namespace _4th_year_set_up.Controllers
 {
@@ -177,13 +177,15 @@ namespace _4th_year_set_up.Controllers
 
         private IActionResult RedirectToDashboard(string roleName)
         {
-            return roleName switch
+            // Tolerant of spelling ("Lab Technician" / "LabTechnician" / "Technician") so every role lands on its own dashboard.
+            var role = (roleName ?? "").Replace(" ", "").ToLowerInvariant();
+            return role switch
             {
-                "Patient" => RedirectToAction("Index", "PatientDashboard"),
-                "Doctor" => RedirectToAction("DoctorDashboard", "Doctor"),
-                "Lab Technician" => RedirectToAction("Index", "TechnicianDashboard"),
-                "Lab Manager" => RedirectToAction("Index", "ManagerDashboard"),
-                "Admin" => RedirectToAction("Dashboard", "Admin"),
+                "patient" => RedirectToAction("Index", "PatientDashboard"),
+                "doctor" => RedirectToAction("DoctorDashboard", "Doctor"),
+                "labtechnician" or "technician" => RedirectToAction("Index", "TechnicianDashboard"),
+                "labmanager" or "manager" => RedirectToAction("Index", "ManagerDashboard"),
+                "admin" => RedirectToAction("Dashboard", "Admin"),
                 _ => RedirectToAction("Index")
             };
         }
