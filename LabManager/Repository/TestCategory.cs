@@ -180,7 +180,13 @@ namespace LabManager.Repositories
             );
         }
 
-        
+        public async Task AddSampleTypeAsync(SampleType sampleType)
+        {
+            await _dataAccess.SaveData(
+                "dbo.sp_AddSampleType",
+                new { sampleType.SampleName }
+            );
+        }
 
         public async Task<IEnumerable<TestType>>
             GetDeletedTestTypesAsync()
