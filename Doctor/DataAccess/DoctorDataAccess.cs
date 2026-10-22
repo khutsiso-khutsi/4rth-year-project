@@ -317,6 +317,44 @@ namespace Doctor.DataAccess
             return list;
         }
 
+        // ---- Automatic barcodes -----------------------------------------------
+        // Barcodes are generated, never typed: BC-YYYYMMDD-XXXXX (letters and digits, no 0/O/1/I).
+        // A barcode suggested by the page is kept only if it is well formed, not repeated in this
+        // request and not already in the SampleBarcodes table; otherwise a new one is generated.
+
+        private static string NewBarcode()
+        {
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            var bytes = System.Security.Cryptography.RandomNumberGenerator.GetBytes(5);
+            var sb = new System.Text.StringBuilder("BC-" + DateTime.Now.ToString("yyyyMMdd") + "-");
+            foreach (var b in bytes) sb.Append(chars[b % chars.Length]);
+            return sb.ToString();
+        }
+
+        private static bool BarcodeExists(SqlConnection conn, string code)
+        {
+            using var cmd = new SqlCommand("SELECT COUNT(*) FROM SampleBarcodes WHERE BarcodeNumber = @Code", conn);
+            cmd.Parameters.AddWithValue("@Code", code);
+            return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+        }
+
+        private static void EnsureBarcodes(SqlConnection conn, List<SampleBarcodeInput> samples)
+        {
+            var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var s in samples)
+            {
+                var code = (s.BarcodeNumber ?? "").Trim();
+                var keep = System.Text.RegularExpressions.Regex.IsMatch(code, @"^BC-\d{8}-[A-Z2-9]{5}$")
+                           && used.Add(code)
+                           && !BarcodeExists(conn, code);
+                if (!keep)
+                {
+                    do { code = NewBarcode(); } while (!used.Add(code) || BarcodeExists(conn, code));
+                }
+                s.BarcodeNumber = code;
+            }
+        }
+
         /// <summary>
         /// Calls the real sp_CreateTestRequest. It requires the test-type IDs
         /// and the barcode/sample-type pairs as JSON (it uses OPENJSON /
@@ -329,6 +367,7 @@ namespace Doctor.DataAccess
             List<int> testTypeIds, List<SampleBarcodeInput> samples)
         {
             using var conn = Open();
+            EnsureBarcodes(conn, samples);   // every sample gets its own automatically generated barcode
             using var cmd = new SqlCommand("sp_CreateTestRequest", conn);
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.Parameters.AddWithValue("@PatientID", patientId);
