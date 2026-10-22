@@ -454,6 +454,33 @@ namespace _4th_year_set_up.Models
         // All of this technician's tests in the queue for the dashboard card (most pressing first)
         public List<TestItem> MyTestsPreview { get; set; } = new();
 
+        public static DashboardViewModel Build(TechnicianDataAccess db)
+        {
+            var all = db.GetTests();
+            var requests = db.GetRequests();
+            var queue = all.Where(t => t.IsInQueue).ToList();
+            return new DashboardViewModel
+            {
+                MyTestsPreview = queue
+                    .Where(t => t.AssignedToMe)
+                    .OrderByDescending(t => t.Stage == TestStage.ToBeReviewed)
+                    .ThenByDescending(t => t.Tat == TatStatus.Overdue)
+                    .ThenByDescending(t => t.Tat == TatStatus.NearingTat)
+                    .ThenByDescending(t => t.IsUrgent)
+                    .ToList(),
+                QueueCount = queue.Count,
+                MineCount = queue.Count(t => t.AssignedToMe),
+                AwaitingCount = all.Count(t => t.Stage == TestStage.AwaitingAssignment),
+                VerifiedCount = all.Count(t => t.Stage == TestStage.Verified),
+                UrgentCount = queue.Count(t => t.IsUrgent),
+                OverdueCount = queue.Count(t => t.Tat == TatStatus.Overdue),
+                NearingCount = queue.Count(t => t.Tat == TatStatus.NearingTat),
+                IsSenior = CurrentUser.IsSenior,
+                SamplesToVerifyCount = requests.SelectMany(r => r.Tubes).Count(t => t.Status == TubeStatus.AwaitingVerification),
+                ResultsToVerifyCount = all.Count(CurrentUser.CanVerifyResult),
+                ReadyToReleaseCount = requests.Count(r => r.IsReadyToRelease),
+            };
+        }
     }
 
     public class TestListViewModel
@@ -473,5 +500,15 @@ namespace _4th_year_set_up.Models
         public List<LabRequest> Held { get; set; } = new();
         public List<LabRequest> Released { get; set; } = new();
 
+        public static ReleaseViewModel Build(TechnicianDataAccess db)
+        {
+            var requests = db.GetRequests();
+            return new ReleaseViewModel
+            {
+                Ready = requests.Where(r => r.IsReadyToRelease).ToList(),
+                Held = requests.Where(r => r.IsHeld).ToList(),
+                Released = requests.Where(r => r.IsReleased).OrderByDescending(r => r.ReleasedAt).Take(10).ToList()
+            };
+        }
     }
 }
