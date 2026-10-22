@@ -1,16 +1,26 @@
 using System;
-using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
+using _4th_year_set_up.DataAccess;
 
 namespace _4th_year_set_up.Models
 {
+    // Shape of the data
+    //
+    //   LabRequest  (REQ-0153)        patient, doctor, ward, clinical notes. One request is released as a whole.
+    //     SampleTube  (REQ-0153-T1)   one physical tube. Received and verified once per tube.
+    //       TestItem  (REQ-0153-FBC)  one test on a tube. Has its own stage, technician, results and attempts.
+    //
+    // A request with a single test is simply one request, one tube, one test.
+    //
     // Lifecycle of a test:
     // Sample received -> AwaitingSampleVerification -> (SampleRejected | AwaitingAssignment)
     //   -> Assigned -> InProgress -> Complete (results captured)
     //   -> Verified (second technician) | ToBeReviewed (returned to the technician with a note)
+    // When every test on a request is Verified, the request can be released (all together).
     public enum TestStage
     {
+        AwaitingSampleReceipt,          // the tube has not reached the lab yet (the Receive Samples screen handles that)
         AwaitingSampleVerification,
         SampleRejected,
         AwaitingAssignment,
@@ -22,6 +32,8 @@ namespace _4th_year_set_up.Models
     }
 
     public enum TatStatus { OnTrack, NearingTat, Overdue }
+
+    public enum TubeStatus { NotReceived, AwaitingVerification, Rejected, Verified }
 
     public class Medication
     {
@@ -74,32 +86,124 @@ namespace _4th_year_set_up.Models
         };
     }
 
+    // ------------------------------------------------------------------ request, tube
+
+    // One physical tube. Sample verification (accept / reject) happens once per tube and applies to every test on it.
+    public class SampleTube
+    {
+        public int BarcodeId { get; set; }                    // SampleBarcodes.BarcodeID
+        public string TubeId { get; set; }                    // REQ-0153-T1  (the barcode number once the database is connected)
+        public string Type { get; set; }                      // EDTA (purple top)
+        public string SampleType { get; set; } = "Whole blood";
+        public string Condition { get; set; } = "Not yet verified";
+        public TubeStatus Status { get; set; }
+        public DateTime CollectedAt { get; set; }
+        public DateTime ReceivedAt { get; set; }
+        public string VerifiedBy { get; set; }
+        public DateTime? VerifiedAt { get; set; }
+        public string RejectReason { get; set; }
+
+        public LabRequest Request { get; set; }
+        public List<TestItem> Tests { get; } = new();
+        public List<TestEvent> Events { get; } = new();       // events that belong to this tube (shared by its tests)
+
+        public string TestsLabel => string.Join(" + ", Tests.Select(t => t.Test));
+
+        public TestEvent Log(string action, string by, EventTone tone = EventTone.Neutral, string detail = null, DateTime? at = null)
+        {
+            var e = TestEvent.Create(action, by, EventScope.Sample, tone, detail, null, at, null);
+            Events.Add(e);
+            return e;
+        }
+    }
+
+    // The request as it arrived from the ward or clinic. Released as a whole, never test by test.
+    public class LabRequest
+    {
+        public int RequestId { get; set; }                    // TestRequests.RequestID
+        public string ReqNum { get; set; }
+        public PatientInfo Patient { get; set; }
+        public string RequestingDoctor { get; set; }
+        public string Ward { get; set; }
+        public string ClinicalNotes { get; set; }
+        public bool IsUrgent { get; set; }
+
+        public List<SampleTube> Tubes { get; } = new();
+        public List<TestItem> Tests { get; } = new();
+        public List<TestEvent> Events { get; } = new();       // events that belong to the whole request
+
+        public string ReleasedBy { get; set; }
+        public DateTime? ReleasedAt { get; set; }
+
+        public bool IsReleased => ReleasedAt.HasValue;
+        public bool AllVerified => Tests.Count > 0 && Tests.All(t => t.Stage == TestStage.Verified);
+        public int VerifiedCount => Tests.Count(t => t.Stage == TestStage.Verified);
+        public bool IsReadyToRelease => !IsReleased && AllVerified;
+        public bool IsHeld => !IsReleased && !AllVerified && VerifiedCount > 0;
+
+        // Why a request that has verified results can't be released yet ("ESR was returned for review").
+        public string HoldReason
+        {
+            get
+            {
+                if (!IsHeld) return null;
+                var t = Tests.Where(x => x.Stage != TestStage.Verified)
+                             .OrderBy(x => x.Stage == TestStage.ToBeReviewed ? 0 : x.Stage == TestStage.SampleRejected ? 1 : 2)
+                             .First();
+                var what = t.Stage switch
+                {
+                    TestStage.ToBeReviewed => "was returned for review",
+                    TestStage.Complete => "is waiting to be verified",
+                    TestStage.SampleRejected => "needs a new sample",
+                    TestStage.AwaitingSampleReceipt => "is waiting for its sample to arrive",
+                    TestStage.AwaitingSampleVerification => "is waiting for its sample to be verified",
+                    _ => "is not finished yet"
+                };
+                return $"{t.Test} {what}";
+            }
+        }
+
+        public TestEvent Log(string action, string by, EventTone tone = EventTone.Neutral, string detail = null, DateTime? at = null)
+        {
+            var e = TestEvent.Create(action, by, EventScope.Request, tone, detail, null, at, null);
+            Events.Add(e);
+            return e;
+        }
+    }
+
+    // ------------------------------------------------------------------ one test on a request
+
     public class TestItem
     {
-        public string ReqNum { get; set; }
-        public PatientInfo PatientDetails { get; set; }
+        // Identity: TestId is unique (REQ-0153-FBC). ReqNum repeats for every test on the same request.
+        public string TestId { get; set; }                    // the RequestItemID as text once the database is connected
+        public int ItemId { get; set; }                       // TestRequestItems.RequestItemID
+        public int TestTypeId { get; set; }                   // TestTypes.TestTypeID
+        public LabRequest Request { get; set; }
+        public SampleTube Sample { get; set; }
+
         public string Test { get; set; }
-        public bool IsUrgent { get; set; }
         public TestStage Stage { get; set; }
         public bool AssignedToMe { get; set; }
         public TatStatus Tat { get; set; }
         public string DueText { get; set; }
-
-        // Request / sample
-        public string RequestingDoctor { get; set; }
-        public string Ward { get; set; }
-        public string SampleType { get; set; }
-        public string Tube { get; set; }
-        public DateTime CollectedAt { get; set; }
-        public DateTime ReceivedAt { get; set; }
-        public string SampleCondition { get; set; }
-        public string ClinicalNotes { get; set; }
         public string PreviousResult { get; set; }
 
-        // Sample verification (senior technician, before the test can be picked up)
-        public string SampleVerifiedBy { get; set; }
-        public DateTime? SampleVerifiedAt { get; set; }
-        public string SampleRejectReason { get; set; }
+        // Request / sample details live on the request and tube; these keep the existing views working.
+        public string ReqNum => Request.ReqNum;
+        public PatientInfo PatientDetails => Request.Patient;
+        public bool IsUrgent => Request.IsUrgent;
+        public string RequestingDoctor => Request.RequestingDoctor;
+        public string Ward => Request.Ward;
+        public string ClinicalNotes => Request.ClinicalNotes;
+        public string SampleType => Sample.SampleType;
+        public string Tube => Sample.Type;
+        public DateTime CollectedAt => Sample.CollectedAt;
+        public DateTime ReceivedAt => Sample.ReceivedAt;
+        public string SampleCondition => Sample.Condition;
+        public string SampleVerifiedBy => Sample.VerifiedBy;
+        public DateTime? SampleVerifiedAt => Sample.VerifiedAt;
+        public string SampleRejectReason => Sample.RejectReason;
 
         // Results (captured by the technician who performed the test)
         public List<ResultLine> Results { get; set; } = new();
@@ -113,30 +217,44 @@ namespace _4th_year_set_up.Models
         public string CaptureNote { get; set; }         // optional note from the technician to the verifier
         public List<ReturnedAttempt> History { get; set; } = new();   // earlier results that were returned
 
+        // ---- Tests on the same request
+        public bool InMultiTestRequest => Request.Tests.Count > 1;
+        public string PositionLabel => InMultiTestRequest ? $"{Request.Tests.IndexOf(this) + 1} of {Request.Tests.Count}" : null;
+        public IEnumerable<TestItem> Siblings => Request.Tests.Where(t => t != this);
+
+        // This test is what is stopping a request with verified results from being released.
+        public bool IsBlockingRelease => Request.IsHeld && Stage != TestStage.Verified;
+
         // ---- Audit trail: append-only. Events are only ever added, never edited or removed.
         // Drafts are not logged; only real state changes (received, verified, picked up, captured, returned, released...).
+        // Own events are test events; tube and request events are stored on the tube / request and shown here too.
         public List<TestEvent> Events { get; set; } = new();
 
         // 1 for the first capture; goes up by one each time a verifier returns the result.
         public int Attempt => History.Count + 1;
 
-        // Newest first. Ties keep the order they were logged in.
-        public IEnumerable<TestEvent> Timeline => Events
-            .Select((e, i) => (e, i))
-            .OrderByDescending(x => x.e.At).ThenByDescending(x => x.i)
-            .Select(x => x.e);
+        // Newest first: this test's events plus its tube's and its request's. Ties keep the order they were logged in.
+        public IEnumerable<TestEvent> Timeline =>
+            (Request?.Events ?? new List<TestEvent>())
+                .Concat(Sample?.Events ?? new List<TestEvent>())
+                .Concat(Events)
+                .Select((e, i) => (e, i))
+                .OrderByDescending(x => x.e.At).ThenByDescending(x => x.i)
+                .Select(x => x.e);
 
         public TestEvent LastEvent => Timeline.FirstOrDefault();
 
+        // Scope decides where the event is stored: Request -> the request, Sample -> the tube, Test -> this test.
         public TestEvent Log(string action, string by, EventScope scope = EventScope.Test, EventTone tone = EventTone.Neutral,
                              string detail = null, int? attempt = null, DateTime? at = null, List<ValueChange> changes = null)
         {
-            var e = new TestEvent
+            var e = TestEvent.Create(action, by, scope, tone, detail, attempt, at, changes);
+            switch (scope)
             {
-                At = at ?? DateTime.Now, By = by, Action = action, Scope = scope, Tone = tone,
-                Detail = detail, Attempt = attempt, Changes = changes ?? new List<ValueChange>()
-            };
-            Events.Add(e);
+                case EventScope.Request when Request != null: Request.Events.Add(e); break;
+                case EventScope.Sample when Sample != null: Sample.Events.Add(e); break;
+                default: Events.Add(e); break;
+            }
             return e;
         }
 
@@ -162,6 +280,7 @@ namespace _4th_year_set_up.Models
 
         public string StageLabel => Stage switch
         {
+            TestStage.AwaitingSampleReceipt => "Awaiting sample",
             TestStage.AwaitingSampleVerification => "Awaiting sample verification",
             TestStage.SampleRejected => "Sample rejected",
             TestStage.AwaitingAssignment => "Awaiting assignment",
@@ -169,13 +288,13 @@ namespace _4th_year_set_up.Models
             TestStage.InProgress => "In progress",
             TestStage.Complete => "Complete",
             TestStage.ToBeReviewed => "To be reviewed",
-            TestStage.Verified => "Verified",
+            TestStage.Verified => Request.IsReleased ? "Released" : "Verified",
             _ => ""
         };
 
         public string StageCss => Stage switch
         {
-            TestStage.AwaitingSampleVerification => "badge-pending",
+            TestStage.AwaitingSampleReceipt or TestStage.AwaitingSampleVerification => "badge-pending",
             TestStage.SampleRejected => "badge-overdue",
             TestStage.AwaitingAssignment => "badge-awaiting",
             TestStage.Assigned => "badge-assigned",
@@ -209,8 +328,8 @@ namespace _4th_year_set_up.Models
         public List<ResultLine> Results { get; set; } = new();
     }
 
-    // What the event is about. A sample (tube) or request event is shared by every test that depends on it;
-    // a test event belongs to one test only. Today each request holds one test, so these all sit on the same item.
+    // What the event is about. A request event (received, released) and a sample event (received, verified, rejected)
+    // are shared by every test they cover; a test event belongs to one test only.
     public enum EventScope { Request, Sample, Test }
 
     // Colour of the dot on the timeline.
@@ -242,6 +361,14 @@ namespace _4th_year_set_up.Models
             EventTone.Bad => "tl-bad",
             _ => "tl-neutral"
         };
+
+        public static TestEvent Create(string action, string by, EventScope scope, EventTone tone, string detail,
+                                       int? attempt, DateTime? at, List<ValueChange> changes)
+            => new()
+            {
+                At = at ?? DateTime.Now, By = by, Action = action, Scope = scope, Tone = tone,
+                Detail = detail, Attempt = attempt, Changes = changes ?? new List<ValueChange>()
+            };
     }
 
     public static class SampleChecklist
@@ -269,17 +396,16 @@ namespace _4th_year_set_up.Models
         };
     }
 
-    // STUB for the signed-in user until authentication/roles come from the database.
-    // VerifiableTests = the test types the laboratory manager has assigned to this technician.
+    // The signed-in technician. One user for now: Sipho Ndlovu (LabTechnicians.TechnicianID 1).
+    // Replace Id / Name with the logged-in user when authentication is connected.
+    // VerifiableTests = the test types the laboratory manager has assigned to this technician
+    // (TechnicianTestTypes); the controller fills it from the database.
     public static class CurrentUser
     {
-        public const string Id = "T-009";
-        public const string Name = "Technician T-009";
+        public const string Id = "1";
+        public const string Name = "Sipho Ndlovu";
         public static bool IsSenior = true;
-        public static readonly HashSet<string> VerifiableTests = new()
-        {
-            "Full Blood Count", "Haemoglobin", "Platelet Count", "ESR"   // not WBC Differential (demo of the rule)
-        };
+        public static HashSet<string> VerifiableTests = new();
 
         public static bool CanVerifySample => IsSenior;
 
@@ -298,198 +424,15 @@ namespace _4th_year_set_up.Models
         public static bool CanVerifyResult(TestItem t) => WhyCannotVerifyResult(t) == null;
     }
 
-    // HARDCODED SAMPLE DATA (fictional patients) until the database is connected.
-    // Replace TestData.All with a repository / EF query.
-    public static class TestData
+    // Turns a technician ID ("2") into a name for display. Filled from LabTechnicians every time data is loaded.
+    public static class TechnicianNames
     {
-        static Medication Med(string name, string dose, string note) => new() { Name = name, Dose = dose, LabNote = note };
-        static DateTime Today(double hours) => DateTime.Today.AddHours(hours);
-        static ResultLine Line(string parameter, string value, string unit, string range, string flag)
-            => new() { Parameter = parameter, Value = value, Unit = unit, Range = range, Flag = flag };
+        private static Dictionary<string, string> _names = new();
 
-        static PatientInfo Pat(string id, string first, string last, DateTime dob, string sex, string conditions,
-                               string allergies, string precautions, bool? pregnant, params Medication[] meds)
-        {
-            var p = new PatientInfo
-            {
-                PatientId = id, FirstName = first, Surname = last, DateOfBirth = dob, Sex = sex,
-                Conditions = conditions, Allergies = allergies, Precautions = precautions,
-                IsPregnant = pregnant, FastingStatus = "Not required"
-            };
-            p.Medications.AddRange(meds);
-            return p;
-        }
+        public static void Set(Dictionary<string, string> names) => _names = names ?? new();
 
-        static TestItem NewTest(string req, string test, bool urgent, TestStage stage, bool mine, TatStatus tat, string due,
-                          PatientInfo pt, string doctor, string ward, double collected, double received,
-                          string sampleCondition, string notes, string previous)
-            => new()
-            {
-                ReqNum = req, Test = test, IsUrgent = urgent, Stage = stage, AssignedToMe = mine, Tat = tat, DueText = due,
-                PatientDetails = pt, RequestingDoctor = doctor, Ward = ward, SampleType = "Whole blood", Tube = "EDTA (purple top)",
-                CollectedAt = Today(collected), ReceivedAt = Today(received), SampleCondition = sampleCondition,
-                ClinicalNotes = notes, PreviousResult = previous
-            };
-
-        public static readonly List<TestItem> All = Build();
-
-        static List<TestItem> Build()
-        {
-            var list = new List<TestItem>
-            {
-                // ---- Awaiting sample verification (senior technician) ----
-                NewTest("REQ-0150", "Full Blood Count", false, TestStage.AwaitingSampleVerification, false, TatStatus.OnTrack, "Due in 4h",
-                    Pat("PT-100511", "Naledi", "Mahlangu", new DateTime(1990, 4, 11), "Female", "Fatigue; query anaemia", "None known", "None flagged", false),
-                    "Dr P. Mthembu", "Outpatients", 10.2, 10.5, "Not yet verified", "Tired for 3 months.", "Hb 11.8 g/dL (6 months ago)"),
-                NewTest("REQ-0149", "Haemoglobin", true, TestStage.AwaitingSampleVerification, false, TatStatus.NearingTat, "Due in 35m",
-                    Pat("PT-100498", "Johan", "Pretorius", new DateTime(1963, 7, 25), "Male", "Upper GI bleed", "None known", "None flagged", null,
-                        Med("Rivaroxaban", "20 mg daily", "Anticoagulant; bleeding risk")),
-                    "Dr N. Pillay", "Emergency Unit", 10.0, 10.4, "Not yet verified", "Melaena since last night. Phone result.", "Hb 13.2 g/dL (2 months ago)"),
-                NewTest("REQ-0151", "Platelet Count", false, TestStage.SampleRejected, false, TatStatus.OnTrack, "Recollection requested",
-                    Pat("PT-100520", "Tumelo", "Sithebe", new DateTime(1979, 2, 3), "Male", "Easy bruising", "None known", "None flagged", null),
-                    "Dr A. Botha", "Haematology Clinic", 8.9, 9.3, "Clotted", "Query thrombocytopenia.", "None on record"),
-
-                // ---- Awaiting assignment (sample verified) ----
-                NewTest("REQ-0148", "Full Blood Count", true, TestStage.AwaitingAssignment, false, TatStatus.Overdue, "Overdue by 1h 20m",
-                    Pat("PT-100482", "Thabo", "Nkosi", new DateTime(1981, 3, 14), "Male", "Suspected sepsis; type 2 diabetes", "Penicillin (rash)", "None flagged", null,
-                        Med("Metformin", "500 mg BD", "No direct effect on FBC"), Med("Ceftriaxone", "1 g IV", "Started this morning; may affect WBC trend")),
-                    "Dr N. Pillay", "Emergency Unit", 7.5, 7.9, "Acceptable", "Fever 39.2°C, tachycardic. Phone results to ED if WBC outside normal range.", "WBC 14.8 ×10³/µL (3 days ago)"),
-                NewTest("REQ-0145", "Platelet Count", false, TestStage.AwaitingAssignment, false, TatStatus.NearingTat, "Due in 40m",
-                    Pat("PT-100377", "Nomsa", "Ndlovu", new DateTime(1989, 5, 30), "Female", "Immune thrombocytopenia (ITP)", "Sulfa drugs", "None flagged", false,
-                        Med("Prednisone", "40 mg daily", "Expected to raise platelets over time")),
-                    "Dr A. Botha", "Haematology Clinic", 9.3, 9.6, "Acceptable", "Bruising reported. Confirm any low count with a smear.", "PLT 22 ×10³/µL (last week)"),
-                NewTest("REQ-0143", "WBC Differential", false, TestStage.AwaitingAssignment, false, TatStatus.OnTrack, "Due tomorrow",
-                    Pat("PT-100390", "Sipho", "Khumalo", new DateTime(2001, 6, 17), "Male", "Recurrent infections; HIV positive (on ART)", "None known", "Standard precautions", null,
-                        Med("Tenofovir/Lamivudine/Dolutegravir", "1 tablet daily", "ART; monitor for cytopenias")),
-                    "Dr T. Sithole", "Outpatients", 9.8, 10.1, "Acceptable", "Check lymphocyte and neutrophil counts.", "Neutrophils 1.6 ×10³/µL (2 months ago)"),
-
-                // ---- My tests (assigned / in progress / returned) ----
-                NewTest("REQ-0147", "Haemoglobin", true, TestStage.InProgress, true, TatStatus.NearingTat, "Due in 25m",
-                    Pat("PT-100455", "Zanele", "Dlamini", new DateTime(1994, 8, 2), "Female", "Postpartum haemorrhage (day 1); iron-deficiency anaemia", "None known", "None flagged", false,
-                        Med("Ferrous sulphate", "200 mg TDS", "Iron therapy; expect gradual Hb response"), Med("Oxytocin", "Infusion", "Obstetric; no lab interference")),
-                    "Dr L. Moyo", "Maternity Ward B", 8.2, 8.5, "Acceptable", "Pallor and dizziness. Transfusion decision depends on this Hb — phone result.", "Hb 7.9 g/dL (yesterday)"),
-                NewTest("REQ-0146", "ESR", false, TestStage.Assigned, true, TatStatus.OnTrack, "Due in 3h",
-                    Pat("PT-100301", "Lerato", "Mokoena", new DateTime(1967, 11, 21), "Female", "Rheumatoid arthritis", "None known", "None flagged", false,
-                        Med("Methotrexate", "15 mg weekly", "May cause cytopenias; interpret counts with care"), Med("Prednisone", "5 mg daily", "Can raise neutrophil count and lower ESR")),
-                    "Dr S. Govender", "Outpatients", 9.0, 9.4, "Acceptable", "Routine disease-activity monitoring.", "ESR 38 mm/hr (3 months ago)"),
-                NewTest("REQ-0144", "Full Blood Count", false, TestStage.Assigned, true, TatStatus.Overdue, "Overdue by 15m",
-                    Pat("PT-100219", "Pieter", "van Wyk", new DateTime(1955, 1, 9), "Male", "Atrial fibrillation; chronic kidney disease stage 3", "None known", "None flagged", null,
-                        Med("Warfarin", "5 mg daily", "Anticoagulant; relevant to bleeding risk and any coagulation tests"), Med("Amlodipine", "10 mg daily", "No lab interference")),
-                    "Dr R. Naidoo", "Medical Ward 3", 7.0, 7.6, "Acceptable", "Mild anaemia on last visit. Flag Hb below 10 g/dL.", "Hb 10.4 g/dL (2 weeks ago)"),
-                NewTest("REQ-0138", "ESR", false, TestStage.ToBeReviewed, true, TatStatus.NearingTat, "Returned for review",
-                    Pat("PT-100061", "Dumisani", "Ngcobo", new DateTime(1958, 10, 5), "Male", "Polymyalgia rheumatica", "None known", "None flagged", null,
-                        Med("Prednisone", "15 mg daily", "Can lower ESR")),
-                    "Dr S. Govender", "Outpatients", 6.8, 7.1, "Acceptable", "Monitoring on steroids.", "ESR 22 mm/hr (1 month ago)"),
-
-                // ---- Complete: waiting for a second technician to verify ----
-                NewTest("REQ-0142", "Full Blood Count", false, TestStage.Complete, false, TatStatus.OnTrack, "Captured 09:50",
-                    Pat("PT-100533", "Mandla", "Cele", new DateTime(1985, 9, 19), "Male", "Pre-operative screening", "None known", "None flagged", null),
-                    "Dr K. Reddy", "Surgical Pre-admission", 7.2, 7.6, "Acceptable", "Elective surgery next week.", "None on record"),
-                NewTest("REQ-0139", "Haemoglobin", false, TestStage.Complete, true, TatStatus.OnTrack, "Captured 09:20",
-                    Pat("PT-100347", "Karabo", "Molefe", new DateTime(1999, 1, 28), "Female", "Iron-deficiency anaemia", "None known", "None flagged", false,
-                        Med("Ferrous sulphate", "200 mg daily", "Iron therapy")),
-                    "Dr L. Moyo", "Outpatients", 7.4, 7.8, "Acceptable", "Follow-up Hb.", "Hb 8.6 g/dL (1 month ago)"),
-                NewTest("REQ-0152", "WBC Differential", false, TestStage.Complete, false, TatStatus.OnTrack, "Captured 09:05",
-                    Pat("PT-100560", "Fatima", "Hendricks", new DateTime(1978, 6, 8), "Female", "Recurrent infections", "None known", "None flagged", false),
-                    "Dr T. Sithole", "Outpatients", 7.1, 7.5, "Acceptable", "Query immune deficiency.", "Lymphocytes 1.9 ×10³/µL (3 months ago)"),
-
-                // ---- Verified ----
-                NewTest("REQ-0141", "Haemoglobin", false, TestStage.Verified, false, TatStatus.OnTrack, "Verified 09:42",
-                    Pat("PT-100122", "Aisha", "Patel", new DateTime(1976, 9, 4), "Female", "Heavy menstrual bleeding", "None known", "None flagged", false,
-                        Med("Tranexamic acid", "1 g TDS", "No direct effect on Hb")),
-                    "Dr K. Reddy", "Outpatients", 6.9, 7.2, "Acceptable", "Follow-up Hb.", "Hb 10.1 g/dL (1 month ago)"),
-                NewTest("REQ-0140", "ESR", false, TestStage.Verified, false, TatStatus.OnTrack, "Verified 08:15",
-                    Pat("PT-100098", "Bongani", "Zulu", new DateTime(1972, 12, 12), "Male", "Pulmonary tuberculosis (on treatment)", "None known",
-                        "TB — standard + airborne precautions at collection", null,
-                        Med("RHZE fixed-dose combination", "4 tablets daily", "TB therapy; can affect liver and counts")),
-                    "Dr M. Dube", "Medical Ward 1", 6.5, 6.9, "Acceptable", "Treatment response monitoring.", "ESR 62 mm/hr (1 month ago)"),
-            };
-
-            TestItem Get(string req) => list.First(x => x.ReqNum == req);
-
-            void Captured(string req, string by, double hour, params ResultLine[] lines)
-            {
-                var t = Get(req);
-                t.CapturedBy = by; t.CapturedAt = Today(hour); t.Results = lines.ToList();
-            }
-
-            Captured("REQ-0142", "T-004", 9.8,
-                Line("WBC", "6.8", "×10³/µL", "4.0 – 11.0", "Normal"),
-                Line("Haemoglobin", "13.9", "g/dL", "13.0 – 17.0", "Normal"),
-                Line("Platelets", "251", "×10³/µL", "150 – 400", "Normal"));
-            Captured("REQ-0139", CurrentUser.Id, 9.3,
-                Line("Haemoglobin", "9.4", "g/dL", "12.0 – 15.5", "Low"));
-            Captured("REQ-0152", "T-004", 9.1,
-                Line("Neutrophils", "5.1", "×10³/µL", "1.8 – 7.7", "Normal"),
-                Line("Lymphocytes", "2.2", "×10³/µL", "1.0 – 4.8", "Normal"));
-            Captured("REQ-0138", CurrentUser.Id, 8.7,
-                Line("ESR", "120", "mm/hr", "0 – 20", "High"));
-            Get("REQ-0138").ReviewNote = "ESR of 120 mm/hr doesn't fit the clinical picture or the previous result (22). Please repeat on a fresh aliquot.";
-            Get("REQ-0138").History.Add(new ReturnedAttempt
-            {
-                Note = Get("REQ-0138").ReviewNote,
-                CapturedBy = CurrentUser.Id,
-                CapturedAt = Today(8.7),
-                Results = new List<ResultLine> { Line("ESR", "120", "mm/hr", "0 – 15", "High") }
-            });
-
-            Captured("REQ-0141", "T-004", 9.4, Line("Haemoglobin", "11.2", "g/dL", "12.0 – 15.5", "Low"));
-            Captured("REQ-0140", "T-004", 7.9, Line("ESR", "48", "mm/hr", "0 – 15", "High"));
-            foreach (var r in new[] { "REQ-0141", "REQ-0140" })
-            {
-                Get(r).VerifiedBy = "T-003";
-                Get(r).VerifiedAt = r == "REQ-0141" ? Today(9.7) : Today(8.25);
-            }
-
-            Get("REQ-0151").SampleRejectReason = "Sample clotted. Recollection requested from Haematology Clinic.";
-
-            // Every test past sample verification was verified by a senior technician earlier today
-            foreach (var t in list.Where(x => x.Stage != TestStage.AwaitingSampleVerification && x.Stage != TestStage.SampleRejected))
-            {
-                t.SampleVerifiedBy = "T-004";
-                t.SampleVerifiedAt = t.ReceivedAt.AddMinutes(20);
-            }
-
-            foreach (var t in list) SeedHistory(t);
-            return list;
-        }
-
-        // Builds each test's audit trail from the sample data above so the History card has something real to show.
-        // With the database these are simply the stored events.
-        static void SeedHistory(TestItem t)
-        {
-            t.Log("Sample received", "T-003", EventScope.Request, EventTone.Neutral,
-                  detail: $"{t.Tube} · {t.SampleType}", at: t.ReceivedAt);
-
-            if (t.Stage == TestStage.SampleRejected)
-            {
-                t.Log("Sample rejected", "T-004", EventScope.Sample, EventTone.Bad,
-                      detail: t.SampleRejectReason, at: t.ReceivedAt.AddMinutes(15));
-                return;
-            }
-            if (t.Stage == TestStage.AwaitingSampleVerification) return;
-
-            t.Log("Sample verified", t.SampleVerifiedBy, EventScope.Sample, EventTone.Good,
-                  detail: "All 6 checks passed", at: t.SampleVerifiedAt);
-            if (t.Stage == TestStage.AwaitingAssignment) return;
-
-            var who = t.CapturedBy ?? CurrentUser.Id;
-            var verifiedAt = t.SampleVerifiedAt ?? t.ReceivedAt;
-            var earliest = verifiedAt.AddMinutes(10);
-            var wanted = (t.CapturedAt ?? verifiedAt.AddMinutes(60)).AddMinutes(-45);
-            t.Log("Test picked up", who, at: wanted > earliest ? wanted : earliest);
-
-            if (!t.CapturedAt.HasValue) return;
-
-            t.Log("Result captured", t.CapturedBy, detail: TestItem.Summarise(t.Results), attempt: 1, at: t.CapturedAt);
-
-            if (t.Stage == TestStage.ToBeReviewed)
-                t.Log("Result returned to technician", "T-003", tone: EventTone.Warn,
-                      detail: t.ReviewNote, attempt: 1, at: t.CapturedAt.Value.AddMinutes(40));
-
-            if (t.Stage == TestStage.Verified)
-                t.Log("Result verified", t.VerifiedBy, tone: EventTone.Good, attempt: 1, at: t.VerifiedAt);
-        }
+        public static string Of(string id)
+            => string.IsNullOrEmpty(id) ? "—" : _names.TryGetValue(id, out var n) ? n : $"Technician {id}";
     }
 
     public class DashboardViewModel
@@ -504,15 +447,18 @@ namespace _4th_year_set_up.Models
 
         // Senior technician tasks
         public bool IsSenior { get; set; }
-        public int SamplesToVerifyCount { get; set; }
+        public int SamplesToVerifyCount { get; set; }       // tubes waiting for verification
         public int ResultsToVerifyCount { get; set; }
+        public int ReadyToReleaseCount { get; set; }        // requests with every test verified
 
         // All of this technician's tests in the queue for the dashboard card (most pressing first)
         public List<TestItem> MyTestsPreview { get; set; } = new();
 
-        public static DashboardViewModel Build()
+        public static DashboardViewModel Build(TechnicianDataAccess db)
         {
-            var queue = TestData.All.Where(t => t.IsInQueue).ToList();
+            var all = db.GetTests();
+            var requests = db.GetRequests();
+            var queue = all.Where(t => t.IsInQueue).ToList();
             return new DashboardViewModel
             {
                 MyTestsPreview = queue
@@ -524,14 +470,15 @@ namespace _4th_year_set_up.Models
                     .ToList(),
                 QueueCount = queue.Count,
                 MineCount = queue.Count(t => t.AssignedToMe),
-                AwaitingCount = TestData.All.Count(t => t.Stage == TestStage.AwaitingAssignment),
-                VerifiedCount = TestData.All.Count(t => t.Stage == TestStage.Verified),
+                AwaitingCount = all.Count(t => t.Stage == TestStage.AwaitingAssignment),
+                VerifiedCount = all.Count(t => t.Stage == TestStage.Verified),
                 UrgentCount = queue.Count(t => t.IsUrgent),
                 OverdueCount = queue.Count(t => t.Tat == TatStatus.Overdue),
                 NearingCount = queue.Count(t => t.Tat == TatStatus.NearingTat),
                 IsSenior = CurrentUser.IsSenior,
-                SamplesToVerifyCount = TestData.All.Count(t => t.Stage == TestStage.AwaitingSampleVerification),
-                ResultsToVerifyCount = TestData.All.Count(CurrentUser.CanVerifyResult),
+                SamplesToVerifyCount = requests.SelectMany(r => r.Tubes).Count(t => t.Status == TubeStatus.AwaitingVerification),
+                ResultsToVerifyCount = all.Count(CurrentUser.CanVerifyResult),
+                ReadyToReleaseCount = requests.Count(r => r.IsReadyToRelease),
             };
         }
     }
@@ -544,5 +491,24 @@ namespace _4th_year_set_up.Models
         public string InitialFilter { get; set; } // all | urgent | overdue | nearing
         public List<TestItem> Items { get; set; } = new();
         public DashboardViewModel Counts { get; set; }
+    }
+
+    // The Release Results screen: requests that are ready, requests held back, and requests already released.
+    public class ReleaseViewModel
+    {
+        public List<LabRequest> Ready { get; set; } = new();
+        public List<LabRequest> Held { get; set; } = new();
+        public List<LabRequest> Released { get; set; } = new();
+
+        public static ReleaseViewModel Build(TechnicianDataAccess db)
+        {
+            var requests = db.GetRequests();
+            return new ReleaseViewModel
+            {
+                Ready = requests.Where(r => r.IsReadyToRelease).ToList(),
+                Held = requests.Where(r => r.IsHeld).ToList(),
+                Released = requests.Where(r => r.IsReleased).OrderByDescending(r => r.ReleasedAt).Take(10).ToList()
+            };
+        }
     }
 }

@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="~/css/technician.css" />
 </head>
 <body>
-
+//mmmmm
     @* ===== TOPBAR + SIDEBAR: copy this block unchanged into every technician screen. Only move the "active" class. ===== *@
     <div class="topbar">
         <a class="brand" asp-controller="Home" asp-action="Index">
@@ -46,16 +46,17 @@
 
     <div class="page">
         <aside class="sidebar">
-            <a asp-controller="TechnicianDashboard" asp-action="Index" class="nav-item">
+            <a asp-controller="TechnicianDashboard" asp-action="Index" class="nav-item active">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /><path d="M9 21v-6h6v6" /></svg>
                 Dashboard
             </a>
 
             <div class="nav-label">Samples and Requests</div>
-            <a asp-controller="TechnicianDashboard" asp-action="ReceiveSamples" class="nav-item active">
+            <a asp-controller="TechnicianDashboard" asp-action="ReceiveSamples" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6" /><polyline points="16 6 12 10 8 6" /><line x1="12" y1="10" x2="12" y2="2" /></svg>
                 Receive Samples
             </a>
+
             <a asp-controller="TechnicianDashboard" asp-action="SampleVerification" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L15 8.5V2" /><polyline points="9 14 11 16 15 12" /></svg>
                 Sample Verification
@@ -80,6 +81,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
                 Result Verification
             </a>
+            <a asp-controller="TechnicianDashboard" asp-action="ReleaseResults" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></svg>
+                Release Results
+            </a>
 
             <div class="nav-label">Reports</div>
             <a asp-controller="TechnicianDashboard" asp-action="Reports" class="nav-item">
@@ -93,7 +98,6 @@
                 Profile
             </a>
         </aside>
-
         @* ===== END shared topbar + sidebar ===== *@
 
         <main class="main">
@@ -158,7 +162,7 @@
                         <span class="stat-trend trend-up">Done</span>
                     </div>
                     <div class="stat-value">@Model.VerifiedCount</div>
-                    <div class="stat-label">Verified results</div>
+                    <div class="stat-label">Verified tests</div>
                     <div class="stat-go">View verified →</div>
                 </a>
             </div>
@@ -175,7 +179,7 @@
                             <span class="stat-trend trend-warn">Before testing</span>
                         </div>
                         <div class="stat-value">@Model.SamplesToVerifyCount</div>
-                        <div class="stat-label">Samples to verify</div>
+                        <div class="stat-label">Tubes to verify</div>
                         <div class="stat-go">Verify samples →</div>
                     </a>
 
@@ -189,6 +193,18 @@
                         <div class="stat-value">@Model.ResultsToVerifyCount</div>
                         <div class="stat-label">Results to verify</div>
                         <div class="stat-go">Verify results →</div>
+                    </a>
+
+                    <a asp-controller="TechnicianDashboard" asp-action="ReleaseResults" class="stat-card">
+                        <div class="stat-top">
+                            <div class="stat-icon" style="background:var(--green-light)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></svg>
+                            </div>
+                            <span class="stat-trend trend-up">Final step</span>
+                        </div>
+                        <div class="stat-value">@Model.ReadyToReleaseCount</div>
+                        <div class="stat-label">Ready for doctor release</div>
+                        <div class="stat-go">Release results →</div>
                     </a>
                 </div>
             }
@@ -205,8 +221,7 @@
 
                 @if (Model.MyTestsPreview.Count == 0)
                 {
-                    <div class="empty-state">
-                        You haven't selected any tests yet.
+                    <div class="empty-state">You haven't selected any tests yet.
                         <a asp-controller="TechnicianDashboard" asp-action="AwaitingAssignment" class="card-action">Pick one from the unassigned list</a>
                     </div>
                 }
@@ -239,9 +254,9 @@
                                 {
                                     var stageCss = t.StageCss;
                                     var tatCss = t.Tat == _4th_year_set_up.Models.TatStatus.Overdue ? "badge-overdue"
-                                    : t.Tat == _4th_year_set_up.Models.TatStatus.NearingTat ? "badge-nearing" : "badge-ontrack";
-                                    <tr class="@(t.Tat == _4th_year_set_up.Models.TatStatus.Overdue ? "row-overdue" : "")"
-                                        data-search="@((t.ReqNum + " " + t.Patient).ToLower())"
+                                               : t.Tat == _4th_year_set_up.Models.TatStatus.NearingTat ? "badge-nearing" : "badge-ontrack";
+                                    <tr class="@(t.Tat == _4th_year_set_up.Models.TatStatus.Overdue ? "row-overdue" : "") @(t.InMultiTestRequest ? "req-group" : "")"
+                                        data-search="@((t.ReqNum + " " + t.Patient + " " + t.Test).ToLower())"
                                         data-urgent="@(t.IsUrgent ? "1" : "0")"
                                         data-tat="@(t.Tat == _4th_year_set_up.Models.TatStatus.Overdue ? "overdue" : t.Tat == _4th_year_set_up.Models.TatStatus.NearingTat ? "nearing" : "ontrack")">
                                         <td><partial name="_ReqLink" model="t" /></td>
@@ -298,5 +313,7 @@
             document.getElementById('noResultsMsg').style.display = visible === 0 ? 'block' : 'none';
         }
     </script>
+    <partial name="_TestModal" />
+    <script src="~/js/test-modal.js"></script>
 </body>
 </html>

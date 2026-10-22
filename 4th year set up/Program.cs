@@ -1,7 +1,9 @@
 ﻿using Doctor.Repository;
+using _4th_year_set_up.DataAccess;
 using _4th_year_set_up.Services;
 using admin.Repository;
 using LabManager.DataAccess;
+using LabManager.Models;
 using LabManager.Repositories;
 using LabManager.Repository;
 using Microsoft.Data.SqlClient;
@@ -10,16 +12,13 @@ using Rotativa.AspNetCore;
 
 
 var builder = WebApplication.CreateBuilder(args);
-// FirstLoginPasswordFilter: users with a temporary password must change it
-// before they can open any other page (spec: change password at first login).
-builder.Services.AddControllersWithViews(options =>
-    options.Filters.Add<_4th_year_set_up.Filters.FirstLoginPasswordFilter>());
-// PDFs need wkhtmltopdf.exe (wwwroot\Rotativa, or the normal install folder).
-// If it's missing the site still starts; PDF pages open as printable pages.
-_4th_year_set_up.Services.PdfSupport.Configure(builder.Environment.WebRootPath);
+// Ensure environment variables are included so secrets can be provided outside appsettings.json
+builder.Configuration.AddEnvironmentVariables();
+builder.Services.AddControllersWithViews();
+//RotativaConfiguration.Setup(builder.Environment.WebRootPath, "Rotativa");
 
 // ✅ Changed from AddSingleton to AddScoped
-builder.Services.AddScoped<EmailService>();
+
 
 builder.Services.AddSession(options =>
 {
@@ -29,9 +28,9 @@ builder.Services.AddSession(options =>
 });
 
 // Patient class library
-builder.Services.AddScoped<UserRepository>(provider =>
-    new UserRepository(
-        builder.Configuration.GetConnectionString("conn")!));
+builder.Services.AddScoped<Patient.Repository.UserRepository>(provider =>
+    new Patient.Repository.UserRepository(
+        builder.Configuration.GetConnectionString("DefaultConnection")!));
 
 // Admin class library
 builder.Services.AddScoped<AdminRepository>(provider =>
@@ -45,12 +44,26 @@ builder.Services.AddScoped<DoctorRepository>(provider =>
         builder.Configuration.GetConnectionString("conn")!));
 
 
+builder.Services.AddScoped<TechnicianDataAccess>(provider =>
+    new TechnicianDataAccess(builder.Configuration.GetConnectionString("conn")!));
+
+
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
 //Lab Manager
 builder.Services.AddTransient<ISqlDataAcess, SqlDataAccess>();
 builder.Services.AddTransient<IConsumablesRepository, ConsumablesRepository>();
 builder.Services.AddTransient<IOrderRepository, ConsumableOrderRepository>();
-builder.Services.AddTransient<ITestCategoryrepository, TestCategoryRepository>();
+builder.Services.AddTransient<ITestCatalogueRepository, TestCatalogueRepository>();
 builder.Services.AddTransient<IStaffRepository, StaffRepository>();
+builder.Services.AddTransient<IUserRepository, LabManager.Repository.UserRepository>();
+builder.Services.AddTransient<IEmailService, LabManager.Repository.EmailService>();
+// Register the concrete EmailService used by HomeController so the DI container can resolve it
+builder.Services.AddTransient<_4th_year_set_up.Services.EmailService>();
+builder.Services.AddTransient<
+    ITestsByCategoryRepository,TestsByCategoryRepository>();
+builder.Services.AddLogging();
+
 
 
 var app = builder.Build();

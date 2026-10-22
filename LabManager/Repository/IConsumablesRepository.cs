@@ -10,22 +10,26 @@ namespace LabManager.Repository
 {
     public interface IConsumablesRepository
     {
+            // Consumables
+            Task<bool> AddConsumables(Consumable consumables);
+            Task<bool> UpdateConsumables(Consumable consumables);
+            Task<bool> DeleteConsumables(int id);
+            Task<bool> AdjustStock(int id, string adjustmentType, int quantity);
+            Task<IEnumerable<Consumable>> GetAllConsumables();
+            Task<Consumable> GetById(int id);
 
-        Task<bool> AddConsumables(Consumable consumables);
+            // Suppliers
+            Task<bool> AddSupplier(Supplier supplier);
+            Task<bool> UpdateSupplier(Supplier supplier);
+            Task<bool> DeleteSupplier(int supplierId);
+            Task<IEnumerable<Supplier>> GetAllSuppliers();
+            Task<Supplier> GetSupplierById(int supplierId);
+            Task<bool> SupplierNameExists(string supplierName, int? excludeSupplierId = null);
+            Task<bool> SupplierHasConsumables(int supplierId);
+        
 
-        Task<bool> AddSupplier(Supplier supplier);
 
-        Task<bool> UpdateConsumables(Consumable consumables);
-
-        Task<bool> DeleteConsumables(int id);
-
-        Task<bool> AdjustStock(int id, string adjustmentType, int quantity);
-
-        Task<IEnumerable<Consumable>> GetAllConsumables();
-
-        Task<Consumable> GetById(int id);
-
-        Task<IEnumerable<Supplier>> GetAllSuppliers();
+        Task<IEnumerable<Supplier>> GetSuppliers();
 
 
     } 

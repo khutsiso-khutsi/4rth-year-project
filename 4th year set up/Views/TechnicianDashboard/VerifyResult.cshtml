@@ -89,6 +89,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
                 Result Verification
             </a>
+            <a asp-controller="TechnicianDashboard" asp-action="ReleaseResults" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></svg>
+                Release Results
+            </a>
 
             <div class="nav-label">Reports</div>
             <a asp-controller="TechnicianDashboard" asp-action="Reports" class="nav-item">
@@ -126,7 +130,7 @@
                 </div>
                 <div class="detail-actions">
                     <a class="btn btn-ghost" asp-controller="TechnicianDashboard" asp-action="Verification">← Back to list</a>
-                    <a class="btn btn-ghost" asp-controller="TechnicianDashboard" asp-action="TestDetails" asp-route-id="@Model.ReqNum">Full patient data</a>
+                    <a class="btn btn-ghost" asp-controller="TechnicianDashboard" asp-action="TestDetails" asp-route-id="@Model.TestId">Full patient data</a>
                 </div>
             </div>
 
@@ -158,7 +162,7 @@
                                         <td><strong>@r.Value</strong></td>
                                         <td>@r.Unit</td>
                                         <td>@r.Range</td>
-                                        <td><span class="badge @(r.IsAbnormal ? "badge-overdue" : "badge-ontrack")">@r.Flag</span></td>
+                                        <td><span class="badge @r.FlagCss">@r.Flag</span></td>
                                     </tr>
                                 }
                             </tbody>
@@ -166,8 +170,12 @@
                     </div>
                     <dl class="info-list" style="margin-top:16px;">
                         <dt>Previous result</dt><dd>@(string.IsNullOrWhiteSpace(Model.PreviousResult) ? "None on record" : Model.PreviousResult)</dd>
-                        <dt>Captured by</dt><dd>Technician @Model.CapturedBy on @Model.CapturedAt?.ToString("dd MMM yyyy, HH:mm")</dd>
-                        <dt>Sample</dt><dd>@Model.SampleCondition (verified by @Model.SampleVerifiedBy)</dd>
+                        <dt>Captured by</dt><dd>@TechnicianNames.Of(Model.CapturedBy) on @Model.CapturedAt?.ToString("dd MMM yyyy, HH:mm")</dd>
+                        @if (!string.IsNullOrWhiteSpace(Model.CaptureNote))
+                        {
+                            <dt>Technician note</dt><dd>@Model.CaptureNote</dd>
+                        }
+                        <dt>Sample</dt><dd>@Model.SampleCondition (verified by @TechnicianNames.Of(Model.SampleVerifiedBy))</dd>
                     </dl>
                 </div>
 
@@ -209,7 +217,7 @@
                     @if (why == null)
                     {
                         <form method="post" asp-controller="TechnicianDashboard" asp-action="ApproveResult">
-                            <input type="hidden" name="id" value="@Model.ReqNum" />
+                            <input type="hidden" name="id" value="@Model.TestId" />
                             <div class="result-field">
                                 <label for="note" class="field-label">Note to the technician (required to return the result)</label>
                                 <textarea id="note" name="note" class="form-control form-textarea" rows="3" placeholder="Explain what needs to be checked or repeated"></textarea>

@@ -4,15 +4,15 @@
     {
         public int ConsumableID { get; set; }
 
-        public string ConsumableName { get; set; }
+        public string? ConsumableName { get; set; }
 
         public int SupplierID { get; set; }
 
-        public string Supplier { get; set; }
+        public string? Supplier { get; set; }
 
         public int ReorderLevel { get; set; }
 
-        public int OnHand { get; set; }
+        public int QuantityOnHand { get; set; }
 
         public DateTime LastUpdated { get; set; }
 
@@ -20,10 +20,10 @@
         {
             get
             {
-                if (OnHand <= ReorderLevel)
+                if (QuantityOnHand <= ReorderLevel)
                     return "Low";
 
-                if (OnHand <= ReorderLevel + 20)
+                if (QuantityOnHand <= ReorderLevel + 20)
                     return "Medium";
 
                 return "Good";
@@ -46,6 +46,7 @@
 
             public List<ReceivedOrderItem> ReceivedItems { get; set; }
         }
+
 
 
     }

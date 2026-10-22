@@ -1,4 +1,7 @@
-﻿@using LabManager.Models
+﻿```cshtml
+@using LabManager.Models
+@using System.Text.Json
+@using Microsoft.AspNetCore.Mvc.Rendering
 @model IEnumerable<TestType>
 
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
@@ -6,38 +9,43 @@
 @{
     Layout = null;
     ViewData["Title"] = "Test Catalogue";
-    var categories = ViewBag.Categories as IEnumerable<TestCategory> ?? Enumerable.Empty<TestCategory>();
+
+    var categories = ViewBag.Categories as IEnumerable<TestCategory>
+                     ?? Enumerable.Empty<TestCategory>();
+
+    // raw sample types list (optional). Controller may set ViewBag.SampleTypes for this.
+    var sampleTypes = ViewBag.SampleTypes as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+
+    // soft-deleted test types (controller sets ViewBag.DeletedTests)
+    var deletedTests = ViewBag.DeletedTests as IEnumerable<TestType> ?? Enumerable.Empty<TestType>();
+
+    <meta charset="UTF-8" />
+    // Technician map: TestId -> list of technician names.
+    // (Also tolerates the old shape: TestId -> single string.)
+    var rawTechMap = ViewBag.TechnicianMap as object;
+
+    // Consumables available for the dropdown (controller sets ViewBag.Consumables as a list of SelectListItem)
+    var consumableOptions = ViewBag.Consumables as IEnumerable<SelectListItem>
+                            ?? Enumerable.Empty<SelectListItem>();
 }
 
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
-    ```
     <meta charset="UTF-8" />
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0" />
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Test Catalogue — NMB-HLabSys</title>
-
-    <link rel="preconnect"
-          href="https://fonts.googleapis.com" />
-
-    <link rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossorigin />
-
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap"
-          rel="stylesheet" />
-
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
             /* =========================================================
-                   ROOT
-                ========================================================= */
+                               ROOT
+                            ========================================================= */
 
             :root {
                 --navy: #0b1f3a;
@@ -70,11 +78,37 @@
                 --radius: 12px;
                 --radius-lg: 16px;
             }
+        :root {
+            --navy: #0b1f3a;
+            --navy2: #122848;
+            --teal: #0d9488;
+            --teal-dark: #0b7c72;
+            --teal-light: rgba(13,148,136,0.1);
+            --white: #ffffff;
+            --offwhite: #f4f7fb;
+            --muted: #6b7a99;
+            --border: #dde4f0;
+            --red: #dc2626;
+            --red-dark: #b91c1c;
+            --red-light: rgba(220,38,38,0.1);
+            --green: #16a34a;
+            --green-light: rgba(22,163,74,0.1);
+            --amber: #d97706;
+            --amber-light: rgba(217,119,6,0.1);
+            --purple: #4f46e5;
+            --purple-light: rgba(79,70,229,0.1);
+            --radius-sm: 8px;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 2px 8px rgba(11,31,58,.05);
+            --shadow: 0 2px 8px rgba(11,31,58,.04);
+            --shadow-lg: 0 20px 60px rgba(11,31,58,.20);
+        }
 
 
             /* =========================================================
-                   RESET
-                ========================================================= */
+                               RESET
+                            ========================================================= */
 
             * {
                 box-sizing: border-box;
@@ -91,22 +125,26 @@
                 color: var(--text);
                 line-height: 1.5;
             }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--offwhite);
+            color: var(--navy);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
 
-            button,
-            input,
-            select,
-            textarea {
-                font-family: inherit;
-            }
+        button, input, select, textarea {
+            font-family: inherit;
+        }
 
 
             /* =========================================================
-                   TOPBAR
-                ========================================================= */
+                               TOPBAR
+                            ========================================================= */
 
             .topbar {
                 height: 70px;
-                background: linear-gradient( 135deg, var(--navy-dark), var(--navy) );
+                background: linear-gradient(135deg, var(--navy-dark), var(--navy));
                 color: var(--white);
                 display: flex;
                 align-items: center;
@@ -119,80 +157,134 @@
                 z-index: 1000;
                 box-shadow: 0 2px 12px rgba(0, 0, 0, .12);
             }
+        /* ── TOPBAR ── */
+        .topbar {
+            background: var(--navy);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+        }
 
 
             /* =========================================================
-                   BRAND
-                ========================================================= */
+                               BRAND
+                            ========================================================= */
 
             .brand {
                 display: flex;
                 align-items: center;
                 gap: 13px;
             }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
 
             .brand-icon {
                 width: 40px;
                 height: 40px;
                 border-radius: 10px;
-                background: linear-gradient( 135deg, var(--teal), var(--teal-light) );
+                background: linear-gradient(135deg, var(--teal), var(--teal-light));
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 font-size: 19px;
                 box-shadow: 0 5px 14px rgba(20, 184, 166, .20);
             }
+        .brand-logo {
+            width: 34px;
+            height: 34px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-            .brand-text {
-                display: flex;
-                flex-direction: column;
+            .brand-logo svg {
+                width: 18px;
+                height: 18px;
+                fill: white;
             }
 
-            .brand-name {
-                font-family: "DM Serif Display", serif;
-                font-size: 21px;
-                line-height: 1;
-                letter-spacing: .1px;
-            }
+        .brand-name {
+            font-family: 'DM Serif Display', serif;
+            color: white;
+            font-size: 1.1rem;
+            line-height: 1.1;
+        }
 
-            .brand-subtitle {
-                font-size: 10px;
-                opacity: .65;
-                margin-top: 5px;
-                letter-spacing: .2px;
+            .brand-name span {
+                display: block;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 0.6rem;
+                font-weight: 300;
+                color: rgba(255,255,255,0.4);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
             }
 
 
             /* =========================================================
-                   TOPBAR USER
-                ========================================================= */
+                               TOPBAR USER
+                            ========================================================= */
 
             .topbar-right {
                 display: flex;
                 align-items: center;
                 gap: 14px;
             }
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
 
-            .user-info {
-                text-align: right;
-            }
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 100px;
+            padding: 6px 14px 6px 8px;
+        }
 
-            .user-name {
-                font-size: 13px;
-                font-weight: 700;
-            }
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            background: var(--teal);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
 
-            .user-role {
-                font-size: 10px;
-                opacity: .62;
-                margin-top: 2px;
-            }
+        .user-email {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.75);
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
 
             .avatar {
                 width: 40px;
                 height: 40px;
                 border-radius: 50%;
-                background: linear-gradient( 135deg, var(--teal), var(--teal-light) );
+                background: linear-gradient(135deg, var(--teal), var(--teal-light));
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -200,84 +292,124 @@
                 font-weight: 800;
                 border: 2px solid rgba(255, 255, 255, .15);
             }
+        .logout-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.8);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
 
+            .logout-btn:hover {
+                background: rgba(255,255,255,0.15);
+                color: white;
+            }
 
             /* =========================================================
-                   SIDEBAR
-                ========================================================= */
-
-            .sidebar {
-                position: fixed;
-                top: 70px;
-                bottom: 0;
-                left: 0;
-                width: 245px;
-                background: var(--white);
-                border-right: 1px solid var(--border);
-                padding: 26px 14px;
-                z-index: 900;
-                box-shadow: 2px 0 12px rgba(11, 31, 58, .025);
-                overflow-y: auto;
+                               SIDEBAR
+                            ========================================================= */
+            .logout-btn svg {
+                width: 14px;
+                height: 14px;
             }
 
-            .nav-section-title {
-                font-size: 10px;
-                font-weight: 800;
-                text-transform: uppercase;
-                letter-spacing: 1.2px;
-                color: #94a3b8;
-                padding: 0 13px 11px;
+        /* ── LAYOUT ── */
+        .page {
+            display: flex;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            flex-shrink: 0;
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: 8px;
+        }
+
+        .nav-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0 20px;
+            margin-bottom: 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.15s;
+            border-left: 3px solid transparent;
+        }
+
+            .nav-item:hover {
+                background: var(--offwhite);
+                color: var(--navy);
             }
 
-            .nav-item {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 11px 13px;
-                border-radius: 9px;
-                margin-bottom: 5px;
-                color: #475569;
-                text-decoration: none;
-                font-size: 13px;
+            .nav-item.active {
+                background: var(--teal-light);
+                color: var(--teal);
+                border-left-color: var(--teal);
                 font-weight: 600;
-                transition: background .2s ease, color .2s ease, transform .2s ease;
             }
 
-                .nav-item:hover {
-                    background: #f0fdfa;
-                    color: var(--teal);
-                    transform: translateX(2px);
-                }
-
-                .nav-item.active {
-                    background: var(--teal-soft);
-                    color: var(--teal);
-                    font-weight: 800;
-                    box-shadow: inset 3px 0 0 var(--teal);
-                }
-
-            .nav-icon {
-                width: 21px;
-                text-align: center;
-                font-size: 16px;
+            .nav-item svg {
+                width: 16px;
+                height: 16px;
                 flex-shrink: 0;
             }
 
+            .nav-item:focus-visible {
+                outline: 2px solid var(--teal);
+                outline-offset: -2px;
+            }
 
             /* =========================================================
-                   MAIN
-                ========================================================= */
+                               MAIN
+                            ========================================================= */
 
             .main {
                 margin-left: 245px;
                 padding: 104px 32px 40px;
                 min-height: 100vh;
             }
+        /* ── MAIN ── */
+        .main {
+            flex: 1;
+            padding: clamp(24px, 3vw, 40px);
+            overflow-y: auto;
+        }
 
 
             /* =========================================================
-                   PAGE HEADER
-                ========================================================= */
+                               PAGE HEADER
+                            ========================================================= */
 
             .page-header {
                 display: flex;
@@ -286,34 +418,43 @@
                 gap: 25px;
                 margin-bottom: 25px;
             }
+        /* ── PAGE HEADER ── */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 25px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
 
-            .page-title {
-                margin: 0;
-                font-family: "DM Serif Display", serif;
-                font-size: 34px;
-                font-weight: 400;
-                line-height: 1.15;
-                color: var(--navy);
-                letter-spacing: -.4px;
-            }
+        .page-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.8rem;
+            font-weight: 400;
+            color: var(--navy);
+            letter-spacing: -.4px;
+            line-height: 1.15;
+        }
 
-            .page-description {
-                margin: 7px 0 0;
-                font-size: 13px;
-                color: var(--muted);
-                max-width: 650px;
-            }
+        .page-description {
+            margin-top: 6px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-weight: 300;
+            max-width: 650px;
+        }
 
-            .header-actions {
-                display: flex;
-                gap: 9px;
-                flex-wrap: wrap;
-            }
+        .header-actions {
+            display: flex;
+            gap: 9px;
+            flex-wrap: wrap;
+        }
 
 
             /* =========================================================
-                   BUTTONS
-                ========================================================= */
+                               BUTTONS
+                            ========================================================= */
 
             .btn {
                 border: none;
@@ -330,77 +471,120 @@
                 text-decoration: none;
                 transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
             }
+        /* ── BUTTONS ── */
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            text-decoration: none;
+            transition: all .18s ease;
+        }
 
-                .btn:hover {
-                    transform: translateY(-1px);
-                }
+            .btn:hover {
+                transform: translateY(-1px);
+            }
 
-                .btn:active {
-                    transform: translateY(0);
-                }
+            .btn:active {
+                transform: translateY(0);
+            }
 
-            .btn-primary {
-                background: var(--teal);
+        .btn-primary {
+            background: var(--teal);
+            color: var(--white);
+            box-shadow: 0 2px 8px rgba(13,148,136,0.25);
+        }
+
+            .btn-primary:hover {
+                background: var(--teal-dark);
+                box-shadow: 0 4px 12px rgba(13,148,136,0.3);
+            }
+
+        .btn-secondary {
+            background: var(--offwhite);
+            color: var(--navy);
+            border: 1px solid var(--border);
+        }
+
+            .btn-secondary:hover {
+                background: var(--white);
+                border-color: var(--teal);
+                color: var(--teal);
+                box-shadow: 0 2px 8px rgba(13,148,136,0.1);
+            }
+
+        .btn-danger {
+            background: var(--red);
+            color: var(--white);
+            box-shadow: 0 2px 8px rgba(220,38,38,0.2);
+        }
+
+            .btn-danger:hover {
+                background: var(--red-dark);
+            }
+
+        .btn-amber {
+            background: var(--amber-light);
+            color: var(--amber);
+            border: 1px solid rgba(217,119,6,.3);
+        }
+
+            /* =========================================================
+                               ALERTS
+                            ========================================================= */
+            .btn-amber:hover {
+                background: var(--amber);
                 color: var(--white);
-                box-shadow: 0 4px 12px rgba(15, 118, 110, .18);
             }
 
-                .btn-primary:hover {
-                    background: var(--teal-dark);
-                    box-shadow: 0 6px 16px rgba(15, 118, 110, .23);
-                }
+        .btn-badge {
+            background: var(--amber);
+            color: var(--white);
+            border-radius: 100px;
+            font-size: .68rem;
+            padding: 1px 7px;
+        }
 
-            .btn-secondary {
-                background: #eef2f6;
-                color: #374151;
-            }
+        .btn-amber:hover .btn-badge {
+            background: var(--white);
+            color: var(--amber);
+        }
 
-                .btn-secondary:hover {
-                    background: #e2e8f0;
-                }
+        /* ── ALERTS ── */
+        .alert {
+            padding: 13px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+        }
 
-            .btn-danger {
-                background: var(--danger);
-                color: var(--white);
-                box-shadow: 0 4px 12px rgba(220, 38, 38, .14);
-            }
+        .alert-success {
+            background: var(--green-light);
+            color: var(--green);
+            border: 1px solid rgba(22,163,74,0.25);
+        }
 
-                .btn-danger:hover {
-                    background: var(--danger-dark);
-                }
+        .alert-error {
+            background: var(--red-light);
+            color: var(--red);
+            border: 1px solid rgba(220,38,38,0.25);
+        }
 
 
             /* =========================================================
-                   ALERTS
-                ========================================================= */
-
-            .alert {
-                padding: 13px 16px;
-                border-radius: 9px;
-                margin-bottom: 20px;
-                font-size: 12px;
-                font-weight: 700;
-                display: flex;
-                align-items: center;
-                box-shadow: var(--shadow-sm);
-            }
-
-            .alert-success {
-                background: var(--success-soft);
-                color: var(--success);
-                border: 1px solid #bbf7d0;
-            }
-
-            .alert-error {
-                background: var(--danger-soft);
-                color: var(--danger);
-                border: 1px solid #fecaca;
-            }
-
-
-            /* =========================================================
-                   CARD
-                ========================================================= */
+                               CARD
+                            ========================================================= */
 
             .card {
                 background: var(--white);
@@ -409,80 +593,92 @@
                 box-shadow: var(--shadow);
                 overflow: hidden;
             }
+        /* ── CARD ── */
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
 
-            .card-header {
-                min-height: 66px;
-                padding: 17px 22px;
-                border-bottom: 1px solid var(--border);
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                background: #ffffff;
-            }
+        .card-header {
+            min-height: 66px;
+            padding: 17px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+        }
 
-            .card-title {
-                font-size: 14px;
-                font-weight: 800;
-                color: var(--navy);
-            }
+        .card-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.05rem;
+            color: var(--navy);
+        }
 
-            .record-count {
-                font-size: 11px;
-                font-weight: 600;
-                color: var(--muted);
-                background: #f8fafc;
-                border: 1px solid var(--border);
-                padding: 5px 9px;
-                border-radius: 20px;
-            }
+        .record-count {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--muted);
+            background: var(--offwhite);
+            border: 1px solid var(--border);
+            padding: 5px 10px;
+            border-radius: 100px;
+        }
 
 
             /* =========================================================
-                   TABLE
-                ========================================================= */
+                               TABLE
+                            ========================================================= */
 
             .table-container {
                 overflow-x: auto;
             }
+        /* ── TABLE ── */
+        .table-container {
+            overflow-x: auto;
+        }
 
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                min-width: 950px;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 950px;
+        }
+
+        th {
+            background: var(--offwhite);
+            color: var(--muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            font-weight: 600;
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 14px 15px;
+            border-bottom: 1px solid var(--offwhite);
+            font-size: 0.83rem;
+            vertical-align: middle;
+            color: var(--navy);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr {
+            transition: background .18s ease;
+        }
+
+            tbody tr:hover {
+                background: var(--offwhite);
             }
-
-            th {
-                background: #f8fafc;
-                color: #64748b;
-                font-size: 10px;
-                text-transform: uppercase;
-                letter-spacing: .65px;
-                font-weight: 800;
-                padding: 13px 15px;
-                text-align: left;
-                border-bottom: 1px solid var(--border);
-                white-space: nowrap;
-            }
-
-            td {
-                padding: 15px;
-                border-bottom: 1px solid #edf0f3;
-                font-size: 12px;
-                vertical-align: middle;
-                color: #475569;
-            }
-
-            tbody tr:last-child td {
-                border-bottom: none;
-            }
-
-            tbody tr {
-                transition: background .18s ease;
-            }
-
-                tbody tr:hover {
-                    background: #fbfefd;
-                }
 
             tr:hover td {
                 background: transparent;
@@ -490,134 +686,176 @@
 
 
             /* =========================================================
-                   TABLE CONTENT
-                ========================================================= */
+                               TABLE CONTENT
+                            ========================================================= */
 
             .test-name {
                 font-weight: 800;
                 color: var(--navy);
                 font-size: 13px;
             }
+        /* ── TABLE CONTENT ── */
+        .test-name {
+            font-weight: 700;
+            color: var(--navy);
+            font-size: 0.85rem;
+        }
 
-            .category-badge {
-                display: inline-block;
-                padding: 5px 9px;
-                border-radius: 20px;
-                background: var(--teal-soft);
-                color: var(--teal);
-                font-size: 10px;
-                font-weight: 800;
-                white-space: nowrap;
-            }
+        .category-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 100px;
+            background: var(--teal-light);
+            color: var(--teal);
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
 
-            .sample-badge {
-                display: inline-block;
-                padding: 5px 9px;
-                border-radius: 20px;
-                background: #f1f5f9;
-                color: #475569;
-                font-size: 10px;
-                font-weight: 700;
-                white-space: nowrap;
-            }
+        .tech-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 100px;
+            background: var(--purple-light);
+            color: var(--purple);
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: default;
+        }
 
-            .range {
-                font-weight: 700;
-                color: #334155;
-                white-space: nowrap;
-            }
+        .tech-none {
+            color: #94a3b8;
+        }
 
-            .tat {
-                font-weight: 800;
-                color: var(--navy);
-                white-space: nowrap;
-            }
+        .sample-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 100px;
+            background: var(--offwhite);
+            color: var(--muted);
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+            border: 1px solid var(--border);
+        }
+
+        .range {
+            font-weight: 600;
+            color: var(--navy);
+            white-space: nowrap;
+        }
+
+        .tat {
+            font-weight: 700;
+            color: var(--navy);
+            white-space: nowrap;
+        }
 
 
             /* =========================================================
-                   ACTION BUTTONS
-                ========================================================= */
+                               ACTION BUTTONS
+                            ========================================================= */
 
             .actions {
                 display: flex;
                 gap: 7px;
             }
+        /* ── ACTION BUTTONS ── */
+        .actions {
+            display: flex;
+            gap: 7px;
+        }
 
-            .action-btn {
-                border: none;
-                width: 34px;
-                height: 34px;
-                border-radius: 7px;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 13px;
-                transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+        .action-icon-btn {
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            transition: all .18s ease;
+        }
+
+            .action-icon-btn:hover {
+                transform: translateY(-1px);
             }
 
-                .action-btn:hover {
-                    transform: translateY(-1px);
-                }
-
-            .edit-btn {
-                background: var(--blue-soft);
-                color: var(--blue);
+            .action-icon-btn:disabled {
+                opacity: .4;
+                cursor: not-allowed;
+                transform: none;
             }
 
-                .edit-btn:hover {
-                    background: #bae6fd;
-                    box-shadow: 0 3px 8px rgba(3, 105, 161, .12);
-                }
+        .edit-btn {
+            background: var(--purple-light);
+            color: var(--purple);
+        }
 
-            .delete-btn {
-                background: var(--danger-soft);
-                color: var(--danger);
+            .edit-btn:hover {
+                background: rgba(79,70,229,0.2);
+                box-shadow: 0 3px 8px rgba(79,70,229,0.15);
             }
 
-                .delete-btn:hover {
-                    background: #fecaca;
-                    box-shadow: 0 3px 8px rgba(220, 38, 38, .12);
-                }
+        .delete-btn {
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+            .delete-btn:hover {
+                background: rgba(220,38,38,0.2);
+                box-shadow: 0 3px 8px rgba(220,38,38,0.15);
+            }
 
 
             /* =========================================================
-                   EMPTY STATE
-                ========================================================= */
+                               EMPTY STATE
+                            ========================================================= */
 
             .empty-state {
                 text-align: center;
                 padding: 65px 20px;
                 color: var(--muted);
             }
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 65px 20px;
+            color: var(--muted);
+        }
 
-            .empty-icon {
-                width: 70px;
-                height: 70px;
-                margin: 0 auto 17px;
-                border-radius: 50%;
-                background: var(--teal-soft);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 32px;
-            }
+        .empty-icon {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 17px;
+            border-radius: 50%;
+            background: var(--teal-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
 
-            .empty-title {
-                font-size: 15px;
-                font-weight: 800;
-                color: var(--navy);
-                margin-bottom: 5px;
-            }
+        .empty-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 5px;
+        }
 
-            .empty-state > div:not(.empty-icon):not(.empty-title) {
-                font-size: 12px;
-            }
+        .empty-state > div:not(.empty-icon):not(.empty-title) {
+            font-size: 0.8rem;
+        }
 
 
             /* =========================================================
-                   MODAL OVERLAY
-                ========================================================= */
+                               MODAL OVERLAY
+                            ========================================================= */
 
             .modal-overlay {
                 position: fixed;
@@ -630,15 +868,27 @@
                 padding: 20px;
                 z-index: 2000;
             }
+        /* ── MODAL OVERLAY ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(11,31,58,.45);
+            backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 2000;
+        }
 
-                .modal-overlay.show {
-                    display: flex;
-                }
+            .modal-overlay.show {
+                display: flex;
+            }
 
 
             /* =========================================================
-                   MODAL
-                ========================================================= */
+                               MODAL
+                            ========================================================= */
 
             .modal {
                 width: 100%;
@@ -651,24 +901,33 @@
                 animation: modalIn .22s ease;
                 border: 1px solid rgba(255,255,255,.7);
             }
+        .modal {
+            width: 100%;
+            max-width: 650px;
+            max-height: 90vh;
+            overflow-y: auto;
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            animation: modalIn .18s ease;
+        }
 
-            @@keyframes modalIn {
-
-                from {
-                    opacity: 0;
-                    transform: translateY(15px) scale(.98);
-                }
-
-                to {
-                    opacity: 1;
-                    transform: translateY(0) scale(1);
-                }
+        @@keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.96) translateY(8px);
             }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
 
 
             /* =========================================================
-                   MODAL HEADER
-                ========================================================= */
+                               MODAL HEADER
+                            ========================================================= */
 
             .modal-header {
                 padding: 19px 22px;
@@ -678,179 +937,297 @@
                 align-items: center;
                 background: #ffffff;
             }
+        .modal-header {
+            padding: 19px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+        }
 
-            .modal-title {
-                font-family: "DM Serif Display", serif;
-                font-size: 22px;
-                font-weight: 400;
+        .modal-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.3rem;
+            font-weight: 400;
+            color: var(--navy);
+        }
+
+        .close-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 8px;
+            background: var(--offwhite);
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 18px;
+            transition: background .18s ease, transform .18s ease;
+        }
+
+            .close-btn:hover {
+                background: var(--border);
                 color: var(--navy);
-                margin: 0;
+                transform: rotate(3deg);
             }
-
-            .close-btn {
-                width: 32px;
-                height: 32px;
-                border: none;
-                border-radius: 7px;
-                background: #f1f5f9;
-                color: #475569;
-                cursor: pointer;
-                font-size: 18px;
-                transition: background .18s ease, transform .18s ease;
-            }
-
-                .close-btn:hover {
-                    background: #e2e8f0;
-                    transform: rotate(3deg);
-                }
 
 
             /* =========================================================
-                   MODAL BODY
-                ========================================================= */
+                               MODAL BODY
+                            ========================================================= */
 
             .modal-body {
                 padding: 23px;
             }
+        .modal-body {
+            padding: 23px;
+        }
 
-            .modal-footer {
-                padding: 16px 22px;
-                border-top: 1px solid var(--border);
-                display: flex;
-                justify-content: flex-end;
-                gap: 10px;
-                background: #fbfcfe;
-            }
+        .modal-footer {
+            padding: 16px 22px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: var(--offwhite);
+        }
 
 
             /* =========================================================
-                   FORM
-                ========================================================= */
+                               FORM
+                            ========================================================= */
 
             .form-grid {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 17px;
             }
+        /* ── FORM ── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 17px;
+        }
 
-            .form-group {
-                display: flex;
-                flex-direction: column;
-                gap: 7px;
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+            .form-group.full {
+                grid-column: 1 / -1;
             }
 
-                .form-group.full {
-                    grid-column: 1 / -1;
-                }
+        .form-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
 
-            .form-label {
-                font-size: 11px;
-                font-weight: 800;
-                color: #374151;
+        .required {
+            color: var(--red);
+            margin-left: 2px;
+        }
+
+        .form-control {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            color: var(--navy);
+            outline: none;
+            background: var(--white);
+            transition: border-color .18s ease, box-shadow .18s ease;
+        }
+
+            .form-control:hover {
+                border-color: #b9c5d3;
             }
 
-            .required {
-                color: var(--danger);
-                margin-left: 2px;
+            .form-control:focus {
+                border-color: var(--teal);
+                box-shadow: 0 0 0 3px var(--teal-light);
             }
 
-            .form-control {
-                width: 100%;
-                border: 1px solid #cfd7e2;
-                border-radius: 8px;
-                padding: 10px 12px;
-                font-family: inherit;
-                font-size: 12px;
-                color: var(--text);
-                outline: none;
-                background: var(--white);
-                transition: border-color .18s ease, box-shadow .18s ease;
-            }
+        textarea.form-control {
+            min-height: 82px;
+            resize: vertical;
+            line-height: 1.5;
+        }
 
-                .form-control:hover {
-                    border-color: #b9c5d3;
-                }
+        select.form-control {
+            cursor: pointer;
+        }
 
-                .form-control:focus {
-                    border-color: var(--teal);
-                    box-shadow: 0 0 0 3px rgba(15,118,110,.10);
-                }
+        .form-help {
+            font-size: 0.7rem;
+            color: var(--muted);
+            margin-top: -2px;
+        }
 
-            textarea.form-control {
-                min-height: 82px;
-                resize: vertical;
-                line-height: 1.5;
-            }
-
-            select.form-control {
-                cursor: pointer;
-            }
-
-            .form-help {
-                font-size: 10px;
-                color: var(--muted);
-                margin-top: -2px;
-            }
-
+        .form-control.is-invalid {
+            border-color: var(--red);
+            box-shadow: 0 0 0 3px var(--red-light);
+        }
 
             /* =========================================================
-                   DELETE MODAL
-                ========================================================= */
+                               DELETE MODAL
+                            ========================================================= */
+        .field-error {
+            display: none;
+            font-size: .7rem;
+            color: var(--red);
+            font-weight: 600;
+            margin-top: -2px;
+        }
 
-            .delete-content {
-                text-align: center;
-                padding: 10px 10px 5px;
+            .field-error.show {
+                display: block;
             }
 
-            .delete-icon {
-                width: 55px;
-                height: 55px;
-                margin: 0 auto 15px;
-                border-radius: 50%;
-                background: var(--danger-soft);
-                color: var(--danger);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 25px;
-                font-weight: 800;
+        /* ── CONSUMABLE ROWS (name + quantity + remove on ONE line) ── */
+        .consumable-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .consumable-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 90px 36px;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .consumable-head {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 90px 36px;
+            gap: 8px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: -2px;
+        }
+
+        .consumable-row .form-control {
+            min-width: 0;
+        }
+
+        .c-remove {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            background: var(--red-light);
+            color: var(--red);
+            font-size: 14px;
+            cursor: pointer;
+            transition: background .18s ease;
+        }
+
+            .c-remove:hover {
+                background: rgba(220,38,38,0.2);
             }
 
-            .delete-title {
-                font-size: 18px;
-                font-weight: 800;
+        .consumable-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 2px;
+        }
+
+        .consumable-empty {
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+        /* ── DELETE MODAL ── */
+        .delete-content {
+            text-align: center;
+            padding: 10px 10px 5px;
+        }
+
+        .delete-icon {
+            width: 55px;
+            height: 55px;
+            margin: 0 auto 15px;
+            border-radius: 14px;
+            background: var(--red-light);
+            color: var(--red);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 25px;
+            font-weight: 800;
+        }
+
+        .delete-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--navy);
+            font-family: 'DM Serif Display', serif;
+        }
+
+        .delete-message {
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+            .delete-message strong {
                 color: var(--navy);
             }
 
-            .delete-message {
-                margin: 8px 0 0;
+        /* ── RESTORE LIST ── */
+        .restore-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+            /* =========================================================
+                               FOOTER
+                            ========================================================= */
+        .restore-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--offwhite);
+        }
+
+            .restore-item .meta {
+                font-size: .72rem;
                 color: var(--muted);
-                font-size: 12px;
-                line-height: 1.6;
             }
 
-                .delete-message strong {
-                    color: var(--text);
-                }
+            .restore-item form {
+                margin: 0;
+            }
+
+        /* ── FOOTER ── */
+        .footer {
+            margin-top: 28px;
+            padding: 0 2px;
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 0.7rem;
+        }
 
 
             /* =========================================================
-                   FOOTER
-                ========================================================= */
-
-            .footer {
-                margin-top: 28px;
-                padding: 0 2px;
-                display: flex;
-                justify-content: space-between;
-                color: #94a3b8;
-                font-size: 10px;
-            }
-
-
-            /* =========================================================
-                   SCROLLBAR
-                ========================================================= */
+                               SCROLLBAR
+                            ========================================================= */
 
             .modal::-webkit-scrollbar,
             .sidebar::-webkit-scrollbar,
@@ -858,24 +1235,31 @@
                 width: 7px;
                 height: 7px;
             }
+        /* ── SCROLLBAR ── */
+        .modal::-webkit-scrollbar,
+        .sidebar::-webkit-scrollbar,
+        .table-container::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
 
-            .modal::-webkit-scrollbar-track,
-            .sidebar::-webkit-scrollbar-track,
-            .table-container::-webkit-scrollbar-track {
-                background: #f1f5f9;
-            }
+        .modal::-webkit-scrollbar-track,
+        .sidebar::-webkit-scrollbar-track,
+        .table-container::-webkit-scrollbar-track {
+            background: var(--offwhite);
+        }
 
-            .modal::-webkit-scrollbar-thumb,
-            .sidebar::-webkit-scrollbar-thumb,
-            .table-container::-webkit-scrollbar-thumb {
-                background: #cbd5e1;
-                border-radius: 20px;
-            }
+        .modal::-webkit-scrollbar-thumb,
+        .sidebar::-webkit-scrollbar-thumb,
+        .table-container::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 20px;
+        }
 
 
             /* =========================================================
-                   RESPONSIVE — TABLET
-                ========================================================= */
+                               RESPONSIVE — TABLET
+                            ========================================================= */
 
             @@media (max-width: 850px) {
 
@@ -915,89 +1299,80 @@
 
 
             /* =========================================================
-                   RESPONSIVE — MOBILE
-                ========================================================= */
+                               RESPONSIVE — MOBILE
+                            ========================================================= */
 
             @@media (max-width: 650px) {
 
                 .topbar {
                     padding: 0 16px;
                 }
+        /* ── RESPONSIVE ── */
+        @@media (max-width: 768px) {
+            .topbar {
+                padding: 0 20px;
+            }
 
-                .brand-subtitle {
-                    display: none;
+            .user-email {
+                display: none;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                padding: 20px 16px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .header-actions {
+                width: 100%;
+            }
+
+                .header-actions .btn {
+                    flex: 1;
                 }
 
-                .brand-name {
-                    font-size: 18px;
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full {
+                grid-column: auto;
+            }
+
+            .modal-overlay {
+                padding: 12px;
+            }
+
+            .modal {
+                max-height: 94vh;
+            }
+
+            .modal-body {
+                padding: 18px;
+            }
+
+            .modal-header {
+                padding: 17px 18px;
+            }
+
+            .modal-footer {
+                padding: 14px 18px;
+            }
+
+                .modal-footer .btn {
+                    flex: 1;
                 }
-
-                .brand-icon {
-                    width: 36px;
-                    height: 36px;
-                }
-
-                .sidebar {
-                    width: 60px;
-                }
-
-                .main {
-                    margin-left: 60px;
-                    padding: 92px 15px 30px;
-                }
-
-                .page-header {
-                    flex-direction: column;
-                    gap: 16px;
-                }
-
-                .page-title {
-                    font-size: 28px;
-                }
-
-                .page-description {
-                    font-size: 12px;
-                }
-
-                .header-actions {
-                    width: 100%;
-                }
-
-                    .header-actions .btn {
-                        flex: 1;
-                    }
-
-                .form-grid {
-                    grid-template-columns: 1fr;
-                }
-
-                .form-group.full {
-                    grid-column: auto;
-                }
-
-                .modal-overlay {
-                    padding: 12px;
-                }
-
-                .modal {
-                    max-height: 94vh;
-                }
-
-                .modal-body {
-                    padding: 18px;
-                }
-
-                .modal-header {
-                    padding: 17px 18px;
-                }
-
-                .modal-footer {
-                    padding: 14px 18px;
-                }
-
-                    .modal-footer .btn {
-                        flex: 1;
-                    }
 
                 .footer {
                     flex-direction: column;
@@ -1008,8 +1383,8 @@
 
 
             /* =========================================================
-                   VERY SMALL SCREENS
-                ========================================================= */
+                               VERY SMALL SCREENS
+                            ========================================================= */
 
             @@media (max-width: 420px) {
 
@@ -1055,17 +1430,19 @@
                 }
             }
 
+            .footer {
+                flex-direction: column;
+                gap: 6px;
+                line-height: 1.5;
+            }
+        }
     </style>
-    ```
-
 </head>
-
 <body>
 
-    ```
     <!-- =========================
-     TOPBAR
-========================= -->
+         TOPBAR
+    ========================= -->
 
     <header class="topbar">
 
@@ -1073,40 +1450,34 @@
 
             <div class="brand-icon">
                 🧪
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
             </div>
-
-            <div class="brand-text">
-
-                <div class="brand-name">
-                    NMB-HLabSys
-                </div>
-
-                <div class="brand-subtitle">
-                    Haematology Laboratory System
-                </div>
-
+            <div class="brand-name">
+                NMB-HLabSys
+                <span>Haematology Lab System</span>
             </div>
-
-        </div>
-
-
+        </a>
         <div class="topbar-right">
-
-            <div class="user-info">
-
-                <div class="user-name">
-                    @(ViewBag.Email ?? "Laboratory Manager")
-                </div>
-
-                <div class="user-role">
-                    Laboratory Management
-                </div>
-
+            <div class="user-chip">
+                <div class="user-avatar">@(ViewBag.Email?.ToString().Substring(0, 1).ToUpper() ?? "M")</div>
+                <span class="user-email">@(ViewBag.Email ?? "Laboratory Manager")</span>
             </div>
+            <a asp-controller="Home" asp-action="Logout" class="logout-btn" id="logout-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Sign Out
+            </a>
+        </div>
+    </div>
 
-            <div class="avatar">
-                LM
-            </div>
+    <div class="page">
 
         </div>
 
@@ -1114,294 +1485,266 @@
 
 
     <!-- =========================
-     SIDEBAR
-========================= -->
+         SIDEBAR
+    ========================= -->
 
     <aside class="sidebar">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="nav-section">
+                <div class="nav-label">Management</div>
 
-        <div class="nav-section-title">
-            Management
-        </div>
+                <a asp-controller="ManagerDashboard" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                    </svg>
+                    Dashboard
+                </a>
 
+                <a asp-controller="TestCatalogue" asp-action="Index" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M9 3v11a3 3 0 006 0V3" />
+                        <line x1="6" y1="3" x2="18" y2="3" />
+                    </svg>
+                    Test Catalogue
+                </a>
 
-        <a asp-controller="ManagerDashboard"
-           asp-action="Index"
-           class="nav-item">
+                <a asp-controller="Consumables" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    Consumables
+                </a>
 
-            <span class="nav-icon">▦</span>
+                <a asp-controller="ConsumableOrder" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    Orders
+                </a>
 
-            <span class="nav-text">
-                Dashboard
-            </span>
+                <a asp-controller="Technician" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                    </svg>
+                   User
+                </a>
 
-        </a>
+                <a asp-controller="Report" asp-action="Index" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                    Reports
+                </a>
 
-
-        <a asp-controller="TestCatalogue"
-           asp-action="Index"
-           class="nav-item active">
-
-            <span class="nav-icon">🧪</span>
-
-            <span class="nav-text">
-                Test Catalogue
-            </span>
-
-        </a>
-
-
-        <a asp-controller="Consumable"
-           asp-action="Index"
-           class="nav-item">
-
-            <span class="nav-icon">📦</span>
-
-            <span class="nav-text">
-                Consumables
-            </span>
-
-        </a>
-
-
-        <a asp-controller="Doctor"
-           asp-action="Index"
-           class="nav-item">
-
-            <span class="nav-icon">👨‍⚕️</span>
-
-            <span class="nav-text">
-                Doctors
-            </span>
-
-        </a>
-
-
-        <a asp-controller="Technician"
-           asp-action="Index"
-           class="nav-item">
-
-            <span class="nav-icon">👤</span>
-
-            <span class="nav-text">
-                Technicians
-            </span>
-
-        </a>
-
-
-        <a asp-controller="Report"
-           asp-action="Index"
-           class="nav-item">
-
-            <span class="nav-icon">📊</span>
-
-            <span class="nav-text">
-                Reports
-            </span>
-
-        </a>
-
-    </aside>
+                <div class="nav-section">
+                <div class="nav-label">System</div>
+                <a asp-controller="User" asp-action="Profile" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    Profile
+                </a>
+                <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                    Audit Log
+                </a>
+            </div>
+            </div>
+        </aside>
 
 
     <!-- =========================
-     MAIN CONTENT
-========================= -->
+         MAIN CONTENT
+    ========================= -->
 
     <main class="main">
+        <!-- MAIN -->
+        <main class="main">
 
+            <!-- PAGE HEADER -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Test Catalogue</h1>
+                    <p class="page-description">
+                        Manage laboratory test types, reference ranges,
+                        sample types and turnaround times.
+                    </p>
+                </div>
 
-        <!-- PAGE HEADER -->
-
-        <div class="page-header">
-
-            <div>
-
-                <h1 class="page-title">
-                    Test Catalogue
-                </h1>
-
-                <p class="page-description">
-                    Manage laboratory test types, reference ranges,
-                    sample types and turnaround times.
-                </p>
-
+                <div class="header-actions">
+                    <button type="button" class="btn btn-amber" onclick="openModal('restoreModal')">
+                        ↺ Restore Tests
+                        @if (deletedTests.Any())
+                        {
+                            <span class="btn-badge">@deletedTests.Count()</span>
+                        }
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="openModal('addSampleTypeModal')">
+                        <span>＋</span> Add Sample Type
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="openModal('addCategoryModal')">
+                        <span>＋</span> Add Category
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="openModal('addModal')">
+                        <span>＋</span> Add Test Type
+                    </button>
+                </div>
             </div>
 
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success">✓ @TempData["Success"]</div>
+            }
 
-            <div class="header-actions">
-
-                <button type="button"
-                        class="btn btn-secondary"
-                        onclick="openAddCategoryModal()">
-
-                    <span>＋</span>
-
-                    Add Category
-
-                </button>
-
-
-                <button type="button"
-                        class="btn btn-primary"
-                        onclick="openAddModal()">
-
-                    <span>＋</span>
-
-                    Add Test Type
-
-                </button>
-
-            </div>
-
-        </div>
-
-
-        @if (TempData["Success"] != null)
-        {
-            <div class="alert alert-success">
-                ✓ @TempData["Success"]
-            </div>
-        }
-
-
-        @if (TempData["Error"] != null)
-        {
-            <div class="alert alert-error">
-                ⚠ @TempData["Error"]
-            </div>
-        }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-error">⚠ @TempData["Error"]</div>
+            }
 
 
         <!-- =========================
-         TEST TABLE
-    ========================= -->
+             TEST TABLE
+        ========================= -->
 
         <div class="card">
+            <!-- TEST TABLE -->
+            <div class="card">
 
-            <div class="card-header">
-
-                <div class="card-title">
-                    Laboratory Test Types
+                <div class="card-header">
+                    <div class="card-title">Laboratory Test Types</div>
+                    <div class="record-count">@(Model?.Count() ?? 0) test type(s)</div>
                 </div>
 
-                <div class="record-count">
-
-                    @(Model?.Count() ?? 0) test type(s)
-
-                </div>
-
-            </div>
-
-
-            @if (Model != null && Model.Any())
-            {
-
-                <div class="table-container">
-
-                    <table>
-
-                        <thead>
-
-                            <tr>
-
-                                <th>Test</th>
-                                <th>Category</th>
-                                <th>Sample Type</th>
-                                <th>Unit</th>
-                                <th>Normal Range</th>
-                                <th>TAT</th>
-                                <th>Consumables</th>
-                                <th>Actions</th>
-
-                            </tr>
-
-                        </thead>
-
-
-                        <tbody>
-
-                            @foreach (var test in Model)
-                            {
-
+                @if (Model != null && Model.Any())
+                {
+                    <div class="table-container">
+                        <table>
+                            <thead>
                                 <tr>
+                                    <th>Test</th>
+                                    <th>Category</th>
+                                    <th>Sample Type</th>
+                                    <th>Unit</th>
+                                    <th>Normal Range</th>
+                                    <th>TAT</th>
+                                    <th>Consumables</th>
+                                    <th>Technicians</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var test in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="test-name">@test.TestName</div>
+                                        </td>
+                                        <td>
+                                            @{
+                                                var catList = ViewBag.Category as IEnumerable<SelectListItem>;
+                                                var categoryText = catList?.FirstOrDefault(c => c.Value == test.CategoryId.ToString())?.Text
+                                                    ?? categories.FirstOrDefault(c => c.CategoryID == test.CategoryId)?.CategoryName
+                                                    ?? "—";
+                                            }
+                                            <div>@categoryText</div>
+                                        </td>
+                                        <td>
+                                            @{
+                                                var sampleList = ViewBag.SampleType as IEnumerable<SelectListItem>;
+                                                var sampleText = sampleList?.FirstOrDefault(s => s.Value == test.SampleTypeId.ToString())?.Text
+                                                    ?? sampleTypes.FirstOrDefault(s => s.SampleTypeID.ToString() == test.SampleTypeId.ToString())?.SampleName
+                                                    ?? "—";
+                                            }
+                                            <div>@sampleText</div>
+                                        </td>
+                                        <td>@(System.Net.WebUtility.HtmlDecode(test.UnitMeasurement ?? "—"))</td>
+                                        <td>
+                                            <span class="range">@test.NormalRangeDisplay</span>
+                                        </td>
+                                        <td>
+                                            <span class="tat">@test.TurnaroundTime hrs</span>
+                                        </td>
+                                        <td>
+                                            @{
+                                                // ConsumablesUsed holds JSON like [{"id":11,"name":"RegeantA","quantity":12}].
+                                                // Older rows may hold plain text such as "Tubes", so handle both.
+                                                var consumableItems = new List<(string Name, int Qty)>();
+                                                var consumablesIsLegacy = false;
+                                                var rawConsumables = (test.ConsumablesUsed ?? "").Trim();
 
+                                                if (rawConsumables.StartsWith("["))
+                                                {
+                                                    JsonDocument consumableDoc = null;
+                                                    try
+                                                    {
+                                                        consumableDoc = JsonDocument.Parse(rawConsumables);
+                                                        foreach (var el in consumableDoc.RootElement.EnumerateArray())
+                                                        {
+                                                            string cName = el.TryGetProperty("name", out var cNameProp) ? cNameProp.GetString() : null;
+                                                            int cQty = 0;
+                                                            if (el.TryGetProperty("quantity", out var cQtyProp)) { cQtyProp.TryGetInt32(out cQty); }
+                                                            if (!string.IsNullOrWhiteSpace(cName)) { consumableItems.Add((cName, cQty)); }
+                                                        }
+                                                    }
+                                                    catch (JsonException) { consumablesIsLegacy = true; }
+                                                    catch (InvalidOperationException) { consumablesIsLegacy = true; }
+                                                    finally { consumableDoc?.Dispose(); }
+                                                }
+                                                else if (rawConsumables.Length > 0)
+                                                {
+                                                    consumablesIsLegacy = true;
+                                                }
+                                            }
+                                            @if (consumableItems.Count > 0)
+                                            {
+                                                <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                                                    @foreach (var ci in consumableItems)
+                                                    {
+                                                        <span class="sample-badge">@ci.Name × @ci.Qty</span>
+                                                    }
+                                                </div>
+                                            }
+                                            else if (consumablesIsLegacy)
+                                            {
+                                                @rawConsumables
+                                            }
+                                            else
+                                            {
+                                                <span class="tech-none">None</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @{
+                                                // Build the list of technician names assigned to this test
+                                                var techNames = new List<string>();
 
-                                    <!-- TEST -->
-
-                                    <td>
-
-                                        <div class="test-name">
-                                            @test.TestName
-                                        </div>
-
-                                    </td>
-
-
-                                    <!-- CATEGORY -->
-
-                                    <td>
-
-                                        <span class="category-badge">
-
-                                            @(test.CategoryName ?? "Uncategorised")
-
-                                        </span>
-
-                                    </td>
-
-
-                                    <!-- SAMPLE TYPE -->
-
-                                    <td>
-
-                                        <span class="sample-badge">
-
-                                            @test.SampleTypeId
-
-                                        </span>
-
-                                    </td>
-
-
-                                    <!-- UNIT -->
-
-                                    <td>
-
-                                        @(test.UnitMeasurement ?? "—")
-
-                                    </td>
-
-
-                                    <!-- NORMAL RANGE -->
-
-                                    <td>
-
-                                        <span class="range">
-
-                                            @test.NormalRangeDisplay
-
-                                        </span>
-
-                                    </td>
-
-
-                                    <!-- TAT -->
-
-                                    <td>
-
-                                        <span class="tat">
-
-                                            @test.TurnaroundTime hrs
-
-                                        </span>
-
-                                    </td>
-
-
-                                    <!-- CONSUMABLES -->
-
-                                    <td>
+                                                if (rawTechMap is IDictionary<int, List<string>> techListMap
+                                                    && techListMap.TryGetValue(test.TestId, out var techListValue)
+                                                    && techListValue != null)
+                                                {
+                                                    techNames = techListValue;
+                                                }
+                                                else if (rawTechMap is IDictionary<int, string> techStringMap
+                                                    && techStringMap.TryGetValue(test.TestId, out var techStringValue)
+                                                    && !string.IsNullOrWhiteSpace(techStringValue)
+                                                    && techStringValue != "—")
+                                                {
+                                                    techNames = techStringValue
+                                                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                                        .ToList();
+                                                }
 
                                         @if (!string.IsNullOrWhiteSpace(test.ConsumablesUsed))
                                         {
@@ -1432,86 +1775,95 @@
                                                     onclick="openEditModal(
                                                 @test.TestId,
                                                 '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.TestName ?? ""))',
-                                                @test.CategoryId,
+                                                '@test.CategoryId',
                                                 '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.SampleTypeId ?? ""))',
                                                 '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.UnitMeasurement ?? ""))',
                                                 '@(test.NormalRangeMin?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")',
                                                 '@(test.NormalRangeMax?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")',
-                                                @test.TurnaroundTime,
+                                                '@test.TurnaroundTime',
                                                 '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.ConsumablesUsed ?? ""))'
                                                 )">
 
                                                 ✎
 
                                             </button>
+                                                techNames = techNames
+                                                    .Where(n => !string.IsNullOrWhiteSpace(n))
+                                                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                                                    .ToList();
+                                            }
+                                            @if (techNames.Count > 0)
+                                            {
+                                                <span class="tech-badge" title="@(string.Join(", ", techNames))">
+                                                    @techNames.Count technician@(techNames.Count == 1 ? "" : "s")
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="tech-none">None</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="actions">
+                                                @if (test.TestId > 0)
+                                                {
+                                                    <button type="button"
+                                                            class="action-icon-btn edit-btn"
+                                                            title="Edit"
+                                                            data-testid="@test.TestId"
+                                                            data-testname="@test.TestName"
+                                                            data-categoryid="@test.CategoryId"
+                                                            data-sampletypeid="@test.SampleTypeId"
+                                                            data-unit="@(System.Net.WebUtility.HtmlDecode(test.UnitMeasurement ?? ""))"
+                                                            data-normalmin="@(test.NormalRangeMin?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")"
+                                                            data-normalmax="@(test.NormalRangeMax?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")"
+                                                            data-tat="@test.TurnaroundTime"
+                                                            data-consumables="@test.ConsumablesUsed"
+                                                            onclick="populateEditModal(this)">
+                                                        ✎
+                                                    </button>
 
-
-                                            <!-- DELETE -->
-
-                                            <button type="button"
-                                                    class="action-btn delete-btn"
-                                                    title="Delete"
-                                                    onclick="openDeleteModal(
-                                                @test.TestId,
-                                                '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(test.TestName ?? ""))'
-                                                )">
-
-                                                🗑
-
-                                            </button>
-
-                                        </div>
-
-                                    </td>
-
-                                </tr>
-
-                            }
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            }
-            else
-            {
-
-                <div class="empty-state">
-
-                    <div class="empty-icon">
-                        🧪
+                                                    <button type="button"
+                                                            class="action-icon-btn delete-btn"
+                                                            title="Delete"
+                                                            data-testid="@test.TestId"
+                                                            data-testname="@test.TestName"
+                                                            onclick="populateDeleteModal(this)">
+                                                        🗑
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="button" class="action-icon-btn edit-btn" title="Invalid test id" disabled>✎</button>
+                                                    <button type="button" class="action-icon-btn delete-btn" title="Invalid test id" disabled>🗑</button>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     </div>
-
-                    <div class="empty-title">
-                        No test types found
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-icon">🧪</div>
+                        <div class="empty-title">No test types found</div>
+                        <div>Add your first laboratory test type to the catalogue.</div>
+                        <br />
+                        <button type="button" class="btn btn-primary" onclick="openModal('addModal')">
+                            ＋ Add Test Type
+                        </button>
                     </div>
+                }
 
-                    <div>
-                        Add your first laboratory test type to the catalogue.
-                    </div>
-
-                    <br />
-
-                    <button type="button"
-                            class="btn btn-primary"
-                            onclick="openAddModal()">
-
-                        ＋ Add Test Type
-
-                    </button>
-
-                </div>
-
-            }
-
-        </div>
+            </div>
 
 
         <!-- =========================
-         FOOTER
-    ========================= -->
+             FOOTER
+        ========================= -->
 
         <div class="footer">
 
@@ -1524,70 +1876,44 @@
             </span>
 
         </div>
+            <!-- FOOTER -->
+            <div class="footer">
+                <span>NMB-HLabSys · Haematology Laboratory System</span>
+                <span>Internal management system · @DateTime.Now.ToString("yyyy")</span>
+            </div>
 
-    </main>
-
+        </main>
+    </div>
 
     <!-- =====================================================
-     ADD TEST TYPE MODAL
-====================================================== -->
+         ADD TEST TYPE MODAL
+    ====================================================== -->
 
     <div id="addModal"
          class="modal-overlay">
 
+         ADD TEST TYPE MODAL
+    ====================================================== -->
+    <div id="addModal" class="modal-overlay">
         <div class="modal">
-
-            <form asp-controller="TestCatalogue"
-                  asp-action="AddTestType"
-                  method="post">
-
+            <form asp-controller="TestCatalogue" asp-action="AddTestType" method="post" novalidate data-validate>
                 @Html.AntiForgeryToken()
 
-
                 <div class="modal-header">
-
-                    <h2 class="modal-title">
-                        Add Test Type
-                    </h2>
-
-                    <button type="button"
-                            class="close-btn"
-                            onclick="closeModal('addModal')">
-
-                        ×
-
-                    </button>
-
+                    <h2 class="modal-title">Add Test Type</h2>
+                    <button type="button" class="close-btn" onclick="closeModal('addModal')">×</button>
                 </div>
 
-
                 <div class="modal-body">
-
                     <div class="form-grid">
 
-
-                        <!-- TEST NAME -->
-
                         <div class="form-group full">
-
-                            <label class="form-label">
-
-                                Test Name
-
-                                <span class="required">*</span>
-
-                            </label>
-
-                            <input type="text"
-                                   name="TestName"
-                                   class="form-control"
-                                   placeholder="e.g. Full Blood Count"
-                                   required />
-
+                            <label class="form-label">Test Name<span class="required">*</span></label>
+                            <input type="text" name="TestName" class="form-control" placeholder="e.g. Full Blood Count" required
+                                   data-required="Test name is required." data-minlength="2" data-maxlength="100"
+                                   data-pattern="^[A-Za-z0-9 ()/.,&%+\-]+$" data-pattern-msg="Test name contains invalid characters." />
+                            <span class="field-error"></span>
                         </div>
-
-
-                        <!-- CATEGORY -->
 
                         <div class="form-group">
 
@@ -1598,7 +1924,8 @@
                                 <span class="required">*</span>
 
                             </label>
-                            <select id="edit-CategoryId"
+
+                            <select id="add-CategoryId"
                                     name="CategoryId"
                                     class="form-control"
                                     required>
@@ -1607,22 +1934,24 @@
                                     Select category
                                 </option>
 
+                            <label class="form-label">Category<span class="required">*</span></label>
+                            <select id="add-CategoryId" name="CategoryId" class="form-control" required
+                                    data-required="Please select a category.">
+                                <option value="">Select category</option>
                                 @if (ViewBag.Category != null)
                                 {
-                                    @foreach (var category in ViewBag.Category)
+                                    @foreach (var sampleType in ViewBag.Category)
+                                    @foreach (var cat in ViewBag.Category)
                                     {
-                                        <option value="@category.Value">
-                                            @category.Text
+                                        <option value="@sampleType.Value">
+                                            @sampleType.Text
                                         </option>
+                                        <option value="@cat.Value">@cat.Text</option>
                                     }
                                 }
-
                             </select>
-
+                            <span class="field-error"></span>
                         </div>
-
-
-                        <!-- SAMPLE TYPE -->
 
                         <div class="form-group">
 
@@ -1634,7 +1963,7 @@
 
                             </label>
 
-                            <select id="edit-SampleTypeId"
+                            <select id="add-SampleTypeId"
                                     name="SampleTypeId"
                                     class="form-control"
                                     required>
@@ -1643,22 +1972,20 @@
                                     Select sample type
                                 </option>
 
+                            <label class="form-label">Sample Type<span class="required">*</span></label>
+                            <select id="add-SampleTypeId" name="SampleTypeId" class="form-control" required
+                                    data-required="Please select a sample type.">
+                                <option value="">Select sample type</option>
                                 @if (ViewBag.SampleType != null)
                                 {
-                                    @foreach (var sampleType in ViewBag.SampleType)
+                                    @foreach (var st in ViewBag.SampleType)
                                     {
-                                        <option value="@sampleType.Value">
-                                            @sampleType.Text
-                                        </option>
+                                        <option value="@st.Value">@st.Text</option>
                                     }
                                 }
-
                             </select>
-
+                            <span class="field-error"></span>
                         </div>
-
-
-                        <!-- UNIT -->
 
                         <div class="form-group">
 
@@ -1666,7 +1993,7 @@
                                 Unit Measurement
                             </label>
 
-                            <select id="edit-UnitMeasurement"
+                            <select id="add-UnitMeasurement"
                                     name="UnitMeasurement"
                                     class="form-control">
 
@@ -1702,114 +2029,91 @@
                                     x10³/µL
                                 </option>
 
+                            <label class="form-label">Unit Measurement</label>
+                            <select id="add-UnitMeasurement" name="UnitMeasurement" class="form-control">
+                                <option value="">Select unit</option>
+                                <option value="µL">µL</option>
+                                <option value="mcL">mcL</option>
+                                <option value="g/dL">g/dL</option>
+                                <option value="g/L">g/L</option>
+                                <option value="g/mL">g/mL</option>
+                                <option value="k/µL">k/µL</option>
+                                <option value="x10³/µL">x10³/µL</option>
                             </select>
-
                         </div>
-
-
-                        <!-- TAT -->
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Turnaround Time
-                            </label>
-
-                            <input type="number"
-                                   name="TurnaroundTime"
-                                   class="form-control"
-                                   placeholder="e.g. 24"
-                                   min="0" />
-
-                            <span class="form-help">
-                                Enter TAT in hours.
-                            </span>
-
+                            <label class="form-label">Turnaround Time</label>
+                            <input type="number" name="TurnaroundTime" class="form-control" placeholder="e.g. 24" min="0" max="8760" step="1"
+                                   data-integer="Whole hours only." data-min="0" data-max="8760"
+                                   data-range-msg="TAT must be between 0 and 8760 hours." />
+                            <span class="form-help">Enter TAT in hours.</span>
+                            <span class="field-error"></span>
                         </div>
-
-
-                        <!-- NORMAL MIN -->
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Normal Range Minimum
-                            </label>
-
-                            <input type="number"
-                                   name="NormalRangeMin"
-                                   class="form-control"
-                                   step="0.01"
-                                   placeholder="e.g. 12.00" />
-
+                            <label class="form-label">Normal Range Minimum</label>
+                            <input type="number" name="NormalRangeMin" class="form-control" step="0.01" min="0" placeholder="e.g. 12.00"
+                                   data-min="0" data-max="100000" data-range-msg="Enter a value between 0 and 100000."
+                                   data-lte="NormalRangeMax" />
+                            <span class="field-error"></span>
                         </div>
-
-
-                        <!-- NORMAL MAX -->
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Normal Range Maximum
-                            </label>
-
-                            <input type="number"
-                                   name="NormalRangeMax"
-                                   class="form-control"
-                                   step="0.01"
-                                   placeholder="e.g. 16.00" />
-
+                            <label class="form-label">Normal Range Maximum</label>
+                            <input type="number" name="NormalRangeMax" class="form-control" step="0.01" min="0" placeholder="e.g. 16.00"
+                                   data-min="0" data-max="100000" data-range-msg="Enter a value between 0 and 100000."
+                                   data-gte="NormalRangeMin" />
+                            <span class="field-error"></span>
                         </div>
 
-
-                        <!-- CONSUMABLES -->
-
+                        <!-- CONSUMABLES: name + quantity + remove on a single line per row -->
                         <div class="form-group full">
+                            <label class="form-label">Consumables Used</label>
 
-                            <label class="form-label">
-                                Consumables Used
-                            </label>
+                            <div id="consumables-head" class="consumable-head" style="display:none;">
+                                <span>Consumable</span>
+                                <span>Qty used</span>
+                                <span></span>
+                            </div>
 
-                            <textarea name="ConsumablesUsed"
-                                      class="form-control"
-                                      placeholder="e.g. EDTA Tube, Reagent A"></textarea>
+                            <div id="consumables-list" class="consumable-list"></div>
 
+                            <div class="consumable-actions">
+                                <button type="button" class="btn btn-secondary" id="add-consumable-btn" @(consumableOptions.Any() ? "" : "disabled")>＋ Add Consumable</button>
+                                <span class="consumable-empty" id="consumables-empty">
+                                    @(consumableOptions.Any() ? "No consumables added." : "No consumables available. Add them on the Consumables page first.")
+                                </span>
+                            </div>
+
+                            <input type="hidden" id="ConsumablesJson" name="ConsumablesJson" />
+
+                            <!-- option source for the per-row dropdowns (never posted: no name) -->
+                            <select id="consumable-source" hidden disabled aria-hidden="true">
+                                <option value="">Select consumable</option>
+                                @foreach (var c in consumableOptions)
+                                {
+                                    <option value="@c.Value">@c.Text</option>
+                                }
+                            </select>
+                            <span class="field-error" id="consumables-error"></span>
                         </div>
 
                     </div>
-
                 </div>
 
-
                 <div class="modal-footer">
-
-                    <button type="button"
-                            class="btn btn-secondary"
-                            onclick="closeModal('addModal')">
-
-                        Cancel
-
-                    </button>
-
-                    <button type="submit"
-                            class="btn btn-primary">
-
-                        ✓ Save Test Type
-
-                    </button>
-
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">✓ Save Test Type</button>
                 </div>
 
             </form>
-
         </div>
-
     </div>
 
-
     <!-- =====================================================
-     ADD CATEGORY MODAL
-====================================================== -->
+         ADD CATEGORY MODAL
+    ====================================================== -->
 
     <div id="addCategoryModal"
          class="modal-overlay">
@@ -1821,348 +2125,200 @@
                   asp-action="AddCategory"
                   method="post">
 
+         ADD CATEGORY MODAL
+    ====================================================== -->
+    <div id="addCategoryModal" class="modal-overlay">
+        <div class="modal" style="max-width:480px;">
+            <form asp-controller="TestCatalogue" asp-action="AddCategory" method="post" novalidate data-validate>
                 @Html.AntiForgeryToken()
 
-
                 <div class="modal-header">
-
-                    <h2 class="modal-title">
-                        Add Category
-                    </h2>
-
-                    <button type="button"
-                            class="close-btn"
-                            onclick="closeModal('addCategoryModal')">
-
-                        ×
-
-                    </button>
-
+                    <h2 class="modal-title">Add Category</h2>
+                    <button type="button" class="close-btn" onclick="closeModal('addCategoryModal')">×</button>
                 </div>
-
 
                 <div class="modal-body">
-
                     <div class="form-grid">
-
-
-                        <!-- CATEGORY NAME -->
-
                         <div class="form-group full">
-
-                            <label class="form-label">
-
-                                Category Name
-
-                                <span class="required">*</span>
-
-                            </label>
-
-                            <input type="text"
-                                   name="CategoryName"
-                                   class="form-control"
-                                   placeholder="e.g. Haematology"
-                                   required />
-
+                            <label class="form-label">Category Name<span class="required">*</span></label>
+                            <input type="text" name="CategoryName" class="form-control" placeholder="e.g. Haematology" required
+                                   data-required="Category name is required." data-minlength="2" data-maxlength="50" />
+                            <span class="field-error"></span>
                         </div>
-
-
-                        <!-- DESCRIPTION -->
-
                         <div class="form-group full">
-
-                            <label class="form-label">
-                                Description
-                            </label>
-
-                            <textarea name="Description"
-                                      class="form-control"
-                                      placeholder="Optional short description"></textarea>
-
+                            <label class="form-label">Description</label>
+                            <textarea name="Description" class="form-control" placeholder="Optional short description"
+                                      data-maxlength="200"></textarea>
+                            <span class="field-error"></span>
                         </div>
-
                     </div>
-
                 </div>
 
-
                 <div class="modal-footer">
-
-                    <button type="button"
-                            class="btn btn-secondary"
-                            onclick="closeModal('addCategoryModal')">
-
-                        Cancel
-
-                    </button>
-
-                    <button type="submit"
-                            class="btn btn-primary">
-
-                        ✓ Save Category
-
-                    </button>
-
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addCategoryModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">✓ Save Category</button>
                 </div>
 
             </form>
-
         </div>
-
     </div>
 
+    <!-- =====================================================
+         ADD SAMPLE TYPE MODAL
+    ====================================================== -->
+    <div id="addSampleTypeModal" class="modal-overlay">
+        <div class="modal" style="max-width:480px;">
+            <form asp-controller="TestCatalogue" asp-action="AddSampleType" method="post" novalidate data-validate>
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header">
+                    <h2 class="modal-title">Add Sample Type</h2>
+                    <button type="button" class="close-btn" onclick="closeModal('addSampleTypeModal')">×</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label class="form-label">Sample Type Name<span class="required">*</span></label>
+                            <input type="text" name="SampleName" class="form-control" placeholder="e.g. Whole Blood (EDTA)" required
+                                   data-required="Sample type name is required." data-minlength="2" data-maxlength="50"
+                                   data-pattern="^[A-Za-z0-9 ()/.,\-]+$"
+                                   data-pattern-msg="Only letters, numbers, spaces and ( ) / . , - are allowed." />
+                            <span class="field-error"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addSampleTypeModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">✓ Save Sample Type</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
 
     <!-- =====================================================
-     EDIT TEST TYPE MODAL
-====================================================== -->
+         EDIT TEST TYPE MODAL
+    ====================================================== -->
 
     <div id="editModal"
          class="modal-overlay">
 
+         EDIT TEST TYPE MODAL
+    ====================================================== -->
+    <div id="editModal" class="modal-overlay">
         <div class="modal">
-
-            <form asp-controller="TestCatalogue"
-                  asp-action="EditTestType"
-                  method="post">
-
+            <form asp-controller="TestCatalogue" asp-action="EditTestType" method="post" novalidate data-validate>
                 @Html.AntiForgeryToken()
 
-
                 <div class="modal-header">
-
-                    <h2 class="modal-title">
-                        Edit Test Type
-                    </h2>
-
-                    <button type="button"
-                            class="close-btn"
-                            onclick="closeModal('editModal')">
-
-                        ×
-
-                    </button>
-
+                    <h2 class="modal-title">Edit Test Type</h2>
+                    <button type="button" class="close-btn" onclick="closeModal('editModal')">×</button>
                 </div>
 
-
                 <div class="modal-body">
-
-                    <input type="hidden"
-                           id="edit-TestId"
-                           name="TestId" />
-
+                    <input type="hidden" id="edit-TestId" name="TestId" value="" />
 
                     <div class="form-grid">
 
-
-                        <!-- TEST NAME -->
-
                         <div class="form-group full">
-
-                            <label class="form-label">
-
-                                Test Name
-
-                                <span class="required">*</span>
-
-                            </label>
-
-                            <input type="text"
-                                   id="edit-TestName"
-                                   name="TestName"
-                                   class="form-control"
-                                   required />
-
+                            <label class="form-label">Test Name<span class="required">*</span></label>
+                            <input type="text" id="edit-TestName" name="TestName" class="form-control" required
+                                   data-required="Test name is required." data-minlength="2" data-maxlength="100"
+                                   data-pattern="^[A-Za-z0-9 ()/.,&%+\-]+$" data-pattern-msg="Test name contains invalid characters." />
+                            <span class="field-error"></span>
                         </div>
 
-
-                        <!-- CATEGORY -->
-
                         <div class="form-group">
-
-                            <label class="form-label">
-
-                                Category
-
-                                <span class="required">*</span>
-
-                            </label>
-
-                            <select id="edit-CategoryId"
-                                    name="CategoryId"
-                                    class="form-control"
-                                    required>
-
-                                <option value="">
-                                    Select category
-                                </option>
-
+                            <label class="form-label">Category<span class="required">*</span></label>
+                            <select id="edit-CategoryId" name="CategoryId" class="form-control" required
+                                    data-required="Please select a category.">
+                                <option value="">Select category</option>
                                 @if (ViewBag.Category != null)
                                 {
-                                    @foreach (var category in ViewBag.Category)
-                                    {
-                                        <option value="@category.Value">
-                                            @category.Text
-                                        </option>
-                                    }
-                                }
-
-                            </select>
-
-                        </div>
-
-
-                        <!-- SAMPLE TYPE -->
-
-                        <div class="form-group">
-
-                            <label class="form-label">
-
-                                Sample Type
-
-                                <span class="required">*</span>
-
-                            </label>
-
-                            <select id="edit-SampleTypeId"
-                                    name="SampleTypeId"
-                                    class="form-control"
-                                    required>
-
-                                <option value="">
-                                    Select sample type
-                                </option>
-
-                                @if (ViewBag.SampleType != null)
-                                {
-                                    @foreach (var sampleType in ViewBag.SampleType)
+                                    @foreach (var sampleType in ViewBag.Category)
+                                    @foreach (var cat in ViewBag.Category)
                                     {
                                         <option value="@sampleType.Value">
                                             @sampleType.Text
                                         </option>
+                                        <option value="@cat.Value">@cat.Text</option>
                                     }
                                 }
-
                             </select>
-
+                            <span class="field-error"></span>
                         </div>
-
-
-                        <!-- UNIT -->
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Unit Measurement
-                            </label>
-
-                            <input type="text"
-                                   id="edit-UnitMeasurement"
-                                   name="UnitMeasurement"
-                                   class="form-control" />
-
+                            <label class="form-label">Sample Type<span class="required">*</span></label>
+                            <select id="edit-SampleTypeId" name="SampleTypeId" class="form-control" required
+                                    data-required="Please select a sample type.">
+                                <option value="">Select sample type</option>
+                                @if (ViewBag.SampleType != null)
+                                {
+                                    @foreach (var st in ViewBag.SampleType)
+                                    {
+                                        <option value="@st.Value">@st.Text</option>
+                                    }
+                                }
+                            </select>
+                            <span class="field-error"></span>
                         </div>
-
-
-                        <!-- TAT -->
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Turnaround Time
-                            </label>
-
-                            <input type="number"
-                                   id="edit-TurnaroundTime"
-                                   name="TurnaroundTime"
-                                   class="form-control"
-                                   min="0" />
-
+                            <label class="form-label">Unit Measurement</label>
+                            <input type="text" id="edit-UnitMeasurement" name="UnitMeasurement" class="form-control"
+                                   data-maxlength="20" />
+                            <span class="field-error"></span>
                         </div>
-
-
-                        <!-- NORMAL MIN -->
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Normal Range Minimum
-                            </label>
-
-                            <input type="number"
-                                   id="edit-NormalRangeMin"
-                                   name="NormalRangeMin"
-                                   class="form-control"
-                                   step="0.01" />
-
+                            <label class="form-label">Turnaround Time</label>
+                            <input type="number" id="edit-TurnaroundTime" name="TurnaroundTime" class="form-control" min="0" max="8760" step="1"
+                                   data-integer="Whole hours only." data-min="0" data-max="8760"
+                                   data-range-msg="TAT must be between 0 and 8760 hours." />
+                            <span class="field-error"></span>
                         </div>
-
-
-                        <!-- NORMAL MAX -->
 
                         <div class="form-group">
-
-                            <label class="form-label">
-                                Normal Range Maximum
-                            </label>
-
-                            <input type="number"
-                                   id="edit-NormalRangeMax"
-                                   name="NormalRangeMax"
-                                   class="form-control"
-                                   step="0.01" />
-
+                            <label class="form-label">Normal Range Minimum</label>
+                            <input type="number" id="edit-NormalRangeMin" name="NormalRangeMin" class="form-control" step="0.01"
+                                   data-min="0" data-max="100000" data-range-msg="Enter a value between 0 and 100000."
+                                   data-lte="NormalRangeMax" />
+                            <span class="field-error"></span>
                         </div>
 
-
-                        <!-- CONSUMABLES -->
+                        <div class="form-group">
+                            <label class="form-label">Normal Range Maximum</label>
+                            <input type="number" id="edit-NormalRangeMax" name="NormalRangeMax" class="form-control" step="0.01"
+                                   data-min="0" data-max="100000" data-range-msg="Enter a value between 0 and 100000."
+                                   data-gte="NormalRangeMin" />
+                            <span class="field-error"></span>
+                        </div>
 
                         <div class="form-group full">
-
-                            <label class="form-label">
-                                Consumables Used
-                            </label>
-
-                            <textarea id="edit-ConsumablesUsed"
-                                      name="ConsumablesUsed"
-                                      class="form-control"></textarea>
-
+                            <label class="form-label">Consumables Used</label>
+                            <textarea id="edit-ConsumablesUsed" name="ConsumablesUsed" class="form-control"
+                                      data-maxlength="500"></textarea>
+                            <span class="field-error"></span>
                         </div>
 
                     </div>
-
                 </div>
 
-
                 <div class="modal-footer">
-
-                    <button type="button"
-                            class="btn btn-secondary"
-                            onclick="closeModal('editModal')">
-
-                        Cancel
-
-                    </button>
-
-                    <button type="submit"
-                            class="btn btn-primary">
-
-                        ✓ Update Test Type
-
-                    </button>
-
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">✓ Update Test Type</button>
                 </div>
 
             </form>
-
         </div>
-
     </div>
 
-
     <!-- =====================================================
-     DELETE CONFIRMATION MODAL
-====================================================== -->
+         DELETE CONFIRMATION MODAL
+    ====================================================== -->
 
     <div id="deleteModal"
          class="modal-overlay">
@@ -2174,229 +2330,447 @@
                   asp-action="DeleteTest"
                   method="post">
 
+         DELETE CONFIRMATION MODAL (soft delete)
+    ====================================================== -->
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal" style="max-width:450px;">
+            <form asp-controller="TestCatalogue" asp-action="DeleteTest" method="post">
                 @Html.AntiForgeryToken()
 
-
-                <input type="hidden"
-                       id="delete-TestId"
-                       name="id" />
-
+                <input type="hidden" id="delete-TestId" name="id" />
 
                 <div class="modal-header">
-
-                    <h2 class="modal-title">
-                        Delete Test Type
-                    </h2>
-
-                    <button type="button"
-                            class="close-btn"
-                            onclick="closeModal('deleteModal')">
-
-                        ×
-
-                    </button>
-
+                    <h2 class="modal-title">Delete Test Type</h2>
+                    <button type="button" class="close-btn" onclick="closeModal('deleteModal')">×</button>
                 </div>
-
 
                 <div class="modal-body">
-
                     <div class="delete-content">
-
-                        <div class="delete-icon">
-                            !
-                        </div>
-
-                        <div class="delete-title">
-                            Are you sure?
-                        </div>
-
+                        <div class="delete-icon">!</div>
+                        <div class="delete-title">Are you sure?</div>
                         <p class="delete-message">
-
                             You are about to delete
-
-                            <strong id="delete-TestName">
-                                this test
-                            </strong>.
-
-                            This action cannot be undone.
-
+                            <strong id="delete-TestName">this test</strong>.
+                            This test type will be hidden from the active catalogue and can be restored later.
                         </p>
-
                     </div>
-
                 </div>
 
-
                 <div class="modal-footer">
-
-                    <button type="button"
-                            class="btn btn-secondary"
-                            onclick="closeModal('deleteModal')">
-
-                        Cancel
-
-                    </button>
-
-                    <button type="submit"
-                            class="btn btn-danger">
-
-                        🗑 Delete Test
-
-                    </button>
-
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
+                    <button type="submit" class="btn btn-danger">🗑 Delete Test</button>
                 </div>
 
             </form>
-
         </div>
-
     </div>
 
-
     <!-- =====================================================
-     JAVASCRIPT
-====================================================== -->
+         JAVASCRIPT
+    ====================================================== -->
+         RESTORE DELETED TESTS MODAL
+    ====================================================== -->
+    <div id="restoreModal" class="modal-overlay">
+        <div class="modal" style="max-width:560px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Restore Deleted Tests</h2>
+                <button type="button" class="close-btn" onclick="closeModal('restoreModal')">×</button>
+            </div>
+
+            <div class="modal-body">
+                @if (deletedTests.Any())
+                {
+                    <div class="restore-list">
+                        @foreach (var d in deletedTests)
+                        {
+                            <div class="restore-item">
+                                <div>
+                                    <div class="test-name">@d.TestName</div>
+                                    <div class="meta">@d.NormalRangeDisplay · @d.TurnaroundTime hrs</div>
+                                </div>
+                                <form asp-controller="TestCatalogue" asp-action="RestoreTest" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@d.TestId" />
+                                    <button type="submit" class="btn btn-primary" style="padding:7px 12px;">↺ Restore</button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state" style="padding:30px 10px;">
+                        <div class="empty-title">Nothing to restore</div>
+                        <div>There are no deleted test types.</div>
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('restoreModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── LOGOUT CONFIRMATION MODAL ── -->
+    <div id="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title"
+         style="display:none;position:fixed;inset:0;z-index:2500;background:rgba(11,31,58,0.45);align-items:center;justify-content:center;">
+        <div style="background:white;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(11,31,58,0.2);animation:modalIn 0.18s ease;">
+            <div style="width:52px;height:52px;background:#fee2e2;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+            </div>
+            <h3 id="logout-modal-title" style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--navy);margin-bottom:8px;">Sign out?</h3>
+            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:24px;line-height:1.6;">You'll be returned to the login screen. Any unsaved changes will be lost.</p>
+            <div style="display:flex;gap:10px;">
+                <button id="logout-cancel" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:white;color:var(--navy);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancel</button>
+                <a id="logout-confirm" href="#" style="flex:1;padding:10px;border:none;border-radius:10px;background:#dc2626;color:white;font-size:0.85rem;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;font-family:'DM Sans',sans-serif;">Sign Out</a>
+            </div>
+        </div>
+    </div>
 
     <script>
+        /* ═════════════ MODAL HELPERS ═════════════ */
+        function clearErrors(modal) {
+            modal.querySelectorAll(".is-invalid").forEach(function (i) { i.classList.remove("is-invalid"); });
+            modal.querySelectorAll(".field-error").forEach(function (s) { s.classList.remove("show"); s.textContent = ""; });
+        }
 
-            function openAddModal() {
+        function hideModal(modal) {
+            modal.classList.remove("show");
+            clearErrors(modal);
+            if (modal.id === "addModal" && window.resetConsumables) window.resetConsumables();
+            if (!document.querySelector(".modal-overlay.show")) document.body.style.overflow = "";
+        }
 
-                document.getElementById("addModal")
-                    .classList.add("show");
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add("show");
+            document.body.style.overflow = "hidden";
+        }
 
-                document.body.style.overflow = "hidden";
+        function closeModal(modalId) {
+            hideModal(document.getElementById(modalId));
+        }
+
+        function populateEditModal(button) {
+            if (!button) return;
+            var d = button.dataset || {};
+
+            document.getElementById("edit-TestId").value = d.testid || "";
+            document.getElementById("edit-TestName").value = d.testname || "";
+            document.getElementById("edit-CategoryId").value = d.categoryid || "";
+            document.getElementById("edit-SampleTypeId").value = d.sampletypeid || "";
+            document.getElementById("edit-UnitMeasurement").value = d.unit || "";
+            document.getElementById("edit-NormalRangeMin").value = d.normalmin || "";
+            document.getElementById("edit-NormalRangeMax").value = d.normalmax || "";
+            document.getElementById("edit-TurnaroundTime").value = d.tat || "";
+            document.getElementById("edit-ConsumablesUsed").value = d.consumables || "";
+
+            openModal("editModal");
+        }
+
+        function populateDeleteModal(button) {
+            if (!button) return;
+            var d = button.dataset || {};
+
+            document.getElementById("delete-TestId").value = d.testid || "";
+            document.getElementById("delete-TestName").textContent = d.testname || "this test";
+
+            openModal("deleteModal");
+        }
+
+        document.querySelectorAll(".modal-overlay").forEach(function (modal) {
+            modal.addEventListener("click", function (event) {
+                if (event.target === modal) hideModal(modal);
+            });
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                document.querySelectorAll(".modal-overlay.show").forEach(hideModal);
+            }
+        });
+
+        setTimeout(function () {
+            document.querySelectorAll(".alert").forEach(function (alert) {
+                alert.style.transition = "opacity .4s ease";
+                alert.style.opacity = "0";
+                setTimeout(function () { alert.remove(); }, 400);
+            });
+        }, 5000);
+
+        /* ═════════════ CONSUMABLES (Add Test Type) ═════════════
+           - name + quantity + remove button sit on ONE line
+           - the same consumable cannot be added twice (case/space-insensitive)
+           - rows are serialised into the hidden ConsumablesJson field on submit
+        */
+        (function () {
+            var list = document.getElementById("consumables-list");
+            var head = document.getElementById("consumables-head");
+            var empty = document.getElementById("consumables-empty");
+            var errBox = document.getElementById("consumables-error");
+            var addBtn = document.getElementById("add-consumable-btn");
+            var hidden = document.getElementById("ConsumablesJson");
+            var form = document.querySelector("#addModal form");
+
+            if (!list || !form) return;
+
+            function normalise(s) {
+                return (s || "").trim().replace(/\s+/g, " ").toLowerCase();
             }
 
-
-            function openAddCategoryModal() {
-
-                document.getElementById("addCategoryModal")
-                    .classList.add("show");
-
-                document.body.style.overflow = "hidden";
+            function showError(msg) {
+                errBox.textContent = msg || "";
+                errBox.classList.toggle("show", !!msg);
             }
 
-
-            function openEditModal(
-                id,
-                testName,
-                categoryId,
-                sampleType,
-                unit,
-                normalMin,
-                normalMax,
-                tat,
-                consumables
-            ) {
-
-                document.getElementById("edit-TestId").value = id;
-
-                document.getElementById("edit-TestName").value = testName;
-
-                document.getElementById("edit-CategoryId").value = categoryId;
-
-                document.getElementById("edit-SampleTypeId").value = sampleType;
-
-                document.getElementById("edit-UnitMeasurement").value = unit;
-
-                document.getElementById("edit-NormalRangeMin").value = normalMin;
-
-                document.getElementById("edit-NormalRangeMax").value = normalMax;
-
-                document.getElementById("edit-TurnaroundTime").value = tat;
-
-                document.getElementById("edit-ConsumablesUsed").value = consumables;
-
-
-                document.getElementById("editModal")
-                    .classList.add("show");
-
-                document.body.style.overflow = "hidden";
+            function refreshChrome() {
+                var has = list.children.length > 0;
+                head.style.display = has ? "grid" : "none";
+                empty.style.display = has ? "none" : "";
             }
 
+            var source = document.getElementById("consumable-source");
 
-            function openDeleteModal(id, testName) {
-
-                document.getElementById("delete-TestId").value = id;
-
-                document.getElementById("delete-TestName").textContent = testName;
-
-
-                document.getElementById("deleteModal")
-                    .classList.add("show");
-
-                document.body.style.overflow = "hidden";
+            function selectedText(sel) {
+                return sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : "";
             }
 
-
-            function closeModal(modalId) {
-
-                document.getElementById(modalId)
-                    .classList.remove("show");
-
-                document.body.style.overflow = "";
-            }
-
-
-            document.querySelectorAll(".modal-overlay")
-                .forEach(function (modal) {
-
-                    modal.addEventListener("click", function (event) {
-
-                        if (event.target === modal) {
-
-                            modal.classList.remove("show");
-
-                            document.body.style.overflow = "";
-
-                        }
-
+            // Grey out options already chosen in other rows so they can't be picked twice
+            function syncOptions() {
+                var rows = list.querySelectorAll(".consumable-row");
+                rows.forEach(function (row) {
+                    var mine = row.querySelector(".c-name");
+                    Array.prototype.forEach.call(mine.options, function (opt) {
+                        if (!opt.value) return;
+                        var takenElsewhere = false;
+                        rows.forEach(function (other) {
+                            var s = other.querySelector(".c-name");
+                            if (s !== mine && s.value === opt.value) takenElsewhere = true;
+                        });
+                        opt.disabled = takenElsewhere;
                     });
+                });
+            }
 
+            function addRow() {
+                var optionsHtml = source ? source.innerHTML : '<option value="">Select consumable</option>';
+                var row = document.createElement("div");
+                row.className = "consumable-row";
+                row.innerHTML =
+                    '<select class="form-control c-name">' + optionsHtml + '</select>' +
+                    '<input type="number" class="form-control c-qty" min="1" step="1" value="1" title="Quantity used" />' +
+                    '<button type="button" class="c-remove" title="Remove" aria-label="Remove consumable">✕</button>';
+                list.appendChild(row);
+                refreshChrome();
+                row.querySelector(".c-name").focus();
+            }
+
+            // Returns the first offending input (or null) and shows a message
+            function checkConsumables() {
+                var seen = Object.create(null);
+                var firstBad = null;
+                var msg = "";
+
+                list.querySelectorAll(".consumable-row").forEach(function (row) {
+                    var n = row.querySelector(".c-name");
+                    var q = row.querySelector(".c-qty");
+                    n.classList.remove("is-invalid");
+                    q.classList.remove("is-invalid");
+
+                    var key = n.value;      // consumable id from the dropdown
+                    if (!key) return;       // rows with nothing selected are ignored on save
+
+                    if (seen[key]) {
+                        n.classList.add("is-invalid");
+                        if (!firstBad) {
+                            firstBad = n;
+                            msg = '"' + selectedText(n) + '" has already been added. Increase its quantity instead.';
+                        }
+                    } else {
+                        seen[key] = true;
+                    }
+
+                    var qty = Number(q.value);
+                    if (q.value.trim() === "" || !Number.isInteger(qty) || qty < 1) {
+                        q.classList.add("is-invalid");
+                        if (!firstBad) {
+                            firstBad = q;
+                            msg = "Quantity must be a whole number of at least 1.";
+                        }
+                    }
                 });
 
+                syncOptions();
+                showError(msg);
+                return firstBad;
+            }
 
-            document.addEventListener("keydown", function (event) {
+            window.resetConsumables = function () {
+                list.innerHTML = "";
+                showError("");
+                refreshChrome();
+            };
 
-                if (event.key === "Escape") {
+            addBtn.addEventListener("click", addRow);
 
-                    document.querySelectorAll(".modal-overlay.show")
-                        .forEach(function (modal) {
-
-                            modal.classList.remove("show");
-
-                        });
-
-                    document.body.style.overflow = "";
-
-                }
-
+            list.addEventListener("click", function (e) {
+                var btn = e.target.closest(".c-remove");
+                if (!btn) return;
+                btn.closest(".consumable-row").remove();
+                refreshChrome();
+                checkConsumables();
             });
 
+            // live duplicate / quantity feedback while typing
+            list.addEventListener("input", checkConsumables);
+            list.addEventListener("focusout", checkConsumables);
 
-            setTimeout(function () {
+            form.addEventListener("submit", function (e) {
+                var bad = checkConsumables();
+                if (bad) {
+                    e.preventDefault();
+                    bad.focus();
+                    return;
+                }
 
-                document.querySelectorAll(".alert")
-                    .forEach(function (alert) {
+                var items = [];
+                list.querySelectorAll(".consumable-row").forEach(function (row) {
+                    var sel = row.querySelector(".c-name");
+                    var qty = parseInt(row.querySelector(".c-qty").value, 10);
+                    if (sel.value) {
+                        items.push({
+                            id: parseInt(sel.value, 10) || sel.value,
+                            name: selectedText(sel),
+                            quantity: qty
+                        });
+                    }
+                });
 
-                        alert.style.transition = "opacity .4s ease";
+                // a test can be saved without consumables
+                hidden.value = JSON.stringify(items);
+            });
 
-                        alert.style.opacity = "0";
+            refreshChrome();
+        })();
 
-                        setTimeout(function () {
+        /* ═════════════ FORM VALIDATION (forms marked data-validate) ═════════════ */
+        (function () {
+            function setError(input, msg) {
+                var err = input.parentElement.querySelector(".field-error");
+                input.classList.toggle("is-invalid", !!msg);
+                if (err) {
+                    err.textContent = msg || "";
+                    err.classList.toggle("show", !!msg);
+                }
+                return !msg;
+            }
 
-                            alert.remove();
+            function validateField(input, form) {
+                var d = input.dataset;
+                var v = (input.value || "").trim();
 
-                        }, 400);
+                if (d.required !== undefined && v === "") return setError(input, d.required);
+                if (v === "") return setError(input, "");   // optional + empty = OK
 
+                if (d.minlength && v.length < +d.minlength)
+                    return setError(input, "Must be at least " + d.minlength + " characters.");
+                if (d.maxlength && v.length > +d.maxlength)
+                    return setError(input, "Must be at most " + d.maxlength + " characters.");
+                if (d.pattern && !new RegExp(d.pattern).test(v))
+                    return setError(input, d.patternMsg || "Invalid format.");
+
+                if (input.type === "number") {
+                    var n = parseFloat(v);
+                    if (isNaN(n)) return setError(input, "Enter a valid number.");
+                    if (d.integer !== undefined && !Number.isInteger(n)) return setError(input, d.integer);
+                    if ((d.min !== undefined && n < +d.min) || (d.max !== undefined && n > +d.max))
+                        return setError(input, d.rangeMsg || "Value out of range.");
+
+                    if (d.lte) {
+                        var other = form.querySelector('[name="' + d.lte + '"]');
+                        if (other && other.value !== "" && n > parseFloat(other.value))
+                            return setError(input, "Minimum cannot exceed maximum.");
+                    }
+                    if (d.gte) {
+                        var other2 = form.querySelector('[name="' + d.gte + '"]');
+                        if (other2 && other2.value !== "" && n < parseFloat(other2.value))
+                            return setError(input, "Maximum cannot be less than minimum.");
+                    }
+                }
+                return setError(input, "");
+            }
+
+            document.querySelectorAll("form[data-validate]").forEach(function (form) {
+                var fields = form.querySelectorAll("input[name], select[name], textarea[name]");
+
+                fields.forEach(function (f) {
+                    if (f.type === "hidden") return;
+
+                    f.addEventListener("blur", function () { validateField(f, form); });
+                    f.addEventListener("change", function () { validateField(f, form); });
+                    f.addEventListener("input", function () {
+                        if (f.classList.contains("is-invalid")) validateField(f, form);
+                        var pair = f.dataset.lte || f.dataset.gte;
+                        if (pair) {
+                            var p = form.querySelector('[name="' + pair + '"]');
+                            if (p && p.classList.contains("is-invalid")) validateField(p, form);
+                        }
                     });
+                });
 
-            }, 5000);
+                form.addEventListener("submit", function (e) {
+                    var ok = true, first = null;
+                    fields.forEach(function (f) {
+                        if (f.type === "hidden") return;
+                        if (!validateField(f, form)) { ok = false; first = first || f; }
+                    });
+                    if (!ok) {
+                        e.preventDefault();
+                        first.focus();
+                    }
+                });
+            });
+        })();
 
+        /* ═════════════ LOGOUT MODAL ═════════════ */
+        (function () {
+            var logoutBtn = document.getElementById("logout-btn");
+            var logoutModal = document.getElementById("logout-modal");
+            var logoutCancel = document.getElementById("logout-cancel");
+            var logoutConfirm = document.getElementById("logout-confirm");
+
+            if (!logoutBtn || !logoutModal) return;
+
+            logoutConfirm.href = logoutBtn.href;
+
+            logoutBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                logoutModal.style.display = "flex";
+                logoutCancel.focus();
+            });
+
+            function closeLogoutModal() {
+                logoutModal.style.display = "none";
+                logoutBtn.focus();
+            }
+
+            logoutCancel.addEventListener("click", closeLogoutModal);
+            logoutModal.addEventListener("click", function (e) {
+                if (e.target === logoutModal) closeLogoutModal();
+            });
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "Escape" && logoutModal.style.display === "flex") closeLogoutModal();
+            });
+        })();
     </script>
-    
+
+
 
 </body>
 
+</html>
 </html>

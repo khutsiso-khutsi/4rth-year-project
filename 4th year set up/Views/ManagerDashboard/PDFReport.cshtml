@@ -1,5 +1,5 @@
-﻿@using LabManager.Models
-@model List<TestCategoryReport>
+@* @using LabManager.Models
+@model IEnumerable<TestReportViewModel>
 
 <!DOCTYPE html>
 <html>
@@ -335,7 +335,7 @@
 
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="TestCatalogue"
+                   asp-controller="TestCatalogue" asp-action="Index"
                    class="nav-item">
 
                     Test Catalogue
@@ -344,7 +344,7 @@
 
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="Consumables"
+                   asp-controller="Consumables" asp-action="Index"
                    class="nav-item">
 
                     Consumables
@@ -353,7 +353,7 @@
 
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="Staff"
+                   asp-controller="Staff" asp-action="Index"
                    class="nav-item">
 
                     Staff
@@ -362,7 +362,7 @@
 
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="Orders"
+                   asp-controller="ConsumableOrder" asp-action="Index"
                    class="nav-item">
 
                     Orders
@@ -371,7 +371,7 @@
 
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="TestsByCategory"
+                   asp-controller="TestsByCategory" asp-action="Index"
                    class="nav-item active">
 
                     Reports
@@ -387,7 +387,7 @@
 
 
                 <a asp-controller="ManagerDashboard"
-                   asp-action="Profile"
+                   asp-controller="User" asp-action="Profile"
                    class="nav-item">
 
                     Profile
@@ -442,8 +442,8 @@
                         @foreach (var item in Model)
                         {
                             <tr>
-                                <td>@item.Category</td>
-                                <td>@item.TotalTests</td>
+                                <td>@item.CategoryName</td>
+                                <td>@item.TestCount</td>
                             </tr>
                         }
 
@@ -457,8 +457,8 @@
         </main>
 
 
-    </div>
+    </div> *@
 
-
+@* 
 </body>
-</html>
+</html> *@
