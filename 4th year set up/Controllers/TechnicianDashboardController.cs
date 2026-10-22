@@ -4,16 +4,16 @@ using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
-using _4th_year_set_up.DataAccess;
+using _4th_year_set_up.Repository;
 using _4th_year_set_up.Models;
 
 namespace _4th_year_set_up.Controllers
 {
 public class TechnicianDashboardController : Controller
 {
-    private readonly TechnicianDataAccess _db;
+    private readonly TechnicianRepository _db;
 
-    public TechnicianDashboardController(TechnicianDataAccess db)
+    public TechnicianDashboardController(TechnicianRepository db)
     {
         _db = db;
         // The test types the laboratory manager assigned to this technician (TechnicianTestTypes).
@@ -38,7 +38,6 @@ public class TechnicianDashboardController : Controller
     {
         var profile = _db.GetProfile(CurrentUser.Id);
         if (profile == null) return NotFound();
-        profile.IsSenior = CurrentUser.IsSenior;
         ViewBag.Email = profile.Email;
         return View(profile);
     }
@@ -85,15 +84,15 @@ public class TechnicianDashboardController : Controller
     // Optional ?filter=urgent|overdue|nearing pre-selects a filter chip.
     public IActionResult TestQueue(string filter = "all")
         => List("queue", "Testing Queue", "Tests with a verified sample that still need work.",
-                _db.GetTests().Where(t => t.IsInQueue), filter);
+                _db.GetTests().Where(t => t.IsInQueue && !t.AssignedToMe), filter);
 
     public IActionResult MyTests(string filter = "all")
         => List("mine", "My Tests", "Tests you have selected, including any returned to you for review.",
                 _db.GetTests().Where(t => t.IsInQueue && t.AssignedToMe), filter);
 
-    // Sample already verified by a senior technician, waiting for a technician to pick it up.
+    // Sample already verified, waiting for a technician to pick it up.
     public IActionResult AwaitingAssignment(string filter = "all")
-        => List("awaiting", "Awaiting Assignment", "Samples verified by a senior technician. Pick one to start.",
+        => List("awaiting", "Awaiting Assignment", "Samples that have been verified. Pick one to start.",
                 _db.GetTests().Where(t => t.Stage == TestStage.AwaitingAssignment), filter);
 
     // Results that have been verified.
@@ -101,13 +100,12 @@ public class TechnicianDashboardController : Controller
         => List("verified", "Verified Tests", "Results verified by a second technician. A request is complete when every test on it is verified.",
                 _db.GetTests().Where(t => t.Stage == TestStage.Verified), filter);
 
-    // ---------------------------------------------------------------- senior technician: step 2, sample verification
+    // ---------------------------------------------------------------- step 2, sample verification
 
     public IActionResult SampleVerification(string filter = "all")
     {
-        if (!CurrentUser.CanVerifySample) return NotSenior();
         // One row per tube. A tube holding several tests is verified once for all of them.
-        return List("samples", "Sample Verification", "Received tubes waiting for a senior technician to accept or reject. Each tube is verified once.",
+        return List("samples", "Sample Verification", "Received tubes waiting to be accepted or rejected. Each tube is verified once.",
                     _db.GetRequests().SelectMany(r => r.Tubes)
                         .Where(tube => tube.Status == TubeStatus.AwaitingVerification && tube.Tests.Count > 0)
                         .Select(tube => tube.Tests.First()), filter);
@@ -115,7 +113,6 @@ public class TechnicianDashboardController : Controller
 
     public IActionResult VerifySample(string id)
     {
-        if (!CurrentUser.CanVerifySample) return NotSenior();
         var item = Find(id);
         if (item == null) return NotFound();
         ViewBag.Email = User?.Identity?.Name;
@@ -127,7 +124,6 @@ public class TechnicianDashboardController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult AcceptSample(string id, string[] checks)
     {
-        if (!CurrentUser.CanVerifySample) return NotSenior();
         var item = Find(id);
         if (item == null) return NotFound();
         var tube = item.Sample;
@@ -157,7 +153,6 @@ public class TechnicianDashboardController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult RejectSample(string id, string reasonType, string reasonNote)
     {
-        if (!CurrentUser.CanVerifySample) return NotSenior();
         var item = Find(id);
         if (item == null) return NotFound();
         var tube = item.Sample;
@@ -187,12 +182,11 @@ public class TechnicianDashboardController : Controller
         return RedirectToAction("SampleVerification");
     }
 
-    // ---------------------------------------------------------------- senior technician: result verification (two-step validation)
+    // ---------------------------------------------------------------- result verification (two-step validation)
 
     // Completed results. Rows you may verify are actionable; the others say why not.
     public IActionResult Verification(string filter = "all")
     {
-        if (!CurrentUser.IsSenior) return NotSenior();
         return List("results", "Result Verification",
                     "Captured results waiting for a second technician to verify before release.",
                     _db.GetTests().Where(t => t.Stage == TestStage.Complete), filter);
@@ -200,7 +194,6 @@ public class TechnicianDashboardController : Controller
 
     public IActionResult VerifyResult(string id)
     {
-        if (!CurrentUser.IsSenior) return NotSenior();
         var item = Find(id);
         if (item == null) return NotFound();
         ViewBag.Email = User?.Identity?.Name;
@@ -515,12 +508,6 @@ public class TechnicianDashboardController : Controller
     {
         TempData["Flash"] = message;
         TempData["FlashType"] = type;
-    }
-
-    private IActionResult NotSenior()
-    {
-        Flash("That screen is for senior technicians.", "warn");
-        return RedirectToAction("Index");
     }
 
     private IActionResult BackTo(string returnUrl)

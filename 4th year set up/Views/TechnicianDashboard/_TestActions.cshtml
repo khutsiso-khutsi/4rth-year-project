@@ -11,14 +11,7 @@
 @switch (Model.Stage)
 {
     case TestStage.AwaitingSampleVerification:
-        if (CurrentUser.CanVerifySample)
-        {
-            <a asp-controller="TechnicianDashboard" asp-action="VerifySample" asp-route-id="@Model.ReqNum" class="btn btn-primary">Verify sample</a>
-        }
-        else
-        {
-            <span class="muted-note">Waiting for a senior technician</span>
-        }
+        <a asp-controller="TechnicianDashboard" asp-action="VerifySample" asp-route-id="@Model.TestId" class="btn btn-primary">Verify sample</a>
         break;
 
     case TestStage.SampleRejected:
@@ -27,25 +20,36 @@
 
     case TestStage.AwaitingAssignment:
         <form method="post" asp-controller="TechnicianDashboard" asp-action="SelectTest" class="inline-form">
-            <input type="hidden" name="id" value="@Model.ReqNum" />
+            <input type="hidden" name="id" value="@Model.TestId" />
             <input type="hidden" name="returnUrl" value="@returnUrl" />
             <button type="submit" class="btn btn-primary">Select test</button>
         </form>
         break;
 
-    case TestStage.Assigned:
-    case TestStage.InProgress:
     case TestStage.ToBeReviewed:
         if (Model.AssignedToMe)
         {
-            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" asp-route-id="@Model.ReqNum"
-               class="btn @enterCss">@(Model.Stage == TestStage.ToBeReviewed ? "Review & re-enter" : "Enter Results")</a>
+            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" asp-route-id="@Model.TestId"
+               class="btn btn-orange">Review &amp; re-enter</a>
+        }
+        else
+        {
+            <span class="muted-note">Assigned to another technician</span>
+        }
+        break;
+
+    case TestStage.Assigned:
+    case TestStage.InProgress:
+        if (Model.AssignedToMe)
+        {
+            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" asp-route-id="@Model.TestId"
+               class="btn @enterCss">Enter Results</a>
             if (Model.Stage == TestStage.Assigned)
             {
                 <form method="post" asp-controller="TechnicianDashboard" asp-action="ReleaseTest" class="inline-form">
-                    <input type="hidden" name="id" value="@Model.ReqNum" />
+                    <input type="hidden" name="id" value="@Model.TestId" />
                     <input type="hidden" name="returnUrl" value="@returnUrl" />
-                    <button type="submit" class="btn btn-ghost">Release</button>
+                    <button type="submit" class="btn btn-ghost">Return to pool</button>
                 </form>
             }
         }
@@ -58,7 +62,7 @@
     case TestStage.Complete:
         if (CurrentUser.CanVerifyResult(Model))
         {
-            <a asp-controller="TechnicianDashboard" asp-action="VerifyResult" asp-route-id="@Model.ReqNum" class="btn btn-orange">Verify result</a>
+            <a asp-controller="TechnicianDashboard" asp-action="VerifyResult" asp-route-id="@Model.TestId" class="btn btn-orange">Verify result</a>
         }
         else
         {
@@ -69,7 +73,7 @@
     case TestStage.Verified:
         if (!inDetails)
         {
-            <a asp-controller="TechnicianDashboard" asp-action="TestDetails" asp-route-id="@Model.ReqNum" class="btn btn-ghost">View</a>
+            <a asp-controller="TechnicianDashboard" asp-action="TestDetails" asp-route-id="@Model.TestId" class="btn btn-ghost">View</a>
         }
         break;
 }
