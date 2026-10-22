@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Patient.Repository;
-using LabManager.Repository;
 using Patient.Models;
 using _4th_year_set_up.Models;
 using _4th_year_set_up.Services;

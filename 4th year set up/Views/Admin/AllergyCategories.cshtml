@@ -1,4 +1,4 @@
-@using Microsoft.AspNetCore.Http
+﻿@using Microsoft.AspNetCore.Http
 @{
     ViewData["Title"] = "Allergy Categories";
     Layout = null;
@@ -791,7 +791,7 @@
                                             }
                                             else
                                             {
-                                                <form method="post" asp-controller="Admin" asp-action="RestoreAllergyCategory" style="display:inline">
+                                                <form method="post" asp-controller="AdminRestore" asp-action="RestoreAllergyCategory" style="display:inline">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="id" value="@cat.AllergyCategoryID" />
                                                     <button type="submit" class="btn-sm">Restore</button>

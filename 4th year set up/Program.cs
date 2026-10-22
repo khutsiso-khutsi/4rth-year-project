@@ -31,7 +31,7 @@ builder.Services.AddSession(options =>
 // Patient class library
 builder.Services.AddScoped<Patient.Repository.UserRepository>(provider =>
     new Patient.Repository.UserRepository(
-        builder.Configuration.GetConnectionString("DefaultConnection")!));
+        builder.Configuration.GetConnectionString("conn")!));
 
 // Admin class library
 builder.Services.AddScoped<AdminRepository>(provider =>

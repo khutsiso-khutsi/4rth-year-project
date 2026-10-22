@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Allergies";
     Layout = null;
 }
@@ -757,7 +757,7 @@
                                             }
                                             else
                                             {
-                                                <form method="post" asp-controller="Admin" asp-action="RestoreAllergy" style="display:inline">
+                                                <form method="post" asp-controller="AdminRestore" asp-action="RestoreAllergy" style="display:inline">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="id" value="@allergy.AllergyID" />
                                                     <button type="submit" class="btn-sm">Restore</button>

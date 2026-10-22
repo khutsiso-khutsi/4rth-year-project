@@ -1,4 +1,4 @@
-@using Microsoft.AspNetCore.Http
+﻿@using Microsoft.AspNetCore.Http
 @{
     ViewData["Title"] = "Condition Categories";
     Layout = null;
@@ -808,7 +808,7 @@
                                             }
                                             else
                                             {
-                                                <form method="post" asp-controller="Admin" asp-action="RestoreConditionCategory" style="display:inline">
+                                                <form method="post" asp-controller="AdminRestore" asp-action="RestoreConditionCategory" style="display:inline">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="id" value="@cat.ConditionCategoryID" />
                                                     <button type="submit" class="btn-sm">Restore</button>

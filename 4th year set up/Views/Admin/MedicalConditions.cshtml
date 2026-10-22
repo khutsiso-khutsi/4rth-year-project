@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Medical conditions";
     Layout = null;
 }
@@ -757,7 +757,7 @@
                                             }
                                             else
                                             {
-                                                <form method="post" asp-controller="Admin" asp-action="RestoreCondition" style="display:inline">
+                                                <form method="post" asp-controller="AdminRestore" asp-action="RestoreCondition" style="display:inline">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="id" value="@condition.ConditionID" />
                                                     <button type="submit" class="btn-sm">Restore</button>
