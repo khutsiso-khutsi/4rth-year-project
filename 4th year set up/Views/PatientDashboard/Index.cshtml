@@ -118,202 +118,50 @@
         body { font-family: 'DM Sans', sans-serif; background: var(--offwhite); color: var(--navy); min-height: 100vh; }
         a { color: inherit; }
 
-        /* -- TOPBAR -- */
-        .topbar {
-            background: var(--navy);
-            padding: 0 40px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 64px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
-        }
+        /* ── TOPBAR ── */
+        .topbar { background: var(--navy); padding: 0 40px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.15); }
+        .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .brand-logo { width: 34px; height: 34px; background: var(--teal); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .brand-logo svg { width: 18px; height: 18px; fill: white; }
+        .brand-name { font-family: 'DM Serif Display', serif; color: white; font-size: 1.1rem; line-height: 1.1; }
+        .brand-name span { display: block; font-family: 'DM Sans', sans-serif; font-size: 0.6rem; font-weight: 300; color: rgba(255,255,255,0.4); letter-spacing: 0.1em; text-transform: uppercase; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .user-chip { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; padding: 6px 14px 6px 8px; }
+        .user-avatar { width: 28px; height: 28px; background: var(--teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; color: white; }
+        .user-email { font-size: 0.8rem; color: rgba(255,255,255,0.75); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .logout-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 0.82rem; font-weight: 500; transition: background 0.2s; display: flex; align-items: center; gap: 6px; }
+        .logout-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+        .logout-btn svg { width: 14px; height: 14px; }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-        }
+        /* ── LAYOUT ── */
+        .page { display: flex; min-height: calc(100vh - 64px); }
+        .sidebar { width: 220px; background: white; border-right: 1px solid var(--border); padding: 24px 0; flex-shrink: 0; position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto; }
+        .nav-section { margin-bottom: 8px; }
+        .nav-label { font-size: 0.65rem; font-weight: 600; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; padding: 0 20px; margin-bottom: 4px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: background 0.15s, color 0.15s; border-left: 3px solid transparent; white-space: nowrap; }
+        .nav-item:hover { background: var(--offwhite); color: var(--navy); }
+        .nav-item.active { background: var(--teal-light); color: var(--teal); border-left-color: var(--teal); }
+        .nav-item:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
+        .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .main { flex: 1; min-width: 0; padding: clamp(20px, 3vw, 36px); }
+        .wrap { max-width: 1180px; margin: 0 auto; }
 
-        .brand-logo {
-            width: 34px;
-            height: 34px;
-            background: var(--teal);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-            .brand-logo svg {
-                width: 18px;
-                height: 18px;
-                fill: white;
-            }
-
-        .brand-name {
-            font-family: 'DM Serif Display', serif;
-            color: white;
-            font-size: 1.1rem;
-            line-height: 1.1;
-        }
-
-            .brand-name span {
-                display: block;
-                font-family: 'DM Sans', sans-serif;
-                font-size: 0.6rem;
-                font-weight: 300;
-                color: rgba(255,255,255,0.4);
-                letter-spacing: 0.1em;
-                text-transform: uppercase;
-            }
-
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .user-chip {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 100px;
-            padding: 6px 14px 6px 8px;
-        }
-
-        .user-avatar {
-            width: 28px;
-            height: 28px;
-            background: var(--teal);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: white;
-        }
-
-        .user-email {
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.75);
-            max-width: 160px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .logout-btn {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            color: rgba(255,255,255,0.8);
-            padding: 8px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 0.82rem;
-            font-weight: 500;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-            .logout-btn:hover {
-                background: rgba(255,255,255,0.15);
-                color: white;
-            }
-
-            .logout-btn svg {
-                width: 14px;
-                height: 14px;
-            }
-
-        /* -- LAYOUT -- */
-        .page {
-            display: flex;
-            min-height: calc(100vh - 64px);
-        }
-
-        /* -- SIDEBAR -- */
-        .sidebar {
-            width: 220px;
-            background: white;
-            border-right: 1px solid var(--border);
-            padding: 24px 0;
-            flex-shrink: 0;
-            position: sticky;
-            top: 64px;
-            height: calc(100vh - 64px);
-            overflow-y: auto;
-        }
-
-        .nav-section {
-            margin-bottom: 8px;
-        }
-
-        .nav-label {
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: var(--muted);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            padding: 0 20px;
-            margin-bottom: 4px;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 20px;
-            color: var(--muted);
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.15s;
-            border-left: 3px solid transparent;
-        }
-
-            .nav-item:hover {
-                background: var(--offwhite);
-                color: var(--navy);
-            }
-
-            .nav-item.active {
-                background: var(--teal-light);
-                color: var(--teal);
-                border-left-color: var(--teal);
-            }
-
-            .nav-item svg {
-                width: 16px;
-                height: 16px;
-                flex-shrink: 0;
-            }
-
-        /* -- MAIN -- */
-        .main {
-            flex: 1;
-            padding: clamp(24px, 3vw, 40px);
-            overflow-y: auto;
-        }
-
-        /* -- HERO -- */
-        .hero {
-            background: var(--navy);
-            border-radius: 20px;
-            padding: 32px 36px;
-            margin-bottom: 32px;
-            position: relative;
-            overflow: hidden;
-        }
+        /* ── HERO ── */
+        .hero { background: var(--navy); border-radius: 20px; padding: 28px 32px; margin-bottom: 20px; position: relative; overflow: hidden; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+        .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 55% 90% at 92% 40%, rgba(13,148,136,0.28) 0%, transparent 62%); }
+        .hero::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px); background-size: 40px 40px; }
+        .hero > * { position: relative; z-index: 2; }
+        .hero-date { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #5eead4; margin-bottom: 10px; }
+        .hero h1 { font-family: 'DM Serif Display', serif; font-size: clamp(1.5rem, 2.6vw, 2.15rem); color: white; line-height: 1.15; margin-bottom: 8px; }
+        .hero h1 span { color: #5eead4; font-style: italic; }
+        .hero p { color: rgba(255,255,255,0.65); font-size: 0.9rem; max-width: 560px; line-height: 1.55; }
+        .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.84rem; font-weight: 600; padding: 10px 16px; border-radius: 10px; text-decoration: none; border: 1px solid transparent; transition: background 0.15s, transform 0.15s; cursor: pointer; }
+        .btn svg { width: 15px; height: 15px; }
+        .btn-primary { background: var(--teal); color: white; }
+        .btn-primary:hover { background: var(--teal-dark); transform: translateY(-1px); }
+        .btn-ghost { background: rgba(255,255,255,0.08); color: white; border-color: rgba(255,255,255,0.16); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.15); }
 
         /* ── ATTENTION ── */
         .attention { background: white; border: 1px solid #fecaca; border-left: 4px solid var(--red); border-radius: 14px; padding: 18px 20px; margin-bottom: 20px; }
@@ -341,262 +189,16 @@
         .stat .v { font-family: 'DM Serif Display', serif; font-size: 1.75rem; line-height: 1.1; margin-top: 6px; color: var(--navy); }
         .stat .v.red { color: var(--red); }
 
-        .hero-content {
-            position: relative;
-            z-index: 2;
-        }
-
-        .hero-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(13,148,136,0.15);
-            border: 1px solid rgba(13,148,136,0.3);
-            color: #5eead4;
-            font-size: 0.68rem;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            padding: 4px 10px;
-            border-radius: 100px;
-            margin-bottom: 14px;
-        }
-
-            .hero-tag::before {
-                content: '';
-                width: 5px;
-                height: 5px;
-                background: #5eead4;
-                border-radius: 50%;
-            }
-
-        .hero h1 {
-            font-family: 'DM Serif Display', serif;
-            font-size: clamp(1.5rem, 2.5vw, 2.2rem);
-            color: white;
-            margin-bottom: 8px;
-            line-height: 1.2;
-        }
-
-            .hero h1 span {
-                color: #5eead4;
-                font-style: italic;
-            }
-
-        .hero p {
-            color: rgba(255,255,255,0.5);
-            font-size: 0.88rem;
-            font-weight: 300;
-        }
-
-        /* -- STATS ROW -- */
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
-        .stat-card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
-        }
-
-        .stat-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 9px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 12px;
-        }
-
-            .stat-icon svg {
-                width: 16px;
-                height: 16px;
-            }
-
-        .stat-value {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.6rem;
-            color: var(--navy);
-            line-height: 1;
-            margin-bottom: 4px;
-        }
-
-        .stat-label {
-            font-size: 0.78rem;
-            color: var(--muted);
-            font-weight: 400;
-        }
-
-        /* -- SECTION HEADER -- */
-        .section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .section-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.2rem;
-            color: var(--navy);
-        }
-
-        .section-link {
-            font-size: 0.8rem;
-            color: var(--teal);
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-            .section-link:hover {
-                text-decoration: underline;
-            }
-
-        /* -- CARDS GRID -- */
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
-        .card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
-            transition: box-shadow 0.2s, transform 0.2s;
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
-
-            .card:hover {
-                box-shadow: 0 8px 24px rgba(11,31,58,0.1);
-                transform: translateY(-2px);
-            }
-
-        .card-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 16px;
-        }
-
-            .card-icon svg {
-                width: 20px;
-                height: 20px;
-            }
-
-        .card h3 {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--navy);
-            margin-bottom: 6px;
-        }
-
-        .card p {
-            font-size: 0.8rem;
-            color: var(--muted);
-            line-height: 1.6;
-        }
-
-        .card-arrow {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            margin-top: 16px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--teal);
-        }
-
-            .card-arrow svg {
-                width: 13px;
-                height: 13px;
-            }
-
-        /* -- RECENT ACTIVITY -- */
-        .activity-list {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(11,31,58,0.04);
-        }
-
-        .activity-item {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-            transition: background 0.15s;
-        }
-
-            .activity-item:last-child {
-                border-bottom: none;
-            }
-
-            .activity-item:hover {
-                background: var(--offwhite);
-            }
-
-        .activity-dot {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-            .activity-dot svg {
-                width: 15px;
-                height: 15px;
-            }
-
-        .activity-info {
-            flex: 1;
-        }
-
-        .activity-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--navy);
-            margin-bottom: 2px;
-        }
-
-        .activity-sub {
-            font-size: 0.75rem;
-            color: var(--muted);
-        }
-
-        .activity-time {
-            font-size: 0.73rem;
-            color: var(--muted);
-            white-space: nowrap;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 100px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
+        /* ── GRID & PANELS ── */
+        .grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+        .col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+        .panel { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; box-shadow: 0 2px 8px rgba(11,31,58,0.04); min-width: 0; }
+        .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+        .panel-head h2 { font-family: 'DM Serif Display', serif; font-size: 1.12rem; color: var(--navy); }
+        .panel-head .sub { font-size: 0.78rem; color: var(--muted); }
+        .link { font-size: 0.8rem; font-weight: 600; color: var(--teal); text-decoration: none; white-space: nowrap; }
+        .link:hover { text-decoration: underline; }
+        .empty { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 18px 8px; line-height: 1.55; }
 
         /* latest results rows */
         .res-row { display: grid; grid-template-columns: minmax(0, 1.3fr) auto minmax(90px, 1fr); align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid var(--border); }
@@ -654,27 +256,18 @@
         .doc-n { font-size: 0.84rem; font-weight: 600; }
         .doc-s { font-size: 0.73rem; color: var(--muted); }
 
-        /* -- ALERT BANNER -- */
-        .alert-banner {
-            background: #fef3c7;
-            border: 1px solid #fde68a;
-            border-radius: 12px;
-            padding: 14px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
-            font-size: 0.85rem;
-            color: #92400e;
-            font-weight: 500;
-        }
+        /* entrance */
+        .reveal { opacity: 0; transform: translateY(8px); transition: opacity 0.35s ease, transform 0.35s ease; }
+        .reveal.in { opacity: 1; transform: none; }
+        @@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
 
         /* ── MODAL / TOAST ── */
         #logout-modal { display: none; position: fixed; inset: 0; z-index: 999; background: rgba(11,31,58,0.45); align-items: center; justify-content: center; }
         #logout-modal.open { display: flex; }
         #toast { position: fixed; bottom: 24px; right: 24px; z-index: 1000; background: var(--navy); color: white; padding: 12px 18px; border-radius: 12px; font-size: 0.82rem; font-weight: 500; display: flex; align-items: center; gap: 10px; opacity: 0; transform: translateY(8px); transition: opacity 0.25s, transform 0.25s; pointer-events: none; max-width: 320px; }
 
-        /* -- RESPONSIVE -- */
+        /* ── RESPONSIVE ── */
+        @@media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
         @@media (max-width: 768px) {
             .topbar { padding: 0 16px; }
             .brand-name span { display: none; }
@@ -747,7 +340,7 @@
             </div>
             <div class="nav-section">
                 <div class="nav-label">Support</div>
-                <a asp-controller="Home" asp-action="Privacy" class="nav-item">
+                <a href="#" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
                     Help
                 </a>
@@ -973,63 +566,73 @@
                             }
                         </section>
                     </div>
-                </a>
-                <a asp-controller="PatientDashboard" asp-action="Consent" class="card">
-                    <div class="card-icon" style="background:#f3e8ff">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                    </div>
-                    <h3>Consent Management</h3>
-                    <p>Control which doctors can access your test results and records.</p>
-                    <div class="card-arrow">
-                        Manage Consent
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6" /></svg>
-                    </div>
-                </a>
-                <a asp-controller="PatientDashboard" asp-action="Profile" class="card">
-                    <div class="card-icon" style="background:rgba(13,148,136,0.1)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                    </div>
-                    <h3>My Profile</h3>
-                    <p>Update your personal details, contact info and change your password.</p>
-                    <div class="card-arrow">
-                        View Profile
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6" /></svg>
-                    </div>
-                </a>
-            </div>
 
-            <!-- RECENT ACTIVITY -->
-            <div class="section-header">
-                <h2 class="section-title">Recent Activity</h2>
-                <a asp-controller="PatientDashboard" asp-action="MyResults" class="section-link">View all results ?</a>
-            </div>
-            <div class="activity-list">
-                @{
-                    var requests = ViewData["Requests"] as List<Patient.Models.TestRequest>;
-                }
-                @if (requests != null && requests.Any())
-                {
-                    @foreach (var req in requests.Take(5))
-                    {
-                        var isCompleted = req.RequestStatus == "Completed";
-                        var isPending = req.RequestStatus == "Pending";
-                        var dotBg = isCompleted ? "#dcfce7" : isPending ? "#fef3c7" : "#dbeafe";
-                        var dotStroke = isCompleted ? "#16a34a" : isPending ? "#d97706" : "#1d4ed8";
-                        var badgeClass = isCompleted ? "badge-green" : isPending ? "badge-amber" : "badge-blue";
-                        <div class="activity-item">
-                            <div class="activity-dot" style="background:@dotBg">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="@dotStroke" stroke-width="2" stroke-linecap="round">
-                                    @if (isCompleted)
-                                    {
-                                        <polyline points="20 6 9 17 4 12" />
-                                    }
-                                    else
-                                    {
-                                        <circle cx="12" cy="12" r="10" />
-                                        <line x1="12" y1="8" x2="12" y2="12" />
-                                        <line x1="12" y1="16" x2="12.01" y2="16" />
-                                    }
-                                </svg>
+                    <div class="col">
+
+                        <!-- REQUEST TRACKER -->
+                        <section class="panel reveal" aria-labelledby="trackTitle">
+                            <div class="panel-head">
+                                <div>
+                                    <h2 id="trackTitle">Request tracker</h2>
+                                    <div class="sub">Where your current tests are</div>
+                                </div>
+                            </div>
+                            @if (!open.Any())
+                            {
+                                <div class="empty">Nothing in progress right now.</div>
+                            }
+                            else
+                            {
+                                @foreach (var r in open.Take(4))
+                                {
+                                    var idx = StepIndex(r.RequestStatus);
+                                    var urgCls = r.Urgency?.ToLower() == "urgent" ? "urgent" : r.Urgency?.ToLower() == "stat" ? "stat" : "";
+                                    <div class="trk">
+                                        <div class="trk-top">
+                                            <div>
+                                                <div class="trk-num">@r.RequestNumber</div>
+                                                <div class="trk-meta">@r.RequestDate.ToString("d MMM yyyy") · Dr @r.DoctorName · @r.Items.Count test@(r.Items.Count == 1 ? "" : "s")</div>
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(r.Urgency))
+                                            {
+                                                <span class="urg @urgCls">@r.Urgency</span>
+                                            }
+                                        </div>
+                                        <div class="steps" role="img" aria-label="Status: @r.RequestStatus, step @(idx + 1) of @steps.Length">
+                                            @for (var s = 0; s < steps.Length; s++)
+                                            {
+                                                <div class="step @(s < idx ? "done" : s == idx ? "now" : "")"></div>
+                                            }
+                                        </div>
+                                        <div class="step-lbl"><b>@r.RequestStatus</b><span>@(idx >= 0 && idx < steps.Length - 1 ? "Next: " + steps[idx + 1] : "")</span></div>
+                                    </div>
+                                }
+                                @if (open.Count > 4)
+                                {
+                                    <a class="link" asp-controller="PatientDashboard" asp-action="MyResults">+@(open.Count - 4) more →</a>
+                                }
+                            }
+                        </section>
+
+                        <!-- HEALTH SNAPSHOT -->
+                        <section class="panel reveal" aria-labelledby="snapTitle">
+                            <div class="panel-head">
+                                <h2 id="snapTitle">Health snapshot</h2>
+                                <a class="link" asp-controller="PatientDashboard" asp-action="MedicalHistory">Edit →</a>
+                            </div>
+                            <div class="snap-group">
+                                <div class="snap-k">Conditions</div>
+                                <div class="chips">
+                                    @if (history.Conditions.Any()) { foreach (var c in history.Conditions) { <span class="chip">@c.ConditionName</span> } }
+                                    else { <span class="chip none">None recorded</span> }
+                                </div>
+                            </div>
+                            <div class="snap-group">
+                                <div class="snap-k">Allergies</div>
+                                <div class="chips">
+                                    @if (history.Allergies.Any()) { foreach (var a in history.Allergies) { <span class="chip allergy">@a.AllergyName@(string.IsNullOrEmpty(a.Severity) ? "" : " · " + a.Severity)</span> } }
+                                    else { <span class="chip none">None recorded</span> }
+                                </div>
                             </div>
                             <div class="snap-group">
                                 <div class="snap-k">Medication</div>
@@ -1071,10 +674,9 @@
         </main>
     </div>
 
-    <!-- -- LOGOUT CONFIRMATION MODAL -- -->
-    <div id="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title"
-         style="display:none;position:fixed;inset:0;z-index:999;background:rgba(11,31,58,0.45);align-items:center;justify-content:center;">
-        <div style="background:white;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(11,31,58,0.2);animation:modalIn 0.18s ease;">
+    <!-- LOGOUT MODAL -->
+    <div id="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
+        <div style="background:white;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(11,31,58,0.2);">
             <div style="width:52px;height:52px;background:#fee2e2;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
             </div>
@@ -1082,16 +684,9 @@
             <p style="font-size:0.85rem;color:var(--muted);margin-bottom:24px;line-height:1.6;">You'll be returned to the login screen.</p>
             <div style="display:flex;gap:10px;">
                 <button id="logout-cancel" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:white;color:var(--navy);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancel</button>
-                <a id="logout-confirm" asp-controller="Home" asp-action="Logout" style="flex:1;padding:10px;border:none;border-radius:10px;background:#dc2626;color:white;font-size:0.85rem;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;font-family:'DM Sans',sans-serif;">Sign Out</a>
+                <a id="logout-confirm" href="#" style="flex:1;padding:10px;border-radius:10px;background:#dc2626;color:white;font-size:0.85rem;font-weight:600;text-align:center;text-decoration:none;font-family:'DM Sans',sans-serif;">Sign Out</a>
             </div>
         </div>
-    </div>
-
-    <!-- -- TOAST NOTIFICATION -- -->
-    <div id="toast" role="status" aria-live="polite"
-         style="position:fixed;bottom:24px;right:24px;z-index:1000;background:var(--navy);color:white;padding:12px 18px;border-radius:12px;font-size:0.82rem;font-weight:500;display:flex;align-items:center;gap:10px;opacity:0;transform:translateY(8px);transition:opacity 0.25s,transform 0.25s;pointer-events:none;max-width:320px;">
-        <span id="toast-icon" style="font-size:1rem;"></span>
-        <span id="toast-msg"></span>
     </div>
 
     <!-- TOAST -->
@@ -1101,231 +696,33 @@
         (function () {
             'use strict';
 
-            /* --- 1. STAGGERED PAGE-LOAD ANIMATIONS --- */
-            const sections = document.querySelectorAll('.hero, .stats, .cards, .activity-list');
-            sections.forEach(function(el, i) {
-                el.style.transitionDelay = (i * 80) + 'ms';
-                // Use rAF so CSS transition fires after first paint
-                requestAnimationFrame(function() {
-                    requestAnimationFrame(function() {
-                        el.classList.add('visible');
-                    });
-                });
+            // Staggered entrance
+            document.querySelectorAll('.reveal').forEach(function (el, i) {
+                el.style.transitionDelay = Math.min(i * 60, 400) + 'ms';
+                requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add('in'); }); });
             });
 
-            /* --- 2. ANIMATED STAT COUNTERS --- */
-            function animateCounter(el, target, duration) {
-                var start = null;
-                var from = 0;
-                function step(ts) {
-                    if (!start) start = ts;
-                    var progress = Math.min((ts - start) / duration, 1);
-                    // Ease-out cubic
-                    var eased = 1 - Math.pow(1 - progress, 3);
-                    el.textContent = Math.round(from + (target - from) * eased);
-                    if (progress < 1) requestAnimationFrame(step);
-                    else {
-                        el.textContent = target;
-                        el.classList.add('animated');
-                    }
-                }
-                requestAnimationFrame(step);
+            // Logout confirmation
+            var btn = document.getElementById('logout-btn');
+            var modal = document.getElementById('logout-modal');
+            var cancel = document.getElementById('logout-cancel');
+            var confirmBtn = document.getElementById('logout-confirm');
+            if (btn && modal) {
+                confirmBtn.href = btn.href;
+                btn.addEventListener('click', function (e) { e.preventDefault(); modal.classList.add('open'); cancel.focus(); });
+                function close() { modal.classList.remove('open'); btn.focus(); }
+                cancel.addEventListener('click', close);
+                modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+                document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('open')) close(); });
             }
 
-            // Trigger counters when stats section enters viewport
-            var statsSection = document.querySelector('.stats');
-            if (statsSection && 'IntersectionObserver' in window) {
-                var counterDone = false;
-                var io = new IntersectionObserver(function(entries) {
-                    if (entries[0].isIntersecting && !counterDone) {
-                        counterDone = true;
-                        document.querySelectorAll('.stat-value[data-target]').forEach(function(el) {
-                            var target = parseInt(el.getAttribute('data-target'), 10) || 0;
-                            animateCounter(el, target, 900);
-                        });
-                    }
-                }, { threshold: 0.3 });
-                io.observe(statsSection);
-            } else {
-                // Fallback: set values immediately
-                document.querySelectorAll('.stat-value[data-target]').forEach(function(el) {
-                    el.textContent = el.getAttribute('data-target');
-                });
-            }
-
-            /* --- 3. LIVE CLOCK IN HERO --- */
-            var heroDt = document.getElementById('hero-datetime');
-            if (heroDt) {
-                var days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-                var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-                function padZ(n) { return n < 10 ? '0' + n : String(n); }
-                function formatHero(d) {
-                    var h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
-                    var ampm = h >= 12 ? 'PM' : 'AM';
-                    var h12 = h % 12 || 12;
-                    var dd = String(d.getDate()).padStart(2, '0');
-                    return days[d.getDay()] + ', ' + dd + ' ' + months[d.getMonth()] + ' ' + d.getFullYear()
-                        + ' \u2014 ' + h12 + ':' + padZ(m) + ':' + padZ(s) + ' ' + ampm;
-                }
-                function tickHero() { heroDt.textContent = formatHero(new Date()); }
-                tickHero();
-                setInterval(tickHero, 1000);
-            }
-
-            /* --- 4. RELATIVE TIMESTAMPS WITH TOOLTIPS --- */
-            document.querySelectorAll('.activity-time[data-date]').forEach(function(el) {
-                var raw = el.getAttribute('data-date');
-                if (!raw) return;
-                var d = new Date(raw);
-                if (isNaN(d)) return;
-                // Absolute date as tooltip
-                el.setAttribute('title', d.toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' }));
-                // Relative label
-                var diff = Date.now() - d.getTime();
-                var mins  = Math.floor(diff / 60000);
-                var hours = Math.floor(diff / 3600000);
-                var days  = Math.floor(diff / 86400000);
-                var weeks = Math.floor(days / 7);
-                var label;
-                if (mins < 1)       label = 'Just now';
-                else if (mins < 60) label = mins + ' min' + (mins !== 1 ? 's' : '') + ' ago';
-                else if (hours < 24) label = hours + ' hour' + (hours !== 1 ? 's' : '') + ' ago';
-                else if (days < 7)  label = days + ' day' + (days !== 1 ? 's' : '') + ' ago';
-                else if (weeks < 5) label = weeks + ' week' + (weeks !== 1 ? 's' : '') + ' ago';
-                else                label = d.toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
-                el.textContent = label;
-            });
-
-            /* --- 5. LOGOUT CONFIRMATION MODAL --- */
-            var logoutBtn    = document.getElementById('logout-btn');
-            var logoutModal  = document.getElementById('logout-modal');
-            var logoutCancel = document.getElementById('logout-cancel');
-            var logoutConfirm = document.getElementById('logout-confirm');
-
-            if (logoutBtn && logoutModal) {
-                // Copy the real href to confirm button
-                logoutConfirm.href = logoutBtn.href;
-
-                logoutBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    logoutModal.classList.add('open');
-                    logoutModal.style.display = 'flex';
-                    logoutCancel.focus();
-                });
-
-                function closeModal() {
-                    logoutModal.classList.remove('open');
-                    logoutModal.style.display = 'none';
-                    logoutBtn.focus();
-                }
-
-                logoutCancel.addEventListener('click', closeModal);
-
-                // Close on backdrop click
-                logoutModal.addEventListener('click', function(e) {
-                    if (e.target === logoutModal) closeModal();
-                });
-
-                // Close on Escape
-                document.addEventListener('keydown', function(e) {
-                    if (e.key === 'Escape' && logoutModal.style.display === 'flex') closeModal();
-                });
-            }
-
-            /* --- 6. TOAST NOTIFICATION HELPER --- */
-            var toast    = document.getElementById('toast');
-            var toastMsg = document.getElementById('toast-msg');
-            var toastIco = document.getElementById('toast-icon');
-            var toastTimer;
-
-            function showToast(msg, type) {
-                type = type || 'info';
-                var icons = { success: '?', warning: '?', error: '?', info: '?' };
-                toastMsg.textContent = msg;
-                toastIco.textContent = icons[type] || icons.info;
-                toast.style.opacity = '1';
-                toast.style.transform = 'translateY(0)';
-                clearTimeout(toastTimer);
-                toastTimer = setTimeout(function() {
-                    toast.style.opacity = '0';
-                    toast.style.transform = 'translateY(8px)';
-                }, 3500);
-            }
-
-            // Expose globally so other scripts can use it
-            window.showToast = showToast;
-
-            // Show a welcome toast on first visit in this session
-            if (!sessionStorage.getItem('dashboard_welcomed')) {
-                sessionStorage.setItem('dashboard_welcomed', '1');
-                setTimeout(function() { showToast('Dashboard loaded successfully', 'success'); }, 800);
-            }
-
-            /* --- 7. ABNORMAL RESULTS ALERT AUTO-DISMISS --- */
-            var alertBanner = document.getElementById('alert-banner');
-            if (alertBanner) {
-                // Add a dismiss button dynamically
-                var dismissBtn = document.createElement('button');
-                dismissBtn.textContent = '×';
-                dismissBtn.setAttribute('aria-label', 'Dismiss alert');
-                dismissBtn.style.cssText = 'margin-left:auto;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#92400e;line-height:1;padding:0 0 0 8px;flex-shrink:0;';
-                alertBanner.appendChild(dismissBtn);
-                dismissBtn.addEventListener('click', function() {
-                    alertBanner.style.transition = 'opacity 0.3s, max-height 0.3s, padding 0.3s, margin 0.3s';
-                    alertBanner.style.maxHeight = alertBanner.offsetHeight + 'px';
-                    requestAnimationFrame(function() {
-                        alertBanner.style.opacity = '0';
-                        alertBanner.style.maxHeight = '0';
-                        alertBanner.style.padding = '0 20px';
-                        alertBanner.style.marginBottom = '0';
-                    });
-                    setTimeout(function() { alertBanner.remove(); }, 350);
-                });
-            }
-
-            /* --- 8. ACTIVITY ITEM CLICK ? NAVIGATE --- */
-            document.querySelectorAll('.activity-item').forEach(function(item) {
-                var titleEl = item.querySelector('.activity-title');
-                if (!titleEl) return;
-                item.style.cursor = 'pointer';
-                item.addEventListener('click', function() {
-                    // Navigate to MyResults — the server will handle filtering
-                    window.location.href = item.getAttribute('data-href') || '/PatientDashboard/MyResults';
-                });
-                // Keyboard accessibility
-                item.setAttribute('tabindex', '0');
-                item.setAttribute('role', 'button');
-                item.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        item.click();
-                    }
-                });
-            });
-
-            /* --- 9. STAT CARD HOVER TOOLTIP (accessible title) --- */
-            var statLabels = {
-                'Test Results':        'Total haematology test results on file',
-                'Abnormal Results':    'Results outside the normal reference range',
-                'Active Conditions':   'Current diagnosed medical conditions',
-                'Active Medications':  'Medications currently prescribed',
-                'Assigned Doctor':     'Doctors with access to your records',
-                'Active Consents':     'Active data-sharing consent agreements'
-            };
-            document.querySelectorAll('.stat-card').forEach(function(card) {
-                var label = card.querySelector('.stat-label');
-                if (label && statLabels[label.textContent.trim()]) {
-                    card.setAttribute('title', statLabels[label.textContent.trim()]);
-                }
-            });
-
-            /* --- 10. KEYBOARD SHORTCUT HINTS --- */
-            // Alt+1-4 = quick nav to the four main sections
-            var shortcuts = {
-                '1': '/PatientDashboard/MyResults',
-                '2': '/PatientDashboard/MedicalHistory',
-                '3': '/PatientDashboard/Consent',
-                '4': '/PatientDashboard/Profile'
+            // Toast (e.g. after changing the temporary password)
+            var toast = document.getElementById('toast');
+            window.showToast = function (msg, icon) {
+                document.getElementById('toast-msg').textContent = msg;
+                document.getElementById('toast-icon').textContent = icon || '✓';
+                toast.style.opacity = '1'; toast.style.transform = 'translateY(0)';
+                setTimeout(function () { toast.style.opacity = '0'; toast.style.transform = 'translateY(8px)'; }, 3500);
             };
             @if (TempData["Success"] != null)
             {
