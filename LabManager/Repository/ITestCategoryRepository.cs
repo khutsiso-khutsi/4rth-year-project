@@ -40,6 +40,16 @@ namespace LabManager.Repository
         Task<IEnumerable<Consumable>> GetConsumables();
 
 
+        Task<int> UpdateCategoryAsync(int categoryId, string categoryName, string description);
+
+        Task<int> DeleteCategoryAsync(int categoryId);
+
+        Task<int> UpdateSampleTypeAsync(int sampleTypeId, string sampleName);
+
+        Task<int> DeleteSampleTypeAsync(int sampleTypeId);
+
+
+
 
     }
 

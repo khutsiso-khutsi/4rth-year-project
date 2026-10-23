@@ -30,14 +30,14 @@ namespace LabManager.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            
 
-                IEnumerable<TestCategory> category = await _repository.GetCategory();
-                ViewBag.Category = category.Select(c => new SelectListItem { Value = c.CategoryID.ToString(), Text = c.CategoryName });
 
-                IEnumerable<TestType> sample = await _repository.GetSampleType();
-                // expose raw sample types for views that expect them
-                ViewBag.SampleTypes = sample;
+            IEnumerable<TestCategory> category = await _repository.GetCategory();
+            ViewBag.Category = category.Select(c => new SelectListItem { Value = c.CategoryID.ToString(), Text = c.CategoryName });
+
+            IEnumerable<TestType> sample = await _repository.GetSampleType();
+            // expose raw sample types for views that expect them
+            ViewBag.SampleTypes = sample;
             // build a SelectListItem list for dropdowns; ensure Text falls back to the id when name is missing
             ViewBag.SampleType = sample
                 .Select(c => new SelectListItem { Value = c.SampleTypeId.ToString(), Text = c.SampleName ?? c.SampleTypeId.ToString() })
@@ -49,28 +49,28 @@ namespace LabManager.Controllers
 
             var tests = await _repository.GetAllTestTypes();
 
-                // Provide a simple map of TestTypeId -> assigned technician name (first assigned)
-                try
-                {
-                    var technicians = await _staffRepository.GetTechnician();
-                    var techMap = technicians
-                        .Where(t => t.TestTypeID > 0)
-                        .GroupBy(t => t.TestTypeID)
-                        .ToDictionary(g => g.Key, g => g.First().FullName);
+            // Provide a simple map of TestTypeId -> assigned technician name (first assigned)
+            try
+            {
+                var technicians = await _staffRepository.GetTechnician();
+                var techMap = technicians
+                    .Where(t => t.TestTypeID > 0)
+                    .GroupBy(t => t.TestTypeID)
+                    .ToDictionary(g => g.Key, g => g.First().FullName);
 
-                    ViewBag.TechnicianMap = techMap;
-                }
-                catch
-                {
-                    ViewBag.TechnicianMap = new Dictionary<int, string>();
-                }
+                ViewBag.TechnicianMap = techMap;
+            }
+            catch
+            {
+                ViewBag.TechnicianMap = new Dictionary<int, string>();
+            }
 
-                ViewBag.Email = HttpContext.Session.GetString("Email");
+            ViewBag.Email = HttpContext.Session.GetString("Email");
 
             ViewBag.DeletedTests = await _repository.GetDeletedTestTypesAsync();
             return View(tests);
-            
-            
+
+
         }
 
         // =========================================================
@@ -277,7 +277,7 @@ namespace LabManager.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-               
+
 
                 if (test.NormalRangeMin.HasValue &&
                     test.NormalRangeMax.HasValue &&
@@ -384,6 +384,87 @@ namespace LabManager.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateCategory(int categoryId, string categoryName, string? description)
+        {
+            if (categoryId <= 0 || string.IsNullOrWhiteSpace(categoryName))
+            {
+                TempData["Error"] = "Category name is required.";
+                return RedirectToAction("Index");
+            }
+
+            int result = await _repository.UpdateCategoryAsync(categoryId, categoryName.Trim(), description);
+
+            TempData[result == 0 ? "Success" : "Error"] = result switch
+            {
+                0 => "Category updated.",
+                1 => "A category with that name already exists.",
+                2 => "That category no longer exists.",
+                _ => "Unable to update the category. Please try again."
+            };
+
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteCategory(int categoryId)
+        {
+            int result = await _repository.DeleteCategoryAsync(categoryId);
+
+            TempData[result == 0 ? "Success" : "Error"] = result switch
+            {
+                0 => "Category deleted.",
+                2 => "That category no longer exists.",
+                3 => "This category still has tests assigned. Reassign or remove them first.",
+                _ => "Unable to delete the category. Please try again."
+            };
+
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateSampleType(int sampleTypeId, string sampleName)
+        {
+            if (sampleTypeId <= 0 || string.IsNullOrWhiteSpace(sampleName))
+            {
+                TempData["Error"] = "Sample type name is required.";
+                return RedirectToAction("Index");
+            }
+
+            int result = await _repository.UpdateSampleTypeAsync(sampleTypeId, sampleName.Trim());
+
+            TempData[result == 0 ? "Success" : "Error"] = result switch
+            {
+                0 => "Sample type updated.",
+                1 => "A sample type with that name already exists.",
+                2 => "That sample type no longer exists.",
+                _ => "Unable to update the sample type. Please try again."
+            };
+
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteSampleType(int sampleTypeId)
+        {
+            int result = await _repository.DeleteSampleTypeAsync(sampleTypeId);
+
+            TempData[result == 0 ? "Success" : "Error"] = result switch
+            {
+                0 => "Sample type deleted.",
+                2 => "That sample type no longer exists.",
+                3 => "This sample type is still used by tests. Reassign or remove them first.",
+                _ => "Unable to delete the sample type. Please try again."
+            };
+
+            return RedirectToAction("Index");
         }
     }
 }
