@@ -7,6 +7,9 @@
     Layout = null;
     ViewData["Title"] = "User Management";
 
+    // Number of rows shown per page in each table (doctors and technicians)
+    const int RowsPerPage = 5;
+
     // Test types for the technician checklist (controller sets ViewBag.TestType as a list of SelectListItem)
     var testTypeOptions = (ViewBag.TestType as IEnumerable<SelectListItem> ?? Enumerable.Empty<SelectListItem>()).ToList();
     var testNameById = testTypeOptions
@@ -27,6 +30,8 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        [hidden] { display: none !important; }
 
         :root {
             --navy: #0b1f3a;
@@ -336,6 +341,54 @@
 
         .empty { text-align: center; padding: 35px; color: var(--muted); font-size: 0.82rem; }
 
+        /* ── PAGINATION (5 rows per table) ── */
+        .pagination-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 12px 18px;
+            border-top: 1px solid var(--border);
+            background: white;
+        }
+
+        .page-info { font-size: 0.74rem; color: var(--muted); }
+        .page-info strong { color: var(--navy); }
+
+        .pager { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+
+        .pg-btn {
+            min-width: 30px;
+            height: 30px;
+            padding: 0 9px;
+            border: 1px solid var(--border);
+            background: var(--white);
+            color: var(--navy);
+            border-radius: 8px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s ease;
+        }
+
+        .pg-btn:hover:not(:disabled):not(.current) {
+            border-color: var(--teal);
+            color: var(--teal);
+            background: var(--teal-light);
+        }
+
+        .pg-btn.current {
+            background: var(--teal);
+            border-color: var(--teal);
+            color: var(--white);
+            cursor: default;
+        }
+
+        .pg-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+        .pg-gap { color: var(--muted); padding: 0 2px; font-size: .8rem; }
+
         /* ── ALERTS ── */
         .alert {
             padding: 13px 16px;
@@ -489,6 +542,7 @@
             .sidebar { display: none; }
             .main { padding: 20px 16px; }
             .page-header { flex-direction: column; align-items: flex-start; }
+            .pagination-bar { justify-content: center; }
         }
     </style>
 </head>
@@ -569,7 +623,7 @@
                     Orders
                 </a>
 
-                <a asp-controller="ManagerDashboard" asp-action="TestsByCategory" class="nav-item">
+                <a asp-controller="TestsByCategory" asp-action="Index" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                         <polyline points="14 2 14 8 20 8" />
@@ -583,7 +637,7 @@
             <div class="nav-section">
                 <div class="nav-label">System</div>
 
-                <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
+                <a asp-controller="User" asp-action="Profile" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
@@ -591,12 +645,7 @@
                     Profile
                 </a>
 
-                <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    </svg>
-                    Audit Log
-                </a>
+                
             </div>
         </aside>
 
@@ -639,7 +688,7 @@
                     @if (Model.Doctors.Any())
                     {
                         <div class="card-scroll">
-                            <table>
+                            <table id="doctor-table" data-per-page="@RowsPerPage">
                                 <thead>
                                     <tr>
                                         <th>Name</th>
@@ -652,7 +701,7 @@
                                 <tbody>
                                     @foreach (var d in Model.Doctors)
                                     {
-                                        <tr class="row-clickable"
+                                        <tr class="row-clickable data-row"
                                             data-id="@d.Id"
                                             data-fullname="@d.FullName"
                                             data-firstname="@d.FirstName"
@@ -687,6 +736,11 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <div class="pagination-bar" id="doctor-pagination" hidden>
+                            <div class="page-info" id="doctor-info"></div>
+                            <div class="pager" id="doctor-pager"></div>
+                        </div>
                     }
                     else
                     {
@@ -712,7 +766,7 @@
                     @if (Model.Technicians.Any())
                     {
                         <div class="card-scroll">
-                            <table>
+                            <table id="technician-table" data-per-page="@RowsPerPage">
                                 <thead>
                                     <tr>
                                         <th>Name</th>
@@ -726,25 +780,24 @@
                                     @foreach (var t in Model.Technicians)
                                     {
                                         // Assigned test type ids: join table first, legacy single TestTypeID as fallback
-                                            var assignedIds = new List<int>();
-                                            if (techTestMap.TryGetValue(t.Id, out var mappedIds) && mappedIds != null)
-                                            {
-                                                assignedIds.AddRange(mappedIds);
-                                            }
-                                            if (assignedIds.Count == 0
-                                                && int.TryParse(t.TestTypeID.ToString(), out var legacyId) && legacyId > 0)
-                                            {
-                                                assignedIds.Add(legacyId);
-                                            }
+                                        var assignedIds = new List<int>();
+                                        if (techTestMap.TryGetValue(t.Id, out var mappedIds) && mappedIds != null)
+                                        {
+                                            assignedIds.AddRange(mappedIds);
+                                        }
+                                        if (assignedIds.Count == 0
+                                            && int.TryParse(t.TestTypeID.ToString(), out var legacyId) && legacyId > 0)
+                                        {
+                                            assignedIds.Add(legacyId);
+                                        }
 
-                                            var assignedNames = assignedIds
-                                                .Distinct()
-                                                .Select(i => testNameById.TryGetValue(i.ToString(), out var nm) ? nm : null)
-                                                .Where(s => !string.IsNullOrWhiteSpace(s))
-                                                .ToList();
+                                        var assignedNames = assignedIds
+                                            .Distinct()
+                                            .Select(i => testNameById.TryGetValue(i.ToString(), out var nm) ? nm : null)
+                                            .Where(s => !string.IsNullOrWhiteSpace(s))
+                                            .ToList();
 
-
-                                        <tr
+                                        <tr class="row-clickable data-row"
                                             data-id="@t.Id"
                                             data-fullname="@t.FullName"
                                             data-firstname="@t.FirstName"
@@ -797,6 +850,11 @@
                                     }
                                 </tbody>
                             </table>
+                        </div>
+
+                        <div class="pagination-bar" id="technician-pagination" hidden>
+                            <div class="page-info" id="technician-info"></div>
+                            <div class="pager" id="technician-pager"></div>
                         </div>
                     }
                     else
@@ -1027,6 +1085,83 @@
                 ? '<span class="status-badge active">Active</span>'
                 : '<span class="status-badge inactive">Inactive</span>';
         }
+
+        // ── PAGINATION (5 rows per table) ──
+        function createTablePager(tableId, barId, infoId, navId, label) {
+            var table = document.getElementById(tableId);
+            if (!table) return;
+
+            var perPage = parseInt(table.dataset.perPage, 10) || 5;
+            var rows = Array.prototype.slice.call(table.querySelectorAll("tbody tr.data-row"));
+            var bar = document.getElementById(barId);
+            var info = document.getElementById(infoId);
+            var nav = document.getElementById(navId);
+            var pages = Math.max(1, Math.ceil(rows.length / perPage));
+            var page = 1;
+
+            // Nothing to page through: show every row and no pager bar
+            if (rows.length <= perPage) return;
+
+            bar.hidden = false;
+
+            function pageList(current, total) {
+                var out = [];
+                if (total <= 7) {
+                    for (var i = 1; i <= total; i++) out.push(i);
+                    return out;
+                }
+                out.push(1);
+                var start = Math.max(2, current - 1), end = Math.min(total - 1, current + 1);
+                if (current <= 3) { start = 2; end = 4; }
+                if (current >= total - 2) { start = total - 3; end = total - 1; }
+                if (start > 2) out.push("…");
+                for (var p = start; p <= end; p++) out.push(p);
+                if (end < total - 1) out.push("…");
+                out.push(total);
+                return out;
+            }
+
+            function button(text, target, opts) {
+                var b = document.createElement("button");
+                b.type = "button";
+                b.className = "pg-btn" + (opts && opts.current ? " current" : "");
+                b.textContent = text;
+                if (opts && opts.label) b.setAttribute("aria-label", opts.label);
+                if (opts && opts.disabled) b.disabled = true;
+                if (opts && opts.current) b.setAttribute("aria-current", "page");
+                b.addEventListener("click", function () { page = target; render(); });
+                return b;
+            }
+
+            function render() {
+                var from = (page - 1) * perPage;
+                var to = Math.min(from + perPage, rows.length);
+
+                rows.forEach(function (r, i) { r.hidden = !(i >= from && i < to); });
+
+                info.innerHTML = "Showing <strong>" + (from + 1) + "–" + to +
+                    "</strong> of <strong>" + rows.length + "</strong> " + label;
+
+                nav.innerHTML = "";
+                nav.appendChild(button("‹", page - 1, { disabled: page === 1, label: "Previous page" }));
+                pageList(page, pages).forEach(function (p) {
+                    if (p === "…") {
+                        var gap = document.createElement("span");
+                        gap.className = "pg-gap";
+                        gap.textContent = "…";
+                        nav.appendChild(gap);
+                    } else {
+                        nav.appendChild(button(p, p, { current: p === page, label: "Page " + p }));
+                    }
+                });
+                nav.appendChild(button("›", page + 1, { disabled: page === pages, label: "Next page" }));
+            }
+
+            render();
+        }
+
+        createTablePager("doctor-table", "doctor-pagination", "doctor-info", "doctor-pager", "doctors");
+        createTablePager("technician-table", "technician-pagination", "technician-info", "technician-pager", "technicians");
 
         // ══════════════ DOCTORS ══════════════
         function openDoctorView(row) {

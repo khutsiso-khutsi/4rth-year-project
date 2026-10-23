@@ -9,6 +9,9 @@
     Layout = null;
     ViewData["Title"] = "Test Catalogue";
 
+    // Number of test rows shown per page in the main table
+    const int TestsPerPage = 5;
+
     var tests = Model ?? Enumerable.Empty<TestType>();
 
     var categories = ViewBag.Categories as IEnumerable<TestCategory>
@@ -744,19 +747,6 @@
                 font-size: .8rem;
             }
 
-            .per-page {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                font-size: 0.75rem;
-                color: var(--muted);
-            }
-
-                .per-page select {
-                    padding: 6px 8px;
-                    width: auto;
-                }
-
             /* ── EMPTY STATE ── */
             .empty-state {
                 text-align: center;
@@ -1409,12 +1399,7 @@
                     </svg>
                     Profile
                 </a>
-                <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    </svg>
-                    Audit Log
-                </a>
+              
             </div>
         </aside>
 
@@ -1481,7 +1466,7 @@
                 @if (testCount > 0)
                 {
                     <div class="table-container">
-                        <table id="test-table">
+                        <table id="test-table" data-per-page="@TestsPerPage">
                             <thead>
                                 <tr>
                                     <th>Test</th>
@@ -1642,17 +1627,8 @@
                         <div>Try a different search term.</div>
                     </div>
 
-                    <!-- PAGINATION -->
+                    <!-- PAGINATION (fixed at @TestsPerPage rows per page) -->
                     <div class="pagination-bar" id="test-pagination">
-                        <div class="per-page">
-                            <span>Rows per page</span>
-                            <select id="test-per-page" class="form-control">
-                                <option value="10" selected>10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                        </div>
                         <div class="page-info" id="test-page-info"></div>
                         <div class="pager" id="test-pager"></div>
                     </div>
@@ -2322,7 +2298,7 @@
                Rows are shown/hidden via the [hidden] attribute.
             */
             function createPager(opts) {
-                var state = { page: 1, per: opts.perPage || 10, filter: function () { return true; } };
+                var state = { page: 1, per: opts.perPage || 5, filter: function () { return true; } };
 
                 function pageList(current, total) {
                     var out = [];
@@ -2403,13 +2379,14 @@
                 };
             }
 
-            /* ═════════════ TEST TABLE: SEARCH + PAGINATION ═════════════ */
+            /* ═════════════ TEST TABLE: SEARCH + PAGINATION (5 rows per page) ═════════════ */
             (function () {
                 var table = document.getElementById("test-table");
                 if (!table) return;
 
+                var PER_PAGE = parseInt(table.dataset.perPage, 10) || 5;
+
                 var search = document.getElementById("test-search");
-                var perSel = document.getElementById("test-per-page");
                 var noResults = document.getElementById("no-results");
                 var count = document.getElementById("test-count");
                 var tableWrap = table.parentElement;
@@ -2417,7 +2394,7 @@
 
                 var pager = createPager({
                     getRows: function () { return Array.prototype.slice.call(table.querySelectorAll("tbody .test-row")); },
-                    perPage: parseInt(perSel.value, 10) || 10,
+                    perPage: PER_PAGE,
                     info: document.getElementById("test-page-info"),
                     nav: document.getElementById("test-pager"),
                     label: "test types",
@@ -2429,8 +2406,6 @@
                         bar.hidden = none;
                     }
                 });
-
-                perSel.addEventListener("change", function () { pager.setPerPage(parseInt(perSel.value, 10) || 10); });
 
                 if (search) {
                     var t;
@@ -2495,7 +2470,7 @@
                         perPage: 5,
                         info: modal.querySelector(".m-info"),
                         nav: modal.querySelector(".m-pager"),
-                        label: label + (label.slice(-1) === "y" ? "" : "") + "s"
+                        label: label + "s"
                     }) : null;
                     if (pager) pager.render();
 
