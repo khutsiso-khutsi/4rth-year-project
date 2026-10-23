@@ -474,7 +474,7 @@ namespace LabManager.Controllers
                 foreach (var item in selectedItems)
                 {
                     rows.Append("<tr><td>")
-                        .Append(WebUtility.HtmlEncode(item.Consumable.ConsumableName))
+                        .Append(WebUtility.HtmlEncode((string?)item.Consumable.ConsumableName))
                         .Append("</td><td>")
                         .Append(item.Quantity)
                         .Append("</td></tr>");
