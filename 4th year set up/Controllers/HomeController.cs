@@ -145,6 +145,7 @@ namespace _4th_year_set_up.Controllers
                 "Admin" => "admin@test.com",
                 "Doctor" => "khutsisoletageng7@gmail.com",
                 "Patient" => "s224114719@mandela.ac.za",
+          
                 _ => null
             };
 

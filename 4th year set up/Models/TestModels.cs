@@ -403,14 +403,17 @@ namespace _4th_year_set_up.Models
         };
     }
 
-    // The signed-in technician. One user for now: Sipho Ndlovu (LabTechnicians.TechnicianID 1).
-    // Replace Id / Name with the logged-in user when authentication is connected.
-    // VerifiableTests = the test types the laboratory manager has assigned to this technician
-    // (TechnicianTestTypes); the controller fills it from the database.
+    // The signed-in technician. The controller sets Id and Name at the start of every request from the logged-in user
+    // (see OnActionExecuting). They are held per request (AsyncLocal), so two technicians signed in at the same time
+    // never see each other's identity. Falls back to Sipho Ndlovu (TechnicianID 1) only when nobody is signed in,
+    // which keeps the developer shortcut working.
     public static class CurrentUser
     {
-        public const string Id = "1";
-        public const string Name = "Sipho Ndlovu";
+        private static readonly System.Threading.AsyncLocal<string> _id = new();
+        private static readonly System.Threading.AsyncLocal<string> _name = new();
+
+        public static string Id { get => _id.Value ?? "1"; set => _id.Value = value; }
+        public static string Name { get => _name.Value ?? "Sipho Ndlovu"; set => _name.Value = value; }
         public static HashSet<string> VerifiableTests = new();
 
         // There are no technician roles: Sipho, Lerato and Pieter are all the same kind of technician and can do every step
@@ -508,7 +511,9 @@ namespace _4th_year_set_up.Models
         public string Priority { get; set; } = "Routine";
         public string Waited { get; set; } = "—";
         public List<ConsumableNeed> Needs { get; set; } = new();
+        public List<string> Missing { get; set; } = new();           // tests on the tube with no consumable linked
         public bool HasShortage => Needs.Any(n => n.IsShort);
+        public bool IsBlocked => HasShortage || Missing.Count > 0;
         public bool IsUrgent => Priority != "Routine";
     }
 

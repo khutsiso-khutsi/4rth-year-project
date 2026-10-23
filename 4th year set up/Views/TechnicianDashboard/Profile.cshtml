@@ -16,221 +16,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Profile — NMB-HLabSys</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/technician.css" />
     <style>
-            *, *::before, *::after {
-                box-sizing: border-box;
-                margin: 0;
-                padding: 0;
-            }
-
-            :root {
-                --navy: #0b1f3a;
-                --navy2: #122848;
-                --teal: #ea580c;
-                --teal-light: rgba(234,88,12,0.1);
-                --white: #ffffff;
-                --offwhite: #f4f7fb;
-                --muted: #6b7a99;
-                --border: #dde4f0;
-                --red: #dc2626;
-                --green: #16a34a;
-                --amber: #d97706;
-            }
-
-            body {
-                font-family: 'DM Sans', sans-serif;
-                background: var(--offwhite);
-                color: var(--navy);
-                min-height: 100vh;
-            }
-
-            /* TOPBAR */
-            .topbar {
-                background: var(--navy);
-                padding: 0 40px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                height: 64px;
-                position: sticky;
-                top: 0;
-                z-index: 100;
-                box-shadow: 0 2px 20px rgba(0,0,0,0.15);
-            }
-
-            .brand {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                text-decoration: none;
-            }
-
-            .brand-logo {
-                width: 34px;
-                height: 34px;
-                background: var(--teal);
-                border-radius: 8px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-                .brand-logo svg {
-                    width: 18px;
-                    height: 18px;
-                    fill: white;
-                }
-
-            .brand-name {
-                font-family: 'DM Serif Display', serif;
-                color: white;
-                font-size: 1.1rem;
-                line-height: 1.1;
-            }
-
-                .brand-name span {
-                    display: block;
-                    font-family: 'DM Sans', sans-serif;
-                    font-size: 0.6rem;
-                    font-weight: 300;
-                    color: rgba(255,255,255,0.4);
-                    letter-spacing: 0.1em;
-                    text-transform: uppercase;
-                }
-
-            .topbar-right {
-                display: flex;
-                align-items: center;
-                gap: 16px;
-            }
-
-            .user-chip {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                background: rgba(255,255,255,0.07);
-                border: 1px solid rgba(255,255,255,0.1);
-                border-radius: 100px;
-                padding: 6px 14px 6px 8px;
-            }
-
-            .user-avatar {
-                width: 28px;
-                height: 28px;
-                background: var(--teal);
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 0.75rem;
-                font-weight: 600;
-                color: white;
-            }
-
-            .user-email {
-                font-size: 0.8rem;
-                color: rgba(255,255,255,0.75);
-                max-width: 160px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-
-            .logout-btn {
-                background: rgba(255,255,255,0.08);
-                border: 1px solid rgba(255,255,255,0.12);
-                color: rgba(255,255,255,0.8);
-                padding: 8px 16px;
-                border-radius: 8px;
-                text-decoration: none;
-                font-size: 0.82rem;
-                font-weight: 500;
-                transition: all 0.2s;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-            }
-
-                .logout-btn:hover {
-                    background: rgba(255,255,255,0.15);
-                    color: white;
-                }
-
-                .logout-btn svg {
-                    width: 14px;
-                    height: 14px;
-                }
-
-            /* LAYOUT */
-            .page {
-                display: flex;
-                min-height: calc(100vh - 64px);
-            }
-
-            /* SIDEBAR */
-            .sidebar {
-                width: 220px;
-                background: white;
-                border-right: 1px solid var(--border);
-                padding: 24px 0;
-                flex-shrink: 0;
-                position: sticky;
-                top: 64px;
-                height: calc(100vh - 64px);
-                overflow-y: auto;
-            }
-
-            .nav-section {
-                margin-bottom: 8px;
-            }
-
-            .nav-label {
-                font-size: 0.65rem;
-                font-weight: 600;
-                color: var(--muted);
-                letter-spacing: 0.1em;
-                text-transform: uppercase;
-                padding: 0 20px;
-                margin-bottom: 4px;
-            }
-
-            .nav-item {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 10px 20px;
-                color: var(--muted);
-                text-decoration: none;
-                font-size: 0.85rem;
-                font-weight: 500;
-                transition: all 0.15s;
-                border-left: 3px solid transparent;
-            }
-
-                .nav-item:hover {
-                    background: var(--offwhite);
-                    color: var(--navy);
-                }
-
-                .nav-item.active {
-                    background: var(--teal-light);
-                    color: var(--teal);
-                    border-left-color: var(--teal);
-                }
-
-                .nav-item svg {
-                    width: 16px;
-                    height: 16px;
-                    flex-shrink: 0;
-                }
-
-            /* MAIN */
-            .main {
-                flex: 1;
-                padding: clamp(24px, 3vw, 40px);
-                overflow-y: auto;
-            }
-
             /* HERO */
             .hero {
                 background: var(--navy);
@@ -712,21 +499,6 @@
 
             /* RESPONSIVE */
             @@media (max-width: 768px) {
-                .topbar {
-                    padding: 0 20px;
-                }
-
-                .user-email {
-                    display: none;
-                }
-
-                .sidebar {
-                    display: none;
-                }
-
-                .main {
-                    padding: 20px 16px;
-                }
 
                 .hero {
                     padding: 24px 20px;
@@ -798,15 +570,11 @@
             </a>
 
             <div class="nav-label">Results</div>
-            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2" /><line x1="8" y1="8" x2="16" y2="8" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="8" y1="16" x2="13" y2="16" /></svg>
-                Capture Results
-            </a>
             <a asp-controller="TechnicianDashboard" asp-action="Verification" class="nav-item @resultActive">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
                 Result Verification
             </a>
-      
+
             <div class="nav-label">Reports</div>
             <a asp-controller="TechnicianDashboard" asp-action="Reports" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="19" x2="20" y2="19" /><rect x="5" y="10" width="3" height="7" /><rect x="10.5" y="6" width="3" height="11" /><rect x="16" y="3" width="3" height="14" /></svg>
@@ -860,8 +628,8 @@
                             <div class="avatar-info">
                                 <div class="profile-name">@Model.FirstName @Model.LastName</div>
                                 <div class="profile-meta">@Model.Email</div>
-                                <div class="profile-meta">Employee no. @Model.EmployeeNumber · Member since @Model.RegistrationDate.ToString("dd MMM yyyy")</div>
-                                <div class="profile-badge">@(Model.IsSenior ? "Senior Lab Technician" : "Lab Technician")</div>
+                                <div class="profile-meta">@(string.IsNullOrEmpty(Model.EmployeeNumber) ? "" : "Employee no. " + Model.EmployeeNumber + " · ")Member since @Model.RegistrationDate.ToString("dd MMM yyyy")</div>
+                                <div class="profile-badge">Lab Technician</div>
                             </div>
                         </div>
                     </div>

@@ -23,10 +23,18 @@ namespace _4th_year_set_up.Models
     public class ConsumableCheck
     {
         public List<ConsumableNeed> Needs { get; set; } = new();
+        public List<string> MissingTests { get; set; } = new();       // tests on the tube with no consumable linked
         public bool HasMapping => Needs.Count > 0;
         public bool IsSufficient => Needs.All(n => !n.IsShort);
+        public bool IsBlocked => MissingTests.Count > 0 || !IsSufficient;
         public IEnumerable<ConsumableNeed> Short => Needs.Where(n => n.IsShort);
         public string ShortText => string.Join(", ", Short.Select(n => $"{n.Name} (need {n.Needed}, have {n.OnHand})"));
+
+        // The reason a tube is blocked, in words for the screen.
+        public string BlockText =>
+            MissingTests.Count > 0
+                ? $"No consumables are linked to {string.Join(", ", MissingTests)}. Ask the lab manager to link them first."
+                : $"Not enough stock: {ShortText}. Ask the lab manager to restock.";
     }
 
     // ------------------------------------------------------------------ reports

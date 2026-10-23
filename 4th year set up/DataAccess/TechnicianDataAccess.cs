@@ -430,28 +430,51 @@ namespace _4th_year_set_up.DataAccess
             });
         }
 
-        // Releases a request whose every test is verified. The procedure checks that again and releases only once.
-        public bool ReleaseRequest(LabRequest req, string by, TestEvent ev)
-            => _sample ? TechnicianSampleData.Release(req) : Run("dbo.sp_Tech_ReleaseRequest", new
-            {
-                RequestID = req.RequestId,
-                By = Tech(by),
-                EventsJson = EventsJson(new[] { ev })
-            });
+        // The technician behind a logged-in user (Users.UserID). Null when that user is not a lab technician.
+        public (string Id, string Name, string Email)? GetTechnicianByUser(int userId)
+        {
+            if (_sample) return ("1", "Sipho Ndlovu", "sipho.ndlovu@nmbhlab.co.za");
+            using var db = Open();
+            var r = db.QueryFirstOrDefault("dbo.sp_Tech_GetTechnicianByUser", new { UserID = userId }, commandType: CommandType.StoredProcedure);
+            if (r == null) return null;
+            return (((int)r.TechnicianID).ToString(), $"{r.FirstName} {r.LastName}", (string)r.Email);
+        }
+
+        // The consumables each waiting tube needs against the lab manager's stock, keyed by BarcodeID.
+        // A tube with no consumables linked is simply absent from the result (the screens say so).
         public Dictionary<int, ConsumableCheck> GetConsumableChecks()
         {
-            if (_sample) return new Dictionary<int, ConsumableCheck>();
+            var result = new Dictionary<int, ConsumableCheck>();
+            if (_sample) return result;
             try
             {
                 using var db = Open();
-                return db.Query<ConsumableRow>("dbo.sp_Tech_GetTubeConsumables", commandType: CommandType.StoredProcedure)
-                         .GroupBy(r => r.BarcodeID)
-                         .ToDictionary(g => g.Key, g => new ConsumableCheck
-                         {
-                             Needs = g.Select(r => new ConsumableNeed { Name = r.Name, Needed = r.Needed, OnHand = r.OnHand }).ToList()
-                         });
+                using var multi = db.QueryMultiple("dbo.sp_Tech_GetTubeConsumables", commandType: CommandType.StoredProcedure);
+                var needs = multi.Read<ConsumableRow>().ToList();
+                var missing = multi.Read<MissingRow>().ToList();
+
+                foreach (var g in needs.GroupBy(r => r.BarcodeID))
+                    result[g.Key] = new ConsumableCheck
+                    {
+                        Needs = g.Select(r => new ConsumableNeed { Name = r.Name, Needed = r.Needed, OnHand = r.OnHand }).ToList()
+                    };
+                foreach (var g in missing.GroupBy(r => r.BarcodeID))
+                {
+                    if (!result.TryGetValue(g.Key, out var check)) result[g.Key] = check = new ConsumableCheck();
+                    check.MissingTests = g.Select(r => r.TestName).Distinct().ToList();
+                }
+                return result;
             }
-            catch (SqlException) { return new Dictionary<int, ConsumableCheck>(); }
+            catch (SqlException)
+            {
+                return new Dictionary<int, ConsumableCheck>();   // procedure or tables not there yet
+            }
+        }
+
+        private class MissingRow
+        {
+            public int BarcodeID { get; set; }
+            public string TestName { get; set; }
         }
 
         private class ConsumableRow
@@ -461,6 +484,16 @@ namespace _4th_year_set_up.DataAccess
             public int Needed { get; set; }
             public int OnHand { get; set; }
         }
+
+        // Releases a request whose every test is verified. The procedure checks that again and releases only once.
+        public bool ReleaseRequest(LabRequest req, string by, TestEvent ev)
+            => _sample ? TechnicianSampleData.Release(req) : Run("dbo.sp_Tech_ReleaseRequest", new
+            {
+                RequestID = req.RequestId,
+                By = Tech(by),
+                EventsJson = EventsJson(new[] { ev })
+            });
+
         // The e-mail address of the doctor who requested the tests (null if none is on record).
         public string GetDoctorEmail(LabRequest req)
         {

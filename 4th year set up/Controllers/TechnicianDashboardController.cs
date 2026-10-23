@@ -25,9 +25,51 @@ public class TechnicianDashboardController : Controller
         // No technician roles: every technician can do every step, so nothing is looked up here.
     }
 
+
+    // Runs before every action: finds out WHO is logged in and tells the screens. Only a lab technician may be here.
+    public override void OnActionExecuting(Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context)
+    {
+            var userId = LoggedInUserId();
+            if (!userId.HasValue)
+            {
+                context.Result = RedirectToAction("Login", "Home");
+                return;
+            }
+
+            //var userId = LoggedInUserId();
+            //if (userId.HasValue)
+            //{
+            //    var tech = _db.GetTechnicianByUser(userId.Value);
+
+            //        if (tech == null)
+            //        {
+            //            // signed in, but no LabTechnicians row: end the session so Login can't bounce back here
+            //            HttpContext.Session.Clear();
+            //            TempData["Error"] = "Your account isn't set up as a lab technician yet. Please ask the administrator.";
+            //            context.Result = RedirectToAction("Login", "Home");
+            //            return;
+            //        }
+            //        CurrentUser.Id = tech.Value.Id;
+            //    CurrentUser.Name = tech.Value.Name;
+            //    ViewBag.Email = tech.Value.Email;
+            //}
+            base.OnActionExecuting(context);
+    }
+
+    // The Users.UserID of the logged-in person: from the login cookie's claims, or from the session if that is what your login uses.
+    private int? LoggedInUserId()
+    {
+        foreach (var type in new[] { System.Security.Claims.ClaimTypes.NameIdentifier, "UserID", "UserId", "sub" })
+        {
+            var v = User?.FindFirst(type)?.Value;
+            if (int.TryParse(v, out var id)) return id;
+        }
+        try { return HttpContext.Session.GetInt32("UserID") ?? HttpContext.Session.GetInt32("UserId"); }
+        catch (InvalidOperationException) { return null; }      // sessions are not switched on
+    }
+
     public IActionResult Index()
     {
-        ViewBag.Email = User?.Identity?.Name;           // keep whatever you already use to set this
         var vm = DashboardViewModel.Build(_db);
 
         // Notification: tests the lab manager assigned to you that you have not acknowledged yet.
@@ -67,7 +109,7 @@ public class TechnicianDashboardController : Controller
     // Tubes the doctor's request has created that have not reached the lab yet.
     public IActionResult ReceiveSamples()
     {
-        ViewBag.Email = User?.Identity?.Name;
+        ViewBag.Email ??= User?.Identity?.Name;
         var checks = _db.GetConsumableChecks();
         var rows = _db.GetRequests().SelectMany(r => r.Tubes)
                       .Where(t => t.Status == TubeStatus.NotReceived && t.BarcodeId > 0 && t.Request != null)
@@ -81,7 +123,8 @@ public class TechnicianDashboardController : Controller
                           Sample = t.Type ?? t.SampleType ?? "—",
                           Priority = t.Request.Priority ?? "Routine",
                           Waited = Waited(t.CollectedAt),
-                          Needs = checks.TryGetValue(t.BarcodeId, out var cc) ? cc.Needs : new List<ConsumableNeed>()
+                          Needs = checks.TryGetValue(t.BarcodeId, out var cc) ? cc.Needs : new List<ConsumableNeed>(),
+                          Missing = cc != null ? cc.MissingTests : new List<string>()
                       }).ToList();
         return View(rows);
     }
@@ -118,9 +161,9 @@ public class TechnicianDashboardController : Controller
             return RedirectToAction("ReceiveSamples");
         }
 
-        if (_db.GetConsumableChecks().TryGetValue(tube.BarcodeId, out var stock) && !stock.IsSufficient)
+        if (_db.GetConsumableChecks().TryGetValue(tube.BarcodeId, out var stock) && stock.IsBlocked)
         {
-            Flash($"{tube.TubeId} was not received: not enough consumables. {stock.ShortText}. Ask the lab manager to restock.", "warn");
+            Flash($"{tube.TubeId} was not received. {stock.BlockText}", "warn");
             return RedirectToAction("ReceiveSamples");
         }
 
@@ -138,7 +181,7 @@ public class TechnicianDashboardController : Controller
 
     public IActionResult Reports()
     {
-        ViewBag.Email = User?.Identity?.Name;
+        ViewBag.Email ??= User?.Identity?.Name;
         ViewBag.Counts = DashboardViewModel.Build(_db);
         var tests = _db.GetTests();
         return View(new ReportsPageViewModel
@@ -272,9 +315,9 @@ public class TechnicianDashboardController : Controller
             return RedirectToAction("SampleVerification");
         }
 
-        if (_db.GetConsumableChecks().TryGetValue(tube.BarcodeId, out var stock) && !stock.IsSufficient)
+        if (_db.GetConsumableChecks().TryGetValue(tube.BarcodeId, out var stock) && stock.IsBlocked)
         {
-            Flash($"{tube.TubeId} cannot be accepted: not enough consumables. {stock.ShortText}. Reject it as \"{SampleChecklist.InsufficientConsumables}\" or ask the lab manager to restock.", "warn");
+            Flash($"{tube.TubeId} cannot be accepted. {stock.BlockText} You can reject it as \"{SampleChecklist.InsufficientConsumables}\".", "warn");
             return RedirectToAction("SampleVerification");
         }
 
@@ -352,7 +395,7 @@ public class TechnicianDashboardController : Controller
     {
         var item = Find(id);
         if (item == null) return NotFound();
-        ViewBag.Email = User?.Identity?.Name;
+        ViewBag.Email ??= User?.Identity?.Name;
         return View(item);
     }
 
@@ -445,7 +488,7 @@ public class TechnicianDashboardController : Controller
                 existing.Add(new ResultValue { Key = def.Key, Name = def.Name, Unit = def.Unit, Value = line.Value });
         }
 
-        ViewBag.Email = User?.Identity?.Name;
+        ViewBag.Email ??= User?.Identity?.Name;
         return View(new CaptureResultsViewModel
         {
             Item = item,
@@ -572,7 +615,7 @@ public class TechnicianDashboardController : Controller
     // Every test on a request is verified: the technician releases it and the requesting doctor is e-mailed.
     public IActionResult ReleaseResults()
     {
-        ViewBag.Email = User?.Identity?.Name;
+        ViewBag.Email ??= User?.Identity?.Name;
         return View(ReleaseViewModel.Build(_db));
     }
 
@@ -651,7 +694,7 @@ public class TechnicianDashboardController : Controller
         ViewBag.Consumables = _db.GetConsumableChecks();
         var item = Find(id);
         if (item == null) return NotFound();
-        ViewBag.Email = User?.Identity?.Name;
+        ViewBag.Email ??= User?.Identity?.Name;
         return View(item);
     }
 
@@ -729,7 +772,7 @@ public class TechnicianDashboardController : Controller
 
     private IActionResult List(string mode, string title, string subtitle, IEnumerable<TestItem> items, string filter)
     {
-        ViewBag.Email = User?.Identity?.Name;
+        ViewBag.Email ??= User?.Identity?.Name;
         return View("TestList", new TestListViewModel
         {
             Mode = mode,

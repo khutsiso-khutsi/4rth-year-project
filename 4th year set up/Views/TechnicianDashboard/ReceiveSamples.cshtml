@@ -117,13 +117,13 @@
 
             <div class="page-head">
                 <h1>Receive Samples</h1>
-                <p>Book in tubes as they arrive. Pressing Receive shows the consumables needed for the tests on that tube against the lab's stock, and a tube can only be received when there is enough.</p>
+                <p>Book in tubes as they arrive. Pressing Receive shows the consumables needed for the tests on that tube against the lab's stock. A tube can only be received when every test on it has consumables linked and there is enough stock.</p>
             </div>
 
             @{
                 var cAll = Model.Count;
                 var cUrgent = Model.Count(x => x.IsUrgent);
-                var cShort = Model.Count(x => x.HasShortage);
+                var cShort = Model.Count(x => x.IsBlocked);
             }
 
             <div class="card">
@@ -137,7 +137,7 @@
                         <input type="text" id="rcSearch" class="form-control form-control--search" placeholder="Search barcode or request #" aria-label="Search tubes" />
                         <button type="button" class="chip active" data-filter="all">All <span class="chip-count">@cAll</span></button>
                         <button type="button" class="chip chip-urgent" data-filter="urgent">Urgent <span class="chip-count">@cUrgent</span></button>
-                        <button type="button" class="chip chip-overdue" data-filter="short">Short on stock <span class="chip-count">@cShort</span></button>
+                        <button type="button" class="chip chip-overdue" data-filter="short">Blocked <span class="chip-count">@cShort</span></button>
                     </div>
 
                     <div class="table-wrap">
@@ -148,7 +148,7 @@
                             <tbody>
                                 @foreach (var t in Model)
                                 {
-                                    <tr data-search="@((t.Barcode + " " + t.ReqNum + " " + t.Tests).ToLower())" data-urgent="@(t.IsUrgent ? "1" : "0")" data-short="@(t.HasShortage ? "1" : "0")">
+                                    <tr data-search="@((t.Barcode + " " + t.ReqNum + " " + t.Tests).ToLower())" data-urgent="@(t.IsUrgent ? "1" : "0")" data-short="@(t.IsBlocked ? "1" : "0")">
                                         <td><strong>@t.Barcode</strong></td>
                                         <td>@t.ReqNum</td>
                                         <td>@t.Tests</td>
@@ -156,13 +156,15 @@
                                         <td><span class="badge @(t.IsUrgent ? "badge-urgent" : "badge-routine")">@t.Priority</span></td>
                                         <td>@t.Waited</td>
                                         <td>
-                                            @if (t.Needs.Count == 0) { <span class="stock-none">Not linked</span> }
+                                            @if (t.Missing.Count > 0) { <span class="badge badge-overdue" title="@string.Join(", ", t.Missing)">No link</span> }
                                             else if (t.HasShortage) { <span class="badge badge-overdue">Short</span> }
+                                            else if (t.Needs.Count == 0) { <span class="stock-none">None needed</span> }
                                             else { <span class="stock-ok">Enough</span> }
                                         </td>
                                         <td class="actions-cell">
                                             <button type="button" class="btn btn-primary js-receive"
                                                     data-barcode="@t.Barcode" data-req="@t.ReqNum" data-tests="@t.Tests" data-sample="@t.Sample"
+                                                    data-missing="@System.Text.Json.JsonSerializer.Serialize(t.Missing)"
                                                     data-needs="@System.Text.Json.JsonSerializer.Serialize(t.Needs.Select(n => new { name = n.Name, needed = n.Needed, onHand = n.OnHand }))">Receive</button>
                                         </td>
                                     </tr>
@@ -197,7 +199,7 @@
             </div>
 
             <div class="detail-card-title">Consumables needed for these tests</div>
-            <p class="muted-note" id="rcNone" hidden>No consumables are linked to these tests yet, so there is nothing to check. The tube can be received.</p>
+            <p class="muted-note" id="rcNone" hidden>No consumables are needed for these tests.</p>
             <div class="table-wrap" id="rcTableWrap" hidden>
                 <table class="table">
                     <thead><tr><th>Consumable</th><th>Needed</th><th>In stock</th><th></th></tr></thead>
@@ -256,8 +258,9 @@
             document.addEventListener('click', function (e) {
                 var b = e.target.closest('.js-receive');
                 if (!b) return;
-                var d = b.dataset, needs = [];
+                var d = b.dataset, needs = [], missing = [];
                 try { needs = JSON.parse(d.needs || '[]'); } catch (x) { }
+                try { missing = JSON.parse(d.missing || '[]'); } catch (x) { }
 
                 document.getElementById('rcTitle').textContent = 'Receive tube ' + d.barcode;
                 document.getElementById('rcSub').textContent = d.req + ' · ' + d.tests + ' · ' + d.sample;
@@ -271,13 +274,15 @@
                     rows.insertAdjacentHTML('beforeend', '<tr><td>' + esc(n.name) + '</td><td>' + n.needed + '</td><td><strong>' + n.onHand +
                         '</strong></td><td><span class="badge ' + (short ? 'badge-overdue">Short' : 'badge-ontrack">OK') + '</span></td></tr>');
                 });
-                document.getElementById('rcNone').hidden = needs.length > 0;
+                document.getElementById('rcNone').hidden = needs.length > 0 || missing.length > 0;
                 document.getElementById('rcTableWrap').hidden = needs.length === 0;
 
-                var warn = document.getElementById('rcShort');
-                warn.hidden = shortList.length === 0;
-                warn.textContent = shortList.length ? 'Not enough stock: ' + shortList.join(', ') + '. Ask the lab manager to restock before receiving this tube.' : '';
-                document.getElementById('rcConfirm').disabled = shortList.length > 0;
+                var warn = document.getElementById('rcShort'), msg = [];
+                if (missing.length) msg.push('No consumables are linked to ' + missing.join(', ') + '. Ask the lab manager to link them first.');
+                if (shortList.length) msg.push('Not enough stock: ' + shortList.join(', ') + '. Ask the lab manager to restock.');
+                warn.hidden = msg.length === 0;
+                warn.textContent = msg.join(' ');
+                document.getElementById('rcConfirm').disabled = msg.length > 0;
 
                 overlay.classList.add('open'); overlay.setAttribute('aria-hidden', 'false');
                 document.getElementById('rcClose').focus();

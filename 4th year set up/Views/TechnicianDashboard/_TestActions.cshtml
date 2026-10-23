@@ -14,6 +14,11 @@
         var list = stock != null && Model.Sample != null && stock.TryGetValue(Model.Sample.BarcodeId, out var cc) ? cc.Needs : new List<ConsumableNeed>();
         return System.Text.Json.JsonSerializer.Serialize(list.Select(n => new { name = n.Name, needed = n.Needed, onHand = n.OnHand }));
     }
+    string MissingJson()
+    {
+        var list = stock != null && Model.Sample != null && stock.TryGetValue(Model.Sample.BarcodeId, out var cm) ? cm.MissingTests : new List<string>();
+        return System.Text.Json.JsonSerializer.Serialize(list);
+    }
     var pt = Model.PatientDetails;
     var medsText = pt == null ? "" : string.Join("||", pt.Medications.Select(m => $"{m.Name} {m.Dose}"));
 }
@@ -25,7 +30,7 @@
                 data-id="@Model.TestId" data-req="@Model.ReqNum" data-tube="@Model.Sample.TubeId" data-tests="@Model.Sample.TestsLabel"
                 data-patient="@(pt == null ? "" : $"{pt.FullName} ({pt.Age} y, {pt.Sex})")"
                 data-allergies="@pt?.Allergies" data-conditions="@pt?.Conditions" data-meds="@medsText"
-                data-precautions="@pt?.Precautions" data-notes="@Model.ClinicalNotes" data-needs="@NeedsJson()">Verify sample</button>
+                data-precautions="@pt?.Precautions" data-notes="@Model.ClinicalNotes" data-needs="@NeedsJson()" data-missing="@MissingJson()">Verify sample</button>
         break;
 
     case TestStage.SampleRejected:

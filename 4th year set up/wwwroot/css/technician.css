@@ -296,5 +296,8 @@ a.stat-card:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px;
     .sibling-note { text-align: left; }
 }
 
-/* the hidden attribute must win over component display rules (modals, alert boxes) */
-[hidden] { display: none !important; }
+/* inside the Receive and Verify-sample modals the hidden attribute must win over component display rules */
+#rcModal [hidden], #svModal [hidden] { display: none !important; }
+#svModal .modal { max-width: 920px; }
+#svModal .info-list { grid-template-columns: 170px 1fr; }
+@media (max-width: 700px) { #svModal .info-list { grid-template-columns: 1fr; } }

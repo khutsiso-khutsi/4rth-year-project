@@ -25,7 +25,7 @@
             </dl>
 
             <div class="detail-card-title" style="margin-top:16px;">Consumables for these tests</div>
-            <p class="muted-note" id="svNone" hidden>No consumables are linked to these tests yet, so there is nothing to check.</p>
+            <p class="muted-note" id="svNone" hidden>No consumables are needed for these tests.</p>
             <div class="table-wrap" id="svNeedsWrap" hidden>
                 <table class="table">
                     <thead><tr><th>Consumable</th><th>Needed</th><th>In stock</th><th></th></tr></thead>
@@ -86,7 +86,7 @@
         function sync() {
             var all = Array.prototype.every.call(boxes, function (b) { return b.checked; });
             accept.disabled = !all || short;
-            hint.textContent = short ? 'Accept is disabled: not enough consumables. Reject the sample as "Insufficient consumables", or ask the lab manager to restock.'
+            hint.textContent = short ? 'Accept is disabled: the consumables for this tube are missing or short. Reject the sample as "Insufficient consumables", or ask the lab manager to restock.'
                                      : (all ? '' : 'Tick all ' + boxes.length + ' checks to enable Accept sample.');
         }
         function close() { overlay.classList.remove('open'); overlay.setAttribute('aria-hidden', 'true'); }
@@ -94,8 +94,9 @@
         document.addEventListener('click', function (e) {
             var b = e.target.closest('.js-verify-sample');
             if (!b) return;
-            var d = b.dataset, needs = [];
+            var d = b.dataset, needs = [], missing = [];
             try { needs = JSON.parse(d.needs || '[]'); } catch (x) { }
+            try { missing = JSON.parse(d.missing || '[]'); } catch (x) { }
 
             document.getElementById('svId').value = d.id;
             set('svTitle', 'Verify sample ' + d.tube);
@@ -116,12 +117,15 @@
                 rows.insertAdjacentHTML('beforeend', '<tr><td>' + esc(n.name) + '</td><td>' + n.needed + '</td><td><strong>' + n.onHand +
                     '</strong></td><td><span class="badge ' + (isShort ? 'badge-overdue">Short' : 'badge-ontrack">OK') + '</span></td></tr>');
             });
-            document.getElementById('svNone').hidden = needs.length > 0;
+            document.getElementById('svNone').hidden = needs.length > 0 || missing.length > 0;
             document.getElementById('svNeedsWrap').hidden = needs.length === 0;
             var warn = document.getElementById('svShort');
-            short = shortList.length > 0;
+            var msg = [];
+            if (missing.length) msg.push('No consumables are linked to ' + missing.join(', ') + '.');
+            if (shortList.length) msg.push('Not enough stock: ' + shortList.join(', ') + '.');
+            short = msg.length > 0;
             warn.hidden = !short;
-            warn.textContent = short ? 'Not enough stock: ' + shortList.join(', ') + '.' : '';
+            warn.textContent = msg.join(' ');
 
             boxes.forEach(function (c) { c.checked = false; });
             panel.hidden = true; confirmReject.hidden = true; showReject.hidden = false;
