@@ -21,9 +21,8 @@
 
     var flash = TempData["Flash"] as string;
     var flashType = TempData["FlashType"] as string ?? "ok";
-    var showTat = Model.Mode != "verified";   // TAT filters make no sense for verified tests
-
-    var isResults = Model.Mode == "results";
+    var showTat = Model.Mode != "verified" && Model.Mode != "results";   // TAT filters make no sense for verified tests
+    var isResults = Model.Mode == "results";  // Result Verification gets a cleaner table with no links
     string Ago(DateTime? d)
     {
         if (!d.HasValue) return "—";
@@ -96,7 +95,6 @@
             </a>
 
             <div class="nav-label">Results</div>
-         
             <a asp-controller="TechnicianDashboard" asp-action="Verification" class="nav-item @resultActive">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
                 Result Verification
@@ -131,7 +129,7 @@
                         <div class="card-sub">@Model.Subtitle</div>
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        @if (Model.Mode != "mine")
+                        @if (Model.Mode != "mine" && Model.Mode != "results")
                         {
                             <a class="chip chip-mine" asp-controller="TechnicianDashboard" asp-action="MyTests">My Tests <span class="chip-count">@Model.Counts.MineCount</span></a>
                         }
@@ -175,30 +173,64 @@
                                     TatStatus.NearingTat => "badge-nearing",
                                     _ => "badge-ontrack"
                                 };
-                                @if (isResults)
-                                {
-                                <td><strong>@t.ReqNum</strong>@if (t.InMultiTestRequest) {
-                                <span class="req-chip">@t.PositionLabel</span>
-                            } </td>
-                            <td>@t.Test</td>
-                            <td><span class="badge @(t.IsUrgent ? "badge-urgent" : "badge-routine")">@(t.IsUrgent ? "Urgent" : "Routine")</span></td>
-                            <td>@TechnicianNames.Of(t.CapturedBy)@(t.CapturedBy == CurrentUser.Id ? " (you)" : "")</td>
-                            <td>@Ago(t.CapturedAt)</td>
-                            <td class="actions-cell">
-                                @if (CurrentUser.CanVerifyResult(t))
-                                {
-                                    <a class="btn btn-orange" asp-controller="TechnicianDashboard" asp-action="VerifyResult" asp-route-id="@t.TestId">Verify result</a>
-                                }
-                                else
-                                {
-                                    <span class="muted-note">Needs another technician</span>
-                                }
-                            </td>
-                        }
-                                                else
-                        {
-                            @* …your existing <td> cells, unchanged… *@
-                        }
+                                <tr class="@(t.Tat == TatStatus.Overdue && t.IsActive ? "row-overdue" : "") @(t.InMultiTestRequest ? "req-group" : "")"
+                                    data-search="@((t.ReqNum + " " + t.Patient + " " + t.Test).ToLower())"
+                                    data-urgent="@(t.IsUrgent ? "1" : "0")"
+                                    data-tat="@(t.Tat == TatStatus.Overdue ? "overdue" : t.Tat == TatStatus.NearingTat ? "nearing" : "ontrack")">
+                                    @if (isResults)
+                                    {
+                                        <td><strong>@t.ReqNum</strong>@if (t.InMultiTestRequest) { <span class="req-chip">@t.PositionLabel</span> }</td>
+                                        <td>@t.Test</td>
+                                        <td><span class="badge @(t.IsUrgent ? "badge-urgent" : "badge-routine")">@(t.IsUrgent ? "Urgent" : "Routine")</span></td>
+                                        <td>@TechnicianNames.Of(t.CapturedBy)@(t.CapturedBy == CurrentUser.Id ? " (you)" : "")</td>
+                                        <td>@Ago(t.CapturedAt)</td>
+                                        <td class="actions-cell">
+                                            @if (CurrentUser.CanVerifyResult(t))
+                                            {
+                                                <a class="btn btn-orange" asp-controller="TechnicianDashboard" asp-action="VerifyResult" asp-route-id="@t.TestId">Verify result</a>
+                                            }
+                                            else
+                                            {
+                                                <span class="muted-note">Needs another technician</span>
+                                            }
+                                        </td>
+                                    }
+                                    else
+                                    {
+                                    <td><partial name="_ReqLink" model="t" /></td>
+                                    <td>@t.Patient</td>
+                                    <td>@(Model.Mode == "samples" ? t.Sample.TestsLabel : t.Test)</td>
+                                    <td>
+                                        @if (t.IsUrgent)
+                                        {
+                                            <span class="badge badge-urgent">Urgent</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-routine">Routine</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (t.IsActive)
+                                        {
+                                            <span class="badge @tatCss">@t.TatLabel</span>
+                                        }
+                                        <span class="due-text">@t.DueText</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @stageCss">@t.StageLabel</span>
+                                        @if (t.Stage == TestStage.ToBeReviewed && !string.IsNullOrEmpty(t.ReviewNote))
+                                        {
+                                            <span class="due-text" title="@t.ReviewNote">Note: @t.ReviewNote</span>
+                                        }
+                                        @if (t.AssignedToMe && t.IsInQueue)
+                                        {
+                                            <span class="badge badge-mine">Mine</span>
+                                        }
+                                    </td>
+                                    <td class="actions-cell"><partial name="_TestActions" model="t" /></td>
+                                    }
+                                </tr>
                             }
                         </tbody>
                     </table>
@@ -219,9 +251,10 @@
     </div>
 
     <script>
-                var currentFilter = '@Model.InitialFilter';
+        var currentFilter = '@Model.InitialFilter';
         if (['all', 'urgent', 'overdue', 'nearing'].indexOf(currentFilter) === -1) currentFilter = 'all';
-        var page = 1, PAGE_SIZE = 10;
+
+        var page = 1, PAGE_SIZE = 5;
 
         function setFilter(f, clearSearch) {
             currentFilter = f; page = 1;
@@ -256,5 +289,8 @@
         document.getElementById('pagerNext').addEventListener('click', function () { page++; filterList(true); });
         filterList();
     </script>
+    <partial name="_TestModal" />
+    <partial name="_SampleVerifyModal" />
+    <script src="~/js/test-modal.js"></script>
 </body>
 </html>

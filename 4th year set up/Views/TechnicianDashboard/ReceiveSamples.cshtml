@@ -26,9 +26,12 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/technician.css" />
     <style>
-        .scan-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 8px; }
-        .scan-input { height: 40px; min-width: 260px; font-size: 15px; }
-        .scan-row .btn { height: 40px; padding: 0 20px; }
+        .page-head h1 { font-family: 'DM Serif Display', serif; font-size: 1.6rem; color: var(--navy); margin: 0 0 4px; }
+        .page-head p { font-size: .88rem; color: var(--muted); margin: 0; max-width: 720px; line-height: 1.5; }
+        .rc-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
+        .rc-bar .form-control { min-width: 240px; }
+        .stock-ok { color: var(--green); font-weight: 600; font-size: .8rem; }
+        .stock-none { color: var(--muted); font-size: .8rem; }
     </style>
 </head>
 <body>
@@ -86,14 +89,9 @@
             </a>
 
             <div class="nav-label">Results</div>
-    
             <a asp-controller="TechnicianDashboard" asp-action="Verification" class="nav-item @resultActive">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" /></svg>
                 Result Verification
-            </a>
-            <a asp-controller="TechnicianDashboard" asp-action="ReleaseResults" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></svg>
-                Release Results
             </a>
 
             <div class="nav-label">Reports</div>
@@ -116,29 +114,41 @@
             {
                 <div class="flash flash-@flashType" role="status">@flash</div>
             }
-            <div class="card">
-                <div class="card-header">
-                    <div>
-                        <div class="card-title">Expected tubes</div>
-                        <div class="card-sub">@Model.Count tube@(Model.Count == 1 ? "" : "s") not yet received. Urgent requests first, then oldest collection.</div>
-                    </div>
-                </div>
 
+            <div class="page-head">
+                <h1>Receive Samples</h1>
+                <p>Book in tubes as they arrive. Pressing Receive shows the consumables needed for the tests on that tube against the lab's stock, and a tube can only be received when there is enough.</p>
+            </div>
+
+            @{
+                var cAll = Model.Count;
+                var cUrgent = Model.Count(x => x.IsUrgent);
+                var cShort = Model.Count(x => x.HasShortage);
+            }
+
+            <div class="card">
                 @if (Model.Count == 0)
                 {
                     <div class="empty-state">No tubes are waiting to be received. New tubes appear here as soon as a doctor submits a request.</div>
                 }
                 else
                 {
+                    <div class="rc-bar">
+                        <input type="text" id="rcSearch" class="form-control form-control--search" placeholder="Search barcode or request #" aria-label="Search tubes" />
+                        <button type="button" class="chip active" data-filter="all">All <span class="chip-count">@cAll</span></button>
+                        <button type="button" class="chip chip-urgent" data-filter="urgent">Urgent <span class="chip-count">@cUrgent</span></button>
+                        <button type="button" class="chip chip-overdue" data-filter="short">Short on stock <span class="chip-count">@cShort</span></button>
+                    </div>
+
                     <div class="table-wrap">
-                        <table class="table">
+                        <table class="table" id="rcTable">
                             <thead>
-                                <tr><th>Barcode</th><th>Request #</th><th>Tests</th><th>Sample</th><th>Priority</th><th>Collected</th><th></th></tr>
+                                <tr><th>Barcode</th><th>Request #</th><th>Tests</th><th>Sample</th><th>Priority</th><th>Collected</th><th>Stock</th><th></th></tr>
                             </thead>
                             <tbody>
                                 @foreach (var t in Model)
                                 {
-                                    <tr>
+                                    <tr data-search="@((t.Barcode + " " + t.ReqNum + " " + t.Tests).ToLower())" data-urgent="@(t.IsUrgent ? "1" : "0")" data-short="@(t.HasShortage ? "1" : "0")">
                                         <td><strong>@t.Barcode</strong></td>
                                         <td>@t.ReqNum</td>
                                         <td>@t.Tests</td>
@@ -146,15 +156,28 @@
                                         <td><span class="badge @(t.IsUrgent ? "badge-urgent" : "badge-routine")">@t.Priority</span></td>
                                         <td>@t.Waited</td>
                                         <td>
-                                            <form method="post" asp-controller="TechnicianDashboard" asp-action="ReceiveSample" class="inline-form">
-                                                <input type="hidden" name="barcode" value="@t.Barcode" />
-                                                <button type="submit" class="btn btn-primary">Receive</button>
-                                            </form>
+                                            @if (t.Needs.Count == 0) { <span class="stock-none">Not linked</span> }
+                                            else if (t.HasShortage) { <span class="badge badge-overdue">Short</span> }
+                                            else { <span class="stock-ok">Enough</span> }
+                                        </td>
+                                        <td class="actions-cell">
+                                            <button type="button" class="btn btn-primary js-receive"
+                                                    data-barcode="@t.Barcode" data-req="@t.ReqNum" data-tests="@t.Tests" data-sample="@t.Sample"
+                                                    data-needs="@System.Text.Json.JsonSerializer.Serialize(t.Needs.Select(n => new { name = n.Name, needed = n.Needed, onHand = n.OnHand }))">Receive</button>
                                         </td>
                                     </tr>
                                 }
                             </tbody>
                         </table>
+                    </div>
+                    <div id="rcEmpty" class="empty-state" style="display:none;">No matching tubes.</div>
+                    <div id="rcPager" style="display:none; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:14px; font-size:.82rem; color:var(--muted);">
+                        <span id="rcPagerInfo"></span>
+                        <span style="display:flex; gap:6px; align-items:center;">
+                            <button type="button" class="btn btn-ghost" id="rcPrev">← Previous</button>
+                            <span id="rcPageNo"></span>
+                            <button type="button" class="btn btn-ghost" id="rcNext">Next →</button>
+                        </span>
                     </div>
                 }
             </div>
@@ -162,12 +185,17 @@
         </main>
     </div>
 
+    @* ===== Receive modal: shows the consumable count for the tests on the tube before it is booked in ===== *@
     <div class="modal-overlay" id="rcModal" aria-hidden="true">
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rcTitle">
             <div class="modal-header">
-                <div><div class="modal-title" id="rcTitle"></div><div class="card-sub" id="rcSub"></div></div>
+                <div>
+                    <div class="modal-title" id="rcTitle"></div>
+                    <div class="card-sub" id="rcSub"></div>
+                </div>
                 <button type="button" class="modal-close" id="rcClose" aria-label="Close">✕</button>
             </div>
+
             <div class="detail-card-title">Consumables needed for these tests</div>
             <p class="muted-note" id="rcNone" hidden>No consumables are linked to these tests yet, so there is nothing to check. The tube can be received.</p>
             <div class="table-wrap" id="rcTableWrap" hidden>
@@ -177,6 +205,7 @@
                 </table>
             </div>
             <div class="alert-box alert-danger" id="rcShort" hidden></div>
+
             <form method="post" asp-controller="TechnicianDashboard" asp-action="ReceiveSample">
                 <input type="hidden" name="barcode" id="rcBarcode" />
                 <div class="modal-footer">
@@ -186,19 +215,56 @@
             </form>
         </div>
     </div>
+
+    <script>
+        (function () {
+            var table = document.getElementById('rcTable'); if (!table) return;
+            var PAGE_SIZE = 5, page = 1, filter = 'all';
+            var search = document.getElementById('rcSearch');
+            function render(keep) {
+                if (keep !== true) page = 1;
+                var q = search.value.trim().toLowerCase(), matches = [];
+                table.querySelectorAll('tbody tr').forEach(function (r) {
+                    var ok = (filter === 'all' || (filter === 'urgent' && r.dataset.urgent === '1') || (filter === 'short' && r.dataset.short === '1'))
+                             && (!q || r.dataset.search.indexOf(q) !== -1);
+                    r.style.display = 'none'; if (ok) matches.push(r);
+                });
+                var pages = Math.max(1, Math.ceil(matches.length / PAGE_SIZE)); if (page > pages) page = pages;
+                var start = (page - 1) * PAGE_SIZE;
+                matches.slice(start, start + PAGE_SIZE).forEach(function (r) { r.style.display = ''; });
+                document.getElementById('rcPagerInfo').textContent = matches.length ? 'Showing ' + (start + 1) + '–' + Math.min(start + PAGE_SIZE, matches.length) + ' of ' + matches.length : '';
+                document.getElementById('rcPageNo').textContent = 'Page ' + page + ' of ' + pages;
+                document.getElementById('rcPrev').disabled = page <= 1;
+                document.getElementById('rcNext').disabled = page >= pages;
+                document.getElementById('rcPager').style.display = matches.length > PAGE_SIZE ? 'flex' : 'none';
+                document.getElementById('rcEmpty').style.display = matches.length === 0 ? 'block' : 'none';
+                document.querySelectorAll('.rc-bar .chip').forEach(function (c) { c.classList.toggle('active', c.dataset.filter === filter); });
+            }
+            document.querySelectorAll('.rc-bar .chip').forEach(function (c) { c.addEventListener('click', function () { filter = c.dataset.filter; render(); }); });
+            search.addEventListener('input', function () { render(); });
+            document.getElementById('rcPrev').addEventListener('click', function () { page--; render(true); });
+            document.getElementById('rcNext').addEventListener('click', function () { page++; render(true); });
+            render();
+        })();
+    </script>
     <script>
         (function () {
             var overlay = document.getElementById('rcModal');
             function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : t; return d.innerHTML; }
             function close() { overlay.classList.remove('open'); overlay.setAttribute('aria-hidden', 'true'); }
+
             document.addEventListener('click', function (e) {
-                var b = e.target.closest('.js-receive'); if (!b) return;
+                var b = e.target.closest('.js-receive');
+                if (!b) return;
                 var d = b.dataset, needs = [];
                 try { needs = JSON.parse(d.needs || '[]'); } catch (x) { }
+
                 document.getElementById('rcTitle').textContent = 'Receive tube ' + d.barcode;
                 document.getElementById('rcSub').textContent = d.req + ' · ' + d.tests + ' · ' + d.sample;
                 document.getElementById('rcBarcode').value = d.barcode;
-                var rows = document.getElementById('rcRows'), shortList = []; rows.innerHTML = '';
+
+                var rows = document.getElementById('rcRows'), shortList = [];
+                rows.innerHTML = '';
                 needs.forEach(function (n) {
                     var short = n.onHand < n.needed;
                     if (short) shortList.push(n.name + ' (need ' + n.needed + ', have ' + n.onHand + ')');
@@ -207,11 +273,14 @@
                 });
                 document.getElementById('rcNone').hidden = needs.length > 0;
                 document.getElementById('rcTableWrap').hidden = needs.length === 0;
+
                 var warn = document.getElementById('rcShort');
                 warn.hidden = shortList.length === 0;
                 warn.textContent = shortList.length ? 'Not enough stock: ' + shortList.join(', ') + '. Ask the lab manager to restock before receiving this tube.' : '';
                 document.getElementById('rcConfirm').disabled = shortList.length > 0;
+
                 overlay.classList.add('open'); overlay.setAttribute('aria-hidden', 'false');
+                document.getElementById('rcClose').focus();
             });
             document.getElementById('rcClose').addEventListener('click', close);
             document.getElementById('rcCancel').addEventListener('click', close);
