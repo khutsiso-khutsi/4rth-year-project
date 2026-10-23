@@ -1,27 +1,29 @@
-﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @using _4th_year_set_up.Models
+@* Sample verification as a modal: patient data, consumable count, the checklist, then Accept or Reject.
+   Opened by any button with class js-verify-sample (see _TestActions). Posts to AcceptSample / RejectSample. *@
 <div class="modal-overlay" id="svModal" aria-hidden="true">
     <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="svTitle">
         <div class="modal-header">
-            <div><div class="modal-title" id="svTitle"></div><div class="card-sub" id="svSub"></div></div>
+            <div>
+                <div class="modal-title" id="svTitle"></div>
+                <div class="card-sub" id="svSub"></div>
+            </div>
             <button type="button" class="modal-close" id="svClose" aria-label="Close">✕</button>
         </div>
+
         <form method="post" asp-controller="TechnicianDashboard" asp-action="AcceptSample" id="svForm">
             <input type="hidden" name="id" id="svId" />
+
             <dl class="info-list">
-                <dt>Patient</dt>
-                <dd id="svPatient"></dd>
-                <dt>Allergies</dt>
-                <dd id="svAllergies"></dd>
-                <dt>Medical condition</dt>
-                <dd id="svConditions"></dd>
-                <dt>Medication</dt>
-                <dd><ul class="plain-list" id="svMeds"></ul></dd>
-                <dt>Precautions</dt>
-                <dd id="svPrecautions"></dd>
-                <dt>Clinical notes</dt>
-                <dd id="svNotes"></dd>
+                <dt>Patient</dt><dd id="svPatient"></dd>
+                <dt>Allergies</dt><dd id="svAllergies"></dd>
+                <dt>Medical condition</dt><dd id="svConditions"></dd>
+                <dt>Medication</dt><dd><ul class="plain-list" id="svMeds"></ul></dd>
+                <dt>Precautions</dt><dd id="svPrecautions"></dd>
+                <dt>Clinical notes</dt><dd id="svNotes"></dd>
             </dl>
+
             <div class="detail-card-title" style="margin-top:16px;">Consumables for these tests</div>
             <p class="muted-note" id="svNone" hidden>No consumables are linked to these tests yet, so there is nothing to check.</p>
             <div class="table-wrap" id="svNeedsWrap" hidden>
@@ -31,6 +33,7 @@
                 </table>
             </div>
             <div class="alert-box alert-danger" id="svShort" hidden></div>
+
             <fieldset class="checklist" style="margin-top:16px;">
                 <legend>Tick every check that passes</legend>
                 @for (var i = 0; i < SampleChecklist.Items.Length; i++)
@@ -38,6 +41,7 @@
                     <label class="check-row"><input type="checkbox" name="checks" value="@i" /><span>@SampleChecklist.Items[i]</span></label>
                 }
             </fieldset>
+
             <div class="reject-panel" id="svRejectPanel" hidden>
                 <div>
                     <label for="svReason" class="field-label">Reason for rejection</label>
@@ -54,7 +58,9 @@
                     <input type="text" id="svNote" name="reasonNote" class="form-control" maxlength="200" placeholder="Anything the ward should know" />
                 </div>
             </div>
+
             <p class="muted-note" id="svHint" style="margin-top:8px;"></p>
+
             <div class="modal-footer">
                 <button type="button" class="btn btn-ghost" id="svCancel">Close</button>
                 <button type="button" class="btn btn-ghost btn-danger-outline" id="svShowReject">Reject sample…</button>
@@ -64,14 +70,17 @@
         </form>
     </div>
 </div>
+
 <script>
     (function () {
-        var overlay = document.getElementById('svModal'); if (!overlay) return;
+        var overlay = document.getElementById('svModal');
+        if (!overlay) return;
         var boxes = overlay.querySelectorAll('input[name="checks"]');
         var accept = document.getElementById('svAccept'), hint = document.getElementById('svHint');
         var panel = document.getElementById('svRejectPanel');
         var confirmReject = document.getElementById('svConfirmReject'), showReject = document.getElementById('svShowReject');
         var short = false;
+
         function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : t; return d.innerHTML; }
         function set(id, text) { document.getElementById(id).textContent = text || '—'; }
         function sync() {
@@ -81,20 +90,26 @@
                                      : (all ? '' : 'Tick all ' + boxes.length + ' checks to enable Accept sample.');
         }
         function close() { overlay.classList.remove('open'); overlay.setAttribute('aria-hidden', 'true'); }
+
         document.addEventListener('click', function (e) {
-            var b = e.target.closest('.js-verify-sample'); if (!b) return;
+            var b = e.target.closest('.js-verify-sample');
+            if (!b) return;
             var d = b.dataset, needs = [];
             try { needs = JSON.parse(d.needs || '[]'); } catch (x) { }
+
             document.getElementById('svId').value = d.id;
             set('svTitle', 'Verify sample ' + d.tube);
             document.getElementById('svSub').textContent = d.req + ' · ' + d.tests;
             set('svPatient', d.patient); set('svAllergies', d.allergies); set('svConditions', d.conditions);
             set('svPrecautions', d.precautions); set('svNotes', d.notes);
+
             var list = document.getElementById('svMeds'); list.innerHTML = '';
             var meds = (d.meds || '').split('||').filter(Boolean);
             if (meds.length === 0) meds = ['No medication recorded'];
             meds.forEach(function (m) { var li = document.createElement('li'); li.textContent = m; list.appendChild(li); });
-            var rows = document.getElementById('svNeeds'), shortList = []; rows.innerHTML = '';
+
+            var rows = document.getElementById('svNeeds'), shortList = [];
+            rows.innerHTML = '';
             needs.forEach(function (n) {
                 var isShort = n.onHand < n.needed;
                 if (isShort) shortList.push(n.name + ' (need ' + n.needed + ', have ' + n.onHand + ')');
@@ -103,14 +118,20 @@
             });
             document.getElementById('svNone').hidden = needs.length > 0;
             document.getElementById('svNeedsWrap').hidden = needs.length === 0;
-            var warn = document.getElementById('svShort'); short = shortList.length > 0;
-            warn.hidden = !short; warn.textContent = short ? 'Not enough stock: ' + shortList.join(', ') + '.' : '';
+            var warn = document.getElementById('svShort');
+            short = shortList.length > 0;
+            warn.hidden = !short;
+            warn.textContent = short ? 'Not enough stock: ' + shortList.join(', ') + '.' : '';
+
             boxes.forEach(function (c) { c.checked = false; });
             panel.hidden = true; confirmReject.hidden = true; showReject.hidden = false;
             document.getElementById('svReason').value = ''; document.getElementById('svNote').value = '';
             sync();
+
             overlay.classList.add('open'); overlay.setAttribute('aria-hidden', 'false');
+            document.getElementById('svClose').focus();
         });
+
         boxes.forEach(function (c) { c.addEventListener('change', sync); });
         showReject.addEventListener('click', function () {
             panel.hidden = false; confirmReject.hidden = false; showReject.hidden = true;

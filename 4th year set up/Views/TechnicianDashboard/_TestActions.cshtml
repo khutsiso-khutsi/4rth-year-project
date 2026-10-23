@@ -3,6 +3,11 @@
 @using _4th_year_set_up.Models
 @* The action buttons for a test, based on its stage. Used by the list rows and the details page. *@
 @{
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+    var inDetails = (ViewContext.RouteData.Values["action"] as string) == "TestDetails";
+    var enterCss = Model.IsUrgent ? "btn-orange" : "btn-ghost";
+
+    // Everything the sample-verification modal shows for this test's tube (patient data and consumable stock).
     var stock = ViewBag.Consumables as Dictionary<int, ConsumableCheck>;
     string NeedsJson()
     {
@@ -11,16 +16,16 @@
     }
     var pt = Model.PatientDetails;
     var medsText = pt == null ? "" : string.Join("||", pt.Medications.Select(m => $"{m.Name} {m.Dose}"));
-
-    var returnUrl = Context.Request.Path + Context.Request.QueryString;
-    var inDetails = (ViewContext.RouteData.Values["action"] as string) == "TestDetails";
-    var enterCss = Model.IsUrgent ? "btn-orange" : "btn-ghost";
 }
 
 @switch (Model.Stage)
 {
     case TestStage.AwaitingSampleVerification:
-        <a asp-controller="TechnicianDashboard" asp-action="VerifySample" asp-route-id="@Model.TestId" class="btn btn-primary">Verify sample</a>
+        <button type="button" class="btn btn-primary js-verify-sample"
+                data-id="@Model.TestId" data-req="@Model.ReqNum" data-tube="@Model.Sample.TubeId" data-tests="@Model.Sample.TestsLabel"
+                data-patient="@(pt == null ? "" : $"{pt.FullName} ({pt.Age} y, {pt.Sex})")"
+                data-allergies="@pt?.Allergies" data-conditions="@pt?.Conditions" data-meds="@medsText"
+                data-precautions="@pt?.Precautions" data-notes="@Model.ClinicalNotes" data-needs="@NeedsJson()">Verify sample</button>
         break;
 
     case TestStage.SampleRejected:
@@ -75,7 +80,7 @@
         }
         else
         {
-            <span class="muted-note">Awaiting verification</span>
+            <span class="muted-note">Awaiting another technician</span>
         }
         break;
 

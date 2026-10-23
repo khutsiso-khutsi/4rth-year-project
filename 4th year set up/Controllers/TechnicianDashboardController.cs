@@ -40,8 +40,6 @@ public class TechnicianDashboardController : Controller
         return View(vm);
     }
 
-
-
     // "Got it" on the new-assignment banner: remembers these tests so the banner goes away.
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -70,6 +68,7 @@ public class TechnicianDashboardController : Controller
     public IActionResult ReceiveSamples()
     {
         ViewBag.Email = User?.Identity?.Name;
+        var checks = _db.GetConsumableChecks();
         var rows = _db.GetRequests().SelectMany(r => r.Tubes)
                       .Where(t => t.Status == TubeStatus.NotReceived && t.BarcodeId > 0 && t.Request != null)
                       .OrderBy(t => t.Request.Priority == "STAT" ? 0 : t.Request.Priority == "Urgent" ? 1 : 2)
@@ -81,7 +80,8 @@ public class TechnicianDashboardController : Controller
                           Tests = string.IsNullOrWhiteSpace(t.TestsLabel) ? "—" : t.TestsLabel,
                           Sample = t.Type ?? t.SampleType ?? "—",
                           Priority = t.Request.Priority ?? "Routine",
-                          Waited = Waited(t.CollectedAt)
+                          Waited = Waited(t.CollectedAt),
+                          Needs = checks.TryGetValue(t.BarcodeId, out var cc) ? cc.Needs : new List<ConsumableNeed>()
                       }).ToList();
         return View(rows);
     }
@@ -118,6 +118,12 @@ public class TechnicianDashboardController : Controller
             return RedirectToAction("ReceiveSamples");
         }
 
+        if (_db.GetConsumableChecks().TryGetValue(tube.BarcodeId, out var stock) && !stock.IsSufficient)
+        {
+            Flash($"{tube.TubeId} was not received: not enough consumables. {stock.ShortText}. Ask the lab manager to restock.", "warn");
+            return RedirectToAction("ReceiveSamples");
+        }
+
         var ev = tube.Log("Sample received", CurrentUser.Id, EventTone.Good, $"{tube.Type} · {tube.SampleType}");
         if (!_db.ReceiveSample(tube, CurrentUser.Id, ev))
         {
@@ -126,10 +132,7 @@ public class TechnicianDashboardController : Controller
         }
         Flash($"{tube.Request.ReqNum}: tube {tube.TubeId} received. It is now waiting in Sample Verification.", "ok");
         return RedirectToAction("ReceiveSamples");
-
-            var checks = _db.GetConsumableChecks();
-        
-        }
+    }
 
     // ---------------------------------------------------------------- reports
 
@@ -239,6 +242,7 @@ public class TechnicianDashboardController : Controller
 
     public IActionResult SampleVerification(string filter = "all")
     {
+        ViewBag.Consumables = _db.GetConsumableChecks();
         // One row per tube. A tube holding several tests is verified once for all of them.
         return List("samples", "Sample Verification", "Received tubes waiting to be accepted or rejected. Each tube is verified once.",
                     _db.GetRequests().SelectMany(r => r.Tubes)
@@ -246,25 +250,11 @@ public class TechnicianDashboardController : Controller
                         .Select(tube => tube.Tests.First()), filter);
     }
 
-    public IActionResult VerifySample(string id)
-    {
-        var item = Find(id);
-        if (item == null) return NotFound();
-        ViewBag.Email = User?.Identity?.Name;
-        return View(item);
-    }
+    // Sample verification now happens in a modal on the Sample Verification list, so there is no page of its own.
+    public IActionResult VerifySample(string id) => RedirectToAction("SampleVerification");
 
-        // After accepting or rejecting, go straight to the next tube waiting for verification, or back to the list when none is left.
-        private IActionResult NextSampleOrList()
-        {
-            var next = _db.GetRequests().SelectMany(r => r.Tubes)
-                          .Where(t => t.Status == TubeStatus.AwaitingVerification && t.Tests.Count > 0)
-                          .Select(t => t.Tests.First()).FirstOrDefault();
-            return next != null ? RedirectToAction("VerifySample", new { id = next.TestId }) : RedirectToAction("SampleVerification");
-        }
-
-        // Accepting or rejecting works on the TUBE of the test that was opened, so it covers every test on that tube.
-        [HttpPost]
+    // Accepting or rejecting works on the TUBE of the test that was opened, so it covers every test on that tube.
+    [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult AcceptSample(string id, string[] checks)
     {
@@ -279,13 +269,27 @@ public class TechnicianDashboardController : Controller
         if ((checks?.Length ?? 0) < SampleChecklist.Items.Length)
         {
             Flash("Tick every check before accepting the sample, or reject it with a reason.", "warn");
-            return RedirectToAction("VerifySample", new { id });
+            return RedirectToAction("SampleVerification");
+        }
+
+        if (_db.GetConsumableChecks().TryGetValue(tube.BarcodeId, out var stock) && !stock.IsSufficient)
+        {
+            Flash($"{tube.TubeId} cannot be accepted: not enough consumables. {stock.ShortText}. Reject it as \"{SampleChecklist.InsufficientConsumables}\" or ask the lab manager to restock.", "warn");
+            return RedirectToAction("SampleVerification");
         }
 
         var ev = tube.Log("Sample verified", CurrentUser.Id, EventTone.Good, $"All {SampleChecklist.Items.Length} checks passed");
-        if (!_db.AcceptSample(tube, CurrentUser.Id, ev))
+        try
         {
-            Flash($"{tube.TubeId} is no longer waiting for sample verification.", "warn");
+            if (!_db.AcceptSample(tube, CurrentUser.Id, ev))
+            {
+                Flash($"{tube.TubeId} is no longer waiting for sample verification.", "warn");
+                return RedirectToAction("SampleVerification");
+            }
+        }
+        catch (Exception ex)
+        {
+            Flash("The sample could not be accepted: " + ex.Message, "warn");
             return RedirectToAction("SampleVerification");
         }
 
@@ -308,7 +312,7 @@ public class TechnicianDashboardController : Controller
         if (string.IsNullOrWhiteSpace(reasonType))
         {
             Flash("Choose a reason for rejecting the sample.", "warn");
-            return RedirectToAction("VerifySample", new { id });
+            return RedirectToAction("SampleVerification");
         }
 
         var reason = string.IsNullOrWhiteSpace(reasonNote)
@@ -316,9 +320,17 @@ public class TechnicianDashboardController : Controller
             : $"{reasonType}: {reasonNote.Trim()}";
 
         var ev = tube.Log("Sample rejected", CurrentUser.Id, EventTone.Bad, reason);
-        if (!_db.RejectSample(tube, CurrentUser.Id, reasonType, reason, ev))
+        try
         {
-            Flash($"{tube.TubeId} is no longer waiting for sample verification.", "warn");
+            if (!_db.RejectSample(tube, CurrentUser.Id, reasonType, reason, ev))
+            {
+                Flash($"{tube.TubeId} is no longer waiting for sample verification.", "warn");
+                return RedirectToAction("SampleVerification");
+            }
+        }
+        catch (Exception ex)
+        {
+            Flash("The sample could not be rejected: " + ex.Message, "warn");
             return RedirectToAction("SampleVerification");
         }
 
@@ -335,7 +347,6 @@ public class TechnicianDashboardController : Controller
                     "Captured results waiting for a second technician to verify before release.",
                     _db.GetTests().Where(t => t.Stage == TestStage.Complete), filter);
     }
-
 
     public IActionResult VerifyResult(string id)
     {
@@ -444,11 +455,11 @@ public class TechnicianDashboardController : Controller
         });
     }
 
-    // Posted by the capture screen. finalise=false saves a draft (not logged); finalise=true submits for verification.
+    // Posted by the capture screen. Every post submits the result for verification (there is no draft).
     // Flags are worked out from the reference ranges here, never taken from the browser.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult SaveResults(string id, string resultsJson, bool finalise)
+    public IActionResult SaveResults(string id, string resultsJson)
     {
         var item = Find(id);
         if (item == null) return NotFound();
@@ -483,7 +494,7 @@ public class TechnicianDashboardController : Controller
 
             if (string.IsNullOrEmpty(raw))
             {
-                if (finalise) problems.Add($"{def.Name} has no result.");
+                problems.Add($"{def.Name} has no result.");
                 continue;
             }
 
@@ -523,7 +534,6 @@ public class TechnicianDashboardController : Controller
         item.Results = lines;
         item.CaptureNote = comments.Count == 0 ? null : string.Join("; ", comments);
 
-        
         // Submit: one audit entry per submission. A re-entry shows what changed since the returned attempt.
         var changes = wasReturned ? TestItem.Diff(previousAttempt, lines) : null;
         var detail = TestItem.Summarise(lines) + (item.CaptureNote != null ? $" — {item.CaptureNote}" : "");
@@ -638,6 +648,7 @@ public class TechnicianDashboardController : Controller
 
     public IActionResult TestDetails(string id)
     {
+        ViewBag.Consumables = _db.GetConsumableChecks();
         var item = Find(id);
         if (item == null) return NotFound();
         ViewBag.Email = User?.Identity?.Name;

@@ -507,9 +507,9 @@ namespace _4th_year_set_up.Models
         public string Sample { get; set; } = "—";
         public string Priority { get; set; } = "Routine";
         public string Waited { get; set; } = "—";
-        public bool IsUrgent => Priority != "Routine";
         public List<ConsumableNeed> Needs { get; set; } = new();
         public bool HasShortage => Needs.Any(n => n.IsShort);
+        public bool IsUrgent => Priority != "Routine";
     }
 
     // The Release Results screen: requests that are ready, requests held back, and requests already released.
