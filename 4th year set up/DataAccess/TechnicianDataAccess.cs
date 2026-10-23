@@ -461,7 +461,8 @@ namespace _4th_year_set_up.DataAccess
                 using var db = Open();
                 using var multi = db.QueryMultiple("dbo.sp_Tech_GetTubeConsumables", commandType: CommandType.StoredProcedure);
                 var needs = multi.Read<ConsumableRow>().ToList();
-                var missing = multi.Read<MissingRow>().ToList();
+                // an older copy of the procedure returns only one result set: read the second one only when it is there
+                var missing = multi.IsConsumed ? new List<MissingRow>() : multi.Read<MissingRow>().ToList();
 
                 foreach (var g in needs.GroupBy(r => r.BarcodeID))
                     result[g.Key] = new ConsumableCheck
