@@ -440,6 +440,16 @@ namespace _4th_year_set_up.DataAccess
             return (((int)r.TechnicianID).ToString(), $"{r.FirstName} {r.LastName}", (string)r.Email);
         }
 
+        // The technician behind a signed-in e-mail address (the group's login keeps it in the session).
+        public (string Id, string Name, string Email)? GetTechnicianByEmail(string email)
+        {
+            if (_sample) return ("1", "Sipho Ndlovu", "sipho.ndlovu@nmbhlab.co.za");
+            using var db = Open();
+            var r = db.QueryFirstOrDefault("dbo.sp_Tech_GetTechnicianByEmail", new { Email = email }, commandType: CommandType.StoredProcedure);
+            if (r == null) return null;
+            return (((int)r.TechnicianID).ToString(), $"{r.FirstName} {r.LastName}", (string)r.Email);
+        }
+
         // The consumables each waiting tube needs against the lab manager's stock, keyed by BarcodeID.
         // A tube with no consumables linked is simply absent from the result (the screens say so).
         public Dictionary<int, ConsumableCheck> GetConsumableChecks()

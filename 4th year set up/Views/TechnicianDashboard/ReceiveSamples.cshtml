@@ -117,13 +117,12 @@
 
             <div class="page-head">
                 <h1>Receive Samples</h1>
-                <p>Book in tubes as they arrive. Pressing Receive shows the consumables needed for the tests on that tube against the lab's stock. A tube can only be received when every test on it has consumables linked and there is enough stock.</p>
+                <p>Book in tubes as they arrive. Pressing Receive confirms the tube has reached the lab and moves it to Sample Verification.</p>
             </div>
 
             @{
                 var cAll = Model.Count;
                 var cUrgent = Model.Count(x => x.IsUrgent);
-                var cShort = Model.Count(x => x.IsBlocked);
             }
 
             <div class="card">
@@ -137,35 +136,26 @@
                         <input type="text" id="rcSearch" class="form-control form-control--search" placeholder="Search barcode or request #" aria-label="Search tubes" />
                         <button type="button" class="chip active" data-filter="all">All <span class="chip-count">@cAll</span></button>
                         <button type="button" class="chip chip-urgent" data-filter="urgent">Urgent <span class="chip-count">@cUrgent</span></button>
-                        <button type="button" class="chip chip-overdue" data-filter="short">Blocked <span class="chip-count">@cShort</span></button>
                     </div>
 
                     <div class="table-wrap">
                         <table class="table" id="rcTable">
                             <thead>
-                                <tr><th>Barcode</th><th>Request #</th><th>Tests</th><th>Sample</th><th>Priority</th><th>Collected</th><th>Stock</th><th></th></tr>
+                                <tr><th>Barcode</th><th>Request #</th><th>Tests</th><th>Sample</th><th>Priority</th><th>Collected</th><th></th></tr>
                             </thead>
                             <tbody>
                                 @foreach (var t in Model)
                                 {
-                                    <tr data-search="@((t.Barcode + " " + t.ReqNum + " " + t.Tests).ToLower())" data-urgent="@(t.IsUrgent ? "1" : "0")" data-short="@(t.IsBlocked ? "1" : "0")">
+                                    <tr data-search="@((t.Barcode + " " + t.ReqNum + " " + t.Tests).ToLower())" data-urgent="@(t.IsUrgent ? "1" : "0")">
                                         <td><strong>@t.Barcode</strong></td>
                                         <td>@t.ReqNum</td>
                                         <td>@t.Tests</td>
                                         <td>@t.Sample</td>
                                         <td><span class="badge @(t.IsUrgent ? "badge-urgent" : "badge-routine")">@t.Priority</span></td>
                                         <td>@t.Waited</td>
-                                        <td>
-                                            @if (t.Missing.Count > 0) { <span class="badge badge-overdue" title="@string.Join(", ", t.Missing)">No link</span> }
-                                            else if (t.HasShortage) { <span class="badge badge-overdue">Short</span> }
-                                            else if (t.Needs.Count == 0) { <span class="stock-none">None needed</span> }
-                                            else { <span class="stock-ok">Enough</span> }
-                                        </td>
                                         <td class="actions-cell">
                                             <button type="button" class="btn btn-primary js-receive"
-                                                    data-barcode="@t.Barcode" data-req="@t.ReqNum" data-tests="@t.Tests" data-sample="@t.Sample"
-                                                    data-missing="@System.Text.Json.JsonSerializer.Serialize(t.Missing)"
-                                                    data-needs="@System.Text.Json.JsonSerializer.Serialize(t.Needs.Select(n => new { name = n.Name, needed = n.Needed, onHand = n.OnHand }))">Receive</button>
+                                                    data-barcode="@t.Barcode" data-req="@t.ReqNum" data-tests="@t.Tests" data-sample="@t.Sample">Receive</button>
                                         </td>
                                     </tr>
                                 }
@@ -198,15 +188,7 @@
                 <button type="button" class="modal-close" id="rcClose" aria-label="Close">✕</button>
             </div>
 
-            <div class="detail-card-title">Consumables needed for these tests</div>
-            <p class="muted-note" id="rcNone" hidden>No consumables are needed for these tests.</p>
-            <div class="table-wrap" id="rcTableWrap" hidden>
-                <table class="table">
-                    <thead><tr><th>Consumable</th><th>Needed</th><th>In stock</th><th></th></tr></thead>
-                    <tbody id="rcRows"></tbody>
-                </table>
-            </div>
-            <div class="alert-box alert-danger" id="rcShort" hidden></div>
+            <p class="muted-note">Confirm this tube has reached the lab. It will move to Sample Verification.</p>
 
             <form method="post" asp-controller="TechnicianDashboard" asp-action="ReceiveSample">
                 <input type="hidden" name="barcode" id="rcBarcode" />
@@ -252,38 +234,15 @@
     <script>
         (function () {
             var overlay = document.getElementById('rcModal');
-            function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : t; return d.innerHTML; }
             function close() { overlay.classList.remove('open'); overlay.setAttribute('aria-hidden', 'true'); }
 
             document.addEventListener('click', function (e) {
                 var b = e.target.closest('.js-receive');
                 if (!b) return;
-                var d = b.dataset, needs = [], missing = [];
-                try { needs = JSON.parse(d.needs || '[]'); } catch (x) { }
-                try { missing = JSON.parse(d.missing || '[]'); } catch (x) { }
-
+                var d = b.dataset;
                 document.getElementById('rcTitle').textContent = 'Receive tube ' + d.barcode;
                 document.getElementById('rcSub').textContent = d.req + ' · ' + d.tests + ' · ' + d.sample;
                 document.getElementById('rcBarcode').value = d.barcode;
-
-                var rows = document.getElementById('rcRows'), shortList = [];
-                rows.innerHTML = '';
-                needs.forEach(function (n) {
-                    var short = n.onHand < n.needed;
-                    if (short) shortList.push(n.name + ' (need ' + n.needed + ', have ' + n.onHand + ')');
-                    rows.insertAdjacentHTML('beforeend', '<tr><td>' + esc(n.name) + '</td><td>' + n.needed + '</td><td><strong>' + n.onHand +
-                        '</strong></td><td><span class="badge ' + (short ? 'badge-overdue">Short' : 'badge-ontrack">OK') + '</span></td></tr>');
-                });
-                document.getElementById('rcNone').hidden = needs.length > 0 || missing.length > 0;
-                document.getElementById('rcTableWrap').hidden = needs.length === 0;
-
-                var warn = document.getElementById('rcShort'), msg = [];
-                if (missing.length) msg.push('No consumables are linked to ' + missing.join(', ') + '. Ask the lab manager to link them first.');
-                if (shortList.length) msg.push('Not enough stock: ' + shortList.join(', ') + '. Ask the lab manager to restock.');
-                warn.hidden = msg.length === 0;
-                warn.textContent = msg.join(' ');
-                document.getElementById('rcConfirm').disabled = msg.length > 0;
-
                 overlay.classList.add('open'); overlay.setAttribute('aria-hidden', 'false');
                 document.getElementById('rcClose').focus();
             });

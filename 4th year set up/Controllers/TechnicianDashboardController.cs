@@ -25,47 +25,52 @@ public class TechnicianDashboardController : Controller
         // No technician roles: every technician can do every step, so nothing is looked up here.
     }
 
-
     // Runs before every action: finds out WHO is logged in and tells the screens. Only a lab technician may be here.
+    // The group's login keeps the signed-in e-mail in the session (Session "Email"), so that is what we read first.
     public override void OnActionExecuting(Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context)
     {
-            var userId = LoggedInUserId();
-            if (!userId.HasValue)
+        var tech = FindLoggedInTechnician(out var loggedIn);
+        if (loggedIn)
+        {
+            if (tech == null)
             {
+                // signed in, but no LabTechnicians row: end the session so Login can't bounce back here (no redirect loop)
+                HttpContext.Session.Clear();
+                TempData["Error"] = "Your account isn't set up as a lab technician yet. Please ask the administrator.";
                 context.Result = RedirectToAction("Login", "Home");
                 return;
             }
-
-            //var userId = LoggedInUserId();
-            //if (userId.HasValue)
-            //{
-            //    var tech = _db.GetTechnicianByUser(userId.Value);
-
-            //        if (tech == null)
-            //        {
-            //            // signed in, but no LabTechnicians row: end the session so Login can't bounce back here
-            //            HttpContext.Session.Clear();
-            //            TempData["Error"] = "Your account isn't set up as a lab technician yet. Please ask the administrator.";
-            //            context.Result = RedirectToAction("Login", "Home");
-            //            return;
-            //        }
-            //        CurrentUser.Id = tech.Value.Id;
-            //    CurrentUser.Name = tech.Value.Name;
-            //    ViewBag.Email = tech.Value.Email;
-            //}
-            base.OnActionExecuting(context);
+            CurrentUser.Id = tech.Value.Id;
+            CurrentUser.Name = tech.Value.Name;
+            ViewBag.Email = tech.Value.Email;
+        }
+        base.OnActionExecuting(context);
     }
 
-    // The Users.UserID of the logged-in person: from the login cookie's claims, or from the session if that is what your login uses.
-    private int? LoggedInUserId()
+    private (string Id, string Name, string Email)? FindLoggedInTechnician(out bool loggedIn)
     {
-        foreach (var type in new[] { System.Security.Claims.ClaimTypes.NameIdentifier, "UserID", "UserId", "sub" })
+        loggedIn = false;
+
+        string email = null;
+        int? userId = null;
+        try
         {
-            var v = User?.FindFirst(type)?.Value;
-            if (int.TryParse(v, out var id)) return id;
+            email = HttpContext.Session.GetString("Email");
+            userId = HttpContext.Session.GetInt32("UserID") ?? HttpContext.Session.GetInt32("UserId");
         }
-        try { return HttpContext.Session.GetInt32("UserID") ?? HttpContext.Session.GetInt32("UserId"); }
-        catch (InvalidOperationException) { return null; }      // sessions are not switched on
+        catch (InvalidOperationException) { }        // sessions are not switched on
+
+        if (userId == null && string.IsNullOrWhiteSpace(email))
+        {
+            // cookie sign-in instead of session
+            email = User?.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+            foreach (var type in new[] { System.Security.Claims.ClaimTypes.NameIdentifier, "UserID", "UserId" })
+                if (int.TryParse(User?.FindFirst(type)?.Value, out var id)) { userId = id; break; }
+        }
+
+        if (userId == null && string.IsNullOrWhiteSpace(email)) return null;      // nobody signed in: developer fallback (Sipho)
+        loggedIn = true;
+        return userId.HasValue ? _db.GetTechnicianByUser(userId.Value) : _db.GetTechnicianByEmail(email.Trim());
     }
 
     public IActionResult Index()
@@ -110,7 +115,6 @@ public class TechnicianDashboardController : Controller
     public IActionResult ReceiveSamples()
     {
         ViewBag.Email ??= User?.Identity?.Name;
-        var checks = _db.GetConsumableChecks();
         var rows = _db.GetRequests().SelectMany(r => r.Tubes)
                       .Where(t => t.Status == TubeStatus.NotReceived && t.BarcodeId > 0 && t.Request != null)
                       .OrderBy(t => t.Request.Priority == "STAT" ? 0 : t.Request.Priority == "Urgent" ? 1 : 2)
@@ -122,9 +126,7 @@ public class TechnicianDashboardController : Controller
                           Tests = string.IsNullOrWhiteSpace(t.TestsLabel) ? "—" : t.TestsLabel,
                           Sample = t.Type ?? t.SampleType ?? "—",
                           Priority = t.Request.Priority ?? "Routine",
-                          Waited = Waited(t.CollectedAt),
-                          Needs = checks.TryGetValue(t.BarcodeId, out var cc) ? cc.Needs : new List<ConsumableNeed>(),
-                          Missing = cc != null ? cc.MissingTests : new List<string>()
+                          Waited = Waited(t.CollectedAt)
                       }).ToList();
         return View(rows);
     }
@@ -158,12 +160,6 @@ public class TechnicianDashboardController : Controller
         if (tube.Status != TubeStatus.NotReceived)
         {
             Flash($"{tube.TubeId} has already been received.", "warn");
-            return RedirectToAction("ReceiveSamples");
-        }
-
-        if (_db.GetConsumableChecks().TryGetValue(tube.BarcodeId, out var stock) && stock.IsBlocked)
-        {
-            Flash($"{tube.TubeId} was not received. {stock.BlockText}", "warn");
             return RedirectToAction("ReceiveSamples");
         }
 

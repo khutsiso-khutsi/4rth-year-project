@@ -42,6 +42,7 @@ namespace _4th_year_set_up.Repository
         public string GetDoctorEmail(LabRequest req) => _dataAccess.GetDoctorEmail(req);
 
         public (string Id, string Name, string Email)? GetTechnicianByUser(int userId) => _dataAccess.GetTechnicianByUser(userId);
+        public (string Id, string Name, string Email)? GetTechnicianByEmail(string email) => _dataAccess.GetTechnicianByEmail(email);
         public Dictionary<int, ConsumableCheck> GetConsumableChecks() => _dataAccess.GetConsumableChecks();
 
         // ── PROFILE ───────────────────────────────────────────────────
