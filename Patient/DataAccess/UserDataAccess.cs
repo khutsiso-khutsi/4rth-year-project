@@ -546,7 +546,7 @@ namespace Patient.DataAccess
 
                     vm.AllDoctors.Add(new DoctorOption
                     {
-                        DoctorID = (int)dr["DoctorID"],
+                        DoctorID = HasColumn(dr, "DoctorID") ? (int)dr["DoctorID"] : (int)dr["Id"],
                         DoctorName = name ?? "",
                         Email = email ?? ""
                     });
