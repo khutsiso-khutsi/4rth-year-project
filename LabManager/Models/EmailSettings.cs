@@ -1,4 +1,5 @@
 
+using Microsoft.Extensions.Configuration;
 using System;
 using System.ComponentModel.DataAnnotations;
 
@@ -8,13 +9,26 @@ namespace LabManager.Models
 
     public class EmailSettings
     {
-        public string Host { get; set; } = "";
-        public int Port { get; set; } = 587;
-        public bool UseSsl { get; set; }          // true = port 465, false = port 587 (StartTls)
+       
+            [ConfigurationKeyName("SmtpHost")]
+            public string Host { get; set; } = "";
+
+            [ConfigurationKeyName("SmtpPort")]
+            public int Port { get; set; } = 587;
+
+            public bool UseSsl { get; set; } = false;
+
         public string Username { get; set; } = "";
+
+        [ConfigurationKeyName("AppPassword")]
         public string Password { get; set; } = "";
-        public string FromEmail { get; set; } = "";
-        public string FromName { get; set; } = "LabManager";
+
+            [ConfigurationKeyName("SenderEmail")]
+            public string FromEmail { get; set; } = "";
+
+            [ConfigurationKeyName("SenderName")]
+            public string FromName { get; set; } = "Lab Manager";
+        
         // OAuth settings
         public bool UseOAuth { get; set; } = false;
         public string OAuthClientId { get; set; } = "";

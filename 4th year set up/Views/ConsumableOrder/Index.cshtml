@@ -46,7 +46,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Consumable Orders ÔÇö NMB-HLabSys</title>
+    <title>Consumable Orders — NMB-HLabSys</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -124,7 +124,7 @@
             outline: none;
         }
 
-        /* ÔöÇÔöÇ TOPBAR ÔöÇÔöÇ */
+        /* ── TOPBAR ── */
         .topbar {
             background: var(--navy);
             padding: 0 40px;
@@ -245,13 +245,13 @@
                 flex-shrink: 0;
             }
 
-        /* ÔöÇÔöÇ LAYOUT ÔöÇÔöÇ */
+        /* ── LAYOUT ── */
         .page {
             display: flex;
             min-height: calc(100vh - var(--topbar-h));
         }
 
-        /* ÔöÇÔöÇ SIDEBAR ÔöÇÔöÇ */
+        /* ── SIDEBAR ── */
         .sidebar {
             width: 220px;
             background: white;
@@ -315,7 +315,7 @@
                 outline-offset: -2px;
             }
 
-        /* ÔöÇÔöÇ MAIN ÔöÇÔöÇ */
+        /* ── MAIN ── */
         .main {
             flex: 1;
             min-width: 0;
@@ -323,7 +323,7 @@
             overflow-y: auto;
         }
 
-        /* ÔöÇÔöÇ PAGE HEADER ÔöÇÔöÇ */
+        /* ── PAGE HEADER ── */
         .page-header {
             display: flex;
             justify-content: space-between;
@@ -356,7 +356,7 @@
             flex-wrap: wrap;
         }
 
-        /* ÔöÇÔöÇ BUTTONS ÔöÇÔöÇ */
+        /* ── BUTTONS ── */
         .btn {
             display: inline-flex;
             align-items: center;
@@ -440,7 +440,7 @@
             font-size: .72rem;
         }
 
-        /* ÔöÇÔöÇ ALERTS ÔöÇÔöÇ */
+        /* ── ALERTS ── */
         .alert {
             border-radius: 10px;
             padding: 13px 16px;
@@ -476,7 +476,7 @@
             padding: 2px 6px;
         }
 
-        /* ÔöÇÔöÇ CARD ÔöÇÔöÇ */
+        /* ── CARD ── */
         .card {
             background: white;
             border: 1px solid var(--border);
@@ -513,7 +513,7 @@
             white-space: nowrap;
         }
 
-        /* ÔöÇÔöÇ FILTER ÔöÇÔöÇ */
+        /* ── FILTER ── */
         .filter-card {
             margin-bottom: 20px;
         }
@@ -582,7 +582,7 @@
             min-width: 260px;
         }
 
-        /* ÔöÇÔöÇ STAT CARDS ÔöÇÔöÇ */
+        /* ── STAT CARDS ── */
         .stats {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -638,7 +638,7 @@
             color: var(--muted);
         }
 
-        /* ÔöÇÔöÇ TABLE ÔöÇÔöÇ */
+        /* ── TABLE ── */
         .table-wrapper {
             width: 100%;
             overflow-x: auto;
@@ -750,6 +750,61 @@
             color: var(--red-dark);
         }
 
+        /* ── PAGINATION ── */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 14px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .pagination-info {
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .page-btn {
+            min-width: 34px;
+            height: 34px;
+            padding: 0 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: white;
+            color: var(--navy);
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+            .page-btn:hover:not(:disabled):not(.active) {
+                border-color: var(--teal);
+                color: var(--teal);
+            }
+
+            .page-btn.active {
+                background: var(--teal);
+                border-color: var(--teal);
+                color: white;
+                cursor: default;
+            }
+
+            .page-btn:disabled {
+                opacity: .4;
+                cursor: not-allowed;
+            }
+
         .table-footer {
             display: flex;
             justify-content: space-between;
@@ -766,7 +821,7 @@
                 color: var(--navy);
             }
 
-        /* ÔöÇÔöÇ EMPTY STATE ÔöÇÔöÇ */
+        /* ── EMPTY STATE ── */
         .empty-state {
             text-align: center;
             padding: 55px 20px;
@@ -796,7 +851,7 @@
             font-size: 0.8rem;
         }
 
-        /* ÔöÇÔöÇ PAGE FOOTER ÔöÇÔöÇ */
+        /* ── PAGE FOOTER ── */
         .footer {
             margin-top: 28px;
             padding: 0 2px;
@@ -806,7 +861,7 @@
             font-size: 0.7rem;
         }
 
-        /* ÔöÇÔöÇ SCROLLBAR ÔöÇÔöÇ */
+        /* ── SCROLLBAR ── */
         .sidebar::-webkit-scrollbar,
         .table-wrapper::-webkit-scrollbar {
             width: 7px;
@@ -824,7 +879,7 @@
             border-radius: 20px;
         }
 
-        /* ÔöÇÔöÇ MODALS ÔöÇÔöÇ */
+        /* ── MODALS ── */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -1059,7 +1114,7 @@
                 color: var(--red-dark);
             }
 
-        /* ÔöÇÔöÇ CREATE-ORDER ITEM ROWS ÔöÇÔöÇ */
+        /* ── CREATE-ORDER ITEM ROWS ── */
         .section-title {
             font-size: 1.02rem;
             font-weight: 700;
@@ -1237,7 +1292,7 @@
             font-size: .77rem;
         }
 
-        /* ÔöÇÔöÇ LOGOUT MODAL ÔöÇÔöÇ */
+        /* ── LOGOUT MODAL ── */
         #logout-modal {
             display: none;
             position: fixed;
@@ -1282,7 +1337,7 @@
                 flex: 1;
             }
 
-        /* ÔöÇÔöÇ RESPONSIVE ÔöÇÔöÇ */
+        /* ── RESPONSIVE ── */
         @@media (max-width: 1000px) {
             .stats {
                 grid-template-columns: 1fr;
@@ -1337,6 +1392,18 @@
 
             .filter-form .btn {
                 flex: 1 1 auto;
+            }
+
+            .pagination {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .pagination-controls {
+                justify-content: center;
             }
 
             .table-footer {
@@ -1489,7 +1556,7 @@
                 <div class="nav-section">
                     <div class="nav-label">System</div>
 
-                    <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
+                    <a asp-controller="User" asp-action="Profile" class="nav-item">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                             <circle cx="12" cy="7" r="4" />
@@ -1497,12 +1564,7 @@
                         Profile
                     </a>
 
-                    <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                        </svg>
-                        Audit Log
-                    </a>
+                    
                 </div>
             </nav>
         </aside>
@@ -1533,15 +1595,15 @@
             @if (!string.IsNullOrWhiteSpace(successMessage))
             {
                 <div class="alert alert-success" id="success-alert" role="status">
-                    <span>Ô£ô @successMessage</span>
-                    <button type="button" class="alert-close" aria-label="Dismiss" onclick="closeAlert('success-alert')">├ù</button>
+                    <span>✓ @successMessage</span>
+                    <button type="button" class="alert-close" aria-label="Dismiss" onclick="closeAlert('success-alert')">×</button>
                 </div>
             }
             @if (!string.IsNullOrWhiteSpace(errorMessage))
             {
                 <div class="alert alert-error" id="error-alert" role="alert">
-                    <span>ÔÜá @errorMessage</span>
-                    <button type="button" class="alert-close" aria-label="Dismiss" onclick="closeAlert('error-alert')">├ù</button>
+                    <span>⚠ @errorMessage</span>
+                    <button type="button" class="alert-close" aria-label="Dismiss" onclick="closeAlert('error-alert')">×</button>
                 </div>
             }
 
@@ -1679,7 +1741,7 @@
                                         .FirstOrDefault(c => c.Value == order.ConsumableID.ToString())?.Text
                                         ?? $"Consumable #{order.ConsumableID}";
 
-                                    // Items comes from sp_GetConsumableOrders, e.g. "Tubes ├ù 100, Gloves ├ù 50".
+                                    // Items comes from sp_GetConsumableOrders, e.g. "Tubes × 100, Gloves × 50".
                                     // Orders created before item rows existed fall back to the single consumable name.
                                     var itemsText = Convert.ToString(order.Items);
                                     if (string.IsNullOrWhiteSpace(itemsText))
@@ -1725,7 +1787,7 @@
                                                 }
                                                 @if (order.Status == "Complete")
                                                 {
-                                                    <span class="action-note action-note-complete">Ô£ô Completed</span>
+                                                    <span class="action-note action-note-complete">✓ Completed</span>
                                                 }
                                                 @if (order.Status == "Cancelled")
                                                 {
@@ -1741,7 +1803,7 @@
                                 <tr id="server-empty-row">
                                     <td colspan="6">
                                         <div class="empty-state">
-                                            <div class="empty-icon">­ƒôª</div>
+                                            <div class="empty-icon">📦</div>
                                             <h3>No orders found</h3>
                                             <p>There are currently no consumable orders matching your filter.</p>
                                         </div>
@@ -1751,7 +1813,7 @@
                             <tr id="filter-empty-row" style="display:none;">
                                 <td colspan="6">
                                     <div class="empty-state">
-                                        <div class="empty-icon">­ƒöÄ</div>
+                                        <div class="empty-icon">🔎</div>
                                         <h3>No matching orders</h3>
                                         <p>Try another supplier, status or search term.</p>
                                     </div>
@@ -1761,16 +1823,22 @@
                     </table>
                 </div>
 
+                <!-- PAGINATION (5 orders per page) -->
+                <div class="pagination" id="pagination">
+                    <div class="pagination-info" id="page-info"></div>
+                    <div class="pagination-controls" id="page-controls"></div>
+                </div>
+
                 <div class="table-footer">
-                    <span>Showing <strong id="footer-count">@orders.Count()</strong> order(s)</span>
+                    <span id="footer-info">Showing <strong>0</strong> order(s)</span>
                     <span>Generated: <strong>@DateTime.Now.ToString("dd MMMM yyyy, HH:mm")</strong></span>
                 </div>
             </div>
 
             <!-- PAGE FOOTER -->
             <div class="footer">
-                <span>NMB-HLabSys ┬À Haematology Laboratory System</span>
-                <span>Internal management report ┬À @DateTime.Now.ToString("yyyy")</span>
+                <span>NMB-HLabSys · Haematology Laboratory System</span>
+                <span>Internal management report · @DateTime.Now.ToString("yyyy")</span>
             </div>
 
         </main>
@@ -1785,7 +1853,7 @@
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="create-order-title">
             <div class="modal-header">
                 <h2 class="modal-title" id="create-order-title">Create Consumable Order</h2>
-                <button type="button" class="modal-close" aria-label="Close" onclick="closeModal('m-create-order')">├ù</button>
+                <button type="button" class="modal-close" aria-label="Close" onclick="closeModal('m-create-order')">×</button>
             </div>
 
             <form method="post" action="@Url.Action("CreateOrder", "ConsumableOrder")" id="create-order-form">
@@ -1844,14 +1912,14 @@
                                 </div>
                             </div>
 
-                            <button type="button" class="btn btn-outline add-item-btn" id="add-item-btn">´╝ï Add another item</button>
+                            <button type="button" class="btn btn-outline add-item-btn" id="add-item-btn">＋ Add another item</button>
                             <div class="order-items-actions">
                                 <span class="order-items-count"><strong id="order-item-count">1</strong> item(s)</span>
                             </div>
                         </div>
 
                         <div class="order-supplier-note">
-                            <span aria-hidden="true">Ôôÿ</span>
+                            <span aria-hidden="true">ⓘ</span>
                             <span id="supplier-items-note">Select a supplier to load only the consumables associated with that supplier.</span>
                         </div>
                         <input type="hidden" name="items" id="order-items-json" />
@@ -1874,7 +1942,7 @@
                     <h2 class="modal-title" id="receive-order-title">Receive Order</h2>
                     <div class="modal-subtitle flush" id="recv-sub"></div>
                 </div>
-                <button type="button" class="modal-close" aria-label="Close" onclick="closeModal('m-receive-order')">├ù</button>
+                <button type="button" class="modal-close" aria-label="Close" onclick="closeModal('m-receive-order')">×</button>
             </div>
             <div class="modal-body">
                 <div class="receive-info">
@@ -1899,7 +1967,7 @@
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cancel-order-title">
             <div class="modal-header">
                 <h2 class="modal-title" id="cancel-order-title">Cancel Order</h2>
-                <button type="button" class="modal-close" aria-label="Close" onclick="closeModal('m-cancel-order')">├ù</button>
+                <button type="button" class="modal-close" aria-label="Close" onclick="closeModal('m-cancel-order')">×</button>
             </div>
             <form id="cancel-order-form" method="post" action="@Url.Action("CancelOrder", "ConsumableOrder")">
                 @Html.AntiForgeryToken()
@@ -2046,7 +2114,7 @@
                         if (item) {
                             const stock = item.quantityOnHand;
                             hint.textContent = "Selected: " + item.name +
-                                (stock !== null && stock !== undefined ? " ┬À Current stock: " + stock : "");
+                                (stock !== null && stock !== undefined ? " · Current stock: " + stock : "");
                             hint.classList.add("has-selection");
                         } else {
                             hint.textContent = selectedSupplierId()
@@ -2243,20 +2311,75 @@
                 this.submit();
             });
 
-            /* Supplier filter, status filter and search work together on visible rows. */
+            /* Supplier filter, status filter and search work together, then the matches are paged (5 per page). */
+            const PAGE_SIZE = 5;
+            let currentPage = 1;
+
             const supplierFilter = document.getElementById("supplier-filter");
             const statusFilter = document.getElementById("status-filter");
             const searchInput = document.getElementById("order-search");
             const filterForm = document.getElementById("order-filter-form");
 
+            function goToPage(page) {
+                currentPage = page;
+                filterOrders();
+            }
+
+            function renderPagination(totalMatches, totalPages, start, end) {
+                const info = document.getElementById("page-info");
+                const controls = document.getElementById("page-controls");
+                const pagination = document.getElementById("pagination");
+                const footerInfo = document.getElementById("footer-info");
+                const count = document.getElementById("table-count");
+
+                if (count) count.textContent = totalMatches + " order(s)";
+
+                const from = totalMatches === 0 ? 0 : start + 1;
+                const to = Math.min(end, totalMatches);
+
+                if (footerInfo) {
+                    footerInfo.innerHTML = "Showing <strong>" + from + "–" + to + "</strong> of <strong>" + totalMatches + "</strong> order(s)";
+                }
+
+                if (!info || !controls) return;
+
+                info.textContent = totalMatches === 0
+                    ? "No results"
+                    : "Page " + currentPage + " of " + totalPages;
+
+                controls.innerHTML = "";
+
+                // Nothing to page through: hide the whole bar.
+                if (pagination) pagination.style.display = totalPages <= 1 ? "none" : "";
+                if (totalPages <= 1) return;
+
+                function makeBtn(label, page, disabled, active) {
+                    const b = document.createElement("button");
+                    b.type = "button";
+                    b.className = "page-btn" + (active ? " active" : "");
+                    b.textContent = label;
+                    b.disabled = !!disabled;
+                    if (active) b.setAttribute("aria-current", "page");
+                    if (!disabled && !active) {
+                        b.addEventListener("click", function () { goToPage(page); });
+                    }
+                    return b;
+                }
+
+                controls.appendChild(makeBtn("Prev", currentPage - 1, currentPage === 1, false));
+                for (let p = 1; p <= totalPages; p++) {
+                    controls.appendChild(makeBtn(String(p), p, false, p === currentPage));
+                }
+                controls.appendChild(makeBtn("Next", currentPage + 1, currentPage === totalPages, false));
+            }
+
             function filterOrders() {
                 const selectedSupplier = supplierFilter?.value || "";
                 const selectedStatus = statusFilter?.value || "All Statuses";
                 const search = normalize(searchInput?.value || "");
-                const rows = document.querySelectorAll("#orders-table tbody .order-row");
-                let visible = 0;
+                const rows = Array.from(document.querySelectorAll("#orders-table tbody .order-row"));
 
-                rows.forEach(row => {
+                const matches = rows.filter(row => {
                     const supplierMatches = !selectedSupplier ||
                         row.dataset.supplierId === selectedSupplier;
 
@@ -2266,30 +2389,42 @@
                     const searchMatches = !search ||
                         normalize(row.dataset.search || row.textContent).includes(search);
 
-                    const show = supplierMatches && statusMatches && searchMatches;
-                    row.style.display = show ? "" : "none";
-                    if (show) visible++;
+                    return supplierMatches && statusMatches && searchMatches;
                 });
 
-                const count = document.getElementById("table-count");
-                if (count) count.textContent = visible + " order(s)";
+                const totalPages = Math.max(1, Math.ceil(matches.length / PAGE_SIZE));
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
 
-                const footerCount = document.getElementById("footer-count");
-                if (footerCount) footerCount.textContent = visible;
+                const start = (currentPage - 1) * PAGE_SIZE;
+                const end = start + PAGE_SIZE;
 
+                rows.forEach(row => { row.style.display = "none"; });
+                matches.slice(start, end).forEach(row => { row.style.display = ""; });
+
+                // Only show the "no matches" row when there are orders but none match.
                 const emptyRow = document.getElementById("filter-empty-row");
-                if (emptyRow) emptyRow.style.display = visible === 0 ? "" : "none";
+                if (emptyRow) {
+                    emptyRow.style.display = (rows.length > 0 && matches.length === 0) ? "" : "none";
+                }
+
+                renderPagination(matches.length, totalPages, start, end);
             }
 
-            supplierFilter?.addEventListener("change", filterOrders);
-            statusFilter?.addEventListener("change", filterOrders);
-            searchInput?.addEventListener("input", filterOrders);
+            function filterFromStart() {
+                currentPage = 1;   // any change to a filter restarts at page 1
+                filterOrders();
+            }
+
+            supplierFilter?.addEventListener("change", filterFromStart);
+            statusFilter?.addEventListener("change", filterFromStart);
+            searchInput?.addEventListener("input", filterFromStart);
 
             filterForm?.addEventListener("submit", function (event) {
                 // Apply these filters to the orders already loaded on this page.
                 // Do not reload and lose the supplier/search selections.
                 event.preventDefault();
-                filterOrders();
+                filterFromStart();
             });
 
             filterOrders();
@@ -2305,7 +2440,7 @@
                     <div>
                         <div class="receive-item-name">${escapeHtml(item.name)}</div>
                         <div class="receive-item-qty">
-                            Ordered: ${item.quantity} ┬À Already received: ${item.quantityReceived} ┬À Remaining: ${outstanding}
+                            Ordered: ${item.quantity} · Already received: ${item.quantityReceived} · Remaining: ${outstanding}
                         </div>
                     </div>
                     <div></div>
@@ -2459,7 +2594,7 @@
                 document.getElementById("cancel-order-id").value = button.dataset.orderId || "";
                 document.getElementById("cancel-reason").value = "";
                 document.getElementById("cancel-sub").textContent =
-                    "Order " + (button.dataset.orderNumber || "") + " ÔÇö " + (button.dataset.supplier || "");
+                    "Order " + (button.dataset.orderNumber || "") + " — " + (button.dataset.supplier || "");
 
                 openModal("m-cancel-order");
             });

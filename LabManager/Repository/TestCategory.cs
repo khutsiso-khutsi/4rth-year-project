@@ -1,7 +1,9 @@
 ﻿using _4th_year_set_up.Models;
+using Dapper;
 using LabManager.DataAccess;
 using LabManager.Models;
 using LabManager.Repository;
+using System.Data;
 
 namespace LabManager.Repositories
 {
@@ -58,10 +60,10 @@ namespace LabManager.Repositories
                         test.NormalRangeMin,
                         test.ConsumablesUsed
                     }
-                 
-                        
 
-                 
+
+
+
                 );
 
                 return true;
@@ -139,7 +141,7 @@ namespace LabManager.Repositories
                     {
                         CategoryName = category.CategoryName,
                         Description = category.Description,
-                        
+
                     }
                 );
 
@@ -210,7 +212,7 @@ namespace LabManager.Repositories
                 new { TestId = testId });
         }
 
-     
+
 
 
         public async Task<IEnumerable<Consumable>> GetConsumables()
@@ -219,6 +221,44 @@ namespace LabManager.Repositories
                 "sp_GetorderConsumables",
                 new { });
         }
+
+        public async Task<int> UpdateCategoryAsync(int categoryId, string categoryName, string? description)
+        {
+            var result = await _dataAccess.GetData<int, dynamic>(
+                "dbo.usp_Category_Update",
+                new { CategoryID = categoryId, CategoryName = categoryName, Description = description });
+
+            return result.Any() ? result.First() : -1;
+        }
+
+        public async Task<int> DeleteCategoryAsync(int categoryId)
+        {
+            var result = await _dataAccess.GetData<int, dynamic>(
+                "dbo.usp_Category_Delete",
+                new { CategoryID = categoryId });
+
+            return result.Any() ? result.First() : -1;
+        }
+
+        public async Task<int> UpdateSampleTypeAsync(int sampleTypeId, string sampleName)
+        {
+            var result = await _dataAccess.GetData<int, dynamic>(
+                "dbo.usp_SampleType_Update",
+                new { SampleTypeID = sampleTypeId, SampleName = sampleName });
+
+            return result.Any() ? result.First() : -1;
+        }
+
+        public async Task<int> DeleteSampleTypeAsync(int sampleTypeId)
+        {
+            var result = await _dataAccess.GetData<int, dynamic>(
+                "dbo.usp_SampleType_Delete",
+                new { SampleTypeID = sampleTypeId });
+
+            return result.Any() ? result.First() : -1;
+        }
+
+
 
     }
 }

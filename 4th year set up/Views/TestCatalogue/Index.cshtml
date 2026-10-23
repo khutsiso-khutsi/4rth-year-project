@@ -9,6 +9,9 @@
     Layout = null;
     ViewData["Title"] = "Test Catalogue";
 
+    // Number of test rows shown per page in the main table
+    const int TestsPerPage = 5;
+
     var tests = Model ?? Enumerable.Empty<TestType>();
 
     var categories = ViewBag.Categories as IEnumerable<TestCategory>
@@ -56,9 +59,16 @@
     }
     sampleItems = sampleItems.OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase).ToList();
 
-    // ── Usage counts (how many active tests use each category / sample type) ──
-    var catUsage = tests.GroupBy(t => t.CategoryId.ToString()).ToDictionary(g => g.Key, g => g.Count());
-    var sampleUsage = tests.GroupBy(t => t.SampleTypeId.ToString()).ToDictionary(g => g.Key, g => g.Count());
+    // ── Usage counts (how many tests use each category / sample type) ──
+    // Soft-deleted tests are included because the delete stored procedures
+    // (usp_Category_Delete / usp_SampleType_Delete) refuse to delete an item
+    // that any test row, active or soft-deleted, still points at.
+    var catUsage = tests.Concat(deletedTests)
+        .GroupBy(t => t.CategoryId.ToString())
+        .ToDictionary(g => g.Key, g => g.Count());
+    var sampleUsage = tests.Concat(deletedTests)
+        .GroupBy(t => t.SampleTypeId.ToString())
+        .ToDictionary(g => g.Key, g => g.Count());
 
     var catNameById = catItems.GroupBy(c => c.Id).ToDictionary(g => g.Key, g => g.First().Name);
     var sampleNameById = sampleItems.GroupBy(s => s.Id).ToDictionary(g => g.Key, g => g.First().Name);
@@ -744,19 +754,6 @@
                 font-size: .8rem;
             }
 
-            .per-page {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                font-size: 0.75rem;
-                color: var(--muted);
-            }
-
-                .per-page select {
-                    padding: 6px 8px;
-                    width: auto;
-                }
-
             /* ── EMPTY STATE ── */
             .empty-state {
                 text-align: center;
@@ -1382,7 +1379,7 @@
                     Orders
                 </a>
 
-                <a asp-controller="Technician" asp-action="Index" class="nav-item">
+                <a asp-controller="User" asp-action="Index" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
                     </svg>
@@ -1409,12 +1406,7 @@
                     </svg>
                     Profile
                 </a>
-                <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    </svg>
-                    Audit Log
-                </a>
+
             </div>
         </aside>
 
@@ -1481,7 +1473,7 @@
                 @if (testCount > 0)
                 {
                     <div class="table-container">
-                        <table id="test-table">
+                        <table id="test-table" data-per-page="@TestsPerPage">
                             <thead>
                                 <tr>
                                     <th>Test</th>
@@ -1642,17 +1634,8 @@
                         <div>Try a different search term.</div>
                     </div>
 
-                    <!-- PAGINATION -->
+                    <!-- PAGINATION (fixed at @TestsPerPage rows per page) -->
                     <div class="pagination-bar" id="test-pagination">
-                        <div class="per-page">
-                            <span>Rows per page</span>
-                            <select id="test-per-page" class="form-control">
-                                <option value="10" selected>10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                        </div>
                         <div class="page-info" id="test-page-info"></div>
                         <div class="pager" id="test-pager"></div>
                     </div>
@@ -1927,11 +1910,13 @@
 
     <!-- =====================================================
          MANAGE CATEGORIES MODAL
+         data-id-name = the controller parameter name the delete id is posted as
     ====================================================== -->
     <div id="manageCategoryModal" class="modal-overlay manage-modal"
          data-label="category"
+         data-id-name="categoryId"
          data-add-url="@Url.Action("AddCategory", "TestCatalogue")"
-         data-edit-url="@Url.Action("EditCategory", "TestCatalogue")"
+         data-edit-url="@Url.Action("UpdateCategory", "TestCatalogue")"
          data-delete-url="@Url.Action("DeleteCategory", "TestCatalogue")">
         <div class="modal" style="max-width:640px;">
             <div class="modal-header">
@@ -2014,8 +1999,9 @@
     ====================================================== -->
     <div id="manageSampleModal" class="modal-overlay manage-modal"
          data-label="sample type"
+         data-id-name="sampleTypeId"
          data-add-url="@Url.Action("AddSampleType", "TestCatalogue")"
-         data-edit-url="@Url.Action("EditSampleType", "TestCatalogue")"
+         data-edit-url="@Url.Action("UpdateSampleType", "TestCatalogue")"
          data-delete-url="@Url.Action("DeleteSampleType", "TestCatalogue")">
         <div class="modal" style="max-width:640px;">
             <div class="modal-header">
@@ -2089,6 +2075,8 @@
 
     <!-- =====================================================
          DELETE CATEGORY / SAMPLE TYPE CONFIRMATION
+         The hidden id input's name is set from the modal's data-id-name
+         so it binds to categoryId / sampleTypeId on the controller.
     ====================================================== -->
     <div id="manageDeleteModal" class="modal-overlay top">
         <div class="modal" style="max-width:450px;">
@@ -2322,7 +2310,7 @@
                Rows are shown/hidden via the [hidden] attribute.
             */
             function createPager(opts) {
-                var state = { page: 1, per: opts.perPage || 10, filter: function () { return true; } };
+                var state = { page: 1, per: opts.perPage || 5, filter: function () { return true; } };
 
                 function pageList(current, total) {
                     var out = [];
@@ -2403,13 +2391,14 @@
                 };
             }
 
-            /* ═════════════ TEST TABLE: SEARCH + PAGINATION ═════════════ */
+            /* ═════════════ TEST TABLE: SEARCH + PAGINATION (5 rows per page) ═════════════ */
             (function () {
                 var table = document.getElementById("test-table");
                 if (!table) return;
 
+                var PER_PAGE = parseInt(table.dataset.perPage, 10) || 5;
+
                 var search = document.getElementById("test-search");
-                var perSel = document.getElementById("test-per-page");
                 var noResults = document.getElementById("no-results");
                 var count = document.getElementById("test-count");
                 var tableWrap = table.parentElement;
@@ -2417,7 +2406,7 @@
 
                 var pager = createPager({
                     getRows: function () { return Array.prototype.slice.call(table.querySelectorAll("tbody .test-row")); },
-                    perPage: parseInt(perSel.value, 10) || 10,
+                    perPage: PER_PAGE,
                     info: document.getElementById("test-page-info"),
                     nav: document.getElementById("test-pager"),
                     label: "test types",
@@ -2429,8 +2418,6 @@
                         bar.hidden = none;
                     }
                 });
-
-                perSel.addEventListener("change", function () { pager.setPerPage(parseInt(perSel.value, 10) || 10); });
 
                 if (search) {
                     var t;
@@ -2463,8 +2450,9 @@
             /* ═════════════ MANAGE CATEGORIES / SAMPLE TYPES ═════════════
                - one form per modal: adds by default, switches to edit when ✎ is clicked
                - duplicate names are rejected client-side (case/space-insensitive)
-               - items in use by a test cannot be deleted (button disabled)
+               - items in use by a test (active or deleted) cannot be deleted (button disabled)
                - list is paginated, 5 per page
+               - the delete id is posted under the modal's data-id-name (categoryId / sampleTypeId)
             */
             (function () {
                 var delModal = document.getElementById("manageDeleteModal");
@@ -2495,7 +2483,7 @@
                         perPage: 5,
                         info: modal.querySelector(".m-info"),
                         nav: modal.querySelector(".m-pager"),
-                        label: label + (label.slice(-1) === "y" ? "" : "") + "s"
+                        label: label + "s"
                     }) : null;
                     if (pager) pager.render();
 
@@ -2542,6 +2530,7 @@
 
                         if (del && !del.disabled) {
                             delForm.action = modal.dataset.deleteUrl;
+                            delId.name = modal.dataset.idName || "id";   // binds to categoryId / sampleTypeId
                             delId.value = del.dataset.id;
                             delName.textContent = del.dataset.name;
                             delTitle.textContent = "Delete " + cap;

@@ -159,16 +159,11 @@ namespace LabManager.Repository
         // Replaces the technician's assigned test types. Deletes existing mappings then inserts each provided id.
         public async Task SetTechnicianTestTypes(int technicianId, IEnumerable<int> testTypeIds)
         {
-            // Remove existing mappings first. Stored procedure name assumed; adjust to match DB.
-            await _db.SaveData("sp_DeleteTechnicianTestTypes", new { TechnicianId = technicianId });
+            var ids = (testTypeIds ?? Enumerable.Empty<int>()).Where(i => i > 0).Distinct();
 
-            if (testTypeIds == null) return;
-
-            foreach (var tid in testTypeIds.Distinct())
-            {
-                if (tid <= 0) continue;
-                await _db.SaveData("sp_AddTechnicianTestType", new { TechnicianId = technicianId, TestTypeId = tid });
-            }
+            await _db.SaveData(
+                "sp_SetTechnicianTestTypes",
+                new { TechnicianId = technicianId, TestTypeIds = string.Join(",", ids) });
         }
     }
 

@@ -17,7 +17,7 @@ namespace LabManager.Controllers
 
         // Serialises "work out next number + insert" so two managers saving at the same
         // moment cannot be given the same HPCSA / employee number (single app instance).
-        // Also add a UNIQUE index on both columns (see StaffMultiTestType.sql).
+        // Also keep a UNIQUE index on both columns in the database.
         private static readonly SemaphoreSlim _numberLock = new SemaphoreSlim(1, 1);
 
         private readonly IStaffRepository _staffRepository;
@@ -45,7 +45,15 @@ namespace LabManager.Controllers
                 var model = new StaffViewModel
                 {
                     Doctors = doctors?.ToList() ?? new List<DoctorModel>(),
-                    Technicians = technicians?.ToList() ?? new List<Technician>(),
+
+                    // One row per technician (employee numbers are unique per person).
+                    // Grouping by Id is not used because it can be 0 on every row.
+                    Technicians = technicians?
+                        .GroupBy(t => string.IsNullOrWhiteSpace(t.EmployeeNumber)
+                            ? "id:" + t.Id
+                            : t.EmployeeNumber.Trim().ToUpperInvariant())
+                        .Select(g => g.First())
+                        .ToList() ?? new List<Technician>(),
                 };
 
                 IEnumerable<TestType> test = await _staffRepository.GetTestType();
@@ -53,8 +61,8 @@ namespace LabManager.Controllers
                     .Select(c => new SelectListItem { Value = c.TestId.ToString(), Text = c.TestName })
                     .ToList();
 
-                // TechnicianId -> assigned TestTypeIds. If the join table has not been created yet,
-                // keep the page working (the view falls back to the old single TestTypeID).
+                // TechnicianId -> assigned TestTypeIds. If the mapping table has not been
+                // created yet, keep the page working (the view falls back to the single TestTypeID).
                 try
                 {
                     ViewBag.TechnicianTestTypes = await _staffRepository.GetTechnicianTestTypeMap();
@@ -240,10 +248,15 @@ namespace LabManager.Controllers
 
             if (string.IsNullOrWhiteSpace(firstName) ||
                 string.IsNullOrWhiteSpace(lastName) ||
-                string.IsNullOrWhiteSpace(email) ||
-                selected.Count == 0)
+                string.IsNullOrWhiteSpace(email))
             {
-                TempData["Error"] = "Complete all required technician fields and select at least one test type.";
+                TempData["Error"] = "First name, last name and email are required.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (selected.Count == 0)
+            {
+                TempData["Error"] = "Select at least one test type for the technician.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -265,18 +278,31 @@ namespace LabManager.Controllers
                     LastName = lastName.Trim(),
                     EmployeeNumber = NextNumber(existing?.Select(t => t.EmployeeNumber), "EMP-"),
                     EmailAddress = email.Trim(),
-                    TestTypeID = selected[0],      // primary test type, kept for the existing single-value column
+                    TestTypeID = selected[0],      // primary test type, stored by sp_CreateStaffUser
                     IsActive = true,
                     Status = "Active"
                 };
 
+                // Returns Users.UserID (NOT the technician's own id).
                 userId = await _staffRepository.CreateTechnicianAccount(technician, passwordHash, expiryUtc);
 
-                // All selected test types go to the join table.
-                // NOTE: userId must be the technician's id (see StaffMultiTestType.sql notes).
                 if (userId > 0)
                 {
-                    await _staffRepository.SetTechnicianTestTypes(userId, selected);
+                    // Test types are keyed on LabTechnicians.TechnicianID, not on the user id,
+                    // so look the new technician up (employee numbers are unique).
+                    var created = (await _staffRepository.GetTechnician())
+                        ?.FirstOrDefault(t => string.Equals(
+                            t.EmployeeNumber,
+                            technician.EmployeeNumber,
+                            StringComparison.OrdinalIgnoreCase));
+
+                    if (created == null)
+                    {
+                        throw new InvalidOperationException(
+                            $"The new technician ({technician.EmployeeNumber}) could not be found after it was created.");
+                    }
+
+                    await _staffRepository.SetTechnicianTestTypes(created.Id, selected);
                 }
             }
             catch (Exception ex)
@@ -318,6 +344,7 @@ namespace LabManager.Controllers
             }
             catch (Exception ex)
             {
+                // The account exists; do NOT create it again.
                 Console.WriteLine($"Error emailing technician invitation: {ex}");
                 TempData["Error"] =
                     $"Technician account created (employee number {technician.EmployeeNumber}) but the invitation email could not be sent.";
@@ -337,13 +364,28 @@ namespace LabManager.Controllers
         {
             var selected = CleanIds(testTypeIDs);
 
-            if (id <= 0 ||
-                string.IsNullOrWhiteSpace(firstName) ||
-                string.IsNullOrWhiteSpace(lastName) ||
-                string.IsNullOrWhiteSpace(email) ||
-                selected.Count == 0)
+            Console.WriteLine(
+                $"EditTechnician received: id={id}, first='{firstName}', last='{lastName}', " +
+                $"email='{email}', testTypes=[{string.Join(",", selected)}]");
+
+            // Specific messages so it is clear which part of the form was missing.
+            if (id <= 0)
             {
-                TempData["Error"] = "Please provide valid technician details and select at least one test type.";
+                TempData["Error"] = "The technician could not be identified. Please close the form and try again.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (string.IsNullOrWhiteSpace(firstName) ||
+                string.IsNullOrWhiteSpace(lastName) ||
+                string.IsNullOrWhiteSpace(email))
+            {
+                TempData["Error"] = "First name, last name and email are required.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (selected.Count == 0)
+            {
+                TempData["Error"] = "Select at least one test type for the technician.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -427,8 +469,11 @@ namespace LabManager.Controllers
             string numberValue,
             IEnumerable<string> testTypes)
         {
+            // Accept the login URL from either AppSettings or EmailSettings so one missing
+            // section does not stop the invitation email.
             string loginUrl =
                 _configuration["AppSettings:LoginUrl"]
+                ?? _configuration["EmailSettings:LoginUrl"]
                 ?? throw new InvalidOperationException("The login URL has not been configured.");
 
             string Enc(string s) => System.Net.WebUtility.HtmlEncode(s ?? "");

@@ -6,6 +6,9 @@
     Layout = null;
     ViewData["Title"] = "Tests by Category";
 
+    // Number of test entries shown at a time inside each category
+    const int RowsPerCategoryPage = 5;
+
     var email = ViewBag.Email?.ToString() ?? "Laboratory Manager";
     var initial = string.IsNullOrWhiteSpace(email)
         ? "M"
@@ -45,6 +48,10 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+        }
+
+        [hidden] {
+            display: none !important;
         }
 
         :root {
@@ -698,6 +705,78 @@
             text-align: center;
         }
 
+        /* ── PER-CATEGORY PAGINATION ── */
+        .pager-row:hover {
+            background: transparent;
+        }
+
+        .pager-row td {
+            padding: 8px 15px 12px 58px;
+            border-bottom: 1px solid var(--border) !important;
+        }
+
+        .group-pager {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .page-info {
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+            .page-info strong {
+                color: var(--navy);
+            }
+
+        .pager {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .pg-btn {
+            min-width: 30px;
+            height: 30px;
+            padding: 0 9px;
+            border: 1px solid var(--border);
+            background: var(--white);
+            color: var(--navy);
+            border-radius: 8px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s ease;
+        }
+
+            .pg-btn:hover:not(:disabled):not(.active) {
+                border-color: var(--teal);
+                color: var(--teal);
+                background: var(--teal-light);
+            }
+
+            .pg-btn.active {
+                background: var(--teal);
+                border-color: var(--teal);
+                color: var(--white);
+                cursor: default;
+            }
+
+            .pg-btn:disabled {
+                opacity: .45;
+                cursor: not-allowed;
+            }
+
+        .pg-gap {
+            color: var(--muted);
+            padding: 0 2px;
+            font-size: .8rem;
+        }
+
         .table-footer {
             display: flex;
             justify-content: space-between;
@@ -848,6 +927,10 @@
                 padding-left: 24px;
             }
 
+            .pager-row td {
+                padding-left: 24px;
+            }
+
             .footer {
                 flex-direction: column;
                 gap: 6px;
@@ -903,6 +986,15 @@
 
             tr {
                 break-inside: avoid;
+            }
+
+            /* The printed / PDF report always lists every entry, without page buttons */
+            .sub-row[hidden] {
+                display: table-row !important;
+            }
+
+            .pager-row {
+                display: none !important;
             }
         }
     </style>
@@ -974,7 +1066,7 @@
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                     </svg>
-                    Staff
+					Users
                 </a>
 
                 <a asp-controller="ConsumableOrder" asp-action="Index" class="nav-item">
@@ -998,7 +1090,7 @@
             <div class="nav-section">
                 <div class="nav-label">System</div>
 
-                <a asp-controller="ManagerDashboard" asp-action="Profile" class="nav-item">
+                <a asp-controller="User" asp-action="Profile" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
@@ -1006,12 +1098,7 @@
                     Profile
                 </a>
 
-                <a asp-controller="ManagerDashboard" asp-action="AuditLog" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    </svg>
-                    Audit Log
-                </a>
+               
             </div>
         </aside>
 
@@ -1165,7 +1252,7 @@
                 @if (reportRows.Any())
                 {
                     <div class="table-container">
-                        <table>
+                        <table id="report-table" data-per-page="@RowsPerCategoryPage">
                             <thead>
                                 <tr>
                                     <th>Category / Test Type</th>
@@ -1174,9 +1261,12 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @{ var groupIndex = 0; }
                                 @foreach (var group in groups)
                                 {
                                     var groupTotal = group.Sum(x => x.TestCount);
+                                    var groupId = groupIndex++;
+                                    var groupSize = group.Count();
 
                                     <!-- Category heading row (one per category) -->
                                     <tr class="group-row">
@@ -1190,7 +1280,7 @@
                                                 </div>
                                                 <span class="category-name">@group.Key</span>
                                                 <span class="group-count">
-                                                    · @group.Count() @(group.Count() == 1 ? "entry" : "entries")
+                                                    · @groupSize @(groupSize == 1 ? "entry" : "entries")
                                                 </span>
                                             </div>
                                         </td>
@@ -1200,13 +1290,25 @@
                                         </td>
                                     </tr>
 
-                                    <!-- Test types underneath, with the date taken -->
+                                    <!-- Test types underneath, with the date taken (5 at a time) -->
                                     @foreach (var item in group)
                                     {
-                                        <tr class="sub-row">
+                                        <tr class="sub-row" data-group="@groupId">
                                             <td><span class="test-name">@item.TestTypeName</span></td>
                                             <td class="date-cell">@item.PerformedDate.ToString("dd MMM yyyy")</td>
                                             <td class="num">@item.TestCount.ToString("N0")</td>
+                                        </tr>
+                                    }
+
+                                    @if (groupSize > RowsPerCategoryPage)
+                                    {
+                                        <tr class="pager-row" data-group="@groupId">
+                                            <td colspan="3">
+                                                <div class="group-pager">
+                                                    <div class="page-info"></div>
+                                                    <div class="pager"></div>
+                                                </div>
+                                            </td>
                                         </tr>
                                     }
                                 }
@@ -1269,6 +1371,84 @@
             // In the print dialog, choose "Save as PDF".
             window.print();
         }
+
+        /* ═════════════ PER-CATEGORY PAGINATION (5 entries per page) ═════════════
+           Each category has its own page buttons. Printing / PDF shows every entry.
+        */
+        (function () {
+            var table = document.getElementById("report-table");
+            if (!table) return;
+
+            var PER_PAGE = parseInt(table.dataset.perPage, 10) || 5;
+
+            function pageList(current, total) {
+                var out = [];
+                if (total <= 7) {
+                    for (var i = 1; i <= total; i++) out.push(i);
+                    return out;
+                }
+                out.push(1);
+                var start = Math.max(2, current - 1), end = Math.min(total - 1, current + 1);
+                if (current <= 3) { start = 2; end = 4; }
+                if (current >= total - 2) { start = total - 3; end = total - 1; }
+                if (start > 2) out.push("…");
+                for (var p = start; p <= end; p++) out.push(p);
+                if (end < total - 1) out.push("…");
+                out.push(total);
+                return out;
+            }
+
+            var pagerRows = table.querySelectorAll("tr.pager-row");
+
+            // Categories with 5 or fewer entries have no pager row, so everything stays visible.
+            pagerRows.forEach(function (pagerRow) {
+                var gid = pagerRow.dataset.group;
+                var rows = Array.prototype.slice.call(
+                    table.querySelectorAll('tr.sub-row[data-group="' + gid + '"]'));
+                var info = pagerRow.querySelector(".page-info");
+                var nav = pagerRow.querySelector(".pager");
+                var pages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
+                var page = 1;
+
+                function button(text, target, opts) {
+                    var b = document.createElement("button");
+                    b.type = "button";
+                    b.className = "pg-btn" + (opts && opts.active ? " active" : "");
+                    b.textContent = text;
+                    if (opts && opts.label) b.setAttribute("aria-label", opts.label);
+                    if (opts && opts.disabled) b.disabled = true;
+                    if (opts && opts.active) b.setAttribute("aria-current", "page");
+                    b.addEventListener("click", function () { page = target; render(); });
+                    return b;
+                }
+
+                function render() {
+                    var from = (page - 1) * PER_PAGE;
+                    var to = Math.min(from + PER_PAGE, rows.length);
+
+                    rows.forEach(function (r, i) { r.hidden = !(i >= from && i < to); });
+
+                    info.innerHTML = "Showing <strong>" + (from + 1) + "–" + to +
+                        "</strong> of <strong>" + rows.length + "</strong> entries";
+
+                    nav.innerHTML = "";
+                    nav.appendChild(button("‹", page - 1, { disabled: page === 1, label: "Previous page" }));
+                    pageList(page, pages).forEach(function (p) {
+                        if (p === "…") {
+                            var gap = document.createElement("span");
+                            gap.className = "pg-gap";
+                            gap.textContent = "…";
+                            nav.appendChild(gap);
+                        } else {
+                            nav.appendChild(button(p, p, { active: p === page, label: "Page " + p }));
+                        }
+                    });
+                    nav.appendChild(button("›", page + 1, { disabled: page === pages, label: "Next page" }));
+                }
+
+                render();
+            });
+        })();
 
         (function () {
             var form = document.getElementById("filter-form");
