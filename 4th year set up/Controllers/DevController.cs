@@ -6,6 +6,9 @@ namespace _4th_year_set_up.Controllers
     {
         public IActionResult Login(string role)
         {
+            // Dev shortcut: only available when running locally, never on the live server.
+            if (!HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment()) return NotFound();
+
             HttpContext.Session.SetString("RoleName", role);
             HttpContext.Session.SetString("Email", $"dev-{role.ToLower()}@test.com");
             HttpContext.Session.SetString("Username", $"dev_{role.ToLower()}");
