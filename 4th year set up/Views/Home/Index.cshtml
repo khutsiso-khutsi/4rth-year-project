@@ -1128,6 +1128,17 @@
         .track-result .flag { margin-left: auto; font-size: 0.68rem; font-weight: 700; padding: 3px 9px; border-radius: 100px; background: rgba(220,38,38,0.18); color: #fca5a5; }
         .track-note { font-size: 0.72rem; color: rgba(255,255,255,0.58); margin-top: 12px; text-align: center; }
 
+        /* HERO BACKGROUND VIDEO: plays silently behind the headline (file: wwwroot/videos/hero.mp4) */
+        .hero::before, .hero::after { z-index: 1; }
+        .hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+        .hero-video-shade {
+            position: absolute; inset: 0; z-index: 1;
+            background: linear-gradient(90deg, rgba(11,31,58,0.94) 0%, rgba(11,31,58,0.80) 45%, rgba(11,31,58,0.58) 100%);
+        }
+        .track-card { background: rgba(11,31,58,0.72); }
+        @@media (max-width: 900px), (prefers-reduced-motion: reduce) {
+            .hero-video { display: none; }
+        }
         /* HERO CARD: tilted in 3D and animated like a short looping video */
         .hero-visual { perspective: 1400px; }
         .track-card {
@@ -1245,6 +1256,10 @@
     <main id="main">
     <!-- HERO -->
     <section class="hero">
+        <video class="hero-video" autoplay muted loop playsinline preload="metadata" aria-hidden="true" tabindex="-1">
+            <source src="~/videos/hero.mp4" type="video/mp4" />
+        </video>
+        <div class="hero-video-shade" aria-hidden="true"></div>
         <div class="hero-inner">
             <div>
                 <h1>Haematology tests,<br />from request to result.</h1>
