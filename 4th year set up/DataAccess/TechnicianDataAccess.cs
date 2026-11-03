@@ -484,6 +484,7 @@ namespace _4th_year_set_up.DataAccess
 
         private class MissingRow
         {
+
             public int BarcodeID { get; set; }
             public string TestName { get; set; }
         }

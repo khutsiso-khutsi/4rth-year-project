@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Testing Queue";
     Layout = null;
+    var fullName = string.IsNullOrWhiteSpace(CurrentUser.Name) ? "Technician" : CurrentUser.Name.Trim();
 }
 
 <!DOCTYPE html>
@@ -737,7 +738,7 @@
             <!-- WELCOME -->
             <section class="welcome">
                 <div class="welcome-tag">Testing Technician</div>
-                <h1>Welcome back, <em>Technician</em></h1>
+                <h1>Welcome back, <em>@fullName</em></h1>
                 <p>
                     Select eligible tests, begin processing, and monitor your turnaround time —
                     @DateTime.Now.ToString("dddd, dd MMMM yyyy")

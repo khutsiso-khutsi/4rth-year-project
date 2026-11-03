@@ -3,7 +3,7 @@
     ViewData["Title"] = "Enter Test Results";
     Layout = null;
 }
-
+<!-- Uses dummy data -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -384,28 +384,7 @@
 <body>
 
     <!-- TOPBAR -->
-    <div class="topbar">
-        <a class="brand" asp-controller="Home" asp-action="Index">
-            <div class="brand-logo">
-                <svg viewBox="0 0 24 24">
-                    <path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" />
-                </svg>
-            </div>
-            <div class="brand-name">
-                NMB-HLabSys
-                <span>Haematology Lab System</span>
-            </div>
-        </a>
-
-        <div class="topbar-right">
-            <div class="user-chip">
-                <div class="user-avatar">T</div>
-                <span class="user-email">tech@nmbhlab.com</span>
-            </div>
-
-            <a href="#" class="logout-btn">Sign Out</a>
-        </div>
-    </div>
+    <partial name="_TechnicianTopbar" />
 
     <div class="page">
 
@@ -448,7 +427,7 @@
 
             <div class="nav-label">Results</div>
 
-            <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" class="nav-item">
+            @* <a asp-controller="TechnicianDashboard" asp-action="CaptureResults" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="4" y="3" width="16" height="18" rx="2" />
                     <line x1="8" y1="8" x2="16" y2="8" />
@@ -456,7 +435,7 @@
                     <line x1="8" y1="16" x2="13" y2="16" />
                 </svg>
                 Capture Results
-            </a>
+            </a> *@
 
             <a asp-controller="TechnicianDashboard" asp-action="Verification" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

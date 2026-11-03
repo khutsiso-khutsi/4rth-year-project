@@ -131,7 +131,22 @@ public class TechnicianDashboardController : Controller
         return View(rows);
     }
 
-    private static string Waited(DateTime collected)
+        private (string Message, bool Ok) ReleaseAndNotify(LabRequest req)
+        {
+            var email = _db.GetDoctorEmail(req);
+            var ev = req.Log("Results released", CurrentUser.Id, EventTone.Good,
+                string.IsNullOrWhiteSpace(email) ? "Released. No doctor e-mail on record." : "Released. Doctor notified by e-mail.");
+            if (!_db.ReleaseRequest(req, CurrentUser.Id, ev))
+                return ($"{req.ReqNum} was already released.", true);
+            if (string.IsNullOrWhiteSpace(email))
+                return ($"{req.ReqNum} released, but no e-mail is on record for {req.RequestingDoctor}, so nobody was notified.", false);
+            var error = SendReleaseEmail(email, req);
+            return ($"{req.ReqNum} released successfully.", true);
+            //return error == null
+            //    ? ($"{req.ReqNum} released and {req.RequestingDoctor} has been e-mailed.", true)
+            //    : ($"{req.ReqNum} released);
+        }
+        private static string Waited(DateTime collected)
     {
         if (collected.Year < 2000) return "—";
         var m = (int)(DateTime.Now - collected).TotalMinutes;
@@ -417,10 +432,19 @@ public class TechnicianDashboardController : Controller
         }
 
         item.Stage = TestStage.Verified;     // so the message below reflects the request as it is now
-        Flash(item.Request.IsReadyToRelease
-                ? $"{Label(item)}: result verified. Every test on {item.ReqNum} is now verified, so the request is complete and ready for the doctor to release."
-                : $"{Label(item)}: result verified." + (item.Request.HoldReason != null ? $" {item.ReqNum} stays open: {item.Request.HoldReason}." : ""), "ok");
-        return RedirectToAction("Verification");
+            var msg = $"{Label(item)}: result verified.";
+            var ok = true;
+            if (item.Request.IsReadyToRelease)
+            {
+                var r = ReleaseAndNotify(item.Request);
+                msg += " " + r.Message;
+                ok = r.Ok;
+            }
+            else if (item.Request.HoldReason != null)
+                msg += $" {item.ReqNum} stays open: {item.Request.HoldReason}.";
+            Flash(msg, ok ? "ok" : "warn");
+            return RedirectToAction("Verification");
+            return RedirectToAction("Verification");
     }
 
     // Not verified: returned to the technician who performed the test, with a note. Status becomes To Be Reviewed.
@@ -485,7 +509,19 @@ public class TechnicianDashboardController : Controller
         }
 
         ViewBag.Email ??= User?.Identity?.Name;
-        return View(new CaptureResultsViewModel
+            var prev = _db.GetPreviousResults(item);     // values keyed by parameter name, plus when they were verified
+            if (prev != null)
+            {
+                var byKey = new Dictionary<string, decimal>();
+                foreach (var d in defs)
+                    if (prev.Value.Values.TryGetValue(d.Name, out var v)) byKey[d.Key] = v;
+                if (byKey.Count > 0)
+                {
+                    ViewBag.Previous = byKey;
+                    ViewBag.PreviousDate = prev.Value.At;
+                }
+            }
+            return View(new CaptureResultsViewModel
         {
             Item = item,
             Parameters = defs,
@@ -498,7 +534,7 @@ public class TechnicianDashboardController : Controller
     // Flags are worked out from the reference ranges here, never taken from the browser.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult SaveResults(string id, string resultsJson)
+    public IActionResult SaveResults(string id, string resultsJson, string verifierNote)
     {
         var item = Find(id);
         if (item == null) return NotFound();
@@ -567,7 +603,8 @@ public class TechnicianDashboardController : Controller
             return RedirectToAction("CaptureResults", new { id });
         }
 
-        var wasReturned = item.Stage == TestStage.ToBeReviewed;
+            if (!string.IsNullOrWhiteSpace(verifierNote)) comments.Add("Note: " + verifierNote.Trim());
+            var wasReturned = item.Stage == TestStage.ToBeReviewed;
         var previousAttempt = item.History.LastOrDefault()?.Results;     // what was entered before it was returned
 
         item.Results = lines;
@@ -624,24 +661,7 @@ public class TechnicianDashboardController : Controller
         if (req.IsReleased) { Flash($"{req.ReqNum} has already been released.", "warn"); return RedirectToAction("ReleaseResults"); }
         if (!req.IsReadyToRelease) { Flash($"{req.ReqNum} cannot be released yet: {req.HoldReason}.", "warn"); return RedirectToAction("ReleaseResults"); }
 
-        var email = _db.GetDoctorEmail(req);
-        var ev = req.Log("Results released", CurrentUser.Id, EventTone.Good,
-                         string.IsNullOrWhiteSpace(email) ? "Released. No doctor e-mail on record." : "Released. Doctor notified by e-mail.");
-        if (!_db.ReleaseRequest(req, CurrentUser.Id, ev))
-        {
-            Flash($"{req.ReqNum} could not be released. It may already have been released.", "warn");
-            return RedirectToAction("ReleaseResults");
-        }
-
-        if (string.IsNullOrWhiteSpace(email))
-            Flash($"{req.ReqNum} released, but no e-mail address is on record for {req.RequestingDoctor}, so nobody was notified.", "warn");
-        else
-        {
-            var error = SendReleaseEmail(email, req);
-            Flash(error == null
-                ? $"{req.ReqNum} released. {req.RequestingDoctor} has been e-mailed."
-                : $"{req.ReqNum} released, but the e-mail to {req.RequestingDoctor} failed: {error}", error == null ? "ok" : "warn");
-        }
+      
         return RedirectToAction("ReleaseResults");
     }
 

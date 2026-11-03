@@ -17,6 +17,7 @@ namespace _4th_year_set_up.Repository
         public bool IsSampleMode => _dataAccess.IsSampleMode;
 
         // ── READ ──────────────────────────────────────────────────────
+        public (Dictionary<string, decimal> Values, DateTime At)? GetPreviousResults(TestItem item) => _dataAccess.GetPreviousResults(item);
         public List<LabRequest> GetRequests() => _dataAccess.GetRequests();
         public List<TestItem> GetTests() => _dataAccess.GetTests();
         public LabRequest GetRequest(string reqNum) => _dataAccess.GetRequest(reqNum);

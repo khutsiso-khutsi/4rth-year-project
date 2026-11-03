@@ -4,8 +4,8 @@
 @{
     ViewData["Title"] = Model.Title;
     Layout = null;
-    var email = ViewBag.Email?.ToString();
-    var initial = string.IsNullOrEmpty(email) ? "T" : email.Substring(0, 1).ToUpper();
+    // var email = ViewBag.Email?.ToString();
+    // var initial = string.IsNullOrEmpty(email) ? "T" : email.Substring(0, 1).ToUpper();
 
     // Which sidebar item is highlighted: queue/awaiting/verified -> Testing Queue, mine -> My Tests
     var queueActive = (Model.Mode == "queue" || Model.Mode == "awaiting" || Model.Mode == "verified") ? "active" : "";
@@ -43,28 +43,7 @@
 <body>
 
     @* ===== TOPBAR + SIDEBAR: identical to Index.cshtml. Only the "active" class moves. ===== *@
-    <div class="topbar">
-        <a class="brand" asp-controller="Home" asp-action="Index">
-            <div class="brand-logo">
-                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
-            </div>
-            <div class="brand-name">NMB-HLabSys<span>Haematology Lab System</span></div>
-        </a>
-        <div class="topbar-right">
-            <div class="user-chip">
-                <div class="user-avatar">@initial</div>
-                <span class="user-email">@email</span>
-            </div>
-            <a asp-controller="Home" asp-action="Logout" class="logout-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
-                Sign Out
-            </a>
-        </div>
-    </div>
+    <partial name="_TechnicianTopbar" />
 
     <div class="page">
         <aside class="sidebar">
@@ -182,7 +161,8 @@
                                         <td><strong>@t.ReqNum</strong>@if (t.InMultiTestRequest) { <span class="req-chip">@t.PositionLabel</span> }</td>
                                         <td>@t.Test</td>
                                         <td><span class="badge @(t.IsUrgent ? "badge-urgent" : "badge-routine")">@(t.IsUrgent ? "Urgent" : "Routine")</span></td>
-                                        <td>@TechnicianNames.Of(t.CapturedBy)@(t.CapturedBy == CurrentUser.Id ? " (you)" : "")</td>
+                                        // <td>@TechnicianNames.Of(t.CapturedBy)@(t.CapturedBy == CurrentUser.Id ? " (you)" : "")</td>
+                                    <td>@TechnicianNames.Of(t.CapturedBy)</td>
                                         <td>@Ago(t.CapturedAt)</td>
                                         <td class="actions-cell">
                                             @if (CurrentUser.CanVerifyResult(t))
@@ -223,10 +203,7 @@
                                         {
                                             <span class="due-text" title="@t.ReviewNote">Note: @t.ReviewNote</span>
                                         }
-                                        @if (t.AssignedToMe && t.IsInQueue)
-                                        {
-                                            <span class="badge badge-mine">Mine</span>
-                                        }
+                                       
                                     </td>
                                     <td class="actions-cell"><partial name="_TestActions" model="t" /></td>
                                     }

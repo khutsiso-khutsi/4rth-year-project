@@ -24,4 +24,7 @@
 		<ProjectReference Include="..\LabManager\LabManager.csproj" />
 		<ProjectReference Include="..\Patient\Patient.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Database\" />
+	</ItemGroup>
 </Project>

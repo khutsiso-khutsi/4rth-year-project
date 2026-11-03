@@ -3,8 +3,10 @@
 @{
     ViewData["Title"] = "Index";
     Layout = null;
-    var email = ViewBag.Email?.ToString();
-    var initial = string.IsNullOrEmpty(email) ? "T" : email.Substring(0, 1).ToUpper();
+    // var email = ViewBag.Email?.ToString();
+    // var initial = string.IsNullOrEmpty(email) ? "T" : email.Substring(0, 1).ToUpper();
+    var fullName = string.IsNullOrWhiteSpace(CurrentUser.Name) ? "Technician" : CurrentUser.Name.Trim();
+
     var flash = TempData["Flash"] as string;
     var flashType = TempData["FlashType"] as string ?? "ok";
 }
@@ -20,28 +22,7 @@
 </head>
 <body>
     @* ===== TOPBAR + SIDEBAR: copy this block unchanged into every technician screen. Only move the "active" class. ===== *@
-    <div class="topbar">
-        <a class="brand" asp-controller="Home" asp-action="Index">
-            <div class="brand-logo">
-                <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 0 2h-4v4a1 1 0 0 1-2 0V9H7a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z" /><circle cx="12" cy="17" r="4" opacity="0.6" /></svg>
-            </div>
-            <div class="brand-name">NMB-HLabSys<span>Haematology Lab System</span></div>
-        </a>
-        <div class="topbar-right">
-            <div class="user-chip">
-                <div class="user-avatar">@initial</div>
-                <span class="user-email">@email</span>
-            </div>
-            <a asp-controller="Home" asp-action="Logout" class="logout-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
-                Sign Out
-            </a>
-        </div>
-    </div>
+    <partial name="_TechnicianTopbar" />
 
     <div class="page">
         <aside class="sidebar">
@@ -116,7 +97,7 @@
             <div class="welcome-banner">
                 <div class="welcome-inner">
                     <div class="welcome-tag">Lab Technician Portal</div>
-                    <h1>Welcome back, <em>Technician</em></h1>
+                    <h1>Welcome back, <em>@fullName</em></h1>
                     <p>Your test queue for today — @DateTime.Now.ToString("dddd, dd MMMM yyyy")</p>
                 </div>
             </div>
@@ -141,7 +122,6 @@
                         <div class="stat-icon" style="background:var(--blue-light)">
                             <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                         </div>
-                        <span class="stat-trend trend-info">Mine</span>
                     </div>
                     <div class="stat-value">@Model.MineCount</div>
                     <div class="stat-label">Tests selected by me</div>
